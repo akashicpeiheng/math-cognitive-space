@@ -5579,3 +5579,24 @@ doctor 的关键结果：
 - 公网部署、多租户账户隔离、远程 DeepTutor 拓扑：未在本轮验证。
 
 以上未声称项在网站的“研究工作台 → 专稿覆盖/证明义务”中逐条可见，并随覆盖清单版本化维护。
+
+## 第七十九轮：公网自托管（Cloudflare 隧道）首次真机上线（2026-10-05）
+
+在没有境外卡、Hugging Face 又被 WAF 拦（418）的前提下，改用「本机 + Cloudflare 隧道」把站点发布到公网。
+**实测记录**（地址为 trycloudflare 随机子域，每次重启会变）：
+
+- 隧道与站点可用：首页 / 登录页 / `/api/v2/health` 均 **200**；
+- 登录链路：`POST /api/v2/auth/github` → Supabase `/auth/v1/authorize` → **302 到 `github.com/login/oauth/authorize`**，
+  真实登录完成后，服务端 `mcs_security` 出现 `session` 记录，`userId` 与 Supabase 的 UID 一致，
+  有效期 7 天，且**库里只存令牌指纹**；
+- 权限边界（全部实测）：游客 GET `/profiles`、`/authoring/drafts`、`/authoring/revisions` 与 POST 写入均 **401**；
+  伪造会话 Cookie **401**；带正确 Origin 但无会话的写入 **401**；公开本体 `/api/v2/ontology` 仍 **200**；
+  上述尝试后 `profiles / events / owners` 计数仍为 **0**（没有任何写入被放行）；
+- 隔离：公网实例用 `runtime/public/` 下独立文件，本机工作台 `runtime/*.sqlite3` 的时间戳未变。
+
+**两个坑（都已写进部署清单）**：
+
+1. **Supabase 重定向白名单**：不配 `Site URL` 与 `Redirect URLs` 时，登录会"成功"但人被丢到
+   `http://localhost:3000/?code=…`——因为 `redirect_to` 未命中白名单时 Supabase 退回 Site URL。
+2. **环境变量盖掉配置**：窗口里残留 `MCS_WEB_DB_URL=base` 会让站点去连一个不存在的主机
+   （`getaddrinfo ENOTFOUND base`）；脚本已改为显式清除并打印。
