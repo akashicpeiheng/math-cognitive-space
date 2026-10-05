@@ -11,8 +11,12 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
 test('maintenance CLIs seed idempotently and back up / restore the configured SQLite store', (t) => {
   // Run real entrypoints in an isolated fixture; never use developer credentials or runtime.
-  const dir = mkdtempSync(join(tmpdir(), 'mcs-maintenance-cli-'));
-  t.after(() => rmSync(dir, { recursive: true, force: true }));
+  const workspace = mkdtempSync(join(tmpdir(), 'mcs-maintenance-cli-'));
+  t.after(() => rmSync(workspace, { recursive: true, force: true }));
+  const dir = join(workspace, 'mcs-web');
+  mkdirSync(dir);
+  cpSync(resolve(root, '../mcs-foundations/validation/certification'),
+    join(workspace, 'mcs-foundations/validation/certification'), { recursive: true });
   /*
    * fixture 要长得像**真的仓库**，不能长得像 `mcs-web`。
    *
