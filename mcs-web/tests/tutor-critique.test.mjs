@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import http from 'node:http';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, dirname } from 'node:path';
@@ -23,6 +23,8 @@ import { TutorAdapter } from '../server/tutor.mjs';
  * 3. 本站内适配器与 mcs-bridge 是两套并行集成，界面却不提桥接，使用者会以为只有一套。
  *
  * 另外核对两套实现**说同一套失败语言**（同一个错误码字符串），避免两套接口各说各话。
+ * 桥接仓库不随公开包分发：本站错误码表在公开包里必须始终可核对；
+ * 桥接源码在时才核对跨仓库一侧，缺材料就带原因跳过，不把「无法核对」判成失败。
  */
 const here = dirname(fileURLToPath(import.meta.url));
 const BRIDGE_ADAPTER = resolve(here, '../../mcs-bridge/deeptutor.mjs');
@@ -160,16 +162,32 @@ test('状态里同时披露桥接与本站适配器，并说明哪一套是权�
   assert.equal(down.deeptutor_ready, false);
 });
 
-test('两套集成的失败语言一致（跨仓库不变量）', () => {
+const CROSS_REPO_CODES = ['DEEPTUTOR_INTERRUPTED', 'DEEPTUTOR_UNAVAILABLE', 'DEEPTUTOR_AUTH_REQUIRED'];
+
+/*
+ * 跨仓库不变量有**两半**，公开包的验收能力不同：
+ *
+ * - 本站这一半（`shared/errors.mjs`）随包分发，必须**始终**核对，不依赖任何外部检出；
+ * - 桥接那一半（`mcs-bridge/deeptutor.mjs`）是独立仓库，不随公开包分发，
+ *   只在源码存在时核对；缺材料时如实跳过并写明缺的是什么，不伪报通过、也不把「无法核对」判成失败。
+ */
+test('本站错误码表保留跨仓库失败码（公开包内必须可核对）', () => {
+  const errors = readFileSync(resolve(here, '../shared/errors.mjs'), 'utf8');
+  for (const code of CROSS_REPO_CODES) {
+    assert.ok(errors.includes(code), `本站错误码表应当保留 ${code}`);
+  }
+});
+
+test('两套集成的失败语言一致（跨仓库不变量）', (t) => {
+  if (!existsSync(BRIDGE_ADAPTER)) {
+    t.skip('本机没有 mcs-bridge 检出（' + BRIDGE_ADAPTER + '）——该仓库不随公开包分发，跨仓库不变量的桥接一侧无法核对；本站错误码表由上一条用例始终核对');
+    return;
+  }
   const bridgeSource = readFileSync(BRIDGE_ADAPTER, 'utf8');
   // 桥接是经过核查的那一套；本站内适配器必须说同一套错误码，否则同一个故障在两套接口里
   // 有不同的名字，使用者无法据此判断「能不能重发」。
-  for (const code of ['DEEPTUTOR_INTERRUPTED', 'DEEPTUTOR_UNAVAILABLE', 'DEEPTUTOR_AUTH_REQUIRED']) {
+  for (const code of CROSS_REPO_CODES) {
     assert.ok(bridgeSource.includes(code), `桥接适配器应当使用 ${code}`);
-  }
-  const errors = readFileSync(resolve(here, '../shared/errors.mjs'), 'utf8');
-  for (const code of ['DEEPTUTOR_INTERRUPTED', 'DEEPTUTOR_UNAVAILABLE', 'DEEPTUTOR_AUTH_REQUIRED']) {
-    assert.ok(errors.includes(code), `本站错误码表应当保留 ${code}`);
   }
 });
 

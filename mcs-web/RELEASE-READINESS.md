@@ -2,26 +2,26 @@
 
 这份记录只写**已经验证过的事实**与**还缺什么**，不写计划口吻的承诺。
 
-## 〇、当前发布进程（2026-10-05 12:5x 更新）
+## 〇、当前发布进程（2026-10-05 下午核对）
 
-| 环节 | 状态 | 证据 |
+**结论：源码已公开，临时公网服务已可访问；下一阶段是运行可靠性与完整使用验收，
+不是重新做首次上传。** 固定地址、长期可用性和灾难恢复尚未验收。
+
+| 环节 | 状态 | 证据与边界 |
 |---|---|---|
-| 源码公开 | **已完成** | <https://github.com/akashicpeiheng/math-cognitive-space>（public，默认分支 `main`） |
-| 公开历史 | 已重整（2026-10-05） | 远程 `main` 只有一个提交 `d6f3cfe chore: 数学认知空间 MCS 开源版本`；此前那 6 个提交保留在本地 `E:\MCS-publish` 的 `backup-before-scrub` 分支，不再随仓库分发 |
-| 仓库更新 | 已推送，与远程同步 | 工作区干净；`git ls-remote origin main` = `d6f3cfe` |
-| Supabase 项目 | 待用户操作 | 步骤见 `mcs-web/docs/部署清单.md` 第 1 节 |
-| GitHub OAuth App | 待用户操作 | 同上第 1.2 节（回调地址取 Supabase 里的 Callback URL） |
-| Render 部署 | 待用户操作 | `render.yaml` 已在仓库根，Blueprint 可直接用 |
-| 公网上线验收 | 待部署后执行 | 部署清单第 3 节的 9 条 |
+| 源码公开 | 已证实 | [公开仓库](https://github.com/akashicpeiheng/math-cognitive-space)；2026-10-05 下午核对远程 `main` 为 `284e1ba`，R0 修复（第八十一轮）随本轮提交推送 |
+| 发布副本 | 已证实 | `E:\MCS-publish` 的 `main` 与上述远程一致，核对时工作区干净；`E:\MCS-open-source` 是旧导出副本，不再作为推送入口 |
+| 构建缓存清理 | 已发布 | 最新公开版本已排除 125 个 arXiv 构建/中间文件；本机原稿保留。此前“远程只有 d6f3cfe 一个提交”的记录已过时 |
+| 当前公网形态 | 已证实 | 本机常驻服务 + Cloudflare 快速隧道；本轮匿名 GET 首页、`/login`、`/api/v2/health` 均为 200，`/api/v2/profiles` 为 401 |
+| GitHub 登录 | 引用既有实测 | `VALIDATION.md` 第七十九轮记载真实 OAuth 登录与会话入库；本轮没有重新登录，也未读取会话令牌 |
+| 公网数据 | 实现存在 | 显式自托管模式使用独立 `runtime/public/` SQLite；本轮没有改动或恢复这些数据 |
+| 本轮定向验证 | 已证实 | `release-export.test.mjs` 与 `maintenance-cli.test.mjs` 合计 8/8，通过且无跳过；`npm run check` 全部通过 |
+| 全量回归 | 已证实（本轮） | 干净导出包（`E:\MCS\tmp\github-release-20261005-r0`）以 `MCS_WEB_REQUIRE_BROWSER=1` + `MCS_WEB_REQUIRE_TLS=1` 跑 `npm test`：**全部 mcs-web 验收通过**，退出码 0；浏览器与 TLS 跳过会判失败 |
+| 公开包独立验收 | 已修复并验证 | R0：跨仓库核对拆成两半——本站错误码表在公开包内始终执行，`mcs-bridge` 一侧缺材料时带原因跳过；验证证据见 `VALIDATION.md` 第八十一轮 |
+| 云端托管 | 未验证 | Render、容器镜像、云端 PostgreSQL 与 Vercel 尚无本轮上线验收；当前可用地址来自隧道，不是这些平台 |
 
-本地克隆 `E:\MCS-publish` 的这一个提交，相对最初那次公开的内容：**新增 9 个文件**（`render.yaml`、`Dockerfile`、`.dockerignore`、
-`mcs-web/docs/部署清单.md`、`GITHUB-VERCEL.md`、`tests/https-public.mjs`、`tls-runtime.mjs`、
-`maintenance-cli.test.mjs`、`release-export.test.mjs`）、**修改 16 个**（含 PostgreSQL 存储层、
-账号层、权限表、README 部署一节）、**移除 125 个**（全是 `mcs-foundations/arxiv/output/`、
-`package-staging/` 的构建产物与 `edition/` 的 LaTeX 中间文件——导出脚本现在按规则排除它们）。
-
-推送前的要求已经满足：`npm test` **全部通过**（2026-10-05 重整公开历史前复核：`全部 mcs-web 验收通过`）、
-`npm run check` 通过、导出审计通过（必需文件齐全、禁用路径 0、密钥 0、用户目录路径 0、本地禁用词表 0）。
+下一阶段按 [TODO.md](TODO.md) 顶部优先级推进，操作步骤见
+[维护与更新流程](docs/维护与更新.md)。从 R1 起仍不重启服务、不改公网配置或重写 Git 历史。
 
 ## 一、已完成的发布阻断修复（2026-10-04，回归测试钉住）
 
@@ -159,20 +159,22 @@ https 下写请求成功（同时穿过 Cookie + CSRF 令牌 + Origin 三道关�
   任何新增缺失案例仍会让测试红。填上它需要一条真正的无条件推导通道（尚未设计）。
 - 另外三案：`group` 3 条、`manifold` 2 条、`tensor` 1 条证书型关系。
 
-## 七、还没做的（公开发布前必须完成）
+## 七、后续工作（按当前自托管路线排序）
 
-1. **三个账号动作（只有你能做）**：建 Supabase 项目、建 GitHub OAuth App 并填进 Supabase、
-   在 Render 用 `render.yaml` 建服务并填六个变量。步骤见 `mcs-web/docs/部署清单.md`。
-   **代码与配置已经就位**，缺的是这些凭据与账号操作。
-2. **推送仓库**：本会话环境没有 `gh` CLI，推送需要凭据或先装 gh。
-3. **邮箱发信**：本版按用户决定先不做（注册与找回如实回 503，登录走 GitHub）；
-   接进来时把 `MCS_WEB_AUTH_EMAIL_ENABLED` 改成 `1` 并配好 Supabase SMTP 即可。
-4. **Dockerfile 未经构建验证**：本机没有 docker；用镜像的平台请先 `docker build` 一次。
-5. **编写库仍在 SQLite**：草稿 / 发现任务 / 审阅记录（`authoringDbFile`）是本机文件，
-   公网部署下只影响管理员的入库流程，不影响学习者数据。
-6. **逐文件审计的覆盖**：`core/**`、`shared/**`、`web/**` 已逐行审完；
-   `server/**`（api / db / index / jobs / tutor / publication / snapshot / maintenance / upstream /
-   extensions / authoring-db / auth / sql-driver 系列）与 `data/**`、`tests/**` 尚未逐行走一遍。
+0. **（已完成 2026-10-05）公开包复现问题**：跨仓库核对已拆分——本站错误码表始终执行，
+   `mcs-bridge` 一侧缺材料时带原因跳过；干净导出包严格全量验收通过（第八十一轮）。
+1. **备份与恢复演练，最高优先级**：覆盖学习数据、账号归属/会话库、编写库、已发布扩展包和必要配置；
+   在隔离目录恢复并核对记录、归属与本体版本。现有维护命令回归只证明测试夹具能恢复，不代表公网备份已可用。
+2. **完整公网验收**：用两个真实账号走登录、保存学习记录/笔记/视图、规划轮询、退出、跨账号拒绝访问；
+   另安排有停机窗口的重启持久化验收。不得用首页 200 或一次登录代替整个流程。
+3. **发布入口统一**：开发源 → 新目录导出与规则检查 → `E:\MCS-publish` → 普通提交推送；
+   推送前核对远程，记录提交、本体哈希与验证结果。不得从旧导出目录强推。
+4. **固定地址与长期托管**：稳定使用前确定域名/命名隧道或常驻托管方案，再核对 OAuth 精确回调。
+   涉及域名购买、账号授权或付费服务需用户选择；Vercel 适配属于可选架构工作，不阻塞现有隧道路线。
+5. **理论与体验缺口**：优先处理 `limit` 证书型关系缺口；视图迁移、组件约定扫描和真实模型回环见 TODO。
+   教学收益与认知成本必须靠真实使用证据校准，不能从工程测试推出。
+6. **保留边界**：邮箱发信按已有决定暂不做；Docker 镜像和真实云端 PostgreSQL 尚需实测。
+   既有审计只覆盖部分目录，不称为全仓库安全保证；编写库与发布目录迁移前必须明确持久化方案。
 
 ## 八、复现命令
 

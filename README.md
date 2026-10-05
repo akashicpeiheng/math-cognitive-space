@@ -4,7 +4,8 @@
 
 这个仓库是 MCS 网站的公开版本：一个从零重建的数学学习与研究一体工作台。
 源码仓库：[akashicpeiheng/math-cognitive-space](https://github.com/akashicpeiheng/math-cognitive-space)。
-当前已公开源码；公网服务仍待部署与验收，尚无已验证的在线站点。
+当前已公开源码，并完成本机自托管 + 临时 HTTPS 隧道的首次上线检查；
+固定地址、长期托管与完整双账号使用流程仍待验收，状态见 `mcs-web/RELEASE-READINESS.md`。
 它把研究专稿里的理论形式直接落在数据模型、算法与界面上——公共本体只读，
 学习者状态外置，视图与路线由两者派生。
 
@@ -60,7 +61,8 @@
 
 配置项与验收清单见 `mcs-web/README.md` 的「部署形态」一节；
 本版本已有 PostgreSQL 学习数据与会话存储、登录页面和服务端权限检查。
-真实数据库、Supabase GitHub OAuth、HTTPS 托管及登录后的数据隔离仍需上线验收。
+既有实测已记录自托管 HTTPS 与 GitHub 登录；真实云端 PostgreSQL、长期托管、
+完整双账号使用与备份恢复仍需验收。自托管例外可显式使用独立 SQLite，见部署清单第 7 节。
 邮箱注册与找回需要发信服务；未配置时应关闭邮箱入口对应的服务能力。
 
 Vercel 部署还需处理本地 SQLite 编写库、文件发布目录、内存任务状态与证书重放环境。

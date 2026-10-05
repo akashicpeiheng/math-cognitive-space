@@ -3,9 +3,14 @@
 ## 当前状态（2026-10-05）
 
 - **已证实**：源码公开在 [math-cognitive-space](https://github.com/akashicpeiheng/math-cognitive-space)。
-- **实现存在**：本机 SQLite；公网 PostgreSQL 学习数据及会话存储；Supabase 身份验证与登录页面。
-- **未验证**：真实云端数据库、Supabase GitHub OAuth 往返、托管 HTTPS 和跨账号隔离。
+- **已证实**：当前采用本机自托管 + Cloudflare 快速隧道；本轮首页、登录页、健康接口为 200，游客档案接口为 401。
+- **引用实测**：`../VALIDATION.md` 第七十九轮记载 Supabase GitHub OAuth 登录成功；本轮未重新登录。
+- **实现存在**：本机 SQLite；常规公网 PostgreSQL 学习数据及会话存储；显式自托管例外允许独立 SQLite。
+- **未验证**：真实云端 PostgreSQL、Vercel 托管、长期可用性、完整双账号流程及公网数据灾难恢复。
 - **待适配**：当前后端不能仅靠将 Vercel Root Directory 设为 `mcs-web` 完成可靠部署。
+
+Vercel 是后续可选路线，不是当前隧道路线的阻塞条件。下一步以
+[当前发布状态](../RELEASE-READINESS.md) 与 [待办优先级](../TODO.md) 为准。
 
 ## 为什么还需要部署适配
 
@@ -31,7 +36,7 @@
 Vercel 需要可访问的个人工作区/团队以及对应 GitHub 仓库的导入权限。
 GitHub 插件的仓库权限不等于 Vercel 的 GitHub 集成权限。
 
-现有公网启动检查要求以下环境变量（值只填托管平台的配置，不提交到 Git）：
+常规云端部署需要以下环境变量（值只填托管平台的配置，不提交到 Git）：
 
 | 变量 | 用途 |
 | --- | --- |
@@ -48,6 +53,8 @@ GitHub 插件的仓库权限不等于 Vercel 的 GitHub 集成权限。
 
 数据库连接串、会话密钥不应放入聊天、README 或前端环境变量。
 管理员 ID 取自 Supabase 用户记录，不能用 GitHub 数字用户 ID 替代。
+本机自托管使用 SQLite 的例外见 [部署清单第 7 节](部署清单.md)；
+不要将 `MCS_WEB_ALLOW_LOCAL_DB=1` 用于没有持久卷的临时实例。
 
 ## 开源包维护
 
@@ -60,8 +67,8 @@ GitHub 插件的仓库权限不等于 Vercel 的 GitHub 集成权限。
 
 导出排除论文 `arxiv/output/`、`arxiv/package-staging/` 和编译辅助文件；
 正式 `arxiv/submission/`、原创论文 PDF、正文与证书继续保留。
-本轮清理从后续版本移除冗余文件，首次公开提交仍保留在 Git 历史中，
-因此不会缩减完整历史的克隆体积。
+公开历史此前另行重整，不能再用最早那次推送的提交数或体积描述现状；
+当前版本以远程 `main` 为准，普通更新不得从旧导出副本强推或擅自改写历史。
 
 检查使用有限的路径和密钥模式；检查通过不代表完整安全审计或数学正确性证明。
 
