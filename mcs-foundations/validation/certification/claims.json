@@ -1,0 +1,1823 @@
+{
+  "schema": "mcs-assertion-evidence/1",
+  "recorded_utc": "2026-09-30T06:17:52.403088+00:00",
+  "checker": "mcs-nd-subset/1",
+  "python": "3.14.7 (tags/v3.14.7:823f032, Aug  5 2026, 10:51:32) [MSC v.1944 64 bit (AMD64)]",
+  "artifacts": [
+    {
+      "path": "validation/certification/actions.py",
+      "sha256": "c103ba05d0653cec107892d2a1b2e8b7b5345394ae4b64dd5cc95e012e1a537f"
+    },
+    {
+      "path": "validation/certification/evidence.py",
+      "sha256": "2b28d5444fd80c1022ab98ac12b7fafaece7b8d2ad15831a43821a5aa5a87366"
+    },
+    {
+      "path": "validation/certification/examples.py",
+      "sha256": "54b200853fdb2e844dded5c79c40c6b129a50e344604fbd3ae65996260e9dd6f"
+    },
+    {
+      "path": "validation/certification/finalize.py",
+      "sha256": "b77bc446e39c22a2e369a6ec4ef4daf7b174d2b7fceed4990823f172a13e67b4"
+    },
+    {
+      "path": "validation/certification/independent.py",
+      "sha256": "39a7cf66e9e1eb1ad25565c192813e0a449b3ede287eec005028383a6f924e15"
+    },
+    {
+      "path": "validation/certification/kernel.py",
+      "sha256": "25130be0e90d0336af0d4505bf664ccbc0d2ca69beda02dd6c501e124a4a4e5e"
+    },
+    {
+      "path": "validation/certification/replay.py",
+      "sha256": "b64fd20ad42c0e2101dac0e8365253405e91bdb4364a785180c6c1f0ab71e300"
+    },
+    {
+      "path": "validation/certification/research.py",
+      "sha256": "70c17654984770c525838e4dbb74ff38c0850350c4e6fab887e4d196a5235f82"
+    },
+    {
+      "path": "validation/certification/run_record.py",
+      "sha256": "299765132d2645a28f6dd5a1684cb471c6e671031bc1b089b7c3c53a01ba6d38"
+    },
+    {
+      "path": "validation/certification/test_kernel.py",
+      "sha256": "2f9182b951b389f16882a7397006818376e77636b75927e8058655bdd2357b37"
+    },
+    {
+      "path": "validation/certification/actions-fixture.json",
+      "sha256": "af03d0de4f8aad05ab3a46650c232d2fdcf428e15a3856708960d98d21241c3e"
+    },
+    {
+      "path": "validation/certification/research-input.json",
+      "sha256": "6068e082ecd7c5c1cb306ef9896dbaa34e3438f5bd66b5f73db82752eac05c0c"
+    },
+    {
+      "path": "validation/certification/sources-audit.json",
+      "sha256": "3b3fdaf7fa8100ca6cee296f3707af73c35ffe59083b64887817a4603d803f52"
+    },
+    {
+      "path": "validation/certification/obligations.json",
+      "sha256": "1a14d71084975f761618684ecca0659988a744105512e88afae9b10b72a22a33"
+    },
+    {
+      "path": "validation/certification/DESIGN.md",
+      "sha256": "765323c8f8e6eea056e15c5720c7d24df4a726adad9426a3dc912850dcf85b81"
+    },
+    {
+      "path": "validation/certification/CASES.md",
+      "sha256": "68b786dce311d2a363537f953fc5eee3142a3a9ef7344911a458d4c2c769dde7"
+    },
+    {
+      "path": "validation/certification/RESEARCH.md",
+      "sha256": "911ec8209b2bf7a7fa1d30105aecc7acf82f336b44e7567b91057969e88827f8"
+    }
+  ],
+  "claims": [
+    {
+      "id": "DEF-LANGUAGE",
+      "source": {
+        "path": "02-对象语言：简单类型论.md",
+        "anchor": "定义 2.1",
+        "line": 9,
+        "sha256": "1ce70beae9f60adcf6a295c9e113834dfa55eb0b644470372a5facff62f42f5e"
+      },
+      "statement": "Implementation represents finite simply typed terms and a distinct sorted certification language.",
+      "assumptions": [
+        "explicit finite base/constant signature",
+        "finite bounded JSON syntax"
+      ],
+      "semantic_scope": "syntax, not semantic truth",
+      "evidence_labels": [
+        "DEF",
+        "FINITE"
+      ],
+      "dependencies": [],
+      "reference_ids": [],
+      "unresolved_premises": [],
+      "check_status": "passed",
+      "mathematical_proof": "not_claimed",
+      "machine_certificate_accepted": false,
+      "kernel_formally_verified": false,
+      "finite_bound": "35 enumerated terms, sizes1..5, binder depth<=2; 175 valuations comparisons; see kernel-report",
+      "synthetic": false,
+      "unsupported_generalizations": [],
+      "next_obligation": "review the stated scope",
+      "manual_review": "Open source at the anchor and inspect hypotheses and argument.",
+      "checks": [
+        {
+          "command": "python mcs-foundations/validation/certification/test_kernel.py",
+          "output": {
+            "path": "validation/certification/kernel-report.json",
+            "sha256": "b49b95eb78120d18b404bad8e9fa1d07c404d212a668040e66c5f403c5e72f21"
+          }
+        }
+      ]
+    },
+    {
+      "id": "THM-HENKIN",
+      "source": {
+        "path": "03-语义：Henkin与标准.md",
+        "anchor": "定理 3.9",
+        "line": 48,
+        "sha256": "0f62bb06426d16a651707e3c2bdd89254b758ceaeab299ab13fb3ec3d4d5c680"
+      },
+      "statement": "The full specified ND calculus corresponds to Henkin consequence under the manuscript translation.",
+      "assumptions": [
+        "full rules and H_Sigma of chapter02",
+        "closed theory, open hypotheses with valuations",
+        "classical many-sorted first-order soundness/completeness"
+      ],
+      "semantic_scope": "general Henkin models",
+      "evidence_labels": [
+        "PROOF",
+        "REF"
+      ],
+      "dependencies": [
+        "DEF-LANGUAGE"
+      ],
+      "reference_ids": [
+        "S01",
+        "R03-b"
+      ],
+      "unresolved_premises": [
+        "implementation-to-calculus preservation not machine proved"
+      ],
+      "check_status": "not_run",
+      "mathematical_proof": "present_in_manuscript",
+      "machine_certificate_accepted": false,
+      "kernel_formally_verified": false,
+      "finite_bound": null,
+      "synthetic": false,
+      "unsupported_generalizations": [
+        "subset completeness",
+        "standard HOL effective completeness"
+      ],
+      "next_obligation": "formal implementation preservation proof; keep first-order metatheorem explicit",
+      "manual_review": "Open source at the anchor and inspect hypotheses and argument.",
+      "checks": []
+    },
+    {
+      "id": "SEM-DIRECTION",
+      "source": {
+        "path": "03-语义：Henkin与标准.md",
+        "anchor": "例 3.16",
+        "line": 102,
+        "sha256": "0f62bb06426d16a651707e3c2bdd89254b758ceaeab299ab13fb3ec3d4d5c680"
+      },
+      "statement": "The displayed branching-function sentence is standard-valid but false in the displayed Henkin model.",
+      "assumptions": [
+        "Boolean auxiliary equivalence universal",
+        "individual domain has distinct a,b",
+        "arrow domains preserve auxiliary equivalence"
+      ],
+      "semantic_scope": "specific Henkin countermodel and all standard models",
+      "evidence_labels": [
+        "PROOF"
+      ],
+      "dependencies": [],
+      "reference_ids": [],
+      "unresolved_premises": [],
+      "check_status": "not_run",
+      "mathematical_proof": "present_in_manuscript",
+      "machine_certificate_accepted": false,
+      "kernel_formally_verified": false,
+      "finite_bound": null,
+      "synthetic": false,
+      "unsupported_generalizations": [],
+      "next_obligation": "machine formalization of the general logical-relations construction",
+      "manual_review": "Open source at the anchor and inspect hypotheses and argument.",
+      "checks": []
+    },
+    {
+      "id": "REF-KERNEL",
+      "source": {
+        "path": "B-文献证据表.md",
+        "anchor": "S07",
+        "line": 85,
+        "sha256": "6731d624a668b375e05fb5ad92274b6a73b3645f05e8ee79d2d8b6d749a534e7"
+      },
+      "statement": "Harrison is a proof-engineering comparison, not a certificate of MCS correctness.",
+      "assumptions": [
+        "only the stated author-paper passages checked"
+      ],
+      "semantic_scope": "bibliographic and local text review",
+      "evidence_labels": [
+        "REF"
+      ],
+      "dependencies": [],
+      "reference_ids": [
+        "S07"
+      ],
+      "unresolved_premises": [],
+      "check_status": "not_run",
+      "mathematical_proof": "not_claimed",
+      "machine_certificate_accepted": false,
+      "kernel_formally_verified": false,
+      "finite_bound": null,
+      "synthetic": false,
+      "unsupported_generalizations": [],
+      "next_obligation": "audit versioned source only if an external prover is integrated",
+      "manual_review": "Open source at the anchor and inspect hypotheses and argument.",
+      "checks": []
+    },
+    {
+      "id": "RULES-FINITE",
+      "source": {
+        "path": "02-对象语言：简单类型论.md",
+        "anchor": "定义 2.12",
+        "line": 172,
+        "sha256": "1ce70beae9f60adcf6a295c9e113834dfa55eb0b644470372a5facff62f42f5e"
+      },
+      "statement": "Implemented ND subset rejects the enumerated attacks and matches the recorded finite reference cases.",
+      "assumptions": [
+        "kernel.py current hash",
+        "explicit finite theories",
+        "resource bounds and submitted examples"
+      ],
+      "semantic_scope": "finite regression",
+      "evidence_labels": [
+        "FINITE"
+      ],
+      "dependencies": [
+        "DEF-LANGUAGE"
+      ],
+      "reference_ids": [],
+      "unresolved_premises": [],
+      "check_status": "passed",
+      "mathematical_proof": "not_claimed",
+      "machine_certificate_accepted": false,
+      "kernel_formally_verified": false,
+      "finite_bound": "kernel-report: finite positive/negative suite; 35 terms,175 comparisons,42 case valuations,11 background schemas,2 mutations",
+      "synthetic": false,
+      "unsupported_generalizations": [
+        "all input soundness",
+        "full calculus completeness"
+      ],
+      "next_obligation": "independent general soundness proof of implementation",
+      "manual_review": "Open source at the anchor and inspect hypotheses and argument.",
+      "checks": [
+        {
+          "command": "python mcs-foundations/validation/certification/test_kernel.py",
+          "output": {
+            "path": "validation/certification/kernel-report.json",
+            "sha256": "b49b95eb78120d18b404bad8e9fa1d07c404d212a668040e66c5f403c5e72f21"
+          }
+        }
+      ]
+    },
+    {
+      "id": "CASE-group",
+      "source": {
+        "path": "cases/04-群概念的多来源.md",
+        "anchor": "## 1",
+        "line": 3,
+        "sha256": "885aef46e2564827d395fbd0a0c95a012aeb474afd8fcf67cea7137e87aade01"
+      },
+      "statement": {
+        "formal_conclusion": [
+          "eq",
+          [
+            "app",
+            [
+              "app",
+              [
+                "logic",
+                "eq",
+                "G"
+              ],
+              [
+                "v",
+                "g",
+                "G"
+              ]
+            ],
+            [
+              "v",
+              "h",
+              "G"
+            ]
+          ],
+          [
+            "logic",
+            "true"
+          ]
+        ],
+        "object_conclusion": [
+          "app",
+          [
+            "app",
+            [
+              "logic",
+              "eq",
+              "G"
+            ],
+            [
+              "v",
+              "g",
+              "G"
+            ]
+          ],
+          [
+            "v",
+            "h",
+            "G"
+          ]
+        ],
+        "scope": "actual mathematical fragment; see CASES.md"
+      },
+      "assumptions": {
+        "theory": {
+          "id": "right-unital-magma",
+          "version": "1",
+          "bases": [
+            "o",
+            "G"
+          ],
+          "constants": {
+            "mul": [
+              "->",
+              "G",
+              [
+                "->",
+                "G",
+                "G"
+              ]
+            ],
+            "unit": "G"
+          },
+          "axioms": [
+            {
+              "id": "right_identity",
+              "formula": [
+                "all",
+                [
+                  "v",
+                  "x",
+                  "G"
+                ],
+                [
+                  "eq",
+                  [
+                    "app",
+                    [
+                      "app",
+                      [
+                        "c",
+                        "mul"
+                      ],
+                      [
+                        "v",
+                        "x",
+                        "G"
+                      ]
+                    ],
+                    [
+                      "c",
+                      "unit"
+                    ]
+                  ],
+                  [
+                    "v",
+                    "x",
+                    "G"
+                  ]
+                ]
+              ]
+            }
+          ],
+          "definitions": []
+        },
+        "open_hypotheses": {
+          "equal_left_translations": [
+            "eq",
+            [
+              "app",
+              [
+                "app",
+                [
+                  "logic",
+                  "eq",
+                  [
+                    "->",
+                    "G",
+                    "G"
+                  ]
+                ],
+                [
+                  "lift",
+                  [
+                    "lam",
+                    "G",
+                    [
+                      "app",
+                      [
+                        "app",
+                        [
+                          "c",
+                          "mul"
+                        ],
+                        [
+                          "v",
+                          "g",
+                          "G"
+                        ]
+                      ],
+                      [
+                        "b",
+                        0,
+                        "G"
+                      ]
+                    ]
+                  ],
+                  [
+                    [
+                      "v",
+                      "g",
+                      "G"
+                    ]
+                  ]
+                ]
+              ],
+              [
+                "lift",
+                [
+                  "lam",
+                  "G",
+                  [
+                    "app",
+                    [
+                      "app",
+                      [
+                        "c",
+                        "mul"
+                      ],
+                      [
+                        "v",
+                        "h",
+                        "G"
+                      ]
+                    ],
+                    [
+                      "b",
+                      0,
+                      "G"
+                    ]
+                  ]
+                ],
+                [
+                  [
+                    "v",
+                    "h",
+                    "G"
+                  ]
+                ]
+              ]
+            ],
+            [
+              "logic",
+              "true"
+            ]
+          ]
+        }
+      },
+      "semantic_scope": "specified theory, typed free parameters and open hypotheses",
+      "evidence_labels": [
+        "PROOF",
+        "FINITE"
+      ],
+      "dependencies": [
+        "RULES-FINITE"
+      ],
+      "reference_ids": [],
+      "unresolved_premises": [],
+      "check_status": "passed",
+      "mathematical_proof": "fragment argument in CASES.md",
+      "machine_certificate_accepted": true,
+      "kernel_formally_verified": false,
+      "finite_bound": "one submitted proof DAG; independent example valuations documented in kernel-report",
+      "synthetic": false,
+      "unsupported_generalizations": [
+        "complete case bridge",
+        "kernel meta-proof",
+        "personal mastery"
+      ],
+      "next_obligation": "full mathematical libraries and remaining bridge steps in CASES.md",
+      "manual_review": "Open source at the anchor and inspect hypotheses and argument.",
+      "checks": [
+        {
+          "command": "python mcs-foundations/validation/certification/kernel.py mcs-foundations/validation/certification/certificates/group.json",
+          "output": {
+            "path": "validation/certification/receipts/group.json",
+            "sha256": "f87502ff239535d9adca7d3c1bdcc8f3ea38e707e52aa4ef2a3e2103c002cc08"
+          }
+        }
+      ],
+      "certificate": {
+        "input": {
+          "path": "validation/certification/certificates/group.json",
+          "sha256": "a730f28138041ea63c237029f8ac5e52a1e26ce5a8c6921376772189e527a529"
+        },
+        "output": {
+          "path": "validation/certification/receipts/group.json",
+          "sha256": "f87502ff239535d9adca7d3c1bdcc8f3ea38e707e52aa4ef2a3e2103c002cc08"
+        },
+        "proof_id": "cayley-evaluation-injective",
+        "checker": "mcs-nd-subset/1",
+        "checker_sha256": "25130be0e90d0336af0d4505bf664ccbc0d2ca69beda02dd6c501e124a4a4e5e"
+      }
+    },
+    {
+      "id": "CASE-limit",
+      "source": {
+        "path": "cases/01-极限与连续.md",
+        "anchor": "## 1",
+        "line": 3,
+        "sha256": "b0daa34abc1cb30b63e5ff4da5eeeac89c892bcb1a7a6c98f2fab379da06e362"
+      },
+      "statement": {
+        "formal_conclusion": [
+          "eq",
+          [
+            "app",
+            [
+              "app",
+              [
+                "logic",
+                "eq",
+                "R"
+              ],
+              [
+                "app",
+                [
+                  "lift",
+                  [
+                    "lam",
+                    "N",
+                    [
+                      "v",
+                      "a",
+                      "R"
+                    ]
+                  ],
+                  [
+                    [
+                      "v",
+                      "a",
+                      "R"
+                    ]
+                  ]
+                ],
+                [
+                  "v",
+                  "n",
+                  "N"
+                ]
+              ]
+            ],
+            [
+              "v",
+              "a",
+              "R"
+            ]
+          ],
+          [
+            "logic",
+            "true"
+          ]
+        ],
+        "object_conclusion": [
+          "app",
+          [
+            "app",
+            [
+              "logic",
+              "eq",
+              "R"
+            ],
+            [
+              "app",
+              [
+                "lambda",
+                "k",
+                "N",
+                [
+                  "v",
+                  "a",
+                  "R"
+                ]
+              ],
+              [
+                "v",
+                "n",
+                "N"
+              ]
+            ]
+          ],
+          [
+            "v",
+            "a",
+            "R"
+          ]
+        ],
+        "scope": "actual mathematical fragment; see CASES.md"
+      },
+      "assumptions": {
+        "theory": {
+          "id": "constant-sequence-evaluation",
+          "version": "1",
+          "bases": [
+            "o",
+            "N",
+            "R"
+          ],
+          "constants": {},
+          "axioms": [],
+          "definitions": []
+        },
+        "open_hypotheses": {}
+      },
+      "semantic_scope": "specified theory, typed free parameters and open hypotheses",
+      "evidence_labels": [
+        "PROOF",
+        "FINITE"
+      ],
+      "dependencies": [
+        "RULES-FINITE"
+      ],
+      "reference_ids": [],
+      "unresolved_premises": [],
+      "check_status": "passed",
+      "mathematical_proof": "fragment argument in CASES.md",
+      "machine_certificate_accepted": true,
+      "kernel_formally_verified": false,
+      "finite_bound": "one submitted proof DAG; independent example valuations documented in kernel-report",
+      "synthetic": false,
+      "unsupported_generalizations": [
+        "complete case bridge",
+        "kernel meta-proof",
+        "personal mastery"
+      ],
+      "next_obligation": "full mathematical libraries and remaining bridge steps in CASES.md",
+      "manual_review": "Open source at the anchor and inspect hypotheses and argument.",
+      "checks": [
+        {
+          "command": "python mcs-foundations/validation/certification/kernel.py mcs-foundations/validation/certification/certificates/limit.json",
+          "output": {
+            "path": "validation/certification/receipts/limit.json",
+            "sha256": "7a8ae6ee9c8457ac2b5dac51fead4830402c0eaa880666f2c028a4c0900ef9d3"
+          }
+        }
+      ],
+      "certificate": {
+        "input": {
+          "path": "validation/certification/certificates/limit.json",
+          "sha256": "14cc5d2c666c9f0c4c200a9e90136aa4417b3af6b03a3e29d1ed358dfdd5122b"
+        },
+        "output": {
+          "path": "validation/certification/receipts/limit.json",
+          "sha256": "7a8ae6ee9c8457ac2b5dac51fead4830402c0eaa880666f2c028a4c0900ef9d3"
+        },
+        "proof_id": "constant-sequence-value",
+        "checker": "mcs-nd-subset/1",
+        "checker_sha256": "25130be0e90d0336af0d4505bf664ccbc0d2ca69beda02dd6c501e124a4a4e5e"
+      }
+    },
+    {
+      "id": "CASE-manifold",
+      "source": {
+        "path": "cases/02-Ck与光滑流形.md",
+        "anchor": "## 1",
+        "line": 3,
+        "sha256": "799f48a45a3aeced2b40ee246a40fa800181192bdff1569649766d9b955b30e9"
+      },
+      "statement": {
+        "formal_conclusion": [
+          "eq",
+          [
+            "app",
+            [
+              "app",
+              [
+                "logic",
+                "eq",
+                "Y"
+              ],
+              [
+                "app",
+                [
+                  "lift",
+                  [
+                    "lam",
+                    "Y",
+                    [
+                      "app",
+                      [
+                        "c",
+                        "chart"
+                      ],
+                      [
+                        "app",
+                        [
+                          "c",
+                          "inverse"
+                        ],
+                        [
+                          "b",
+                          0,
+                          "Y"
+                        ]
+                      ]
+                    ]
+                  ],
+                  []
+                ],
+                [
+                  "v",
+                  "y",
+                  "Y"
+                ]
+              ]
+            ],
+            [
+              "v",
+              "y",
+              "Y"
+            ]
+          ],
+          [
+            "logic",
+            "true"
+          ]
+        ],
+        "object_conclusion": [
+          "app",
+          [
+            "app",
+            [
+              "logic",
+              "eq",
+              "Y"
+            ],
+            [
+              "app",
+              [
+                "lambda",
+                "u",
+                "Y",
+                [
+                  "app",
+                  [
+                    "c",
+                    "chart"
+                  ],
+                  [
+                    "app",
+                    [
+                      "c",
+                      "inverse"
+                    ],
+                    [
+                      "v",
+                      "u",
+                      "Y"
+                    ]
+                  ]
+                ]
+              ],
+              [
+                "v",
+                "y",
+                "Y"
+              ]
+            ]
+          ],
+          [
+            "v",
+            "y",
+            "Y"
+          ]
+        ],
+        "scope": "actual mathematical fragment; see CASES.md"
+      },
+      "assumptions": {
+        "theory": {
+          "id": "chart-transition-algebra",
+          "version": "1",
+          "bases": [
+            "o",
+            "X",
+            "Y"
+          ],
+          "constants": {
+            "chart": [
+              "->",
+              "X",
+              "Y"
+            ],
+            "inverse": [
+              "->",
+              "Y",
+              "X"
+            ]
+          },
+          "axioms": [],
+          "definitions": []
+        },
+        "open_hypotheses": {
+          "right_inverse_at_y": [
+            "eq",
+            [
+              "app",
+              [
+                "c",
+                "chart"
+              ],
+              [
+                "app",
+                [
+                  "c",
+                  "inverse"
+                ],
+                [
+                  "v",
+                  "y",
+                  "Y"
+                ]
+              ]
+            ],
+            [
+              "v",
+              "y",
+              "Y"
+            ]
+          ]
+        }
+      },
+      "semantic_scope": "specified theory, typed free parameters and open hypotheses",
+      "evidence_labels": [
+        "PROOF",
+        "FINITE"
+      ],
+      "dependencies": [
+        "RULES-FINITE"
+      ],
+      "reference_ids": [],
+      "unresolved_premises": [],
+      "check_status": "passed",
+      "mathematical_proof": "fragment argument in CASES.md",
+      "machine_certificate_accepted": true,
+      "kernel_formally_verified": false,
+      "finite_bound": "one submitted proof DAG; independent example valuations documented in kernel-report",
+      "synthetic": false,
+      "unsupported_generalizations": [
+        "complete case bridge",
+        "kernel meta-proof",
+        "personal mastery"
+      ],
+      "next_obligation": "full mathematical libraries and remaining bridge steps in CASES.md",
+      "manual_review": "Open source at the anchor and inspect hypotheses and argument.",
+      "checks": [
+        {
+          "command": "python mcs-foundations/validation/certification/kernel.py mcs-foundations/validation/certification/certificates/manifold.json",
+          "output": {
+            "path": "validation/certification/receipts/manifold.json",
+            "sha256": "c624f266ec21bdae5f9835dc1303a451500077258df5ff0b9dd9407f24bc8251"
+          }
+        }
+      ],
+      "certificate": {
+        "input": {
+          "path": "validation/certification/certificates/manifold.json",
+          "sha256": "8ed9540e6b0865449d6033c9a593b9bbcffad1819c5bbfd41b21f08e7ffb55f4"
+        },
+        "output": {
+          "path": "validation/certification/receipts/manifold.json",
+          "sha256": "c624f266ec21bdae5f9835dc1303a451500077258df5ff0b9dd9407f24bc8251"
+        },
+        "proof_id": "chart-self-transition",
+        "checker": "mcs-nd-subset/1",
+        "checker_sha256": "25130be0e90d0336af0d4505bf664ccbc0d2ca69beda02dd6c501e124a4a4e5e"
+      }
+    },
+    {
+      "id": "CASE-tensor",
+      "source": {
+        "path": "cases/03-张量与张量场.md",
+        "anchor": "## 1",
+        "line": 3,
+        "sha256": "72f2e17b4be5d94e888aacba61eb72c4c5291c9fd9fd8cc9e986ea16ef0a673e"
+      },
+      "statement": {
+        "formal_conclusion": [
+          "eq",
+          [
+            "app",
+            [
+              "app",
+              [
+                "logic",
+                "eq",
+                "Vec"
+              ],
+              [
+                "app",
+                [
+                  "lift",
+                  [
+                    "lam",
+                    "Vec",
+                    [
+                      "app",
+                      [
+                        "app",
+                        [
+                          "c",
+                          "scalar"
+                        ],
+                        [
+                          "app",
+                          [
+                            "v",
+                            "alpha",
+                            [
+                              "->",
+                              "Vec",
+                              "F"
+                            ]
+                          ],
+                          [
+                            "b",
+                            0,
+                            "Vec"
+                          ]
+                        ]
+                      ],
+                      [
+                        "v",
+                        "v",
+                        "Vec"
+                      ]
+                    ]
+                  ],
+                  [
+                    [
+                      "v",
+                      "alpha",
+                      [
+                        "->",
+                        "Vec",
+                        "F"
+                      ]
+                    ],
+                    [
+                      "v",
+                      "v",
+                      "Vec"
+                    ]
+                  ]
+                ],
+                [
+                  "app",
+                  [
+                    "app",
+                    [
+                      "c",
+                      "vadd"
+                    ],
+                    [
+                      "v",
+                      "x",
+                      "Vec"
+                    ]
+                  ],
+                  [
+                    "v",
+                    "y",
+                    "Vec"
+                  ]
+                ]
+              ]
+            ],
+            [
+              "app",
+              [
+                "app",
+                [
+                  "c",
+                  "vadd"
+                ],
+                [
+                  "app",
+                  [
+                    "lift",
+                    [
+                      "lam",
+                      "Vec",
+                      [
+                        "app",
+                        [
+                          "app",
+                          [
+                            "c",
+                            "scalar"
+                          ],
+                          [
+                            "app",
+                            [
+                              "v",
+                              "alpha",
+                              [
+                                "->",
+                                "Vec",
+                                "F"
+                              ]
+                            ],
+                            [
+                              "b",
+                              0,
+                              "Vec"
+                            ]
+                          ]
+                        ],
+                        [
+                          "v",
+                          "v",
+                          "Vec"
+                        ]
+                      ]
+                    ],
+                    [
+                      [
+                        "v",
+                        "alpha",
+                        [
+                          "->",
+                          "Vec",
+                          "F"
+                        ]
+                      ],
+                      [
+                        "v",
+                        "v",
+                        "Vec"
+                      ]
+                    ]
+                  ],
+                  [
+                    "v",
+                    "x",
+                    "Vec"
+                  ]
+                ]
+              ],
+              [
+                "app",
+                [
+                  "lift",
+                  [
+                    "lam",
+                    "Vec",
+                    [
+                      "app",
+                      [
+                        "app",
+                        [
+                          "c",
+                          "scalar"
+                        ],
+                        [
+                          "app",
+                          [
+                            "v",
+                            "alpha",
+                            [
+                              "->",
+                              "Vec",
+                              "F"
+                            ]
+                          ],
+                          [
+                            "b",
+                            0,
+                            "Vec"
+                          ]
+                        ]
+                      ],
+                      [
+                        "v",
+                        "v",
+                        "Vec"
+                      ]
+                    ]
+                  ],
+                  [
+                    [
+                      "v",
+                      "alpha",
+                      [
+                        "->",
+                        "Vec",
+                        "F"
+                      ]
+                    ],
+                    [
+                      "v",
+                      "v",
+                      "Vec"
+                    ]
+                  ]
+                ],
+                [
+                  "v",
+                  "y",
+                  "Vec"
+                ]
+              ]
+            ]
+          ],
+          [
+            "logic",
+            "true"
+          ]
+        ],
+        "object_conclusion": [
+          "app",
+          [
+            "app",
+            [
+              "logic",
+              "eq",
+              "Vec"
+            ],
+            [
+              "app",
+              [
+                "lambda",
+                "w",
+                "Vec",
+                [
+                  "app",
+                  [
+                    "app",
+                    [
+                      "c",
+                      "scalar"
+                    ],
+                    [
+                      "app",
+                      [
+                        "v",
+                        "alpha",
+                        [
+                          "->",
+                          "Vec",
+                          "F"
+                        ]
+                      ],
+                      [
+                        "v",
+                        "w",
+                        "Vec"
+                      ]
+                    ]
+                  ],
+                  [
+                    "v",
+                    "v",
+                    "Vec"
+                  ]
+                ]
+              ],
+              [
+                "app",
+                [
+                  "app",
+                  [
+                    "c",
+                    "vadd"
+                  ],
+                  [
+                    "v",
+                    "x",
+                    "Vec"
+                  ]
+                ],
+                [
+                  "v",
+                  "y",
+                  "Vec"
+                ]
+              ]
+            ]
+          ],
+          [
+            "app",
+            [
+              "app",
+              [
+                "c",
+                "vadd"
+              ],
+              [
+                "app",
+                [
+                  "lambda",
+                  "w",
+                  "Vec",
+                  [
+                    "app",
+                    [
+                      "app",
+                      [
+                        "c",
+                        "scalar"
+                      ],
+                      [
+                        "app",
+                        [
+                          "v",
+                          "alpha",
+                          [
+                            "->",
+                            "Vec",
+                            "F"
+                          ]
+                        ],
+                        [
+                          "v",
+                          "w",
+                          "Vec"
+                        ]
+                      ]
+                    ],
+                    [
+                      "v",
+                      "v",
+                      "Vec"
+                    ]
+                  ]
+                ],
+                [
+                  "v",
+                  "x",
+                  "Vec"
+                ]
+              ]
+            ],
+            [
+              "app",
+              [
+                "lambda",
+                "w",
+                "Vec",
+                [
+                  "app",
+                  [
+                    "app",
+                    [
+                      "c",
+                      "scalar"
+                    ],
+                    [
+                      "app",
+                      [
+                        "v",
+                        "alpha",
+                        [
+                          "->",
+                          "Vec",
+                          "F"
+                        ]
+                      ],
+                      [
+                        "v",
+                        "w",
+                        "Vec"
+                      ]
+                    ]
+                  ],
+                  [
+                    "v",
+                    "v",
+                    "Vec"
+                  ]
+                ]
+              ],
+              [
+                "v",
+                "y",
+                "Vec"
+              ]
+            ]
+          ]
+        ],
+        "scope": "actual mathematical fragment; see CASES.md"
+      },
+      "assumptions": {
+        "theory": {
+          "id": "module-additive-fragment",
+          "version": "1",
+          "bases": [
+            "o",
+            "F",
+            "Vec"
+          ],
+          "constants": {
+            "scalar": [
+              "->",
+              "F",
+              [
+                "->",
+                "Vec",
+                "Vec"
+              ]
+            ],
+            "vadd": [
+              "->",
+              "Vec",
+              [
+                "->",
+                "Vec",
+                "Vec"
+              ]
+            ],
+            "fadd": [
+              "->",
+              "F",
+              [
+                "->",
+                "F",
+                "F"
+              ]
+            ]
+          },
+          "axioms": [
+            {
+              "id": "scalar_distributes",
+              "formula": [
+                "all",
+                [
+                  "v",
+                  "a",
+                  "F"
+                ],
+                [
+                  "all",
+                  [
+                    "v",
+                    "c",
+                    "F"
+                  ],
+                  [
+                    "all",
+                    [
+                      "v",
+                      "v",
+                      "Vec"
+                    ],
+                    [
+                      "eq",
+                      [
+                        "app",
+                        [
+                          "app",
+                          [
+                            "c",
+                            "scalar"
+                          ],
+                          [
+                            "app",
+                            [
+                              "app",
+                              [
+                                "c",
+                                "fadd"
+                              ],
+                              [
+                                "v",
+                                "a",
+                                "F"
+                              ]
+                            ],
+                            [
+                              "v",
+                              "c",
+                              "F"
+                            ]
+                          ]
+                        ],
+                        [
+                          "v",
+                          "v",
+                          "Vec"
+                        ]
+                      ],
+                      [
+                        "app",
+                        [
+                          "app",
+                          [
+                            "c",
+                            "vadd"
+                          ],
+                          [
+                            "app",
+                            [
+                              "app",
+                              [
+                                "c",
+                                "scalar"
+                              ],
+                              [
+                                "v",
+                                "a",
+                                "F"
+                              ]
+                            ],
+                            [
+                              "v",
+                              "v",
+                              "Vec"
+                            ]
+                          ]
+                        ],
+                        [
+                          "app",
+                          [
+                            "app",
+                            [
+                              "c",
+                              "scalar"
+                            ],
+                            [
+                              "v",
+                              "c",
+                              "F"
+                            ]
+                          ],
+                          [
+                            "v",
+                            "v",
+                            "Vec"
+                          ]
+                        ]
+                      ]
+                    ]
+                  ]
+                ]
+              ]
+            }
+          ],
+          "definitions": []
+        },
+        "open_hypotheses": {
+          "alpha_additive": [
+            "all",
+            [
+              "v",
+              "s",
+              "Vec"
+            ],
+            [
+              "all",
+              [
+                "v",
+                "t",
+                "Vec"
+              ],
+              [
+                "eq",
+                [
+                  "app",
+                  [
+                    "v",
+                    "alpha",
+                    [
+                      "->",
+                      "Vec",
+                      "F"
+                    ]
+                  ],
+                  [
+                    "app",
+                    [
+                      "app",
+                      [
+                        "c",
+                        "vadd"
+                      ],
+                      [
+                        "v",
+                        "s",
+                        "Vec"
+                      ]
+                    ],
+                    [
+                      "v",
+                      "t",
+                      "Vec"
+                    ]
+                  ]
+                ],
+                [
+                  "app",
+                  [
+                    "app",
+                    [
+                      "c",
+                      "fadd"
+                    ],
+                    [
+                      "app",
+                      [
+                        "v",
+                        "alpha",
+                        [
+                          "->",
+                          "Vec",
+                          "F"
+                        ]
+                      ],
+                      [
+                        "v",
+                        "s",
+                        "Vec"
+                      ]
+                    ]
+                  ],
+                  [
+                    "app",
+                    [
+                      "v",
+                      "alpha",
+                      [
+                        "->",
+                        "Vec",
+                        "F"
+                      ]
+                    ],
+                    [
+                      "v",
+                      "t",
+                      "Vec"
+                    ]
+                  ]
+                ]
+              ]
+            ]
+          ]
+        }
+      },
+      "semantic_scope": "specified theory, typed free parameters and open hypotheses",
+      "evidence_labels": [
+        "PROOF",
+        "FINITE"
+      ],
+      "dependencies": [
+        "RULES-FINITE"
+      ],
+      "reference_ids": [],
+      "unresolved_premises": [],
+      "check_status": "passed",
+      "mathematical_proof": "fragment argument in CASES.md",
+      "machine_certificate_accepted": true,
+      "kernel_formally_verified": false,
+      "finite_bound": "one submitted proof DAG; independent example valuations documented in kernel-report",
+      "synthetic": false,
+      "unsupported_generalizations": [
+        "complete case bridge",
+        "kernel meta-proof",
+        "personal mastery"
+      ],
+      "next_obligation": "full mathematical libraries and remaining bridge steps in CASES.md",
+      "manual_review": "Open source at the anchor and inspect hypotheses and argument.",
+      "checks": [
+        {
+          "command": "python mcs-foundations/validation/certification/kernel.py mcs-foundations/validation/certification/certificates/tensor.json",
+          "output": {
+            "path": "validation/certification/receipts/tensor.json",
+            "sha256": "b600794f135aa9c26609a1ba49c6afd8c77a2fe342e834f0b1c12c9bc66f355d"
+          }
+        }
+      ],
+      "certificate": {
+        "input": {
+          "path": "validation/certification/certificates/tensor.json",
+          "sha256": "01812b0c9035b18b8e8c49693909606c37935bc9d90a80f86f5d48850a85ed35"
+        },
+        "output": {
+          "path": "validation/certification/receipts/tensor.json",
+          "sha256": "b600794f135aa9c26609a1ba49c6afd8c77a2fe342e834f0b1c12c9bc66f355d"
+        },
+        "proof_id": "rank-one-additivity",
+        "checker": "mcs-nd-subset/1",
+        "checker_sha256": "25130be0e90d0336af0d4505bf664ccbc0d2ca69beda02dd6c501e124a4a4e5e"
+      }
+    },
+    {
+      "id": "ACTION-MATCH",
+      "source": {
+        "path": "D-接口契约.md",
+        "anchor": "D.3",
+        "line": 40,
+        "sha256": "6c0d7d213d50491d90c2f1876fc7112135d9460fdad47b14a5d940e279dbebfb"
+      },
+      "statement": "Standalone adapter requires a replayed certificate matching the public conclusion, theory, hypotheses, types and versions.",
+      "assumptions": [
+        "fixed public action fixture",
+        "declared assumptions retain provenance"
+      ],
+      "semantic_scope": "public conditional resources, not learner knowledge",
+      "evidence_labels": [
+        "DEF",
+        "FINITE"
+      ],
+      "dependencies": [
+        "CASE-group",
+        "CASE-limit",
+        "CASE-manifold",
+        "CASE-tensor"
+      ],
+      "reference_ids": [],
+      "unresolved_premises": [],
+      "check_status": "passed",
+      "mathematical_proof": "not_claimed",
+      "machine_certificate_accepted": false,
+      "kernel_formally_verified": false,
+      "finite_bound": "four positive actions and five rejection scenarios",
+      "synthetic": false,
+      "unsupported_generalizations": [],
+      "next_obligation": "optional site integration and general adapter proof",
+      "manual_review": "Open source at the anchor and inspect hypotheses and argument.",
+      "checks": [
+        {
+          "command": "python mcs-foundations/validation/certification/actions.py",
+          "output": {
+            "path": "validation/certification/action-report.json",
+            "sha256": "6e0a80dd178d7fd79c14528be3d83ff97697b369e175336af05a434027d6e6d0"
+          }
+        }
+      ]
+    },
+    {
+      "id": "RESEARCH-MODEL",
+      "source": {
+        "path": "07-软关系与认知状态.md",
+        "anchor": "定义 7.8",
+        "line": 40,
+        "sha256": "d1f1544da4e2443068fd5c6b0a8f6c117c9e76686824545b3c9f50ef63f4f811"
+      },
+      "statement": "Fixed synthetic Beta observation model runs participant/time holdout evaluation; stipulated action transitions preserve Unknown.",
+      "assumptions": [
+        "synthetic fixed seed20260929",
+        "model assumptions in research-input.json",
+        "no real participants"
+      ],
+      "semantic_scope": "workflow validation",
+      "evidence_labels": [
+        "DEF",
+        "ILLUSTRATION",
+        "FINITE"
+      ],
+      "dependencies": [],
+      "reference_ids": [],
+      "unresolved_premises": [],
+      "check_status": "passed",
+      "mathematical_proof": "not_claimed",
+      "machine_certificate_accepted": false,
+      "kernel_formally_verified": false,
+      "finite_bound": "36 simulated participants,24 items,864 rows; two fixed splits",
+      "synthetic": true,
+      "unsupported_generalizations": [
+        "measurement validity",
+        "causal effect"
+      ],
+      "next_obligation": "real protocol and external validation",
+      "manual_review": "Open source at the anchor and inspect hypotheses and argument.",
+      "checks": [
+        {
+          "command": "python mcs-foundations/validation/certification/research.py",
+          "output": {
+            "path": "validation/certification/research-report.json",
+            "sha256": "3236df70db4303169cf8b8b1d81f77f7da2e947c32be4a53ad9d560ac7a66edf"
+          }
+        }
+      ]
+    },
+    {
+      "id": "REP-COMPARE",
+      "source": {
+        "path": "16-开放问题.md",
+        "anchor": "需要比较什么",
+        "line": 62,
+        "sha256": "9d4b9dbb0ec97310771adcb93cc4f2ef0ec605ab307c1391bcee3b89225be2af"
+      },
+      "statement": "Typed action graph, annotated bipartite graph and MCS agree on the fixed bounded comparison; plain all-incoming dependency encoding loses distinctions.",
+      "assumptions": [
+        "same content/actions/goal/budget",
+        "explicit baseline encodings",
+        "independent unknown-completion reference"
+      ],
+      "semantic_scope": "finite representation capacity",
+      "evidence_labels": [
+        "FINITE"
+      ],
+      "dependencies": [],
+      "reference_ids": [],
+      "unresolved_premises": [],
+      "check_status": "passed",
+      "mathematical_proof": "not_claimed",
+      "machine_certificate_accepted": false,
+      "kernel_formally_verified": false,
+      "finite_bound": "4 actions,85 words length0..3,27 availability states,2295 candidates per representation, budget3",
+      "synthetic": false,
+      "unsupported_generalizations": [
+        "unique MCS advantage",
+        "all graph models insufficient"
+      ],
+      "next_obligation": "larger independently implemented comparisons",
+      "manual_review": "Open source at the anchor and inspect hypotheses and argument.",
+      "checks": [
+        {
+          "command": "python mcs-foundations/validation/certification/research.py",
+          "output": {
+            "path": "validation/certification/research-report.json",
+            "sha256": "3236df70db4303169cf8b8b1d81f77f7da2e947c32be4a53ad9d560ac7a66edf"
+          }
+        }
+      ]
+    },
+    {
+      "id": "NONIDENTIFICATION",
+      "source": {
+        "path": "16-开放问题.md",
+        "anchor": "反例 16.1",
+        "line": 51,
+        "sha256": "9d4b9dbb0ec97310771adcb93cc4f2ef0ec605ab307c1391bcee3b89225be2af"
+      },
+      "statement": "Same observed a histories allow opposite untried b predictions.",
+      "assumptions": [
+        "two explicitly specified deterministic models",
+        "observations contain only action a"
+      ],
+      "semantic_scope": "model nonidentification example",
+      "evidence_labels": [
+        "PROOF",
+        "FINITE"
+      ],
+      "dependencies": [],
+      "reference_ids": [],
+      "unresolved_premises": [],
+      "check_status": "passed",
+      "mathematical_proof": "present_in_manuscript",
+      "machine_certificate_accepted": false,
+      "kernel_formally_verified": false,
+      "finite_bound": "history lengths0..4; one b probe; general counterexample argued in manuscript",
+      "synthetic": false,
+      "unsupported_generalizations": [],
+      "next_obligation": "review the stated scope",
+      "manual_review": "Open source at the anchor and inspect hypotheses and argument.",
+      "checks": [
+        {
+          "command": "python mcs-foundations/validation/certification/research.py",
+          "output": {
+            "path": "validation/certification/research-report.json",
+            "sha256": "3236df70db4303169cf8b8b1d81f77f7da2e947c32be4a53ad9d560ac7a66edf"
+          }
+        }
+      ]
+    },
+    {
+      "id": "REMAINING",
+      "source": {
+        "path": "15-验证与完成标准.md",
+        "anchor": "15.6",
+        "line": 83,
+        "sha256": "c5f0c89aa0df6cf90115a2a813373e90a77d451638712ca4271f3e5b7f51bf0a"
+      },
+      "statement": "Full HOL, kernel machine metaproof, complete four bridges and empirical learning claims remain uncompleted.",
+      "assumptions": [
+        "current scoped delivery"
+      ],
+      "semantic_scope": "completion boundaries",
+      "evidence_labels": [
+        "NOT-CLAIMED"
+      ],
+      "dependencies": [],
+      "reference_ids": [],
+      "unresolved_premises": [],
+      "check_status": "not_run",
+      "mathematical_proof": "not_claimed",
+      "machine_certificate_accepted": false,
+      "kernel_formally_verified": false,
+      "finite_bound": null,
+      "synthetic": false,
+      "unsupported_generalizations": [],
+      "next_obligation": "see obligations.json and DELIVERY.md",
+      "manual_review": "Open source at the anchor and inspect hypotheses and argument.",
+      "checks": []
+    }
+  ],
+  "scope_note": "Evidence labels are independent responsibilities; check_status is separate. Hashes identify artifacts, not proof of natural-language correctness."
+}

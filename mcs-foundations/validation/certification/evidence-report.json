@@ -1,0 +1,40 @@
+{
+  "status": "passed",
+  "claims": 14,
+  "manifest_sha256": "2e63aeae965810f5ffdf7faaacd14177a898aa11a65b0924cb8afd6d51350651",
+  "negative_checks": [
+    {
+      "case": "dangling_reference",
+      "rejected": "dangling claim dependency"
+    },
+    {
+      "case": "missing_assumptions",
+      "rejected": "missing assumptions"
+    },
+    {
+      "case": "missing_finite_boundary",
+      "rejected": "finite claim lacks boundary"
+    },
+    {
+      "case": "machine_claim_without_certificate",
+      "rejected": "machine claim without replayable certificate"
+    },
+    {
+      "case": "stale_checker",
+      "rejected": "stale checker version"
+    },
+    {
+      "case": "stale_input",
+      "rejected": "stale artifact: validation/certification/actions.py"
+    },
+    {
+      "case": "unproved_kernel_claim",
+      "rejected": "unsupported kernel meta-proof claim"
+    },
+    {
+      "case": "cyclic_evidence",
+      "rejected": "cyclic evidence dependency"
+    }
+  ],
+  "boundary": "schema, pinned artifacts and machine replays only; no automatic natural-language/source applicability judgment"
+}

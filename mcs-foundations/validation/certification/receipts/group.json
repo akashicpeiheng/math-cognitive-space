@@ -1,0 +1,160 @@
+{
+  "status": "passed",
+  "checker": "mcs-nd-subset/1",
+  "checker_sha256": "25130be0e90d0336af0d4505bf664ccbc0d2ca69beda02dd6c501e124a4a4e5e",
+  "theory_id": "right-unital-magma",
+  "theory_version": "1",
+  "theory_sha256": "bafb1e68454a2e7e1b1dff44598c8c1c839ab580018d4daa461eb5b07da48157",
+  "proof_id": "cayley-evaluation-injective",
+  "proof_sha256": "0ad45aa56db0896e17ba5bd8983416641e4f65196aa5f43d7f817a2f1bd13bac",
+  "conclusion": [
+    "eq",
+    [
+      "app",
+      [
+        "app",
+        [
+          "logic",
+          "eq",
+          "G"
+        ],
+        [
+          "v",
+          "g",
+          "G"
+        ]
+      ],
+      [
+        "v",
+        "h",
+        "G"
+      ]
+    ],
+    [
+      "logic",
+      "true"
+    ]
+  ],
+  "conclusion_type": "FOL-formula",
+  "object_conclusion": [
+    "app",
+    [
+      "app",
+      [
+        "logic",
+        "eq",
+        "G"
+      ],
+      [
+        "v",
+        "g",
+        "G"
+      ]
+    ],
+    [
+      "v",
+      "h",
+      "G"
+    ]
+  ],
+  "open_hypotheses": {
+    "equal_left_translations": [
+      "eq",
+      [
+        "app",
+        [
+          "app",
+          [
+            "logic",
+            "eq",
+            [
+              "->",
+              "G",
+              "G"
+            ]
+          ],
+          [
+            "lift",
+            [
+              "lam",
+              "G",
+              [
+                "app",
+                [
+                  "app",
+                  [
+                    "c",
+                    "mul"
+                  ],
+                  [
+                    "v",
+                    "g",
+                    "G"
+                  ]
+                ],
+                [
+                  "b",
+                  0,
+                  "G"
+                ]
+              ]
+            ],
+            [
+              [
+                "v",
+                "g",
+                "G"
+              ]
+            ]
+          ]
+        ],
+        [
+          "lift",
+          [
+            "lam",
+            "G",
+            [
+              "app",
+              [
+                "app",
+                [
+                  "c",
+                  "mul"
+                ],
+                [
+                  "v",
+                  "h",
+                  "G"
+                ]
+              ],
+              [
+                "b",
+                0,
+                "G"
+              ]
+            ]
+          ],
+          [
+            [
+              "v",
+              "h",
+              "G"
+            ]
+          ]
+        ]
+      ],
+      [
+        "logic",
+        "true"
+      ]
+    ]
+  },
+  "dependencies": [
+    "H:{\"schema\":\"abstraction\",\"term\":[\"lambda\",\"x\",\"G\",[\"app\",[\"app\",[\"c\",\"mul\"],[\"v\",\"g\",\"G\"]],[\"v\",\"x\",\"G\"]]]}",
+    "H:{\"schema\":\"abstraction\",\"term\":[\"lambda\",\"x\",\"G\",[\"app\",[\"app\",[\"c\",\"mul\"],[\"v\",\"h\",\"G\"]],[\"v\",\"x\",\"G\"]]]}",
+    "H:{\"schema\":\"equality\",\"type\":\"G\"}",
+    "H:{\"schema\":\"equality\",\"type\":[\"->\",\"G\",\"G\"]}",
+    "T:right_identity"
+  ],
+  "kernel_formally_verified": false
+}

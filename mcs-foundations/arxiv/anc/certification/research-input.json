@@ -1,0 +1,8187 @@
+{
+  "schema": "mcs-synthetic-research/1",
+  "synthetic": true,
+  "seed": 20260929,
+  "model": "beta-observation-and-stipulated-transition/1",
+  "public_version": "research-content/1",
+  "items": [
+    {
+      "id": "definition-0",
+      "ability": "definition",
+      "anchor": [
+        {
+          "node": "LimitED",
+          "competence": "definition"
+        }
+      ],
+      "phase": "diagnostic",
+      "occasion": 0,
+      "migration_task": false,
+      "delayed_task": false
+    },
+    {
+      "id": "definition-1",
+      "ability": "definition",
+      "anchor": [
+        {
+          "node": "LimitED",
+          "competence": "definition"
+        }
+      ],
+      "phase": "diagnostic",
+      "occasion": 1,
+      "migration_task": false,
+      "delayed_task": false
+    },
+    {
+      "id": "definition-2",
+      "ability": "definition",
+      "anchor": [
+        {
+          "node": "LimitED",
+          "competence": "definition"
+        }
+      ],
+      "phase": "fit",
+      "occasion": 2,
+      "migration_task": false,
+      "delayed_task": false
+    },
+    {
+      "id": "definition-3",
+      "ability": "definition",
+      "anchor": [
+        {
+          "node": "LimitED",
+          "competence": "definition"
+        }
+      ],
+      "phase": "fit",
+      "occasion": 3,
+      "migration_task": false,
+      "delayed_task": false
+    },
+    {
+      "id": "definition-4",
+      "ability": "definition",
+      "anchor": [
+        {
+          "node": "LimitED",
+          "competence": "definition"
+        }
+      ],
+      "phase": "holdout",
+      "occasion": 4,
+      "migration_task": true,
+      "delayed_task": false
+    },
+    {
+      "id": "definition-5",
+      "ability": "definition",
+      "anchor": [
+        {
+          "node": "LimitED",
+          "competence": "definition"
+        }
+      ],
+      "phase": "holdout",
+      "occasion": 5,
+      "migration_task": false,
+      "delayed_task": true
+    },
+    {
+      "id": "calculation-0",
+      "ability": "calculation",
+      "anchor": [
+        {
+          "node": "Group",
+          "competence": "calculation"
+        }
+      ],
+      "phase": "diagnostic",
+      "occasion": 0,
+      "migration_task": false,
+      "delayed_task": false
+    },
+    {
+      "id": "calculation-1",
+      "ability": "calculation",
+      "anchor": [
+        {
+          "node": "Group",
+          "competence": "calculation"
+        }
+      ],
+      "phase": "diagnostic",
+      "occasion": 1,
+      "migration_task": false,
+      "delayed_task": false
+    },
+    {
+      "id": "calculation-2",
+      "ability": "calculation",
+      "anchor": [
+        {
+          "node": "Group",
+          "competence": "calculation"
+        }
+      ],
+      "phase": "fit",
+      "occasion": 2,
+      "migration_task": false,
+      "delayed_task": false
+    },
+    {
+      "id": "calculation-3",
+      "ability": "calculation",
+      "anchor": [
+        {
+          "node": "Group",
+          "competence": "calculation"
+        }
+      ],
+      "phase": "fit",
+      "occasion": 3,
+      "migration_task": false,
+      "delayed_task": false
+    },
+    {
+      "id": "calculation-4",
+      "ability": "calculation",
+      "anchor": [
+        {
+          "node": "Group",
+          "competence": "calculation"
+        }
+      ],
+      "phase": "holdout",
+      "occasion": 4,
+      "migration_task": true,
+      "delayed_task": false
+    },
+    {
+      "id": "calculation-5",
+      "ability": "calculation",
+      "anchor": [
+        {
+          "node": "Group",
+          "competence": "calculation"
+        }
+      ],
+      "phase": "holdout",
+      "occasion": 5,
+      "migration_task": false,
+      "delayed_task": true
+    },
+    {
+      "id": "proof-0",
+      "ability": "proof",
+      "anchor": [
+        {
+          "node": "Tensor",
+          "competence": "proof"
+        }
+      ],
+      "phase": "diagnostic",
+      "occasion": 0,
+      "migration_task": false,
+      "delayed_task": false
+    },
+    {
+      "id": "proof-1",
+      "ability": "proof",
+      "anchor": [
+        {
+          "node": "Tensor",
+          "competence": "proof"
+        }
+      ],
+      "phase": "diagnostic",
+      "occasion": 1,
+      "migration_task": false,
+      "delayed_task": false
+    },
+    {
+      "id": "proof-2",
+      "ability": "proof",
+      "anchor": [
+        {
+          "node": "Tensor",
+          "competence": "proof"
+        }
+      ],
+      "phase": "fit",
+      "occasion": 2,
+      "migration_task": false,
+      "delayed_task": false
+    },
+    {
+      "id": "proof-3",
+      "ability": "proof",
+      "anchor": [
+        {
+          "node": "Tensor",
+          "competence": "proof"
+        }
+      ],
+      "phase": "fit",
+      "occasion": 3,
+      "migration_task": false,
+      "delayed_task": false
+    },
+    {
+      "id": "proof-4",
+      "ability": "proof",
+      "anchor": [
+        {
+          "node": "Tensor",
+          "competence": "proof"
+        }
+      ],
+      "phase": "holdout",
+      "occasion": 4,
+      "migration_task": true,
+      "delayed_task": false
+    },
+    {
+      "id": "proof-5",
+      "ability": "proof",
+      "anchor": [
+        {
+          "node": "Tensor",
+          "competence": "proof"
+        }
+      ],
+      "phase": "holdout",
+      "occasion": 5,
+      "migration_task": false,
+      "delayed_task": true
+    },
+    {
+      "id": "transfer-0",
+      "ability": "transfer",
+      "anchor": [
+        {
+          "node": "CkAtlas",
+          "competence": "transfer"
+        }
+      ],
+      "phase": "diagnostic",
+      "occasion": 0,
+      "migration_task": false,
+      "delayed_task": false
+    },
+    {
+      "id": "transfer-1",
+      "ability": "transfer",
+      "anchor": [
+        {
+          "node": "CkAtlas",
+          "competence": "transfer"
+        }
+      ],
+      "phase": "diagnostic",
+      "occasion": 1,
+      "migration_task": false,
+      "delayed_task": false
+    },
+    {
+      "id": "transfer-2",
+      "ability": "transfer",
+      "anchor": [
+        {
+          "node": "CkAtlas",
+          "competence": "transfer"
+        }
+      ],
+      "phase": "fit",
+      "occasion": 2,
+      "migration_task": false,
+      "delayed_task": false
+    },
+    {
+      "id": "transfer-3",
+      "ability": "transfer",
+      "anchor": [
+        {
+          "node": "CkAtlas",
+          "competence": "transfer"
+        }
+      ],
+      "phase": "fit",
+      "occasion": 3,
+      "migration_task": false,
+      "delayed_task": false
+    },
+    {
+      "id": "transfer-4",
+      "ability": "transfer",
+      "anchor": [
+        {
+          "node": "CkAtlas",
+          "competence": "transfer"
+        }
+      ],
+      "phase": "holdout",
+      "occasion": 4,
+      "migration_task": true,
+      "delayed_task": false
+    },
+    {
+      "id": "transfer-5",
+      "ability": "transfer",
+      "anchor": [
+        {
+          "node": "CkAtlas",
+          "competence": "transfer"
+        }
+      ],
+      "phase": "holdout",
+      "occasion": 5,
+      "migration_task": false,
+      "delayed_task": true
+    }
+  ],
+  "observations": [
+    {
+      "id": "p00:definition-0",
+      "participant": "p00",
+      "item": "definition-0",
+      "time": 0,
+      "correct": null,
+      "confidence": null,
+      "seconds": null
+    },
+    {
+      "id": "p00:definition-1",
+      "participant": "p00",
+      "item": "definition-1",
+      "time": 1,
+      "correct": 1,
+      "confidence": 0.5566,
+      "seconds": 50.4308
+    },
+    {
+      "id": "p00:definition-2",
+      "participant": "p00",
+      "item": "definition-2",
+      "time": 2,
+      "correct": 1,
+      "confidence": 0.4628,
+      "seconds": 49.158
+    },
+    {
+      "id": "p00:definition-3",
+      "participant": "p00",
+      "item": "definition-3",
+      "time": 3,
+      "correct": 0,
+      "confidence": 0.627,
+      "seconds": 50.3238
+    },
+    {
+      "id": "p00:definition-4",
+      "participant": "p00",
+      "item": "definition-4",
+      "time": 4,
+      "correct": 0,
+      "confidence": 0.5999,
+      "seconds": 53.2797
+    },
+    {
+      "id": "p00:definition-5",
+      "participant": "p00",
+      "item": "definition-5",
+      "time": 5,
+      "correct": 1,
+      "confidence": 0.3039,
+      "seconds": 49.3262
+    },
+    {
+      "id": "p00:calculation-0",
+      "participant": "p00",
+      "item": "calculation-0",
+      "time": 0,
+      "correct": null,
+      "confidence": null,
+      "seconds": null
+    },
+    {
+      "id": "p00:calculation-1",
+      "participant": "p00",
+      "item": "calculation-1",
+      "time": 1,
+      "correct": 1,
+      "confidence": 0.6385,
+      "seconds": 36.5219
+    },
+    {
+      "id": "p00:calculation-2",
+      "participant": "p00",
+      "item": "calculation-2",
+      "time": 2,
+      "correct": 1,
+      "confidence": 0.6425,
+      "seconds": 42.5029
+    },
+    {
+      "id": "p00:calculation-3",
+      "participant": "p00",
+      "item": "calculation-3",
+      "time": 3,
+      "correct": 0,
+      "confidence": 0.7194,
+      "seconds": 44.4345
+    },
+    {
+      "id": "p00:calculation-4",
+      "participant": "p00",
+      "item": "calculation-4",
+      "time": 4,
+      "correct": 0,
+      "confidence": 0.5226,
+      "seconds": 40.937
+    },
+    {
+      "id": "p00:calculation-5",
+      "participant": "p00",
+      "item": "calculation-5",
+      "time": 5,
+      "correct": 0,
+      "confidence": 0.6723,
+      "seconds": 34.6641
+    },
+    {
+      "id": "p00:proof-0",
+      "participant": "p00",
+      "item": "proof-0",
+      "time": 0,
+      "correct": null,
+      "confidence": null,
+      "seconds": null
+    },
+    {
+      "id": "p00:proof-1",
+      "participant": "p00",
+      "item": "proof-1",
+      "time": 1,
+      "correct": 1,
+      "confidence": 0.7168,
+      "seconds": 39.6829
+    },
+    {
+      "id": "p00:proof-2",
+      "participant": "p00",
+      "item": "proof-2",
+      "time": 2,
+      "correct": 1,
+      "confidence": 0.7175,
+      "seconds": 43.3566
+    },
+    {
+      "id": "p00:proof-3",
+      "participant": "p00",
+      "item": "proof-3",
+      "time": 3,
+      "correct": 0,
+      "confidence": 0.4798,
+      "seconds": 50.9872
+    },
+    {
+      "id": "p00:proof-4",
+      "participant": "p00",
+      "item": "proof-4",
+      "time": 4,
+      "correct": 1,
+      "confidence": 0.473,
+      "seconds": 38.0645
+    },
+    {
+      "id": "p00:proof-5",
+      "participant": "p00",
+      "item": "proof-5",
+      "time": 5,
+      "correct": 1,
+      "confidence": 0.472,
+      "seconds": 37.8379
+    },
+    {
+      "id": "p00:transfer-0",
+      "participant": "p00",
+      "item": "transfer-0",
+      "time": 0,
+      "correct": null,
+      "confidence": null,
+      "seconds": null
+    },
+    {
+      "id": "p00:transfer-1",
+      "participant": "p00",
+      "item": "transfer-1",
+      "time": 1,
+      "correct": 1,
+      "confidence": 0.155,
+      "seconds": 53.5518
+    },
+    {
+      "id": "p00:transfer-2",
+      "participant": "p00",
+      "item": "transfer-2",
+      "time": 2,
+      "correct": 1,
+      "confidence": 0.4541,
+      "seconds": 62.8589
+    },
+    {
+      "id": "p00:transfer-3",
+      "participant": "p00",
+      "item": "transfer-3",
+      "time": 3,
+      "correct": 1,
+      "confidence": 0.2091,
+      "seconds": 60.7477
+    },
+    {
+      "id": "p00:transfer-4",
+      "participant": "p00",
+      "item": "transfer-4",
+      "time": 4,
+      "correct": 0,
+      "confidence": 0.2098,
+      "seconds": 60.5885
+    },
+    {
+      "id": "p00:transfer-5",
+      "participant": "p00",
+      "item": "transfer-5",
+      "time": 5,
+      "correct": 0,
+      "confidence": 0.1487,
+      "seconds": 48.743
+    },
+    {
+      "id": "p01:definition-0",
+      "participant": "p01",
+      "item": "definition-0",
+      "time": 0,
+      "correct": 1,
+      "confidence": 0.9656,
+      "seconds": 41.8645
+    },
+    {
+      "id": "p01:definition-1",
+      "participant": "p01",
+      "item": "definition-1",
+      "time": 1,
+      "correct": 0,
+      "confidence": 0.7859,
+      "seconds": 36.6052
+    },
+    {
+      "id": "p01:definition-2",
+      "participant": "p01",
+      "item": "definition-2",
+      "time": 2,
+      "correct": 1,
+      "confidence": 0.6142,
+      "seconds": 39.9063
+    },
+    {
+      "id": "p01:definition-3",
+      "participant": "p01",
+      "item": "definition-3",
+      "time": 3,
+      "correct": 1,
+      "confidence": 0.9654,
+      "seconds": 30.2438
+    },
+    {
+      "id": "p01:definition-4",
+      "participant": "p01",
+      "item": "definition-4",
+      "time": 4,
+      "correct": 0,
+      "confidence": 0.7826,
+      "seconds": 32.2521
+    },
+    {
+      "id": "p01:definition-5",
+      "participant": "p01",
+      "item": "definition-5",
+      "time": 5,
+      "correct": 1,
+      "confidence": 0.6919,
+      "seconds": 33.2648
+    },
+    {
+      "id": "p01:calculation-0",
+      "participant": "p01",
+      "item": "calculation-0",
+      "time": 0,
+      "correct": 1,
+      "confidence": 0.3659,
+      "seconds": 51.9004
+    },
+    {
+      "id": "p01:calculation-1",
+      "participant": "p01",
+      "item": "calculation-1",
+      "time": 1,
+      "correct": 0,
+      "confidence": 0.3726,
+      "seconds": 38.9153
+    },
+    {
+      "id": "p01:calculation-2",
+      "participant": "p01",
+      "item": "calculation-2",
+      "time": 2,
+      "correct": 1,
+      "confidence": 0.4688,
+      "seconds": 50.9679
+    },
+    {
+      "id": "p01:calculation-3",
+      "participant": "p01",
+      "item": "calculation-3",
+      "time": 3,
+      "correct": 0,
+      "confidence": 0.6484,
+      "seconds": 39.4727
+    },
+    {
+      "id": "p01:calculation-4",
+      "participant": "p01",
+      "item": "calculation-4",
+      "time": 4,
+      "correct": 1,
+      "confidence": 0.529,
+      "seconds": 44.8192
+    },
+    {
+      "id": "p01:calculation-5",
+      "participant": "p01",
+      "item": "calculation-5",
+      "time": 5,
+      "correct": 1,
+      "confidence": 0.4374,
+      "seconds": 49.7438
+    },
+    {
+      "id": "p01:proof-0",
+      "participant": "p01",
+      "item": "proof-0",
+      "time": 0,
+      "correct": 1,
+      "confidence": 0.3864,
+      "seconds": 55.9879
+    },
+    {
+      "id": "p01:proof-1",
+      "participant": "p01",
+      "item": "proof-1",
+      "time": 1,
+      "correct": 1,
+      "confidence": 0.4219,
+      "seconds": 47.1549
+    },
+    {
+      "id": "p01:proof-2",
+      "participant": "p01",
+      "item": "proof-2",
+      "time": 2,
+      "correct": 1,
+      "confidence": 0.4933,
+      "seconds": 44.3853
+    },
+    {
+      "id": "p01:proof-3",
+      "participant": "p01",
+      "item": "proof-3",
+      "time": 3,
+      "correct": 1,
+      "confidence": 0.3271,
+      "seconds": 54.2268
+    },
+    {
+      "id": "p01:proof-4",
+      "participant": "p01",
+      "item": "proof-4",
+      "time": 4,
+      "correct": 1,
+      "confidence": 0.4891,
+      "seconds": 51.6733
+    },
+    {
+      "id": "p01:proof-5",
+      "participant": "p01",
+      "item": "proof-5",
+      "time": 5,
+      "correct": 1,
+      "confidence": 0.549,
+      "seconds": 44.5644
+    },
+    {
+      "id": "p01:transfer-0",
+      "participant": "p01",
+      "item": "transfer-0",
+      "time": 0,
+      "correct": 1,
+      "confidence": 0.1125,
+      "seconds": 62.5974
+    },
+    {
+      "id": "p01:transfer-1",
+      "participant": "p01",
+      "item": "transfer-1",
+      "time": 1,
+      "correct": 1,
+      "confidence": 0.429,
+      "seconds": 49.6488
+    },
+    {
+      "id": "p01:transfer-2",
+      "participant": "p01",
+      "item": "transfer-2",
+      "time": 2,
+      "correct": 0,
+      "confidence": 0.1405,
+      "seconds": 50.1455
+    },
+    {
+      "id": "p01:transfer-3",
+      "participant": "p01",
+      "item": "transfer-3",
+      "time": 3,
+      "correct": 0,
+      "confidence": 0.2791,
+      "seconds": 51.7759
+    },
+    {
+      "id": "p01:transfer-4",
+      "participant": "p01",
+      "item": "transfer-4",
+      "time": 4,
+      "correct": 1,
+      "confidence": 0.1268,
+      "seconds": 59.3428
+    },
+    {
+      "id": "p01:transfer-5",
+      "participant": "p01",
+      "item": "transfer-5",
+      "time": 5,
+      "correct": 1,
+      "confidence": 0.4325,
+      "seconds": 53.264
+    },
+    {
+      "id": "p02:definition-0",
+      "participant": "p02",
+      "item": "definition-0",
+      "time": 0,
+      "correct": 1,
+      "confidence": 0.3692,
+      "seconds": 42.519
+    },
+    {
+      "id": "p02:definition-1",
+      "participant": "p02",
+      "item": "definition-1",
+      "time": 1,
+      "correct": 0,
+      "confidence": 0.3711,
+      "seconds": 49.0585
+    },
+    {
+      "id": "p02:definition-2",
+      "participant": "p02",
+      "item": "definition-2",
+      "time": 2,
+      "correct": 0,
+      "confidence": 0.5057,
+      "seconds": 49.7104
+    },
+    {
+      "id": "p02:definition-3",
+      "participant": "p02",
+      "item": "definition-3",
+      "time": 3,
+      "correct": 0,
+      "confidence": 0.732,
+      "seconds": 53.0178
+    },
+    {
+      "id": "p02:definition-4",
+      "participant": "p02",
+      "item": "definition-4",
+      "time": 4,
+      "correct": 0,
+      "confidence": 0.5282,
+      "seconds": 47.0483
+    },
+    {
+      "id": "p02:definition-5",
+      "participant": "p02",
+      "item": "definition-5",
+      "time": 5,
+      "correct": 0,
+      "confidence": 0.5272,
+      "seconds": 46.2421
+    },
+    {
+      "id": "p02:calculation-0",
+      "participant": "p02",
+      "item": "calculation-0",
+      "time": 0,
+      "correct": 1,
+      "confidence": 0.3868,
+      "seconds": 43.1514
+    },
+    {
+      "id": "p02:calculation-1",
+      "participant": "p02",
+      "item": "calculation-1",
+      "time": 1,
+      "correct": 1,
+      "confidence": 0.6789,
+      "seconds": 46.7101
+    },
+    {
+      "id": "p02:calculation-2",
+      "participant": "p02",
+      "item": "calculation-2",
+      "time": 2,
+      "correct": 0,
+      "confidence": 0.5926,
+      "seconds": 54.7214
+    },
+    {
+      "id": "p02:calculation-3",
+      "participant": "p02",
+      "item": "calculation-3",
+      "time": 3,
+      "correct": 1,
+      "confidence": 0.5842,
+      "seconds": 41.5
+    },
+    {
+      "id": "p02:calculation-4",
+      "participant": "p02",
+      "item": "calculation-4",
+      "time": 4,
+      "correct": 1,
+      "confidence": 0.5691,
+      "seconds": 44.1358
+    },
+    {
+      "id": "p02:calculation-5",
+      "participant": "p02",
+      "item": "calculation-5",
+      "time": 5,
+      "correct": 0,
+      "confidence": 0.3971,
+      "seconds": 49.4291
+    },
+    {
+      "id": "p02:proof-0",
+      "participant": "p02",
+      "item": "proof-0",
+      "time": 0,
+      "correct": 0,
+      "confidence": 0.0269,
+      "seconds": 57.6035
+    },
+    {
+      "id": "p02:proof-1",
+      "participant": "p02",
+      "item": "proof-1",
+      "time": 1,
+      "correct": 1,
+      "confidence": 0.4145,
+      "seconds": 57.135
+    },
+    {
+      "id": "p02:proof-2",
+      "participant": "p02",
+      "item": "proof-2",
+      "time": 2,
+      "correct": 0,
+      "confidence": 0.1794,
+      "seconds": 59.9499
+    },
+    {
+      "id": "p02:proof-3",
+      "participant": "p02",
+      "item": "proof-3",
+      "time": 3,
+      "correct": 0,
+      "confidence": 0.1626,
+      "seconds": 55.4426
+    },
+    {
+      "id": "p02:proof-4",
+      "participant": "p02",
+      "item": "proof-4",
+      "time": 4,
+      "correct": 0,
+      "confidence": 0.2893,
+      "seconds": 64.767
+    },
+    {
+      "id": "p02:proof-5",
+      "participant": "p02",
+      "item": "proof-5",
+      "time": 5,
+      "correct": 1,
+      "confidence": 0.1109,
+      "seconds": 60.1504
+    },
+    {
+      "id": "p02:transfer-0",
+      "participant": "p02",
+      "item": "transfer-0",
+      "time": 0,
+      "correct": 1,
+      "confidence": 0.6516,
+      "seconds": 38.0036
+    },
+    {
+      "id": "p02:transfer-1",
+      "participant": "p02",
+      "item": "transfer-1",
+      "time": 1,
+      "correct": 1,
+      "confidence": 0.7037,
+      "seconds": 44.6263
+    },
+    {
+      "id": "p02:transfer-2",
+      "participant": "p02",
+      "item": "transfer-2",
+      "time": 2,
+      "correct": 1,
+      "confidence": 0.6223,
+      "seconds": 38.6803
+    },
+    {
+      "id": "p02:transfer-3",
+      "participant": "p02",
+      "item": "transfer-3",
+      "time": 3,
+      "correct": 0,
+      "confidence": 0.8424,
+      "seconds": 35.6456
+    },
+    {
+      "id": "p02:transfer-4",
+      "participant": "p02",
+      "item": "transfer-4",
+      "time": 4,
+      "correct": 0,
+      "confidence": 0.5774,
+      "seconds": 36.4422
+    },
+    {
+      "id": "p02:transfer-5",
+      "participant": "p02",
+      "item": "transfer-5",
+      "time": 5,
+      "correct": 1,
+      "confidence": 0.8394,
+      "seconds": 38.9694
+    },
+    {
+      "id": "p03:definition-0",
+      "participant": "p03",
+      "item": "definition-0",
+      "time": 0,
+      "correct": 0,
+      "confidence": 0.4955,
+      "seconds": 41.3592
+    },
+    {
+      "id": "p03:definition-1",
+      "participant": "p03",
+      "item": "definition-1",
+      "time": 1,
+      "correct": 1,
+      "confidence": 0.4696,
+      "seconds": 41.0476
+    },
+    {
+      "id": "p03:definition-2",
+      "participant": "p03",
+      "item": "definition-2",
+      "time": 2,
+      "correct": 1,
+      "confidence": 0.4261,
+      "seconds": 45.8763
+    },
+    {
+      "id": "p03:definition-3",
+      "participant": "p03",
+      "item": "definition-3",
+      "time": 3,
+      "correct": 1,
+      "confidence": 0.5552,
+      "seconds": 41.4354
+    },
+    {
+      "id": "p03:definition-4",
+      "participant": "p03",
+      "item": "definition-4",
+      "time": 4,
+      "correct": 0,
+      "confidence": 0.5986,
+      "seconds": 44.2439
+    },
+    {
+      "id": "p03:definition-5",
+      "participant": "p03",
+      "item": "definition-5",
+      "time": 5,
+      "correct": 0,
+      "confidence": 0.6207,
+      "seconds": 50.081
+    },
+    {
+      "id": "p03:calculation-0",
+      "participant": "p03",
+      "item": "calculation-0",
+      "time": 0,
+      "correct": 1,
+      "confidence": 0.5173,
+      "seconds": 44.0782
+    },
+    {
+      "id": "p03:calculation-1",
+      "participant": "p03",
+      "item": "calculation-1",
+      "time": 1,
+      "correct": 0,
+      "confidence": 0.4689,
+      "seconds": 48.0936
+    },
+    {
+      "id": "p03:calculation-2",
+      "participant": "p03",
+      "item": "calculation-2",
+      "time": 2,
+      "correct": 0,
+      "confidence": 0.5077,
+      "seconds": 45.8834
+    },
+    {
+      "id": "p03:calculation-3",
+      "participant": "p03",
+      "item": "calculation-3",
+      "time": 3,
+      "correct": 1,
+      "confidence": 0.5299,
+      "seconds": 52.6007
+    },
+    {
+      "id": "p03:calculation-4",
+      "participant": "p03",
+      "item": "calculation-4",
+      "time": 4,
+      "correct": 0,
+      "confidence": 0.4535,
+      "seconds": 57.1161
+    },
+    {
+      "id": "p03:calculation-5",
+      "participant": "p03",
+      "item": "calculation-5",
+      "time": 5,
+      "correct": 1,
+      "confidence": 0.4607,
+      "seconds": 54.0117
+    },
+    {
+      "id": "p03:proof-0",
+      "participant": "p03",
+      "item": "proof-0",
+      "time": 0,
+      "correct": 1,
+      "confidence": 0.3921,
+      "seconds": 59.8145
+    },
+    {
+      "id": "p03:proof-1",
+      "participant": "p03",
+      "item": "proof-1",
+      "time": 1,
+      "correct": 0,
+      "confidence": 0.2427,
+      "seconds": 57.9932
+    },
+    {
+      "id": "p03:proof-2",
+      "participant": "p03",
+      "item": "proof-2",
+      "time": 2,
+      "correct": 0,
+      "confidence": 0.3819,
+      "seconds": 57.3221
+    },
+    {
+      "id": "p03:proof-3",
+      "participant": "p03",
+      "item": "proof-3",
+      "time": 3,
+      "correct": 0,
+      "confidence": 0.1034,
+      "seconds": 59.641
+    },
+    {
+      "id": "p03:proof-4",
+      "participant": "p03",
+      "item": "proof-4",
+      "time": 4,
+      "correct": 0,
+      "confidence": 0.3803,
+      "seconds": 57.7608
+    },
+    {
+      "id": "p03:proof-5",
+      "participant": "p03",
+      "item": "proof-5",
+      "time": 5,
+      "correct": 1,
+      "confidence": 0.1343,
+      "seconds": 53.5695
+    },
+    {
+      "id": "p03:transfer-0",
+      "participant": "p03",
+      "item": "transfer-0",
+      "time": 0,
+      "correct": 0,
+      "confidence": 0.5594,
+      "seconds": 43.0119
+    },
+    {
+      "id": "p03:transfer-1",
+      "participant": "p03",
+      "item": "transfer-1",
+      "time": 1,
+      "correct": 0,
+      "confidence": 0.5214,
+      "seconds": 49.0503
+    },
+    {
+      "id": "p03:transfer-2",
+      "participant": "p03",
+      "item": "transfer-2",
+      "time": 2,
+      "correct": 0,
+      "confidence": 0.3906,
+      "seconds": 48.6258
+    },
+    {
+      "id": "p03:transfer-3",
+      "participant": "p03",
+      "item": "transfer-3",
+      "time": 3,
+      "correct": 1,
+      "confidence": 0.4094,
+      "seconds": 53.7886
+    },
+    {
+      "id": "p03:transfer-4",
+      "participant": "p03",
+      "item": "transfer-4",
+      "time": 4,
+      "correct": 0,
+      "confidence": 0.6199,
+      "seconds": 57.1219
+    },
+    {
+      "id": "p03:transfer-5",
+      "participant": "p03",
+      "item": "transfer-5",
+      "time": 5,
+      "correct": 0,
+      "confidence": 0.5477,
+      "seconds": 52.8805
+    },
+    {
+      "id": "p04:definition-0",
+      "participant": "p04",
+      "item": "definition-0",
+      "time": 0,
+      "correct": 0,
+      "confidence": 0.8493,
+      "seconds": 34.0471
+    },
+    {
+      "id": "p04:definition-1",
+      "participant": "p04",
+      "item": "definition-1",
+      "time": 1,
+      "correct": 0,
+      "confidence": 0.8545,
+      "seconds": 42.7007
+    },
+    {
+      "id": "p04:definition-2",
+      "participant": "p04",
+      "item": "definition-2",
+      "time": 2,
+      "correct": 1,
+      "confidence": 0.5534,
+      "seconds": 44.5893
+    },
+    {
+      "id": "p04:definition-3",
+      "participant": "p04",
+      "item": "definition-3",
+      "time": 3,
+      "correct": 1,
+      "confidence": 0.7394,
+      "seconds": 42.1614
+    },
+    {
+      "id": "p04:definition-4",
+      "participant": "p04",
+      "item": "definition-4",
+      "time": 4,
+      "correct": 1,
+      "confidence": 0.7524,
+      "seconds": 47.6041
+    },
+    {
+      "id": "p04:definition-5",
+      "participant": "p04",
+      "item": "definition-5",
+      "time": 5,
+      "correct": 1,
+      "confidence": 0.8421,
+      "seconds": 46.6215
+    },
+    {
+      "id": "p04:calculation-0",
+      "participant": "p04",
+      "item": "calculation-0",
+      "time": 0,
+      "correct": 1,
+      "confidence": 0.6026,
+      "seconds": 39.148
+    },
+    {
+      "id": "p04:calculation-1",
+      "participant": "p04",
+      "item": "calculation-1",
+      "time": 1,
+      "correct": 0,
+      "confidence": 0.7518,
+      "seconds": 41.2034
+    },
+    {
+      "id": "p04:calculation-2",
+      "participant": "p04",
+      "item": "calculation-2",
+      "time": 2,
+      "correct": 0,
+      "confidence": 0.6032,
+      "seconds": 34.1344
+    },
+    {
+      "id": "p04:calculation-3",
+      "participant": "p04",
+      "item": "calculation-3",
+      "time": 3,
+      "correct": 1,
+      "confidence": 0.7841,
+      "seconds": 32.2293
+    },
+    {
+      "id": "p04:calculation-4",
+      "participant": "p04",
+      "item": "calculation-4",
+      "time": 4,
+      "correct": 0,
+      "confidence": 0.5188,
+      "seconds": 38.8514
+    },
+    {
+      "id": "p04:calculation-5",
+      "participant": "p04",
+      "item": "calculation-5",
+      "time": 5,
+      "correct": 1,
+      "confidence": 0.6885,
+      "seconds": 43.4624
+    },
+    {
+      "id": "p04:proof-0",
+      "participant": "p04",
+      "item": "proof-0",
+      "time": 0,
+      "correct": 1,
+      "confidence": 0.6565,
+      "seconds": 32.7815
+    },
+    {
+      "id": "p04:proof-1",
+      "participant": "p04",
+      "item": "proof-1",
+      "time": 1,
+      "correct": 1,
+      "confidence": 0.6885,
+      "seconds": 38.0642
+    },
+    {
+      "id": "p04:proof-2",
+      "participant": "p04",
+      "item": "proof-2",
+      "time": 2,
+      "correct": 1,
+      "confidence": 0.8915,
+      "seconds": 37.2406
+    },
+    {
+      "id": "p04:proof-3",
+      "participant": "p04",
+      "item": "proof-3",
+      "time": 3,
+      "correct": 1,
+      "confidence": 0.8882,
+      "seconds": 39.3543
+    },
+    {
+      "id": "p04:proof-4",
+      "participant": "p04",
+      "item": "proof-4",
+      "time": 4,
+      "correct": 1,
+      "confidence": 0.6743,
+      "seconds": 35.432
+    },
+    {
+      "id": "p04:proof-5",
+      "participant": "p04",
+      "item": "proof-5",
+      "time": 5,
+      "correct": 1,
+      "confidence": 0.7226,
+      "seconds": 37.955
+    },
+    {
+      "id": "p04:transfer-0",
+      "participant": "p04",
+      "item": "transfer-0",
+      "time": 0,
+      "correct": 0,
+      "confidence": 0.2552,
+      "seconds": 59.8766
+    },
+    {
+      "id": "p04:transfer-1",
+      "participant": "p04",
+      "item": "transfer-1",
+      "time": 1,
+      "correct": 0,
+      "confidence": 0.3967,
+      "seconds": 58.6852
+    },
+    {
+      "id": "p04:transfer-2",
+      "participant": "p04",
+      "item": "transfer-2",
+      "time": 2,
+      "correct": 1,
+      "confidence": 0.1375,
+      "seconds": 53.4149
+    },
+    {
+      "id": "p04:transfer-3",
+      "participant": "p04",
+      "item": "transfer-3",
+      "time": 3,
+      "correct": 0,
+      "confidence": 0.3289,
+      "seconds": 60.0552
+    },
+    {
+      "id": "p04:transfer-4",
+      "participant": "p04",
+      "item": "transfer-4",
+      "time": 4,
+      "correct": 0,
+      "confidence": 0.3899,
+      "seconds": 60.2696
+    },
+    {
+      "id": "p04:transfer-5",
+      "participant": "p04",
+      "item": "transfer-5",
+      "time": 5,
+      "correct": 0,
+      "confidence": 0.4327,
+      "seconds": 51.9377
+    },
+    {
+      "id": "p05:definition-0",
+      "participant": "p05",
+      "item": "definition-0",
+      "time": 0,
+      "correct": 0,
+      "confidence": 0.4296,
+      "seconds": 51.4742
+    },
+    {
+      "id": "p05:definition-1",
+      "participant": "p05",
+      "item": "definition-1",
+      "time": 1,
+      "correct": 1,
+      "confidence": 0.3787,
+      "seconds": 47.6623
+    },
+    {
+      "id": "p05:definition-2",
+      "participant": "p05",
+      "item": "definition-2",
+      "time": 2,
+      "correct": 1,
+      "confidence": 0.2419,
+      "seconds": 51.1954
+    },
+    {
+      "id": "p05:definition-3",
+      "participant": "p05",
+      "item": "definition-3",
+      "time": 3,
+      "correct": 0,
+      "confidence": 0.4532,
+      "seconds": 60.1982
+    },
+    {
+      "id": "p05:definition-4",
+      "participant": "p05",
+      "item": "definition-4",
+      "time": 4,
+      "correct": 0,
+      "confidence": 0.2235,
+      "seconds": 50.1705
+    },
+    {
+      "id": "p05:definition-5",
+      "participant": "p05",
+      "item": "definition-5",
+      "time": 5,
+      "correct": 1,
+      "confidence": 0.4792,
+      "seconds": 56.9931
+    },
+    {
+      "id": "p05:calculation-0",
+      "participant": "p05",
+      "item": "calculation-0",
+      "time": 0,
+      "correct": 0,
+      "confidence": 0.5469,
+      "seconds": 52.7574
+    },
+    {
+      "id": "p05:calculation-1",
+      "participant": "p05",
+      "item": "calculation-1",
+      "time": 1,
+      "correct": 0,
+      "confidence": 0.2613,
+      "seconds": 55.1373
+    },
+    {
+      "id": "p05:calculation-2",
+      "participant": "p05",
+      "item": "calculation-2",
+      "time": 2,
+      "correct": 0,
+      "confidence": 0.4048,
+      "seconds": 59.6748
+    },
+    {
+      "id": "p05:calculation-3",
+      "participant": "p05",
+      "item": "calculation-3",
+      "time": 3,
+      "correct": 1,
+      "confidence": 0.3806,
+      "seconds": 45.9156
+    },
+    {
+      "id": "p05:calculation-4",
+      "participant": "p05",
+      "item": "calculation-4",
+      "time": 4,
+      "correct": 0,
+      "confidence": 0.375,
+      "seconds": 54.5146
+    },
+    {
+      "id": "p05:calculation-5",
+      "participant": "p05",
+      "item": "calculation-5",
+      "time": 5,
+      "correct": 1,
+      "confidence": 0.5228,
+      "seconds": 52.1002
+    },
+    {
+      "id": "p05:proof-0",
+      "participant": "p05",
+      "item": "proof-0",
+      "time": 0,
+      "correct": 1,
+      "confidence": 0.549,
+      "seconds": 48.251
+    },
+    {
+      "id": "p05:proof-1",
+      "participant": "p05",
+      "item": "proof-1",
+      "time": 1,
+      "correct": 0,
+      "confidence": 0.2179,
+      "seconds": 52.0273
+    },
+    {
+      "id": "p05:proof-2",
+      "participant": "p05",
+      "item": "proof-2",
+      "time": 2,
+      "correct": 1,
+      "confidence": 0.3897,
+      "seconds": 52.0181
+    },
+    {
+      "id": "p05:proof-3",
+      "participant": "p05",
+      "item": "proof-3",
+      "time": 3,
+      "correct": 0,
+      "confidence": 0.3197,
+      "seconds": 46.4901
+    },
+    {
+      "id": "p05:proof-4",
+      "participant": "p05",
+      "item": "proof-4",
+      "time": 4,
+      "correct": 0,
+      "confidence": 0.4238,
+      "seconds": 52.727
+    },
+    {
+      "id": "p05:proof-5",
+      "participant": "p05",
+      "item": "proof-5",
+      "time": 5,
+      "correct": 1,
+      "confidence": 0.489,
+      "seconds": 54.03
+    },
+    {
+      "id": "p05:transfer-0",
+      "participant": "p05",
+      "item": "transfer-0",
+      "time": 0,
+      "correct": 1,
+      "confidence": 0.6845,
+      "seconds": 32.9178
+    },
+    {
+      "id": "p05:transfer-1",
+      "participant": "p05",
+      "item": "transfer-1",
+      "time": 1,
+      "correct": 1,
+      "confidence": 0.7509,
+      "seconds": 35.3615
+    },
+    {
+      "id": "p05:transfer-2",
+      "participant": "p05",
+      "item": "transfer-2",
+      "time": 2,
+      "correct": 1,
+      "confidence": 0.5811,
+      "seconds": 30.8503
+    },
+    {
+      "id": "p05:transfer-3",
+      "participant": "p05",
+      "item": "transfer-3",
+      "time": 3,
+      "correct": 0,
+      "confidence": 0.8881,
+      "seconds": 32.346
+    },
+    {
+      "id": "p05:transfer-4",
+      "participant": "p05",
+      "item": "transfer-4",
+      "time": 4,
+      "correct": 0,
+      "confidence": 0.9073,
+      "seconds": 44.5393
+    },
+    {
+      "id": "p05:transfer-5",
+      "participant": "p05",
+      "item": "transfer-5",
+      "time": 5,
+      "correct": 1,
+      "confidence": 0.7392,
+      "seconds": 40.5039
+    },
+    {
+      "id": "p06:definition-0",
+      "participant": "p06",
+      "item": "definition-0",
+      "time": 0,
+      "correct": 1,
+      "confidence": 0.366,
+      "seconds": 47.9218
+    },
+    {
+      "id": "p06:definition-1",
+      "participant": "p06",
+      "item": "definition-1",
+      "time": 1,
+      "correct": 1,
+      "confidence": 0.2965,
+      "seconds": 55.254
+    },
+    {
+      "id": "p06:definition-2",
+      "participant": "p06",
+      "item": "definition-2",
+      "time": 2,
+      "correct": 0,
+      "confidence": 0.3578,
+      "seconds": 45.6705
+    },
+    {
+      "id": "p06:definition-3",
+      "participant": "p06",
+      "item": "definition-3",
+      "time": 3,
+      "correct": 1,
+      "confidence": 0.4768,
+      "seconds": 45.0078
+    },
+    {
+      "id": "p06:definition-4",
+      "participant": "p06",
+      "item": "definition-4",
+      "time": 4,
+      "correct": 1,
+      "confidence": 0.4768,
+      "seconds": 53.4113
+    },
+    {
+      "id": "p06:definition-5",
+      "participant": "p06",
+      "item": "definition-5",
+      "time": 5,
+      "correct": 0,
+      "confidence": 0.4066,
+      "seconds": 49.4067
+    },
+    {
+      "id": "p06:calculation-0",
+      "participant": "p06",
+      "item": "calculation-0",
+      "time": 0,
+      "correct": 0,
+      "confidence": 0.2278,
+      "seconds": 54.167
+    },
+    {
+      "id": "p06:calculation-1",
+      "participant": "p06",
+      "item": "calculation-1",
+      "time": 1,
+      "correct": 0,
+      "confidence": 0.5184,
+      "seconds": 53.8012
+    },
+    {
+      "id": "p06:calculation-2",
+      "participant": "p06",
+      "item": "calculation-2",
+      "time": 2,
+      "correct": 0,
+      "confidence": 0.458,
+      "seconds": 56.2181
+    },
+    {
+      "id": "p06:calculation-3",
+      "participant": "p06",
+      "item": "calculation-3",
+      "time": 3,
+      "correct": 0,
+      "confidence": 0.5816,
+      "seconds": 50.0749
+    },
+    {
+      "id": "p06:calculation-4",
+      "participant": "p06",
+      "item": "calculation-4",
+      "time": 4,
+      "correct": 1,
+      "confidence": 0.2746,
+      "seconds": 52.3944
+    },
+    {
+      "id": "p06:calculation-5",
+      "participant": "p06",
+      "item": "calculation-5",
+      "time": 5,
+      "correct": 0,
+      "confidence": 0.5334,
+      "seconds": 46.4095
+    },
+    {
+      "id": "p06:proof-0",
+      "participant": "p06",
+      "item": "proof-0",
+      "time": 0,
+      "correct": 1,
+      "confidence": 0.6785,
+      "seconds": 31.9517
+    },
+    {
+      "id": "p06:proof-1",
+      "participant": "p06",
+      "item": "proof-1",
+      "time": 1,
+      "correct": 1,
+      "confidence": 0.8027,
+      "seconds": 40.5885
+    },
+    {
+      "id": "p06:proof-2",
+      "participant": "p06",
+      "item": "proof-2",
+      "time": 2,
+      "correct": 0,
+      "confidence": 0.6946,
+      "seconds": 45.2194
+    },
+    {
+      "id": "p06:proof-3",
+      "participant": "p06",
+      "item": "proof-3",
+      "time": 3,
+      "correct": 1,
+      "confidence": 0.5337,
+      "seconds": 38.2427
+    },
+    {
+      "id": "p06:proof-4",
+      "participant": "p06",
+      "item": "proof-4",
+      "time": 4,
+      "correct": 1,
+      "confidence": 0.7213,
+      "seconds": 41.175
+    },
+    {
+      "id": "p06:proof-5",
+      "participant": "p06",
+      "item": "proof-5",
+      "time": 5,
+      "correct": 1,
+      "confidence": 0.9212,
+      "seconds": 35.5921
+    },
+    {
+      "id": "p06:transfer-0",
+      "participant": "p06",
+      "item": "transfer-0",
+      "time": 0,
+      "correct": 1,
+      "confidence": 0.8751,
+      "seconds": 31.395
+    },
+    {
+      "id": "p06:transfer-1",
+      "participant": "p06",
+      "item": "transfer-1",
+      "time": 1,
+      "correct": 0,
+      "confidence": 0.7637,
+      "seconds": 37.5616
+    },
+    {
+      "id": "p06:transfer-2",
+      "participant": "p06",
+      "item": "transfer-2",
+      "time": 2,
+      "correct": 1,
+      "confidence": 0.819,
+      "seconds": 31.6281
+    },
+    {
+      "id": "p06:transfer-3",
+      "participant": "p06",
+      "item": "transfer-3",
+      "time": 3,
+      "correct": 1,
+      "confidence": 0.7926,
+      "seconds": 42.3718
+    },
+    {
+      "id": "p06:transfer-4",
+      "participant": "p06",
+      "item": "transfer-4",
+      "time": 4,
+      "correct": 1,
+      "confidence": 0.6599,
+      "seconds": 37.4439
+    },
+    {
+      "id": "p06:transfer-5",
+      "participant": "p06",
+      "item": "transfer-5",
+      "time": 5,
+      "correct": 1,
+      "confidence": 0.8355,
+      "seconds": 31.8702
+    },
+    {
+      "id": "p07:definition-0",
+      "participant": "p07",
+      "item": "definition-0",
+      "time": 0,
+      "correct": 0,
+      "confidence": 0.1915,
+      "seconds": 56.4829
+    },
+    {
+      "id": "p07:definition-1",
+      "participant": "p07",
+      "item": "definition-1",
+      "time": 1,
+      "correct": 0,
+      "confidence": 0.5281,
+      "seconds": 47.7564
+    },
+    {
+      "id": "p07:definition-2",
+      "participant": "p07",
+      "item": "definition-2",
+      "time": 2,
+      "correct": 1,
+      "confidence": 0.3866,
+      "seconds": 51.752
+    },
+    {
+      "id": "p07:definition-3",
+      "participant": "p07",
+      "item": "definition-3",
+      "time": 3,
+      "correct": 0,
+      "confidence": 0.2524,
+      "seconds": 47.1191
+    },
+    {
+      "id": "p07:definition-4",
+      "participant": "p07",
+      "item": "definition-4",
+      "time": 4,
+      "correct": 1,
+      "confidence": 0.4781,
+      "seconds": 52.7957
+    },
+    {
+      "id": "p07:definition-5",
+      "participant": "p07",
+      "item": "definition-5",
+      "time": 5,
+      "correct": 0,
+      "confidence": 0.268,
+      "seconds": 46.6402
+    },
+    {
+      "id": "p07:calculation-0",
+      "participant": "p07",
+      "item": "calculation-0",
+      "time": 0,
+      "correct": 1,
+      "confidence": 0.3005,
+      "seconds": 49.8215
+    },
+    {
+      "id": "p07:calculation-1",
+      "participant": "p07",
+      "item": "calculation-1",
+      "time": 1,
+      "correct": 0,
+      "confidence": 0.2771,
+      "seconds": 47.5895
+    },
+    {
+      "id": "p07:calculation-2",
+      "participant": "p07",
+      "item": "calculation-2",
+      "time": 2,
+      "correct": 0,
+      "confidence": 0.2905,
+      "seconds": 41.3397
+    },
+    {
+      "id": "p07:calculation-3",
+      "participant": "p07",
+      "item": "calculation-3",
+      "time": 3,
+      "correct": 0,
+      "confidence": 0.3166,
+      "seconds": 49.4026
+    },
+    {
+      "id": "p07:calculation-4",
+      "participant": "p07",
+      "item": "calculation-4",
+      "time": 4,
+      "correct": 0,
+      "confidence": 0.5432,
+      "seconds": 50.0234
+    },
+    {
+      "id": "p07:calculation-5",
+      "participant": "p07",
+      "item": "calculation-5",
+      "time": 5,
+      "correct": 0,
+      "confidence": 0.3602,
+      "seconds": 45.7077
+    },
+    {
+      "id": "p07:proof-0",
+      "participant": "p07",
+      "item": "proof-0",
+      "time": 0,
+      "correct": 0,
+      "confidence": 0.4303,
+      "seconds": 57.8947
+    },
+    {
+      "id": "p07:proof-1",
+      "participant": "p07",
+      "item": "proof-1",
+      "time": 1,
+      "correct": 0,
+      "confidence": 0.4272,
+      "seconds": 63.9746
+    },
+    {
+      "id": "p07:proof-2",
+      "participant": "p07",
+      "item": "proof-2",
+      "time": 2,
+      "correct": 1,
+      "confidence": 0.3283,
+      "seconds": 61.0083
+    },
+    {
+      "id": "p07:proof-3",
+      "participant": "p07",
+      "item": "proof-3",
+      "time": 3,
+      "correct": 0,
+      "confidence": 0.1339,
+      "seconds": 52.8417
+    },
+    {
+      "id": "p07:proof-4",
+      "participant": "p07",
+      "item": "proof-4",
+      "time": 4,
+      "correct": 0,
+      "confidence": 0.2366,
+      "seconds": 61.3728
+    },
+    {
+      "id": "p07:proof-5",
+      "participant": "p07",
+      "item": "proof-5",
+      "time": 5,
+      "correct": 0,
+      "confidence": 0.3356,
+      "seconds": 52.2343
+    },
+    {
+      "id": "p07:transfer-0",
+      "participant": "p07",
+      "item": "transfer-0",
+      "time": 0,
+      "correct": 1,
+      "confidence": 0.7342,
+      "seconds": 37.1356
+    },
+    {
+      "id": "p07:transfer-1",
+      "participant": "p07",
+      "item": "transfer-1",
+      "time": 1,
+      "correct": 1,
+      "confidence": 0.7396,
+      "seconds": 34.227
+    },
+    {
+      "id": "p07:transfer-2",
+      "participant": "p07",
+      "item": "transfer-2",
+      "time": 2,
+      "correct": 1,
+      "confidence": 0.8174,
+      "seconds": 42.622
+    },
+    {
+      "id": "p07:transfer-3",
+      "participant": "p07",
+      "item": "transfer-3",
+      "time": 3,
+      "correct": 0,
+      "confidence": 0.857,
+      "seconds": 37.2671
+    },
+    {
+      "id": "p07:transfer-4",
+      "participant": "p07",
+      "item": "transfer-4",
+      "time": 4,
+      "correct": 1,
+      "confidence": 0.5954,
+      "seconds": 41.2662
+    },
+    {
+      "id": "p07:transfer-5",
+      "participant": "p07",
+      "item": "transfer-5",
+      "time": 5,
+      "correct": 1,
+      "confidence": 0.7951,
+      "seconds": 39.4901
+    },
+    {
+      "id": "p08:definition-0",
+      "participant": "p08",
+      "item": "definition-0",
+      "time": 0,
+      "correct": 1,
+      "confidence": 0.1899,
+      "seconds": 59.4889
+    },
+    {
+      "id": "p08:definition-1",
+      "participant": "p08",
+      "item": "definition-1",
+      "time": 1,
+      "correct": 0,
+      "confidence": 0.3546,
+      "seconds": 54.5296
+    },
+    {
+      "id": "p08:definition-2",
+      "participant": "p08",
+      "item": "definition-2",
+      "time": 2,
+      "correct": 0,
+      "confidence": 0.2457,
+      "seconds": 59.6702
+    },
+    {
+      "id": "p08:definition-3",
+      "participant": "p08",
+      "item": "definition-3",
+      "time": 3,
+      "correct": 1,
+      "confidence": 0.4096,
+      "seconds": 48.9698
+    },
+    {
+      "id": "p08:definition-4",
+      "participant": "p08",
+      "item": "definition-4",
+      "time": 4,
+      "correct": 1,
+      "confidence": 0.3552,
+      "seconds": 52.9856
+    },
+    {
+      "id": "p08:definition-5",
+      "participant": "p08",
+      "item": "definition-5",
+      "time": 5,
+      "correct": 0,
+      "confidence": 0.4467,
+      "seconds": 59.9524
+    },
+    {
+      "id": "p08:calculation-0",
+      "participant": "p08",
+      "item": "calculation-0",
+      "time": 0,
+      "correct": 0,
+      "confidence": 0.3966,
+      "seconds": 45.075
+    },
+    {
+      "id": "p08:calculation-1",
+      "participant": "p08",
+      "item": "calculation-1",
+      "time": 1,
+      "correct": 0,
+      "confidence": 0.6931,
+      "seconds": 40.2663
+    },
+    {
+      "id": "p08:calculation-2",
+      "participant": "p08",
+      "item": "calculation-2",
+      "time": 2,
+      "correct": 0,
+      "confidence": 0.4492,
+      "seconds": 50.4424
+    },
+    {
+      "id": "p08:calculation-3",
+      "participant": "p08",
+      "item": "calculation-3",
+      "time": 3,
+      "correct": 0,
+      "confidence": 0.4867,
+      "seconds": 38.3133
+    },
+    {
+      "id": "p08:calculation-4",
+      "participant": "p08",
+      "item": "calculation-4",
+      "time": 4,
+      "correct": 0,
+      "confidence": 0.5334,
+      "seconds": 45.3505
+    },
+    {
+      "id": "p08:calculation-5",
+      "participant": "p08",
+      "item": "calculation-5",
+      "time": 5,
+      "correct": 1,
+      "confidence": 0.3714,
+      "seconds": 45.8138
+    },
+    {
+      "id": "p08:proof-0",
+      "participant": "p08",
+      "item": "proof-0",
+      "time": 0,
+      "correct": 1,
+      "confidence": 0.5081,
+      "seconds": 41.0821
+    },
+    {
+      "id": "p08:proof-1",
+      "participant": "p08",
+      "item": "proof-1",
+      "time": 1,
+      "correct": 0,
+      "confidence": 0.5887,
+      "seconds": 34.7054
+    },
+    {
+      "id": "p08:proof-2",
+      "participant": "p08",
+      "item": "proof-2",
+      "time": 2,
+      "correct": 0,
+      "confidence": 0.7118,
+      "seconds": 35.1507
+    },
+    {
+      "id": "p08:proof-3",
+      "participant": "p08",
+      "item": "proof-3",
+      "time": 3,
+      "correct": 1,
+      "confidence": 0.5267,
+      "seconds": 35.1732
+    },
+    {
+      "id": "p08:proof-4",
+      "participant": "p08",
+      "item": "proof-4",
+      "time": 4,
+      "correct": 1,
+      "confidence": 0.7478,
+      "seconds": 39.7
+    },
+    {
+      "id": "p08:proof-5",
+      "participant": "p08",
+      "item": "proof-5",
+      "time": 5,
+      "correct": 1,
+      "confidence": 0.7573,
+      "seconds": 40.0673
+    },
+    {
+      "id": "p08:transfer-0",
+      "participant": "p08",
+      "item": "transfer-0",
+      "time": 0,
+      "correct": 0,
+      "confidence": 0.52,
+      "seconds": 41.9266
+    },
+    {
+      "id": "p08:transfer-1",
+      "participant": "p08",
+      "item": "transfer-1",
+      "time": 1,
+      "correct": 1,
+      "confidence": 0.7075,
+      "seconds": 44.1241
+    },
+    {
+      "id": "p08:transfer-2",
+      "participant": "p08",
+      "item": "transfer-2",
+      "time": 2,
+      "correct": 1,
+      "confidence": 0.4747,
+      "seconds": 40.4222
+    },
+    {
+      "id": "p08:transfer-3",
+      "participant": "p08",
+      "item": "transfer-3",
+      "time": 3,
+      "correct": 1,
+      "confidence": 0.5522,
+      "seconds": 46.8915
+    },
+    {
+      "id": "p08:transfer-4",
+      "participant": "p08",
+      "item": "transfer-4",
+      "time": 4,
+      "correct": 1,
+      "confidence": 0.4806,
+      "seconds": 46.7182
+    },
+    {
+      "id": "p08:transfer-5",
+      "participant": "p08",
+      "item": "transfer-5",
+      "time": 5,
+      "correct": 1,
+      "confidence": 0.7437,
+      "seconds": 38.3632
+    },
+    {
+      "id": "p09:definition-0",
+      "participant": "p09",
+      "item": "definition-0",
+      "time": 0,
+      "correct": 1,
+      "confidence": 0.5341,
+      "seconds": 45.1145
+    },
+    {
+      "id": "p09:definition-1",
+      "participant": "p09",
+      "item": "definition-1",
+      "time": 1,
+      "correct": 1,
+      "confidence": 0.4919,
+      "seconds": 43.7771
+    },
+    {
+      "id": "p09:definition-2",
+      "participant": "p09",
+      "item": "definition-2",
+      "time": 2,
+      "correct": 0,
+      "confidence": 0.6313,
+      "seconds": 50.8785
+    },
+    {
+      "id": "p09:definition-3",
+      "participant": "p09",
+      "item": "definition-3",
+      "time": 3,
+      "correct": 0,
+      "confidence": 0.5753,
+      "seconds": 45.0385
+    },
+    {
+      "id": "p09:definition-4",
+      "participant": "p09",
+      "item": "definition-4",
+      "time": 4,
+      "correct": 1,
+      "confidence": 0.3814,
+      "seconds": 38.3707
+    },
+    {
+      "id": "p09:definition-5",
+      "participant": "p09",
+      "item": "definition-5",
+      "time": 5,
+      "correct": 1,
+      "confidence": 0.3912,
+      "seconds": 51.5862
+    },
+    {
+      "id": "p09:calculation-0",
+      "participant": "p09",
+      "item": "calculation-0",
+      "time": 0,
+      "correct": 0,
+      "confidence": 0.489,
+      "seconds": 56.7638
+    },
+    {
+      "id": "p09:calculation-1",
+      "participant": "p09",
+      "item": "calculation-1",
+      "time": 1,
+      "correct": 0,
+      "confidence": 0.3782,
+      "seconds": 52.7714
+    },
+    {
+      "id": "p09:calculation-2",
+      "participant": "p09",
+      "item": "calculation-2",
+      "time": 2,
+      "correct": 0,
+      "confidence": 0.2368,
+      "seconds": 50.3384
+    },
+    {
+      "id": "p09:calculation-3",
+      "participant": "p09",
+      "item": "calculation-3",
+      "time": 3,
+      "correct": 1,
+      "confidence": 0.2258,
+      "seconds": 46.0522
+    },
+    {
+      "id": "p09:calculation-4",
+      "participant": "p09",
+      "item": "calculation-4",
+      "time": 4,
+      "correct": 0,
+      "confidence": 0.4915,
+      "seconds": 55.7583
+    },
+    {
+      "id": "p09:calculation-5",
+      "participant": "p09",
+      "item": "calculation-5",
+      "time": 5,
+      "correct": 1,
+      "confidence": 0.3983,
+      "seconds": 56.1691
+    },
+    {
+      "id": "p09:proof-0",
+      "participant": "p09",
+      "item": "proof-0",
+      "time": 0,
+      "correct": 0,
+      "confidence": 0.5534,
+      "seconds": 49.1793
+    },
+    {
+      "id": "p09:proof-1",
+      "participant": "p09",
+      "item": "proof-1",
+      "time": 1,
+      "correct": 1,
+      "confidence": 0.7198,
+      "seconds": 43.7661
+    },
+    {
+      "id": "p09:proof-2",
+      "participant": "p09",
+      "item": "proof-2",
+      "time": 2,
+      "correct": 1,
+      "confidence": 0.5288,
+      "seconds": 49.9513
+    },
+    {
+      "id": "p09:proof-3",
+      "participant": "p09",
+      "item": "proof-3",
+      "time": 3,
+      "correct": 0,
+      "confidence": 0.7247,
+      "seconds": 38.3086
+    },
+    {
+      "id": "p09:proof-4",
+      "participant": "p09",
+      "item": "proof-4",
+      "time": 4,
+      "correct": 0,
+      "confidence": 0.534,
+      "seconds": 36.8124
+    },
+    {
+      "id": "p09:proof-5",
+      "participant": "p09",
+      "item": "proof-5",
+      "time": 5,
+      "correct": 1,
+      "confidence": 0.6442,
+      "seconds": 45.2432
+    },
+    {
+      "id": "p09:transfer-0",
+      "participant": "p09",
+      "item": "transfer-0",
+      "time": 0,
+      "correct": 0,
+      "confidence": 0.408,
+      "seconds": 49.1732
+    },
+    {
+      "id": "p09:transfer-1",
+      "participant": "p09",
+      "item": "transfer-1",
+      "time": 1,
+      "correct": 0,
+      "confidence": 0.3867,
+      "seconds": 55.5669
+    },
+    {
+      "id": "p09:transfer-2",
+      "participant": "p09",
+      "item": "transfer-2",
+      "time": 2,
+      "correct": 0,
+      "confidence": 0.4031,
+      "seconds": 62.5136
+    },
+    {
+      "id": "p09:transfer-3",
+      "participant": "p09",
+      "item": "transfer-3",
+      "time": 3,
+      "correct": 1,
+      "confidence": 0.1606,
+      "seconds": 56.0676
+    },
+    {
+      "id": "p09:transfer-4",
+      "participant": "p09",
+      "item": "transfer-4",
+      "time": 4,
+      "correct": 0,
+      "confidence": 0.1712,
+      "seconds": 56.7548
+    },
+    {
+      "id": "p09:transfer-5",
+      "participant": "p09",
+      "item": "transfer-5",
+      "time": 5,
+      "correct": 1,
+      "confidence": 0.1404,
+      "seconds": 58.8145
+    },
+    {
+      "id": "p10:definition-0",
+      "participant": "p10",
+      "item": "definition-0",
+      "time": 0,
+      "correct": 0,
+      "confidence": 0.5536,
+      "seconds": 36.3251
+    },
+    {
+      "id": "p10:definition-1",
+      "participant": "p10",
+      "item": "definition-1",
+      "time": 1,
+      "correct": 0,
+      "confidence": 0.7852,
+      "seconds": 42.916
+    },
+    {
+      "id": "p10:definition-2",
+      "participant": "p10",
+      "item": "definition-2",
+      "time": 2,
+      "correct": 1,
+      "confidence": 0.7005,
+      "seconds": 41.9401
+    },
+    {
+      "id": "p10:definition-3",
+      "participant": "p10",
+      "item": "definition-3",
+      "time": 3,
+      "correct": 1,
+      "confidence": 0.7486,
+      "seconds": 38.9475
+    },
+    {
+      "id": "p10:definition-4",
+      "participant": "p10",
+      "item": "definition-4",
+      "time": 4,
+      "correct": 1,
+      "confidence": 0.7065,
+      "seconds": 49.2084
+    },
+    {
+      "id": "p10:definition-5",
+      "participant": "p10",
+      "item": "definition-5",
+      "time": 5,
+      "correct": 0,
+      "confidence": 0.7919,
+      "seconds": 36.7503
+    },
+    {
+      "id": "p10:calculation-0",
+      "participant": "p10",
+      "item": "calculation-0",
+      "time": 0,
+      "correct": 1,
+      "confidence": 0.4023,
+      "seconds": 47.5224
+    },
+    {
+      "id": "p10:calculation-1",
+      "participant": "p10",
+      "item": "calculation-1",
+      "time": 1,
+      "correct": 0,
+      "confidence": 0.2938,
+      "seconds": 52.2148
+    },
+    {
+      "id": "p10:calculation-2",
+      "participant": "p10",
+      "item": "calculation-2",
+      "time": 2,
+      "correct": 1,
+      "confidence": 0.2184,
+      "seconds": 59.9575
+    },
+    {
+      "id": "p10:calculation-3",
+      "participant": "p10",
+      "item": "calculation-3",
+      "time": 3,
+      "correct": 1,
+      "confidence": 0.3164,
+      "seconds": 56.9732
+    },
+    {
+      "id": "p10:calculation-4",
+      "participant": "p10",
+      "item": "calculation-4",
+      "time": 4,
+      "correct": 0,
+      "confidence": 0.3852,
+      "seconds": 51.6435
+    },
+    {
+      "id": "p10:calculation-5",
+      "participant": "p10",
+      "item": "calculation-5",
+      "time": 5,
+      "correct": 1,
+      "confidence": 0.4413,
+      "seconds": 49.8018
+    },
+    {
+      "id": "p10:proof-0",
+      "participant": "p10",
+      "item": "proof-0",
+      "time": 0,
+      "correct": 0,
+      "confidence": 0.5475,
+      "seconds": 41.4654
+    },
+    {
+      "id": "p10:proof-1",
+      "participant": "p10",
+      "item": "proof-1",
+      "time": 1,
+      "correct": 1,
+      "confidence": 0.415,
+      "seconds": 39.2449
+    },
+    {
+      "id": "p10:proof-2",
+      "participant": "p10",
+      "item": "proof-2",
+      "time": 2,
+      "correct": 0,
+      "confidence": 0.7046,
+      "seconds": 40.6365
+    },
+    {
+      "id": "p10:proof-3",
+      "participant": "p10",
+      "item": "proof-3",
+      "time": 3,
+      "correct": 0,
+      "confidence": 0.4015,
+      "seconds": 39.0279
+    },
+    {
+      "id": "p10:proof-4",
+      "participant": "p10",
+      "item": "proof-4",
+      "time": 4,
+      "correct": 0,
+      "confidence": 0.6395,
+      "seconds": 39.2366
+    },
+    {
+      "id": "p10:proof-5",
+      "participant": "p10",
+      "item": "proof-5",
+      "time": 5,
+      "correct": 1,
+      "confidence": 0.6705,
+      "seconds": 44.3465
+    },
+    {
+      "id": "p10:transfer-0",
+      "participant": "p10",
+      "item": "transfer-0",
+      "time": 0,
+      "correct": 1,
+      "confidence": 0.6107,
+      "seconds": 39.6093
+    },
+    {
+      "id": "p10:transfer-1",
+      "participant": "p10",
+      "item": "transfer-1",
+      "time": 1,
+      "correct": 1,
+      "confidence": 0.7877,
+      "seconds": 45.2309
+    },
+    {
+      "id": "p10:transfer-2",
+      "participant": "p10",
+      "item": "transfer-2",
+      "time": 2,
+      "correct": 1,
+      "confidence": 0.5567,
+      "seconds": 45.1587
+    },
+    {
+      "id": "p10:transfer-3",
+      "participant": "p10",
+      "item": "transfer-3",
+      "time": 3,
+      "correct": 1,
+      "confidence": 0.6056,
+      "seconds": 34.3357
+    },
+    {
+      "id": "p10:transfer-4",
+      "participant": "p10",
+      "item": "transfer-4",
+      "time": 4,
+      "correct": 0,
+      "confidence": 0.729,
+      "seconds": 42.996
+    },
+    {
+      "id": "p10:transfer-5",
+      "participant": "p10",
+      "item": "transfer-5",
+      "time": 5,
+      "correct": 1,
+      "confidence": 0.6342,
+      "seconds": 40.5503
+    },
+    {
+      "id": "p11:definition-0",
+      "participant": "p11",
+      "item": "definition-0",
+      "time": 0,
+      "correct": 1,
+      "confidence": 0.5952,
+      "seconds": 36.146
+    },
+    {
+      "id": "p11:definition-1",
+      "participant": "p11",
+      "item": "definition-1",
+      "time": 1,
+      "correct": 1,
+      "confidence": 0.5795,
+      "seconds": 42.5162
+    },
+    {
+      "id": "p11:definition-2",
+      "participant": "p11",
+      "item": "definition-2",
+      "time": 2,
+      "correct": 0,
+      "confidence": 0.4909,
+      "seconds": 37.9769
+    },
+    {
+      "id": "p11:definition-3",
+      "participant": "p11",
+      "item": "definition-3",
+      "time": 3,
+      "correct": 1,
+      "confidence": 0.534,
+      "seconds": 42.7447
+    },
+    {
+      "id": "p11:definition-4",
+      "participant": "p11",
+      "item": "definition-4",
+      "time": 4,
+      "correct": 1,
+      "confidence": 0.5241,
+      "seconds": 43.0089
+    },
+    {
+      "id": "p11:definition-5",
+      "participant": "p11",
+      "item": "definition-5",
+      "time": 5,
+      "correct": 0,
+      "confidence": 0.5266,
+      "seconds": 49.5224
+    },
+    {
+      "id": "p11:calculation-0",
+      "participant": "p11",
+      "item": "calculation-0",
+      "time": 0,
+      "correct": 1,
+      "confidence": 0.6871,
+      "seconds": 53.074
+    },
+    {
+      "id": "p11:calculation-1",
+      "participant": "p11",
+      "item": "calculation-1",
+      "time": 1,
+      "correct": 1,
+      "confidence": 0.5576,
+      "seconds": 47.4821
+    },
+    {
+      "id": "p11:calculation-2",
+      "participant": "p11",
+      "item": "calculation-2",
+      "time": 2,
+      "correct": 0,
+      "confidence": 0.4794,
+      "seconds": 45.2302
+    },
+    {
+      "id": "p11:calculation-3",
+      "participant": "p11",
+      "item": "calculation-3",
+      "time": 3,
+      "correct": 0,
+      "confidence": 0.6689,
+      "seconds": 53.1101
+    },
+    {
+      "id": "p11:calculation-4",
+      "participant": "p11",
+      "item": "calculation-4",
+      "time": 4,
+      "correct": 0,
+      "confidence": 0.4231,
+      "seconds": 51.924
+    },
+    {
+      "id": "p11:calculation-5",
+      "participant": "p11",
+      "item": "calculation-5",
+      "time": 5,
+      "correct": 0,
+      "confidence": 0.3905,
+      "seconds": 49.7304
+    },
+    {
+      "id": "p11:proof-0",
+      "participant": "p11",
+      "item": "proof-0",
+      "time": 0,
+      "correct": 1,
+      "confidence": 0.6135,
+      "seconds": 37.3092
+    },
+    {
+      "id": "p11:proof-1",
+      "participant": "p11",
+      "item": "proof-1",
+      "time": 1,
+      "correct": 0,
+      "confidence": 0.7069,
+      "seconds": 32.9822
+    },
+    {
+      "id": "p11:proof-2",
+      "participant": "p11",
+      "item": "proof-2",
+      "time": 2,
+      "correct": 1,
+      "confidence": 0.5915,
+      "seconds": 30.5469
+    },
+    {
+      "id": "p11:proof-3",
+      "participant": "p11",
+      "item": "proof-3",
+      "time": 3,
+      "correct": 1,
+      "confidence": 0.8676,
+      "seconds": 36.8767
+    },
+    {
+      "id": "p11:proof-4",
+      "participant": "p11",
+      "item": "proof-4",
+      "time": 4,
+      "correct": 1,
+      "confidence": 0.7179,
+      "seconds": 33.6118
+    },
+    {
+      "id": "p11:proof-5",
+      "participant": "p11",
+      "item": "proof-5",
+      "time": 5,
+      "correct": 0,
+      "confidence": 0.6936,
+      "seconds": 41.5155
+    },
+    {
+      "id": "p11:transfer-0",
+      "participant": "p11",
+      "item": "transfer-0",
+      "time": 0,
+      "correct": 1,
+      "confidence": 0.614,
+      "seconds": 48.9366
+    },
+    {
+      "id": "p11:transfer-1",
+      "participant": "p11",
+      "item": "transfer-1",
+      "time": 1,
+      "correct": 0,
+      "confidence": 0.5703,
+      "seconds": 53.3603
+    },
+    {
+      "id": "p11:transfer-2",
+      "participant": "p11",
+      "item": "transfer-2",
+      "time": 2,
+      "correct": 0,
+      "confidence": 0.6091,
+      "seconds": 50.7668
+    },
+    {
+      "id": "p11:transfer-3",
+      "participant": "p11",
+      "item": "transfer-3",
+      "time": 3,
+      "correct": 0,
+      "confidence": 0.6082,
+      "seconds": 52.1494
+    },
+    {
+      "id": "p11:transfer-4",
+      "participant": "p11",
+      "item": "transfer-4",
+      "time": 4,
+      "correct": 1,
+      "confidence": 0.4235,
+      "seconds": 53.622
+    },
+    {
+      "id": "p11:transfer-5",
+      "participant": "p11",
+      "item": "transfer-5",
+      "time": 5,
+      "correct": 1,
+      "confidence": 0.4468,
+      "seconds": 45.832
+    },
+    {
+      "id": "p12:definition-0",
+      "participant": "p12",
+      "item": "definition-0",
+      "time": 0,
+      "correct": 1,
+      "confidence": 0.1498,
+      "seconds": 53.1492
+    },
+    {
+      "id": "p12:definition-1",
+      "participant": "p12",
+      "item": "definition-1",
+      "time": 1,
+      "correct": 0,
+      "confidence": 0.3874,
+      "seconds": 54.3332
+    },
+    {
+      "id": "p12:definition-2",
+      "participant": "p12",
+      "item": "definition-2",
+      "time": 2,
+      "correct": 1,
+      "confidence": 0.2274,
+      "seconds": 55.4199
+    },
+    {
+      "id": "p12:definition-3",
+      "participant": "p12",
+      "item": "definition-3",
+      "time": 3,
+      "correct": 0,
+      "confidence": 0.1857,
+      "seconds": 63.526
+    },
+    {
+      "id": "p12:definition-4",
+      "participant": "p12",
+      "item": "definition-4",
+      "time": 4,
+      "correct": 0,
+      "confidence": 0.2319,
+      "seconds": 59.4966
+    },
+    {
+      "id": "p12:definition-5",
+      "participant": "p12",
+      "item": "definition-5",
+      "time": 5,
+      "correct": 1,
+      "confidence": 0.1596,
+      "seconds": 64.1153
+    },
+    {
+      "id": "p12:calculation-0",
+      "participant": "p12",
+      "item": "calculation-0",
+      "time": 0,
+      "correct": 1,
+      "confidence": 0.7061,
+      "seconds": 31.1785
+    },
+    {
+      "id": "p12:calculation-1",
+      "participant": "p12",
+      "item": "calculation-1",
+      "time": 1,
+      "correct": 0,
+      "confidence": 0.7178,
+      "seconds": 33.7228
+    },
+    {
+      "id": "p12:calculation-2",
+      "participant": "p12",
+      "item": "calculation-2",
+      "time": 2,
+      "correct": 1,
+      "confidence": 0.7715,
+      "seconds": 42.0442
+    },
+    {
+      "id": "p12:calculation-3",
+      "participant": "p12",
+      "item": "calculation-3",
+      "time": 3,
+      "correct": 1,
+      "confidence": 0.7471,
+      "seconds": 30.6165
+    },
+    {
+      "id": "p12:calculation-4",
+      "participant": "p12",
+      "item": "calculation-4",
+      "time": 4,
+      "correct": 1,
+      "confidence": 0.7552,
+      "seconds": 41.2236
+    },
+    {
+      "id": "p12:calculation-5",
+      "participant": "p12",
+      "item": "calculation-5",
+      "time": 5,
+      "correct": 1,
+      "confidence": 0.7545,
+      "seconds": 37.3535
+    },
+    {
+      "id": "p12:proof-0",
+      "participant": "p12",
+      "item": "proof-0",
+      "time": 0,
+      "correct": 1,
+      "confidence": 0.4598,
+      "seconds": 42.3711
+    },
+    {
+      "id": "p12:proof-1",
+      "participant": "p12",
+      "item": "proof-1",
+      "time": 1,
+      "correct": 0,
+      "confidence": 0.3178,
+      "seconds": 48.1134
+    },
+    {
+      "id": "p12:proof-2",
+      "participant": "p12",
+      "item": "proof-2",
+      "time": 2,
+      "correct": 1,
+      "confidence": 0.2896,
+      "seconds": 44.2208
+    },
+    {
+      "id": "p12:proof-3",
+      "participant": "p12",
+      "item": "proof-3",
+      "time": 3,
+      "correct": 0,
+      "confidence": 0.5863,
+      "seconds": 46.7548
+    },
+    {
+      "id": "p12:proof-4",
+      "participant": "p12",
+      "item": "proof-4",
+      "time": 4,
+      "correct": 0,
+      "confidence": 0.6146,
+      "seconds": 50.4389
+    },
+    {
+      "id": "p12:proof-5",
+      "participant": "p12",
+      "item": "proof-5",
+      "time": 5,
+      "correct": 0,
+      "confidence": 0.6265,
+      "seconds": 45.9769
+    },
+    {
+      "id": "p12:transfer-0",
+      "participant": "p12",
+      "item": "transfer-0",
+      "time": 0,
+      "correct": 0,
+      "confidence": 0.6741,
+      "seconds": 43.0873
+    },
+    {
+      "id": "p12:transfer-1",
+      "participant": "p12",
+      "item": "transfer-1",
+      "time": 1,
+      "correct": 0,
+      "confidence": 0.6418,
+      "seconds": 42.2823
+    },
+    {
+      "id": "p12:transfer-2",
+      "participant": "p12",
+      "item": "transfer-2",
+      "time": 2,
+      "correct": 0,
+      "confidence": 0.5081,
+      "seconds": 50.3929
+    },
+    {
+      "id": "p12:transfer-3",
+      "participant": "p12",
+      "item": "transfer-3",
+      "time": 3,
+      "correct": 1,
+      "confidence": 0.7488,
+      "seconds": 40.807
+    },
+    {
+      "id": "p12:transfer-4",
+      "participant": "p12",
+      "item": "transfer-4",
+      "time": 4,
+      "correct": 1,
+      "confidence": 0.7107,
+      "seconds": 50.9016
+    },
+    {
+      "id": "p12:transfer-5",
+      "participant": "p12",
+      "item": "transfer-5",
+      "time": 5,
+      "correct": 1,
+      "confidence": 0.434,
+      "seconds": 42.453
+    },
+    {
+      "id": "p13:definition-0",
+      "participant": "p13",
+      "item": "definition-0",
+      "time": 0,
+      "correct": 0,
+      "confidence": 0.8784,
+      "seconds": 29.806
+    },
+    {
+      "id": "p13:definition-1",
+      "participant": "p13",
+      "item": "definition-1",
+      "time": 1,
+      "correct": 1,
+      "confidence": 0.6937,
+      "seconds": 33.6595
+    },
+    {
+      "id": "p13:definition-2",
+      "participant": "p13",
+      "item": "definition-2",
+      "time": 2,
+      "correct": 0,
+      "confidence": 0.8521,
+      "seconds": 30.5972
+    },
+    {
+      "id": "p13:definition-3",
+      "participant": "p13",
+      "item": "definition-3",
+      "time": 3,
+      "correct": 1,
+      "confidence": 0.8986,
+      "seconds": 30.2136
+    },
+    {
+      "id": "p13:definition-4",
+      "participant": "p13",
+      "item": "definition-4",
+      "time": 4,
+      "correct": 1,
+      "confidence": 0.6697,
+      "seconds": 36.1968
+    },
+    {
+      "id": "p13:definition-5",
+      "participant": "p13",
+      "item": "definition-5",
+      "time": 5,
+      "correct": 1,
+      "confidence": 0.6715,
+      "seconds": 35.5021
+    },
+    {
+      "id": "p13:calculation-0",
+      "participant": "p13",
+      "item": "calculation-0",
+      "time": 0,
+      "correct": 1,
+      "confidence": 0.6333,
+      "seconds": 40.017
+    },
+    {
+      "id": "p13:calculation-1",
+      "participant": "p13",
+      "item": "calculation-1",
+      "time": 1,
+      "correct": 0,
+      "confidence": 0.4567,
+      "seconds": 49.0699
+    },
+    {
+      "id": "p13:calculation-2",
+      "participant": "p13",
+      "item": "calculation-2",
+      "time": 2,
+      "correct": 0,
+      "confidence": 0.5376,
+      "seconds": 50.0503
+    },
+    {
+      "id": "p13:calculation-3",
+      "participant": "p13",
+      "item": "calculation-3",
+      "time": 3,
+      "correct": 0,
+      "confidence": 0.587,
+      "seconds": 40.9098
+    },
+    {
+      "id": "p13:calculation-4",
+      "participant": "p13",
+      "item": "calculation-4",
+      "time": 4,
+      "correct": 0,
+      "confidence": 0.6323,
+      "seconds": 44.4954
+    },
+    {
+      "id": "p13:calculation-5",
+      "participant": "p13",
+      "item": "calculation-5",
+      "time": 5,
+      "correct": 0,
+      "confidence": 0.3628,
+      "seconds": 48.436
+    },
+    {
+      "id": "p13:proof-0",
+      "participant": "p13",
+      "item": "proof-0",
+      "time": 0,
+      "correct": 1,
+      "confidence": 0.2711,
+      "seconds": 61.5653
+    },
+    {
+      "id": "p13:proof-1",
+      "participant": "p13",
+      "item": "proof-1",
+      "time": 1,
+      "correct": 0,
+      "confidence": 0.3288,
+      "seconds": 59.6536
+    },
+    {
+      "id": "p13:proof-2",
+      "participant": "p13",
+      "item": "proof-2",
+      "time": 2,
+      "correct": 1,
+      "confidence": 0.3665,
+      "seconds": 56.1461
+    },
+    {
+      "id": "p13:proof-3",
+      "participant": "p13",
+      "item": "proof-3",
+      "time": 3,
+      "correct": 1,
+      "confidence": 0.4755,
+      "seconds": 49.8386
+    },
+    {
+      "id": "p13:proof-4",
+      "participant": "p13",
+      "item": "proof-4",
+      "time": 4,
+      "correct": 0,
+      "confidence": 0.1427,
+      "seconds": 58.0177
+    },
+    {
+      "id": "p13:proof-5",
+      "participant": "p13",
+      "item": "proof-5",
+      "time": 5,
+      "correct": 0,
+      "confidence": 0.2624,
+      "seconds": 54.9631
+    },
+    {
+      "id": "p13:transfer-0",
+      "participant": "p13",
+      "item": "transfer-0",
+      "time": 0,
+      "correct": 1,
+      "confidence": 0.4414,
+      "seconds": 57.7542
+    },
+    {
+      "id": "p13:transfer-1",
+      "participant": "p13",
+      "item": "transfer-1",
+      "time": 1,
+      "correct": 1,
+      "confidence": 0.1059,
+      "seconds": 58.7351
+    },
+    {
+      "id": "p13:transfer-2",
+      "participant": "p13",
+      "item": "transfer-2",
+      "time": 2,
+      "correct": 0,
+      "confidence": 0.2413,
+      "seconds": 52.237
+    },
+    {
+      "id": "p13:transfer-3",
+      "participant": "p13",
+      "item": "transfer-3",
+      "time": 3,
+      "correct": 0,
+      "confidence": 0.3409,
+      "seconds": 56.0423
+    },
+    {
+      "id": "p13:transfer-4",
+      "participant": "p13",
+      "item": "transfer-4",
+      "time": 4,
+      "correct": 0,
+      "confidence": 0.1584,
+      "seconds": 49.9808
+    },
+    {
+      "id": "p13:transfer-5",
+      "participant": "p13",
+      "item": "transfer-5",
+      "time": 5,
+      "correct": 0,
+      "confidence": 0.1721,
+      "seconds": 51.678
+    },
+    {
+      "id": "p14:definition-0",
+      "participant": "p14",
+      "item": "definition-0",
+      "time": 0,
+      "correct": 0,
+      "confidence": 0.6286,
+      "seconds": 44.5244
+    },
+    {
+      "id": "p14:definition-1",
+      "participant": "p14",
+      "item": "definition-1",
+      "time": 1,
+      "correct": 1,
+      "confidence": 0.5099,
+      "seconds": 52.6539
+    },
+    {
+      "id": "p14:definition-2",
+      "participant": "p14",
+      "item": "definition-2",
+      "time": 2,
+      "correct": 0,
+      "confidence": 0.6356,
+      "seconds": 50.6048
+    },
+    {
+      "id": "p14:definition-3",
+      "participant": "p14",
+      "item": "definition-3",
+      "time": 3,
+      "correct": 1,
+      "confidence": 0.7103,
+      "seconds": 48.4318
+    },
+    {
+      "id": "p14:definition-4",
+      "participant": "p14",
+      "item": "definition-4",
+      "time": 4,
+      "correct": 0,
+      "confidence": 0.7251,
+      "seconds": 45.7191
+    },
+    {
+      "id": "p14:definition-5",
+      "participant": "p14",
+      "item": "definition-5",
+      "time": 5,
+      "correct": 0,
+      "confidence": 0.516,
+      "seconds": 49.505
+    },
+    {
+      "id": "p14:calculation-0",
+      "participant": "p14",
+      "item": "calculation-0",
+      "time": 0,
+      "correct": 0,
+      "confidence": 0.1631,
+      "seconds": 60.973
+    },
+    {
+      "id": "p14:calculation-1",
+      "participant": "p14",
+      "item": "calculation-1",
+      "time": 1,
+      "correct": 1,
+      "confidence": 0.2336,
+      "seconds": 56.0521
+    },
+    {
+      "id": "p14:calculation-2",
+      "participant": "p14",
+      "item": "calculation-2",
+      "time": 2,
+      "correct": 1,
+      "confidence": 0.4205,
+      "seconds": 53.1556
+    },
+    {
+      "id": "p14:calculation-3",
+      "participant": "p14",
+      "item": "calculation-3",
+      "time": 3,
+      "correct": 0,
+      "confidence": 0.4308,
+      "seconds": 56.1891
+    },
+    {
+      "id": "p14:calculation-4",
+      "participant": "p14",
+      "item": "calculation-4",
+      "time": 4,
+      "correct": 1,
+      "confidence": 0.22,
+      "seconds": 62.4389
+    },
+    {
+      "id": "p14:calculation-5",
+      "participant": "p14",
+      "item": "calculation-5",
+      "time": 5,
+      "correct": 0,
+      "confidence": 0.4933,
+      "seconds": 57.7484
+    },
+    {
+      "id": "p14:proof-0",
+      "participant": "p14",
+      "item": "proof-0",
+      "time": 0,
+      "correct": 0,
+      "confidence": 0.576,
+      "seconds": 31.5734
+    },
+    {
+      "id": "p14:proof-1",
+      "participant": "p14",
+      "item": "proof-1",
+      "time": 1,
+      "correct": 0,
+      "confidence": 0.5929,
+      "seconds": 42.5227
+    },
+    {
+      "id": "p14:proof-2",
+      "participant": "p14",
+      "item": "proof-2",
+      "time": 2,
+      "correct": 1,
+      "confidence": 0.6398,
+      "seconds": 42.7202
+    },
+    {
+      "id": "p14:proof-3",
+      "participant": "p14",
+      "item": "proof-3",
+      "time": 3,
+      "correct": 1,
+      "confidence": 0.7558,
+      "seconds": 30.898
+    },
+    {
+      "id": "p14:proof-4",
+      "participant": "p14",
+      "item": "proof-4",
+      "time": 4,
+      "correct": 1,
+      "confidence": 0.9597,
+      "seconds": 32.5469
+    },
+    {
+      "id": "p14:proof-5",
+      "participant": "p14",
+      "item": "proof-5",
+      "time": 5,
+      "correct": 0,
+      "confidence": 0.6371,
+      "seconds": 36.0296
+    },
+    {
+      "id": "p14:transfer-0",
+      "participant": "p14",
+      "item": "transfer-0",
+      "time": 0,
+      "correct": 1,
+      "confidence": 0.2662,
+      "seconds": 48.6589
+    },
+    {
+      "id": "p14:transfer-1",
+      "participant": "p14",
+      "item": "transfer-1",
+      "time": 1,
+      "correct": 0,
+      "confidence": 0.6169,
+      "seconds": 57.0599
+    },
+    {
+      "id": "p14:transfer-2",
+      "participant": "p14",
+      "item": "transfer-2",
+      "time": 2,
+      "correct": 1,
+      "confidence": 0.6452,
+      "seconds": 53.9531
+    },
+    {
+      "id": "p14:transfer-3",
+      "participant": "p14",
+      "item": "transfer-3",
+      "time": 3,
+      "correct": 0,
+      "confidence": 0.2598,
+      "seconds": 45.1859
+    },
+    {
+      "id": "p14:transfer-4",
+      "participant": "p14",
+      "item": "transfer-4",
+      "time": 4,
+      "correct": 1,
+      "confidence": 0.4331,
+      "seconds": 49.8587
+    },
+    {
+      "id": "p14:transfer-5",
+      "participant": "p14",
+      "item": "transfer-5",
+      "time": 5,
+      "correct": 1,
+      "confidence": 0.4267,
+      "seconds": 49.7793
+    },
+    {
+      "id": "p15:definition-0",
+      "participant": "p15",
+      "item": "definition-0",
+      "time": 0,
+      "correct": 0,
+      "confidence": 0.5473,
+      "seconds": 51.7229
+    },
+    {
+      "id": "p15:definition-1",
+      "participant": "p15",
+      "item": "definition-1",
+      "time": 1,
+      "correct": 0,
+      "confidence": 0.2632,
+      "seconds": 56.0646
+    },
+    {
+      "id": "p15:definition-2",
+      "participant": "p15",
+      "item": "definition-2",
+      "time": 2,
+      "correct": 0,
+      "confidence": 0.5215,
+      "seconds": 53.4336
+    },
+    {
+      "id": "p15:definition-3",
+      "participant": "p15",
+      "item": "definition-3",
+      "time": 3,
+      "correct": 1,
+      "confidence": 0.5931,
+      "seconds": 56.1968
+    },
+    {
+      "id": "p15:definition-4",
+      "participant": "p15",
+      "item": "definition-4",
+      "time": 4,
+      "correct": 0,
+      "confidence": 0.4362,
+      "seconds": 54.9411
+    },
+    {
+      "id": "p15:definition-5",
+      "participant": "p15",
+      "item": "definition-5",
+      "time": 5,
+      "correct": 0,
+      "confidence": 0.2745,
+      "seconds": 52.9172
+    },
+    {
+      "id": "p15:calculation-0",
+      "participant": "p15",
+      "item": "calculation-0",
+      "time": 0,
+      "correct": 1,
+      "confidence": 0.4113,
+      "seconds": 47.8561
+    },
+    {
+      "id": "p15:calculation-1",
+      "participant": "p15",
+      "item": "calculation-1",
+      "time": 1,
+      "correct": 0,
+      "confidence": 0.5732,
+      "seconds": 45.2882
+    },
+    {
+      "id": "p15:calculation-2",
+      "participant": "p15",
+      "item": "calculation-2",
+      "time": 2,
+      "correct": 1,
+      "confidence": 0.4889,
+      "seconds": 42.5386
+    },
+    {
+      "id": "p15:calculation-3",
+      "participant": "p15",
+      "item": "calculation-3",
+      "time": 3,
+      "correct": 1,
+      "confidence": 0.5749,
+      "seconds": 46.5287
+    },
+    {
+      "id": "p15:calculation-4",
+      "participant": "p15",
+      "item": "calculation-4",
+      "time": 4,
+      "correct": 1,
+      "confidence": 0.7207,
+      "seconds": 45.2725
+    },
+    {
+      "id": "p15:calculation-5",
+      "participant": "p15",
+      "item": "calculation-5",
+      "time": 5,
+      "correct": 0,
+      "confidence": 0.4502,
+      "seconds": 50.9328
+    },
+    {
+      "id": "p15:proof-0",
+      "participant": "p15",
+      "item": "proof-0",
+      "time": 0,
+      "correct": 1,
+      "confidence": 0.8149,
+      "seconds": 36.8132
+    },
+    {
+      "id": "p15:proof-1",
+      "participant": "p15",
+      "item": "proof-1",
+      "time": 1,
+      "correct": 1,
+      "confidence": 0.5465,
+      "seconds": 43.2159
+    },
+    {
+      "id": "p15:proof-2",
+      "participant": "p15",
+      "item": "proof-2",
+      "time": 2,
+      "correct": 0,
+      "confidence": 0.5715,
+      "seconds": 49.8877
+    },
+    {
+      "id": "p15:proof-3",
+      "participant": "p15",
+      "item": "proof-3",
+      "time": 3,
+      "correct": 0,
+      "confidence": 0.484,
+      "seconds": 38.7987
+    },
+    {
+      "id": "p15:proof-4",
+      "participant": "p15",
+      "item": "proof-4",
+      "time": 4,
+      "correct": 1,
+      "confidence": 0.6072,
+      "seconds": 37.8106
+    },
+    {
+      "id": "p15:proof-5",
+      "participant": "p15",
+      "item": "proof-5",
+      "time": 5,
+      "correct": 0,
+      "confidence": 0.4747,
+      "seconds": 50.3221
+    },
+    {
+      "id": "p15:transfer-0",
+      "participant": "p15",
+      "item": "transfer-0",
+      "time": 0,
+      "correct": 0,
+      "confidence": 0.6583,
+      "seconds": 53.4463
+    },
+    {
+      "id": "p15:transfer-1",
+      "participant": "p15",
+      "item": "transfer-1",
+      "time": 1,
+      "correct": 0,
+      "confidence": 0.6306,
+      "seconds": 53.8881
+    },
+    {
+      "id": "p15:transfer-2",
+      "participant": "p15",
+      "item": "transfer-2",
+      "time": 2,
+      "correct": 0,
+      "confidence": 0.6368,
+      "seconds": 44.6652
+    },
+    {
+      "id": "p15:transfer-3",
+      "participant": "p15",
+      "item": "transfer-3",
+      "time": 3,
+      "correct": 1,
+      "confidence": 0.3702,
+      "seconds": 53.7659
+    },
+    {
+      "id": "p15:transfer-4",
+      "participant": "p15",
+      "item": "transfer-4",
+      "time": 4,
+      "correct": 1,
+      "confidence": 0.5669,
+      "seconds": 43.0554
+    },
+    {
+      "id": "p15:transfer-5",
+      "participant": "p15",
+      "item": "transfer-5",
+      "time": 5,
+      "correct": 1,
+      "confidence": 0.6309,
+      "seconds": 47.2177
+    },
+    {
+      "id": "p16:definition-0",
+      "participant": "p16",
+      "item": "definition-0",
+      "time": 0,
+      "correct": 1,
+      "confidence": 0.3993,
+      "seconds": 48.2567
+    },
+    {
+      "id": "p16:definition-1",
+      "participant": "p16",
+      "item": "definition-1",
+      "time": 1,
+      "correct": 0,
+      "confidence": 0.553,
+      "seconds": 47.11
+    },
+    {
+      "id": "p16:definition-2",
+      "participant": "p16",
+      "item": "definition-2",
+      "time": 2,
+      "correct": 1,
+      "confidence": 0.2876,
+      "seconds": 43.8645
+    },
+    {
+      "id": "p16:definition-3",
+      "participant": "p16",
+      "item": "definition-3",
+      "time": 3,
+      "correct": 0,
+      "confidence": 0.5838,
+      "seconds": 48.8103
+    },
+    {
+      "id": "p16:definition-4",
+      "participant": "p16",
+      "item": "definition-4",
+      "time": 4,
+      "correct": 1,
+      "confidence": 0.2691,
+      "seconds": 44.1531
+    },
+    {
+      "id": "p16:definition-5",
+      "participant": "p16",
+      "item": "definition-5",
+      "time": 5,
+      "correct": 1,
+      "confidence": 0.2336,
+      "seconds": 47.8135
+    },
+    {
+      "id": "p16:calculation-0",
+      "participant": "p16",
+      "item": "calculation-0",
+      "time": 0,
+      "correct": 0,
+      "confidence": 0.2361,
+      "seconds": 50.3448
+    },
+    {
+      "id": "p16:calculation-1",
+      "participant": "p16",
+      "item": "calculation-1",
+      "time": 1,
+      "correct": 0,
+      "confidence": 0.2234,
+      "seconds": 56.4759
+    },
+    {
+      "id": "p16:calculation-2",
+      "participant": "p16",
+      "item": "calculation-2",
+      "time": 2,
+      "correct": 0,
+      "confidence": 0.1668,
+      "seconds": 55.1239
+    },
+    {
+      "id": "p16:calculation-3",
+      "participant": "p16",
+      "item": "calculation-3",
+      "time": 3,
+      "correct": 0,
+      "confidence": 0.5079,
+      "seconds": 59.7814
+    },
+    {
+      "id": "p16:calculation-4",
+      "participant": "p16",
+      "item": "calculation-4",
+      "time": 4,
+      "correct": 0,
+      "confidence": 0.3803,
+      "seconds": 48.2284
+    },
+    {
+      "id": "p16:calculation-5",
+      "participant": "p16",
+      "item": "calculation-5",
+      "time": 5,
+      "correct": 0,
+      "confidence": 0.249,
+      "seconds": 50.8163
+    },
+    {
+      "id": "p16:proof-0",
+      "participant": "p16",
+      "item": "proof-0",
+      "time": 0,
+      "correct": 0,
+      "confidence": 0.4516,
+      "seconds": 46.5862
+    },
+    {
+      "id": "p16:proof-1",
+      "participant": "p16",
+      "item": "proof-1",
+      "time": 1,
+      "correct": 1,
+      "confidence": 0.6608,
+      "seconds": 35.3936
+    },
+    {
+      "id": "p16:proof-2",
+      "participant": "p16",
+      "item": "proof-2",
+      "time": 2,
+      "correct": 1,
+      "confidence": 0.4505,
+      "seconds": 37.2384
+    },
+    {
+      "id": "p16:proof-3",
+      "participant": "p16",
+      "item": "proof-3",
+      "time": 3,
+      "correct": 1,
+      "confidence": 0.5561,
+      "seconds": 35.366
+    },
+    {
+      "id": "p16:proof-4",
+      "participant": "p16",
+      "item": "proof-4",
+      "time": 4,
+      "correct": 0,
+      "confidence": 0.8296,
+      "seconds": 44.2681
+    },
+    {
+      "id": "p16:proof-5",
+      "participant": "p16",
+      "item": "proof-5",
+      "time": 5,
+      "correct": 1,
+      "confidence": 0.8353,
+      "seconds": 46.8494
+    },
+    {
+      "id": "p16:transfer-0",
+      "participant": "p16",
+      "item": "transfer-0",
+      "time": 0,
+      "correct": 0,
+      "confidence": 0.3842,
+      "seconds": 57.5361
+    },
+    {
+      "id": "p16:transfer-1",
+      "participant": "p16",
+      "item": "transfer-1",
+      "time": 1,
+      "correct": 0,
+      "confidence": 0.2444,
+      "seconds": 51.4005
+    },
+    {
+      "id": "p16:transfer-2",
+      "participant": "p16",
+      "item": "transfer-2",
+      "time": 2,
+      "correct": 1,
+      "confidence": 0.3068,
+      "seconds": 49.7084
+    },
+    {
+      "id": "p16:transfer-3",
+      "participant": "p16",
+      "item": "transfer-3",
+      "time": 3,
+      "correct": 0,
+      "confidence": 0.4445,
+      "seconds": 62.6387
+    },
+    {
+      "id": "p16:transfer-4",
+      "participant": "p16",
+      "item": "transfer-4",
+      "time": 4,
+      "correct": 1,
+      "confidence": 0.1267,
+      "seconds": 55.1372
+    },
+    {
+      "id": "p16:transfer-5",
+      "participant": "p16",
+      "item": "transfer-5",
+      "time": 5,
+      "correct": 0,
+      "confidence": 0.1402,
+      "seconds": 55.1309
+    },
+    {
+      "id": "p17:definition-0",
+      "participant": "p17",
+      "item": "definition-0",
+      "time": 0,
+      "correct": 1,
+      "confidence": 0.4186,
+      "seconds": 47.2574
+    },
+    {
+      "id": "p17:definition-1",
+      "participant": "p17",
+      "item": "definition-1",
+      "time": 1,
+      "correct": 1,
+      "confidence": 0.3537,
+      "seconds": 49.4078
+    },
+    {
+      "id": "p17:definition-2",
+      "participant": "p17",
+      "item": "definition-2",
+      "time": 2,
+      "correct": 1,
+      "confidence": 0.728,
+      "seconds": 39.9918
+    },
+    {
+      "id": "p17:definition-3",
+      "participant": "p17",
+      "item": "definition-3",
+      "time": 3,
+      "correct": 0,
+      "confidence": 0.3809,
+      "seconds": 40.2203
+    },
+    {
+      "id": "p17:definition-4",
+      "participant": "p17",
+      "item": "definition-4",
+      "time": 4,
+      "correct": 0,
+      "confidence": 0.6616,
+      "seconds": 52.859
+    },
+    {
+      "id": "p17:definition-5",
+      "participant": "p17",
+      "item": "definition-5",
+      "time": 5,
+      "correct": 1,
+      "confidence": 0.3699,
+      "seconds": 50.7533
+    },
+    {
+      "id": "p17:calculation-0",
+      "participant": "p17",
+      "item": "calculation-0",
+      "time": 0,
+      "correct": 1,
+      "confidence": 0.6072,
+      "seconds": 39.5761
+    },
+    {
+      "id": "p17:calculation-1",
+      "participant": "p17",
+      "item": "calculation-1",
+      "time": 1,
+      "correct": 0,
+      "confidence": 0.757,
+      "seconds": 36.9227
+    },
+    {
+      "id": "p17:calculation-2",
+      "participant": "p17",
+      "item": "calculation-2",
+      "time": 2,
+      "correct": 1,
+      "confidence": 0.5256,
+      "seconds": 44.3105
+    },
+    {
+      "id": "p17:calculation-3",
+      "participant": "p17",
+      "item": "calculation-3",
+      "time": 3,
+      "correct": 1,
+      "confidence": 0.8812,
+      "seconds": 40.674
+    },
+    {
+      "id": "p17:calculation-4",
+      "participant": "p17",
+      "item": "calculation-4",
+      "time": 4,
+      "correct": 1,
+      "confidence": 0.7226,
+      "seconds": 35.2678
+    },
+    {
+      "id": "p17:calculation-5",
+      "participant": "p17",
+      "item": "calculation-5",
+      "time": 5,
+      "correct": 1,
+      "confidence": 0.5862,
+      "seconds": 33.9745
+    },
+    {
+      "id": "p17:proof-0",
+      "participant": "p17",
+      "item": "proof-0",
+      "time": 0,
+      "correct": 0,
+      "confidence": 0.4383,
+      "seconds": 50.5731
+    },
+    {
+      "id": "p17:proof-1",
+      "participant": "p17",
+      "item": "proof-1",
+      "time": 1,
+      "correct": 1,
+      "confidence": 0.6188,
+      "seconds": 42.4627
+    },
+    {
+      "id": "p17:proof-2",
+      "participant": "p17",
+      "item": "proof-2",
+      "time": 2,
+      "correct": 0,
+      "confidence": 0.6465,
+      "seconds": 39.8666
+    },
+    {
+      "id": "p17:proof-3",
+      "participant": "p17",
+      "item": "proof-3",
+      "time": 3,
+      "correct": 1,
+      "confidence": 0.6276,
+      "seconds": 38.6635
+    },
+    {
+      "id": "p17:proof-4",
+      "participant": "p17",
+      "item": "proof-4",
+      "time": 4,
+      "correct": 0,
+      "confidence": 0.5738,
+      "seconds": 50.9989
+    },
+    {
+      "id": "p17:proof-5",
+      "participant": "p17",
+      "item": "proof-5",
+      "time": 5,
+      "correct": 0,
+      "confidence": 0.55,
+      "seconds": 49.8763
+    },
+    {
+      "id": "p17:transfer-0",
+      "participant": "p17",
+      "item": "transfer-0",
+      "time": 0,
+      "correct": 0,
+      "confidence": 0.3887,
+      "seconds": 50.7548
+    },
+    {
+      "id": "p17:transfer-1",
+      "participant": "p17",
+      "item": "transfer-1",
+      "time": 1,
+      "correct": 1,
+      "confidence": 0.4136,
+      "seconds": 40.7815
+    },
+    {
+      "id": "p17:transfer-2",
+      "participant": "p17",
+      "item": "transfer-2",
+      "time": 2,
+      "correct": 0,
+      "confidence": 0.4949,
+      "seconds": 47.8045
+    },
+    {
+      "id": "p17:transfer-3",
+      "participant": "p17",
+      "item": "transfer-3",
+      "time": 3,
+      "correct": 1,
+      "confidence": 0.4822,
+      "seconds": 50.6655
+    },
+    {
+      "id": "p17:transfer-4",
+      "participant": "p17",
+      "item": "transfer-4",
+      "time": 4,
+      "correct": 0,
+      "confidence": 0.3336,
+      "seconds": 46.5566
+    },
+    {
+      "id": "p17:transfer-5",
+      "participant": "p17",
+      "item": "transfer-5",
+      "time": 5,
+      "correct": 1,
+      "confidence": 0.302,
+      "seconds": 43.0225
+    },
+    {
+      "id": "p18:definition-0",
+      "participant": "p18",
+      "item": "definition-0",
+      "time": 0,
+      "correct": 0,
+      "confidence": 0.6344,
+      "seconds": 46.9809
+    },
+    {
+      "id": "p18:definition-1",
+      "participant": "p18",
+      "item": "definition-1",
+      "time": 1,
+      "correct": 1,
+      "confidence": 0.5004,
+      "seconds": 43.7534
+    },
+    {
+      "id": "p18:definition-2",
+      "participant": "p18",
+      "item": "definition-2",
+      "time": 2,
+      "correct": 1,
+      "confidence": 0.5839,
+      "seconds": 34.681
+    },
+    {
+      "id": "p18:definition-3",
+      "participant": "p18",
+      "item": "definition-3",
+      "time": 3,
+      "correct": 1,
+      "confidence": 0.475,
+      "seconds": 47.5163
+    },
+    {
+      "id": "p18:definition-4",
+      "participant": "p18",
+      "item": "definition-4",
+      "time": 4,
+      "correct": 0,
+      "confidence": 0.7668,
+      "seconds": 45.9926
+    },
+    {
+      "id": "p18:definition-5",
+      "participant": "p18",
+      "item": "definition-5",
+      "time": 5,
+      "correct": 1,
+      "confidence": 0.8452,
+      "seconds": 36.2323
+    },
+    {
+      "id": "p18:calculation-0",
+      "participant": "p18",
+      "item": "calculation-0",
+      "time": 0,
+      "correct": 1,
+      "confidence": 0.7964,
+      "seconds": 33.3623
+    },
+    {
+      "id": "p18:calculation-1",
+      "participant": "p18",
+      "item": "calculation-1",
+      "time": 1,
+      "correct": 1,
+      "confidence": 0.6176,
+      "seconds": 40.5229
+    },
+    {
+      "id": "p18:calculation-2",
+      "participant": "p18",
+      "item": "calculation-2",
+      "time": 2,
+      "correct": 1,
+      "confidence": 0.8299,
+      "seconds": 34.7918
+    },
+    {
+      "id": "p18:calculation-3",
+      "participant": "p18",
+      "item": "calculation-3",
+      "time": 3,
+      "correct": 1,
+      "confidence": 0.7799,
+      "seconds": 37.1199
+    },
+    {
+      "id": "p18:calculation-4",
+      "participant": "p18",
+      "item": "calculation-4",
+      "time": 4,
+      "correct": 1,
+      "confidence": 0.8603,
+      "seconds": 35.5172
+    },
+    {
+      "id": "p18:calculation-5",
+      "participant": "p18",
+      "item": "calculation-5",
+      "time": 5,
+      "correct": 1,
+      "confidence": 0.7842,
+      "seconds": 41.5975
+    },
+    {
+      "id": "p18:proof-0",
+      "participant": "p18",
+      "item": "proof-0",
+      "time": 0,
+      "correct": 1,
+      "confidence": 0.9472,
+      "seconds": 29.0804
+    },
+    {
+      "id": "p18:proof-1",
+      "participant": "p18",
+      "item": "proof-1",
+      "time": 1,
+      "correct": 1,
+      "confidence": 0.8622,
+      "seconds": 43.8062
+    },
+    {
+      "id": "p18:proof-2",
+      "participant": "p18",
+      "item": "proof-2",
+      "time": 2,
+      "correct": 0,
+      "confidence": 0.6154,
+      "seconds": 37.1904
+    },
+    {
+      "id": "p18:proof-3",
+      "participant": "p18",
+      "item": "proof-3",
+      "time": 3,
+      "correct": 1,
+      "confidence": 0.8873,
+      "seconds": 40.1721
+    },
+    {
+      "id": "p18:proof-4",
+      "participant": "p18",
+      "item": "proof-4",
+      "time": 4,
+      "correct": 1,
+      "confidence": 0.8232,
+      "seconds": 29.7273
+    },
+    {
+      "id": "p18:proof-5",
+      "participant": "p18",
+      "item": "proof-5",
+      "time": 5,
+      "correct": 1,
+      "confidence": 0.6141,
+      "seconds": 39.474
+    },
+    {
+      "id": "p18:transfer-0",
+      "participant": "p18",
+      "item": "transfer-0",
+      "time": 0,
+      "correct": 0,
+      "confidence": 0.6535,
+      "seconds": 47.3046
+    },
+    {
+      "id": "p18:transfer-1",
+      "participant": "p18",
+      "item": "transfer-1",
+      "time": 1,
+      "correct": 1,
+      "confidence": 0.5763,
+      "seconds": 37.3218
+    },
+    {
+      "id": "p18:transfer-2",
+      "participant": "p18",
+      "item": "transfer-2",
+      "time": 2,
+      "correct": 1,
+      "confidence": 0.6192,
+      "seconds": 48.4088
+    },
+    {
+      "id": "p18:transfer-3",
+      "participant": "p18",
+      "item": "transfer-3",
+      "time": 3,
+      "correct": 0,
+      "confidence": 0.8044,
+      "seconds": 37.1129
+    },
+    {
+      "id": "p18:transfer-4",
+      "participant": "p18",
+      "item": "transfer-4",
+      "time": 4,
+      "correct": 0,
+      "confidence": 0.6908,
+      "seconds": 42.5203
+    },
+    {
+      "id": "p18:transfer-5",
+      "participant": "p18",
+      "item": "transfer-5",
+      "time": 5,
+      "correct": 0,
+      "confidence": 0.6579,
+      "seconds": 39.0823
+    },
+    {
+      "id": "p19:definition-0",
+      "participant": "p19",
+      "item": "definition-0",
+      "time": 0,
+      "correct": 1,
+      "confidence": 0.4571,
+      "seconds": 39.7002
+    },
+    {
+      "id": "p19:definition-1",
+      "participant": "p19",
+      "item": "definition-1",
+      "time": 1,
+      "correct": 0,
+      "confidence": 0.5054,
+      "seconds": 53.0913
+    },
+    {
+      "id": "p19:definition-2",
+      "participant": "p19",
+      "item": "definition-2",
+      "time": 2,
+      "correct": 1,
+      "confidence": 0.6584,
+      "seconds": 42.6085
+    },
+    {
+      "id": "p19:definition-3",
+      "participant": "p19",
+      "item": "definition-3",
+      "time": 3,
+      "correct": 0,
+      "confidence": 0.4774,
+      "seconds": 46.872
+    },
+    {
+      "id": "p19:definition-4",
+      "participant": "p19",
+      "item": "definition-4",
+      "time": 4,
+      "correct": 1,
+      "confidence": 0.4607,
+      "seconds": 50.7323
+    },
+    {
+      "id": "p19:definition-5",
+      "participant": "p19",
+      "item": "definition-5",
+      "time": 5,
+      "correct": 0,
+      "confidence": 0.4695,
+      "seconds": 49.2386
+    },
+    {
+      "id": "p19:calculation-0",
+      "participant": "p19",
+      "item": "calculation-0",
+      "time": 0,
+      "correct": 0,
+      "confidence": 0.3002,
+      "seconds": 55.7414
+    },
+    {
+      "id": "p19:calculation-1",
+      "participant": "p19",
+      "item": "calculation-1",
+      "time": 1,
+      "correct": 1,
+      "confidence": 0.4466,
+      "seconds": 56.0964
+    },
+    {
+      "id": "p19:calculation-2",
+      "participant": "p19",
+      "item": "calculation-2",
+      "time": 2,
+      "correct": 1,
+      "confidence": 0.5216,
+      "seconds": 58.2366
+    },
+    {
+      "id": "p19:calculation-3",
+      "participant": "p19",
+      "item": "calculation-3",
+      "time": 3,
+      "correct": 0,
+      "confidence": 0.4129,
+      "seconds": 53.905
+    },
+    {
+      "id": "p19:calculation-4",
+      "participant": "p19",
+      "item": "calculation-4",
+      "time": 4,
+      "correct": 0,
+      "confidence": 0.1983,
+      "seconds": 52.2242
+    },
+    {
+      "id": "p19:calculation-5",
+      "participant": "p19",
+      "item": "calculation-5",
+      "time": 5,
+      "correct": 0,
+      "confidence": 0.395,
+      "seconds": 49.7329
+    },
+    {
+      "id": "p19:proof-0",
+      "participant": "p19",
+      "item": "proof-0",
+      "time": 0,
+      "correct": 0,
+      "confidence": 0.1649,
+      "seconds": 53.5437
+    },
+    {
+      "id": "p19:proof-1",
+      "participant": "p19",
+      "item": "proof-1",
+      "time": 1,
+      "correct": 0,
+      "confidence": 0.3532,
+      "seconds": 61.4022
+    },
+    {
+      "id": "p19:proof-2",
+      "participant": "p19",
+      "item": "proof-2",
+      "time": 2,
+      "correct": 0,
+      "confidence": 0.3709,
+      "seconds": 61.7449
+    },
+    {
+      "id": "p19:proof-3",
+      "participant": "p19",
+      "item": "proof-3",
+      "time": 3,
+      "correct": 0,
+      "confidence": 0.3639,
+      "seconds": 62.7616
+    },
+    {
+      "id": "p19:proof-4",
+      "participant": "p19",
+      "item": "proof-4",
+      "time": 4,
+      "correct": 0,
+      "confidence": 0.1289,
+      "seconds": 60.0782
+    },
+    {
+      "id": "p19:proof-5",
+      "participant": "p19",
+      "item": "proof-5",
+      "time": 5,
+      "correct": 0,
+      "confidence": 0.3052,
+      "seconds": 53.8079
+    },
+    {
+      "id": "p19:transfer-0",
+      "participant": "p19",
+      "item": "transfer-0",
+      "time": 0,
+      "correct": 1,
+      "confidence": 0.5683,
+      "seconds": 50.2481
+    },
+    {
+      "id": "p19:transfer-1",
+      "participant": "p19",
+      "item": "transfer-1",
+      "time": 1,
+      "correct": 0,
+      "confidence": 0.639,
+      "seconds": 46.3593
+    },
+    {
+      "id": "p19:transfer-2",
+      "participant": "p19",
+      "item": "transfer-2",
+      "time": 2,
+      "correct": 0,
+      "confidence": 0.3703,
+      "seconds": 50.5577
+    },
+    {
+      "id": "p19:transfer-3",
+      "participant": "p19",
+      "item": "transfer-3",
+      "time": 3,
+      "correct": 1,
+      "confidence": 0.6926,
+      "seconds": 49.4284
+    },
+    {
+      "id": "p19:transfer-4",
+      "participant": "p19",
+      "item": "transfer-4",
+      "time": 4,
+      "correct": 1,
+      "confidence": 0.5584,
+      "seconds": 48.7916
+    },
+    {
+      "id": "p19:transfer-5",
+      "participant": "p19",
+      "item": "transfer-5",
+      "time": 5,
+      "correct": 1,
+      "confidence": 0.5702,
+      "seconds": 53.9612
+    },
+    {
+      "id": "p20:definition-0",
+      "participant": "p20",
+      "item": "definition-0",
+      "time": 0,
+      "correct": 0,
+      "confidence": 0.4933,
+      "seconds": 54.685
+    },
+    {
+      "id": "p20:definition-1",
+      "participant": "p20",
+      "item": "definition-1",
+      "time": 1,
+      "correct": 0,
+      "confidence": 0.4039,
+      "seconds": 56.0997
+    },
+    {
+      "id": "p20:definition-2",
+      "participant": "p20",
+      "item": "definition-2",
+      "time": 2,
+      "correct": 0,
+      "confidence": 0.3511,
+      "seconds": 55.4945
+    },
+    {
+      "id": "p20:definition-3",
+      "participant": "p20",
+      "item": "definition-3",
+      "time": 3,
+      "correct": 0,
+      "confidence": 0.3558,
+      "seconds": 60.9157
+    },
+    {
+      "id": "p20:definition-4",
+      "participant": "p20",
+      "item": "definition-4",
+      "time": 4,
+      "correct": 1,
+      "confidence": 0.2597,
+      "seconds": 49.5517
+    },
+    {
+      "id": "p20:definition-5",
+      "participant": "p20",
+      "item": "definition-5",
+      "time": 5,
+      "correct": 0,
+      "confidence": 0.2381,
+      "seconds": 53.7851
+    },
+    {
+      "id": "p20:calculation-0",
+      "participant": "p20",
+      "item": "calculation-0",
+      "time": 0,
+      "correct": 0,
+      "confidence": 0.3348,
+      "seconds": 57.5213
+    },
+    {
+      "id": "p20:calculation-1",
+      "participant": "p20",
+      "item": "calculation-1",
+      "time": 1,
+      "correct": 0,
+      "confidence": 0.3868,
+      "seconds": 52.082
+    },
+    {
+      "id": "p20:calculation-2",
+      "participant": "p20",
+      "item": "calculation-2",
+      "time": 2,
+      "correct": 0,
+      "confidence": 0.3483,
+      "seconds": 57.0353
+    },
+    {
+      "id": "p20:calculation-3",
+      "participant": "p20",
+      "item": "calculation-3",
+      "time": 3,
+      "correct": 0,
+      "confidence": 0.1841,
+      "seconds": 54.1021
+    },
+    {
+      "id": "p20:calculation-4",
+      "participant": "p20",
+      "item": "calculation-4",
+      "time": 4,
+      "correct": 0,
+      "confidence": 0.1414,
+      "seconds": 61.7377
+    },
+    {
+      "id": "p20:calculation-5",
+      "participant": "p20",
+      "item": "calculation-5",
+      "time": 5,
+      "correct": 1,
+      "confidence": 0.1219,
+      "seconds": 50.5951
+    },
+    {
+      "id": "p20:proof-0",
+      "participant": "p20",
+      "item": "proof-0",
+      "time": 0,
+      "correct": 0,
+      "confidence": 0.2377,
+      "seconds": 59.3799
+    },
+    {
+      "id": "p20:proof-1",
+      "participant": "p20",
+      "item": "proof-1",
+      "time": 1,
+      "correct": 0,
+      "confidence": 0.4753,
+      "seconds": 52.6926
+    },
+    {
+      "id": "p20:proof-2",
+      "participant": "p20",
+      "item": "proof-2",
+      "time": 2,
+      "correct": 0,
+      "confidence": 0.5125,
+      "seconds": 47.2548
+    },
+    {
+      "id": "p20:proof-3",
+      "participant": "p20",
+      "item": "proof-3",
+      "time": 3,
+      "correct": 1,
+      "confidence": 0.3009,
+      "seconds": 54.7653
+    },
+    {
+      "id": "p20:proof-4",
+      "participant": "p20",
+      "item": "proof-4",
+      "time": 4,
+      "correct": 0,
+      "confidence": 0.2404,
+      "seconds": 61.1566
+    },
+    {
+      "id": "p20:proof-5",
+      "participant": "p20",
+      "item": "proof-5",
+      "time": 5,
+      "correct": 1,
+      "confidence": 0.3264,
+      "seconds": 56.2505
+    },
+    {
+      "id": "p20:transfer-0",
+      "participant": "p20",
+      "item": "transfer-0",
+      "time": 0,
+      "correct": 0,
+      "confidence": 0.2734,
+      "seconds": 51.1559
+    },
+    {
+      "id": "p20:transfer-1",
+      "participant": "p20",
+      "item": "transfer-1",
+      "time": 1,
+      "correct": 0,
+      "confidence": 0.5897,
+      "seconds": 46.2155
+    },
+    {
+      "id": "p20:transfer-2",
+      "participant": "p20",
+      "item": "transfer-2",
+      "time": 2,
+      "correct": 0,
+      "confidence": 0.3062,
+      "seconds": 46.8016
+    },
+    {
+      "id": "p20:transfer-3",
+      "participant": "p20",
+      "item": "transfer-3",
+      "time": 3,
+      "correct": 1,
+      "confidence": 0.5642,
+      "seconds": 49.9991
+    },
+    {
+      "id": "p20:transfer-4",
+      "participant": "p20",
+      "item": "transfer-4",
+      "time": 4,
+      "correct": 0,
+      "confidence": 0.567,
+      "seconds": 46.4481
+    },
+    {
+      "id": "p20:transfer-5",
+      "participant": "p20",
+      "item": "transfer-5",
+      "time": 5,
+      "correct": 0,
+      "confidence": 0.394,
+      "seconds": 51.1215
+    },
+    {
+      "id": "p21:definition-0",
+      "participant": "p21",
+      "item": "definition-0",
+      "time": 0,
+      "correct": 1,
+      "confidence": 0.2245,
+      "seconds": 51.81
+    },
+    {
+      "id": "p21:definition-1",
+      "participant": "p21",
+      "item": "definition-1",
+      "time": 1,
+      "correct": 0,
+      "confidence": 0.4744,
+      "seconds": 56.8311
+    },
+    {
+      "id": "p21:definition-2",
+      "participant": "p21",
+      "item": "definition-2",
+      "time": 2,
+      "correct": 1,
+      "confidence": 0.2713,
+      "seconds": 54.9214
+    },
+    {
+      "id": "p21:definition-3",
+      "participant": "p21",
+      "item": "definition-3",
+      "time": 3,
+      "correct": 0,
+      "confidence": 0.3158,
+      "seconds": 61.9345
+    },
+    {
+      "id": "p21:definition-4",
+      "participant": "p21",
+      "item": "definition-4",
+      "time": 4,
+      "correct": 0,
+      "confidence": 0.4185,
+      "seconds": 61.1752
+    },
+    {
+      "id": "p21:definition-5",
+      "participant": "p21",
+      "item": "definition-5",
+      "time": 5,
+      "correct": 0,
+      "confidence": 0.3241,
+      "seconds": 53.3541
+    },
+    {
+      "id": "p21:calculation-0",
+      "participant": "p21",
+      "item": "calculation-0",
+      "time": 0,
+      "correct": 0,
+      "confidence": 0.374,
+      "seconds": 58.4293
+    },
+    {
+      "id": "p21:calculation-1",
+      "participant": "p21",
+      "item": "calculation-1",
+      "time": 1,
+      "correct": 0,
+      "confidence": 0.25,
+      "seconds": 54.6664
+    },
+    {
+      "id": "p21:calculation-2",
+      "participant": "p21",
+      "item": "calculation-2",
+      "time": 2,
+      "correct": 1,
+      "confidence": 0.2735,
+      "seconds": 53.9313
+    },
+    {
+      "id": "p21:calculation-3",
+      "participant": "p21",
+      "item": "calculation-3",
+      "time": 3,
+      "correct": 0,
+      "confidence": 0.2366,
+      "seconds": 49.7855
+    },
+    {
+      "id": "p21:calculation-4",
+      "participant": "p21",
+      "item": "calculation-4",
+      "time": 4,
+      "correct": 1,
+      "confidence": 0.511,
+      "seconds": 48.017
+    },
+    {
+      "id": "p21:calculation-5",
+      "participant": "p21",
+      "item": "calculation-5",
+      "time": 5,
+      "correct": 1,
+      "confidence": 0.445,
+      "seconds": 53.6043
+    },
+    {
+      "id": "p21:proof-0",
+      "participant": "p21",
+      "item": "proof-0",
+      "time": 0,
+      "correct": 0,
+      "confidence": 0.8811,
+      "seconds": 37.6514
+    },
+    {
+      "id": "p21:proof-1",
+      "participant": "p21",
+      "item": "proof-1",
+      "time": 1,
+      "correct": 1,
+      "confidence": 0.9244,
+      "seconds": 30.5961
+    },
+    {
+      "id": "p21:proof-2",
+      "participant": "p21",
+      "item": "proof-2",
+      "time": 2,
+      "correct": 1,
+      "confidence": 0.7004,
+      "seconds": 34.6121
+    },
+    {
+      "id": "p21:proof-3",
+      "participant": "p21",
+      "item": "proof-3",
+      "time": 3,
+      "correct": 0,
+      "confidence": 0.6333,
+      "seconds": 37.347
+    },
+    {
+      "id": "p21:proof-4",
+      "participant": "p21",
+      "item": "proof-4",
+      "time": 4,
+      "correct": 1,
+      "confidence": 0.5476,
+      "seconds": 36.7927
+    },
+    {
+      "id": "p21:proof-5",
+      "participant": "p21",
+      "item": "proof-5",
+      "time": 5,
+      "correct": 1,
+      "confidence": 0.9058,
+      "seconds": 35.9479
+    },
+    {
+      "id": "p21:transfer-0",
+      "participant": "p21",
+      "item": "transfer-0",
+      "time": 0,
+      "correct": 0,
+      "confidence": 0.7218,
+      "seconds": 42.8712
+    },
+    {
+      "id": "p21:transfer-1",
+      "participant": "p21",
+      "item": "transfer-1",
+      "time": 1,
+      "correct": 0,
+      "confidence": 0.5731,
+      "seconds": 42.6461
+    },
+    {
+      "id": "p21:transfer-2",
+      "participant": "p21",
+      "item": "transfer-2",
+      "time": 2,
+      "correct": 0,
+      "confidence": 0.453,
+      "seconds": 41.9522
+    },
+    {
+      "id": "p21:transfer-3",
+      "participant": "p21",
+      "item": "transfer-3",
+      "time": 3,
+      "correct": 1,
+      "confidence": 0.4703,
+      "seconds": 48.4043
+    },
+    {
+      "id": "p21:transfer-4",
+      "participant": "p21",
+      "item": "transfer-4",
+      "time": 4,
+      "correct": 0,
+      "confidence": 0.652,
+      "seconds": 43.6257
+    },
+    {
+      "id": "p21:transfer-5",
+      "participant": "p21",
+      "item": "transfer-5",
+      "time": 5,
+      "correct": 1,
+      "confidence": 0.7317,
+      "seconds": 46.1531
+    },
+    {
+      "id": "p22:definition-0",
+      "participant": "p22",
+      "item": "definition-0",
+      "time": 0,
+      "correct": 1,
+      "confidence": 0.528,
+      "seconds": 47.9018
+    },
+    {
+      "id": "p22:definition-1",
+      "participant": "p22",
+      "item": "definition-1",
+      "time": 1,
+      "correct": 0,
+      "confidence": 0.3365,
+      "seconds": 46.4844
+    },
+    {
+      "id": "p22:definition-2",
+      "participant": "p22",
+      "item": "definition-2",
+      "time": 2,
+      "correct": 1,
+      "confidence": 0.1588,
+      "seconds": 58.0647
+    },
+    {
+      "id": "p22:definition-3",
+      "participant": "p22",
+      "item": "definition-3",
+      "time": 3,
+      "correct": 0,
+      "confidence": 0.1646,
+      "seconds": 56.9276
+    },
+    {
+      "id": "p22:definition-4",
+      "participant": "p22",
+      "item": "definition-4",
+      "time": 4,
+      "correct": 1,
+      "confidence": 0.4959,
+      "seconds": 60.0669
+    },
+    {
+      "id": "p22:definition-5",
+      "participant": "p22",
+      "item": "definition-5",
+      "time": 5,
+      "correct": 1,
+      "confidence": 0.2146,
+      "seconds": 56.8741
+    },
+    {
+      "id": "p22:calculation-0",
+      "participant": "p22",
+      "item": "calculation-0",
+      "time": 0,
+      "correct": 0,
+      "confidence": 0.4519,
+      "seconds": 56.6909
+    },
+    {
+      "id": "p22:calculation-1",
+      "participant": "p22",
+      "item": "calculation-1",
+      "time": 1,
+      "correct": 0,
+      "confidence": 0.5449,
+      "seconds": 52.8246
+    },
+    {
+      "id": "p22:calculation-2",
+      "participant": "p22",
+      "item": "calculation-2",
+      "time": 2,
+      "correct": 1,
+      "confidence": 0.2052,
+      "seconds": 50.167
+    },
+    {
+      "id": "p22:calculation-3",
+      "participant": "p22",
+      "item": "calculation-3",
+      "time": 3,
+      "correct": 0,
+      "confidence": 0.5804,
+      "seconds": 51.433
+    },
+    {
+      "id": "p22:calculation-4",
+      "participant": "p22",
+      "item": "calculation-4",
+      "time": 4,
+      "correct": 1,
+      "confidence": 0.2721,
+      "seconds": 50.4398
+    },
+    {
+      "id": "p22:calculation-5",
+      "participant": "p22",
+      "item": "calculation-5",
+      "time": 5,
+      "correct": 1,
+      "confidence": 0.3671,
+      "seconds": 52.6811
+    },
+    {
+      "id": "p22:proof-0",
+      "participant": "p22",
+      "item": "proof-0",
+      "time": 0,
+      "correct": 0,
+      "confidence": 0.4919,
+      "seconds": 42.6865
+    },
+    {
+      "id": "p22:proof-1",
+      "participant": "p22",
+      "item": "proof-1",
+      "time": 1,
+      "correct": 1,
+      "confidence": 0.3406,
+      "seconds": 46.1409
+    },
+    {
+      "id": "p22:proof-2",
+      "participant": "p22",
+      "item": "proof-2",
+      "time": 2,
+      "correct": 1,
+      "confidence": 0.3189,
+      "seconds": 47.3152
+    },
+    {
+      "id": "p22:proof-3",
+      "participant": "p22",
+      "item": "proof-3",
+      "time": 3,
+      "correct": 0,
+      "confidence": 0.4202,
+      "seconds": 47.7027
+    },
+    {
+      "id": "p22:proof-4",
+      "participant": "p22",
+      "item": "proof-4",
+      "time": 4,
+      "correct": 0,
+      "confidence": 0.4311,
+      "seconds": 45.9381
+    },
+    {
+      "id": "p22:proof-5",
+      "participant": "p22",
+      "item": "proof-5",
+      "time": 5,
+      "correct": 1,
+      "confidence": 0.6955,
+      "seconds": 45.3309
+    },
+    {
+      "id": "p22:transfer-0",
+      "participant": "p22",
+      "item": "transfer-0",
+      "time": 0,
+      "correct": 0,
+      "confidence": 0.239,
+      "seconds": 59.2223
+    },
+    {
+      "id": "p22:transfer-1",
+      "participant": "p22",
+      "item": "transfer-1",
+      "time": 1,
+      "correct": 1,
+      "confidence": 0.1927,
+      "seconds": 57.4617
+    },
+    {
+      "id": "p22:transfer-2",
+      "participant": "p22",
+      "item": "transfer-2",
+      "time": 2,
+      "correct": 0,
+      "confidence": 0.436,
+      "seconds": 55.3608
+    },
+    {
+      "id": "p22:transfer-3",
+      "participant": "p22",
+      "item": "transfer-3",
+      "time": 3,
+      "correct": 0,
+      "confidence": 0.4317,
+      "seconds": 48.4915
+    },
+    {
+      "id": "p22:transfer-4",
+      "participant": "p22",
+      "item": "transfer-4",
+      "time": 4,
+      "correct": 1,
+      "confidence": 0.2316,
+      "seconds": 52.2367
+    },
+    {
+      "id": "p22:transfer-5",
+      "participant": "p22",
+      "item": "transfer-5",
+      "time": 5,
+      "correct": 0,
+      "confidence": 0.4075,
+      "seconds": 54.0809
+    },
+    {
+      "id": "p23:definition-0",
+      "participant": "p23",
+      "item": "definition-0",
+      "time": 0,
+      "correct": 1,
+      "confidence": 0.5431,
+      "seconds": 39.2713
+    },
+    {
+      "id": "p23:definition-1",
+      "participant": "p23",
+      "item": "definition-1",
+      "time": 1,
+      "correct": 1,
+      "confidence": 0.7637,
+      "seconds": 38.8164
+    },
+    {
+      "id": "p23:definition-2",
+      "participant": "p23",
+      "item": "definition-2",
+      "time": 2,
+      "correct": 1,
+      "confidence": 0.6287,
+      "seconds": 36.257
+    },
+    {
+      "id": "p23:definition-3",
+      "participant": "p23",
+      "item": "definition-3",
+      "time": 3,
+      "correct": 0,
+      "confidence": 0.6611,
+      "seconds": 43.0841
+    },
+    {
+      "id": "p23:definition-4",
+      "participant": "p23",
+      "item": "definition-4",
+      "time": 4,
+      "correct": 0,
+      "confidence": 0.6186,
+      "seconds": 39.2827
+    },
+    {
+      "id": "p23:definition-5",
+      "participant": "p23",
+      "item": "definition-5",
+      "time": 5,
+      "correct": 1,
+      "confidence": 0.8433,
+      "seconds": 38.3383
+    },
+    {
+      "id": "p23:calculation-0",
+      "participant": "p23",
+      "item": "calculation-0",
+      "time": 0,
+      "correct": 0,
+      "confidence": 0.1839,
+      "seconds": 60.6737
+    },
+    {
+      "id": "p23:calculation-1",
+      "participant": "p23",
+      "item": "calculation-1",
+      "time": 1,
+      "correct": 0,
+      "confidence": 0.3402,
+      "seconds": 55.5301
+    },
+    {
+      "id": "p23:calculation-2",
+      "participant": "p23",
+      "item": "calculation-2",
+      "time": 2,
+      "correct": 1,
+      "confidence": 0.2439,
+      "seconds": 48.7152
+    },
+    {
+      "id": "p23:calculation-3",
+      "participant": "p23",
+      "item": "calculation-3",
+      "time": 3,
+      "correct": 1,
+      "confidence": 0.348,
+      "seconds": 56.8675
+    },
+    {
+      "id": "p23:calculation-4",
+      "participant": "p23",
+      "item": "calculation-4",
+      "time": 4,
+      "correct": 0,
+      "confidence": 0.21,
+      "seconds": 53.6964
+    },
+    {
+      "id": "p23:calculation-5",
+      "participant": "p23",
+      "item": "calculation-5",
+      "time": 5,
+      "correct": 0,
+      "confidence": 0.2143,
+      "seconds": 56.4803
+    },
+    {
+      "id": "p23:proof-0",
+      "participant": "p23",
+      "item": "proof-0",
+      "time": 0,
+      "correct": 1,
+      "confidence": 0.1314,
+      "seconds": 55.3459
+    },
+    {
+      "id": "p23:proof-1",
+      "participant": "p23",
+      "item": "proof-1",
+      "time": 1,
+      "correct": 0,
+      "confidence": 0.2023,
+      "seconds": 58.2419
+    },
+    {
+      "id": "p23:proof-2",
+      "participant": "p23",
+      "item": "proof-2",
+      "time": 2,
+      "correct": 0,
+      "confidence": 0.0979,
+      "seconds": 58.1454
+    },
+    {
+      "id": "p23:proof-3",
+      "participant": "p23",
+      "item": "proof-3",
+      "time": 3,
+      "correct": 0,
+      "confidence": 0.1688,
+      "seconds": 56.0715
+    },
+    {
+      "id": "p23:proof-4",
+      "participant": "p23",
+      "item": "proof-4",
+      "time": 4,
+      "correct": 0,
+      "confidence": 0.1139,
+      "seconds": 63.326
+    },
+    {
+      "id": "p23:proof-5",
+      "participant": "p23",
+      "item": "proof-5",
+      "time": 5,
+      "correct": 0,
+      "confidence": 0.3055,
+      "seconds": 61.126
+    },
+    {
+      "id": "p23:transfer-0",
+      "participant": "p23",
+      "item": "transfer-0",
+      "time": 0,
+      "correct": 1,
+      "confidence": 0.5818,
+      "seconds": 34.7667
+    },
+    {
+      "id": "p23:transfer-1",
+      "participant": "p23",
+      "item": "transfer-1",
+      "time": 1,
+      "correct": 1,
+      "confidence": 0.8489,
+      "seconds": 41.5384
+    },
+    {
+      "id": "p23:transfer-2",
+      "participant": "p23",
+      "item": "transfer-2",
+      "time": 2,
+      "correct": 1,
+      "confidence": 0.8777,
+      "seconds": 40.0602
+    },
+    {
+      "id": "p23:transfer-3",
+      "participant": "p23",
+      "item": "transfer-3",
+      "time": 3,
+      "correct": 1,
+      "confidence": 0.7108,
+      "seconds": 37.2649
+    },
+    {
+      "id": "p23:transfer-4",
+      "participant": "p23",
+      "item": "transfer-4",
+      "time": 4,
+      "correct": 0,
+      "confidence": 0.8202,
+      "seconds": 44.2315
+    },
+    {
+      "id": "p23:transfer-5",
+      "participant": "p23",
+      "item": "transfer-5",
+      "time": 5,
+      "correct": 1,
+      "confidence": 0.5724,
+      "seconds": 37.3909
+    },
+    {
+      "id": "p24:definition-0",
+      "participant": "p24",
+      "item": "definition-0",
+      "time": 0,
+      "correct": 1,
+      "confidence": 0.5462,
+      "seconds": 37.8913
+    },
+    {
+      "id": "p24:definition-1",
+      "participant": "p24",
+      "item": "definition-1",
+      "time": 1,
+      "correct": 0,
+      "confidence": 0.8029,
+      "seconds": 36.2935
+    },
+    {
+      "id": "p24:definition-2",
+      "participant": "p24",
+      "item": "definition-2",
+      "time": 2,
+      "correct": 0,
+      "confidence": 0.6909,
+      "seconds": 37.3785
+    },
+    {
+      "id": "p24:definition-3",
+      "participant": "p24",
+      "item": "definition-3",
+      "time": 3,
+      "correct": 0,
+      "confidence": 0.6603,
+      "seconds": 46.2885
+    },
+    {
+      "id": "p24:definition-4",
+      "participant": "p24",
+      "item": "definition-4",
+      "time": 4,
+      "correct": 0,
+      "confidence": 0.8,
+      "seconds": 44.7971
+    },
+    {
+      "id": "p24:definition-5",
+      "participant": "p24",
+      "item": "definition-5",
+      "time": 5,
+      "correct": null,
+      "confidence": null,
+      "seconds": null
+    },
+    {
+      "id": "p24:calculation-0",
+      "participant": "p24",
+      "item": "calculation-0",
+      "time": 0,
+      "correct": 0,
+      "confidence": 0.3032,
+      "seconds": 45.6588
+    },
+    {
+      "id": "p24:calculation-1",
+      "participant": "p24",
+      "item": "calculation-1",
+      "time": 1,
+      "correct": 0,
+      "confidence": 0.3363,
+      "seconds": 53.5733
+    },
+    {
+      "id": "p24:calculation-2",
+      "participant": "p24",
+      "item": "calculation-2",
+      "time": 2,
+      "correct": 1,
+      "confidence": 0.5369,
+      "seconds": 50.6159
+    },
+    {
+      "id": "p24:calculation-3",
+      "participant": "p24",
+      "item": "calculation-3",
+      "time": 3,
+      "correct": 1,
+      "confidence": 0.3549,
+      "seconds": 51.872
+    },
+    {
+      "id": "p24:calculation-4",
+      "participant": "p24",
+      "item": "calculation-4",
+      "time": 4,
+      "correct": 0,
+      "confidence": 0.3845,
+      "seconds": 53.5717
+    },
+    {
+      "id": "p24:calculation-5",
+      "participant": "p24",
+      "item": "calculation-5",
+      "time": 5,
+      "correct": null,
+      "confidence": null,
+      "seconds": null
+    },
+    {
+      "id": "p24:proof-0",
+      "participant": "p24",
+      "item": "proof-0",
+      "time": 0,
+      "correct": 0,
+      "confidence": 0.3077,
+      "seconds": 57.1262
+    },
+    {
+      "id": "p24:proof-1",
+      "participant": "p24",
+      "item": "proof-1",
+      "time": 1,
+      "correct": 1,
+      "confidence": 0.1714,
+      "seconds": 51.1579
+    },
+    {
+      "id": "p24:proof-2",
+      "participant": "p24",
+      "item": "proof-2",
+      "time": 2,
+      "correct": 0,
+      "confidence": 0.5001,
+      "seconds": 55.6374
+    },
+    {
+      "id": "p24:proof-3",
+      "participant": "p24",
+      "item": "proof-3",
+      "time": 3,
+      "correct": 0,
+      "confidence": 0.1639,
+      "seconds": 49.2398
+    },
+    {
+      "id": "p24:proof-4",
+      "participant": "p24",
+      "item": "proof-4",
+      "time": 4,
+      "correct": 1,
+      "confidence": 0.3522,
+      "seconds": 54.5998
+    },
+    {
+      "id": "p24:proof-5",
+      "participant": "p24",
+      "item": "proof-5",
+      "time": 5,
+      "correct": null,
+      "confidence": null,
+      "seconds": null
+    },
+    {
+      "id": "p24:transfer-0",
+      "participant": "p24",
+      "item": "transfer-0",
+      "time": 0,
+      "correct": 1,
+      "confidence": 0.6923,
+      "seconds": 47.5484
+    },
+    {
+      "id": "p24:transfer-1",
+      "participant": "p24",
+      "item": "transfer-1",
+      "time": 1,
+      "correct": 1,
+      "confidence": 0.5643,
+      "seconds": 40.7902
+    },
+    {
+      "id": "p24:transfer-2",
+      "participant": "p24",
+      "item": "transfer-2",
+      "time": 2,
+      "correct": 1,
+      "confidence": 0.7317,
+      "seconds": 44.4475
+    },
+    {
+      "id": "p24:transfer-3",
+      "participant": "p24",
+      "item": "transfer-3",
+      "time": 3,
+      "correct": 0,
+      "confidence": 0.5305,
+      "seconds": 46.7707
+    },
+    {
+      "id": "p24:transfer-4",
+      "participant": "p24",
+      "item": "transfer-4",
+      "time": 4,
+      "correct": 1,
+      "confidence": 0.7228,
+      "seconds": 47.0268
+    },
+    {
+      "id": "p24:transfer-5",
+      "participant": "p24",
+      "item": "transfer-5",
+      "time": 5,
+      "correct": null,
+      "confidence": null,
+      "seconds": null
+    },
+    {
+      "id": "p25:definition-0",
+      "participant": "p25",
+      "item": "definition-0",
+      "time": 0,
+      "correct": 1,
+      "confidence": 0.354,
+      "seconds": 45.4844
+    },
+    {
+      "id": "p25:definition-1",
+      "participant": "p25",
+      "item": "definition-1",
+      "time": 1,
+      "correct": 0,
+      "confidence": 0.4812,
+      "seconds": 43.2744
+    },
+    {
+      "id": "p25:definition-2",
+      "participant": "p25",
+      "item": "definition-2",
+      "time": 2,
+      "correct": 0,
+      "confidence": 0.6115,
+      "seconds": 50.2767
+    },
+    {
+      "id": "p25:definition-3",
+      "participant": "p25",
+      "item": "definition-3",
+      "time": 3,
+      "correct": 1,
+      "confidence": 0.3956,
+      "seconds": 49.3988
+    },
+    {
+      "id": "p25:definition-4",
+      "participant": "p25",
+      "item": "definition-4",
+      "time": 4,
+      "correct": null,
+      "confidence": null,
+      "seconds": null
+    },
+    {
+      "id": "p25:definition-5",
+      "participant": "p25",
+      "item": "definition-5",
+      "time": 5,
+      "correct": 0,
+      "confidence": 0.396,
+      "seconds": 48.7744
+    },
+    {
+      "id": "p25:calculation-0",
+      "participant": "p25",
+      "item": "calculation-0",
+      "time": 0,
+      "correct": 0,
+      "confidence": 0.2849,
+      "seconds": 51.2968
+    },
+    {
+      "id": "p25:calculation-1",
+      "participant": "p25",
+      "item": "calculation-1",
+      "time": 1,
+      "correct": 1,
+      "confidence": 0.4609,
+      "seconds": 60.5007
+    },
+    {
+      "id": "p25:calculation-2",
+      "participant": "p25",
+      "item": "calculation-2",
+      "time": 2,
+      "correct": 1,
+      "confidence": 0.3478,
+      "seconds": 49.8257
+    },
+    {
+      "id": "p25:calculation-3",
+      "participant": "p25",
+      "item": "calculation-3",
+      "time": 3,
+      "correct": 0,
+      "confidence": 0.401,
+      "seconds": 50.1389
+    },
+    {
+      "id": "p25:calculation-4",
+      "participant": "p25",
+      "item": "calculation-4",
+      "time": 4,
+      "correct": null,
+      "confidence": null,
+      "seconds": null
+    },
+    {
+      "id": "p25:calculation-5",
+      "participant": "p25",
+      "item": "calculation-5",
+      "time": 5,
+      "correct": 0,
+      "confidence": 0.3608,
+      "seconds": 47.4803
+    },
+    {
+      "id": "p25:proof-0",
+      "participant": "p25",
+      "item": "proof-0",
+      "time": 0,
+      "correct": 1,
+      "confidence": 0.6397,
+      "seconds": 43.05
+    },
+    {
+      "id": "p25:proof-1",
+      "participant": "p25",
+      "item": "proof-1",
+      "time": 1,
+      "correct": 1,
+      "confidence": 0.5983,
+      "seconds": 40.2168
+    },
+    {
+      "id": "p25:proof-2",
+      "participant": "p25",
+      "item": "proof-2",
+      "time": 2,
+      "correct": 1,
+      "confidence": 0.8479,
+      "seconds": 30.5982
+    },
+    {
+      "id": "p25:proof-3",
+      "participant": "p25",
+      "item": "proof-3",
+      "time": 3,
+      "correct": 1,
+      "confidence": 0.9041,
+      "seconds": 33.1034
+    },
+    {
+      "id": "p25:proof-4",
+      "participant": "p25",
+      "item": "proof-4",
+      "time": 4,
+      "correct": null,
+      "confidence": null,
+      "seconds": null
+    },
+    {
+      "id": "p25:proof-5",
+      "participant": "p25",
+      "item": "proof-5",
+      "time": 5,
+      "correct": 1,
+      "confidence": 0.7512,
+      "seconds": 31.0402
+    },
+    {
+      "id": "p25:transfer-0",
+      "participant": "p25",
+      "item": "transfer-0",
+      "time": 0,
+      "correct": 0,
+      "confidence": 0.6725,
+      "seconds": 47.621
+    },
+    {
+      "id": "p25:transfer-1",
+      "participant": "p25",
+      "item": "transfer-1",
+      "time": 1,
+      "correct": 1,
+      "confidence": 0.3008,
+      "seconds": 50.5306
+    },
+    {
+      "id": "p25:transfer-2",
+      "participant": "p25",
+      "item": "transfer-2",
+      "time": 2,
+      "correct": 0,
+      "confidence": 0.3395,
+      "seconds": 41.4553
+    },
+    {
+      "id": "p25:transfer-3",
+      "participant": "p25",
+      "item": "transfer-3",
+      "time": 3,
+      "correct": 0,
+      "confidence": 0.3244,
+      "seconds": 40.7927
+    },
+    {
+      "id": "p25:transfer-4",
+      "participant": "p25",
+      "item": "transfer-4",
+      "time": 4,
+      "correct": null,
+      "confidence": null,
+      "seconds": null
+    },
+    {
+      "id": "p25:transfer-5",
+      "participant": "p25",
+      "item": "transfer-5",
+      "time": 5,
+      "correct": 1,
+      "confidence": 0.4542,
+      "seconds": 48.0194
+    },
+    {
+      "id": "p26:definition-0",
+      "participant": "p26",
+      "item": "definition-0",
+      "time": 0,
+      "correct": 1,
+      "confidence": 0.6953,
+      "seconds": 48.5334
+    },
+    {
+      "id": "p26:definition-1",
+      "participant": "p26",
+      "item": "definition-1",
+      "time": 1,
+      "correct": 0,
+      "confidence": 0.5268,
+      "seconds": 48.1803
+    },
+    {
+      "id": "p26:definition-2",
+      "participant": "p26",
+      "item": "definition-2",
+      "time": 2,
+      "correct": 0,
+      "confidence": 0.6368,
+      "seconds": 40.4282
+    },
+    {
+      "id": "p26:definition-3",
+      "participant": "p26",
+      "item": "definition-3",
+      "time": 3,
+      "correct": null,
+      "confidence": null,
+      "seconds": null
+    },
+    {
+      "id": "p26:definition-4",
+      "participant": "p26",
+      "item": "definition-4",
+      "time": 4,
+      "correct": 1,
+      "confidence": 0.6395,
+      "seconds": 42.0442
+    },
+    {
+      "id": "p26:definition-5",
+      "participant": "p26",
+      "item": "definition-5",
+      "time": 5,
+      "correct": 1,
+      "confidence": 0.462,
+      "seconds": 50.8445
+    },
+    {
+      "id": "p26:calculation-0",
+      "participant": "p26",
+      "item": "calculation-0",
+      "time": 0,
+      "correct": 1,
+      "confidence": 0.2477,
+      "seconds": 52.8823
+    },
+    {
+      "id": "p26:calculation-1",
+      "participant": "p26",
+      "item": "calculation-1",
+      "time": 1,
+      "correct": 1,
+      "confidence": 0.4872,
+      "seconds": 50.0642
+    },
+    {
+      "id": "p26:calculation-2",
+      "participant": "p26",
+      "item": "calculation-2",
+      "time": 2,
+      "correct": 0,
+      "confidence": 0.2127,
+      "seconds": 52.7347
+    },
+    {
+      "id": "p26:calculation-3",
+      "participant": "p26",
+      "item": "calculation-3",
+      "time": 3,
+      "correct": null,
+      "confidence": null,
+      "seconds": null
+    },
+    {
+      "id": "p26:calculation-4",
+      "participant": "p26",
+      "item": "calculation-4",
+      "time": 4,
+      "correct": 0,
+      "confidence": 0.4544,
+      "seconds": 44.5091
+    },
+    {
+      "id": "p26:calculation-5",
+      "participant": "p26",
+      "item": "calculation-5",
+      "time": 5,
+      "correct": 0,
+      "confidence": 0.5337,
+      "seconds": 52.9312
+    },
+    {
+      "id": "p26:proof-0",
+      "participant": "p26",
+      "item": "proof-0",
+      "time": 0,
+      "correct": 1,
+      "confidence": 0.5434,
+      "seconds": 59.6277
+    },
+    {
+      "id": "p26:proof-1",
+      "participant": "p26",
+      "item": "proof-1",
+      "time": 1,
+      "correct": 1,
+      "confidence": 0.3811,
+      "seconds": 57.6703
+    },
+    {
+      "id": "p26:proof-2",
+      "participant": "p26",
+      "item": "proof-2",
+      "time": 2,
+      "correct": 0,
+      "confidence": 0.5156,
+      "seconds": 48.5889
+    },
+    {
+      "id": "p26:proof-3",
+      "participant": "p26",
+      "item": "proof-3",
+      "time": 3,
+      "correct": null,
+      "confidence": null,
+      "seconds": null
+    },
+    {
+      "id": "p26:proof-4",
+      "participant": "p26",
+      "item": "proof-4",
+      "time": 4,
+      "correct": 0,
+      "confidence": 0.2189,
+      "seconds": 56.8875
+    },
+    {
+      "id": "p26:proof-5",
+      "participant": "p26",
+      "item": "proof-5",
+      "time": 5,
+      "correct": 0,
+      "confidence": 0.4958,
+      "seconds": 56.3104
+    },
+    {
+      "id": "p26:transfer-0",
+      "participant": "p26",
+      "item": "transfer-0",
+      "time": 0,
+      "correct": 1,
+      "confidence": 0.4265,
+      "seconds": 60.6406
+    },
+    {
+      "id": "p26:transfer-1",
+      "participant": "p26",
+      "item": "transfer-1",
+      "time": 1,
+      "correct": 0,
+      "confidence": 0.2811,
+      "seconds": 63.2263
+    },
+    {
+      "id": "p26:transfer-2",
+      "participant": "p26",
+      "item": "transfer-2",
+      "time": 2,
+      "correct": 0,
+      "confidence": 0.0717,
+      "seconds": 57.3201
+    },
+    {
+      "id": "p26:transfer-3",
+      "participant": "p26",
+      "item": "transfer-3",
+      "time": 3,
+      "correct": null,
+      "confidence": null,
+      "seconds": null
+    },
+    {
+      "id": "p26:transfer-4",
+      "participant": "p26",
+      "item": "transfer-4",
+      "time": 4,
+      "correct": 1,
+      "confidence": 0.2361,
+      "seconds": 58.0954
+    },
+    {
+      "id": "p26:transfer-5",
+      "participant": "p26",
+      "item": "transfer-5",
+      "time": 5,
+      "correct": 0,
+      "confidence": 0.4004,
+      "seconds": 52.1428
+    },
+    {
+      "id": "p27:definition-0",
+      "participant": "p27",
+      "item": "definition-0",
+      "time": 0,
+      "correct": 0,
+      "confidence": 0.391,
+      "seconds": 53.6734
+    },
+    {
+      "id": "p27:definition-1",
+      "participant": "p27",
+      "item": "definition-1",
+      "time": 1,
+      "correct": 0,
+      "confidence": 0.187,
+      "seconds": 55.1237
+    },
+    {
+      "id": "p27:definition-2",
+      "participant": "p27",
+      "item": "definition-2",
+      "time": 2,
+      "correct": null,
+      "confidence": null,
+      "seconds": null
+    },
+    {
+      "id": "p27:definition-3",
+      "participant": "p27",
+      "item": "definition-3",
+      "time": 3,
+      "correct": 1,
+      "confidence": 0.2731,
+      "seconds": 55.7071
+    },
+    {
+      "id": "p27:definition-4",
+      "participant": "p27",
+      "item": "definition-4",
+      "time": 4,
+      "correct": 1,
+      "confidence": 0.2245,
+      "seconds": 53.8294
+    },
+    {
+      "id": "p27:definition-5",
+      "participant": "p27",
+      "item": "definition-5",
+      "time": 5,
+      "correct": 0,
+      "confidence": 0.3439,
+      "seconds": 53.9427
+    },
+    {
+      "id": "p27:calculation-0",
+      "participant": "p27",
+      "item": "calculation-0",
+      "time": 0,
+      "correct": 0,
+      "confidence": 0.7149,
+      "seconds": 43.3185
+    },
+    {
+      "id": "p27:calculation-1",
+      "participant": "p27",
+      "item": "calculation-1",
+      "time": 1,
+      "correct": 1,
+      "confidence": 0.6036,
+      "seconds": 43.0263
+    },
+    {
+      "id": "p27:calculation-2",
+      "participant": "p27",
+      "item": "calculation-2",
+      "time": 2,
+      "correct": null,
+      "confidence": null,
+      "seconds": null
+    },
+    {
+      "id": "p27:calculation-3",
+      "participant": "p27",
+      "item": "calculation-3",
+      "time": 3,
+      "correct": 0,
+      "confidence": 0.7468,
+      "seconds": 43.6382
+    },
+    {
+      "id": "p27:calculation-4",
+      "participant": "p27",
+      "item": "calculation-4",
+      "time": 4,
+      "correct": 1,
+      "confidence": 0.6099,
+      "seconds": 50.3617
+    },
+    {
+      "id": "p27:calculation-5",
+      "participant": "p27",
+      "item": "calculation-5",
+      "time": 5,
+      "correct": 0,
+      "confidence": 0.4676,
+      "seconds": 44.553
+    },
+    {
+      "id": "p27:proof-0",
+      "participant": "p27",
+      "item": "proof-0",
+      "time": 0,
+      "correct": 1,
+      "confidence": 0.0702,
+      "seconds": 50.8182
+    },
+    {
+      "id": "p27:proof-1",
+      "participant": "p27",
+      "item": "proof-1",
+      "time": 1,
+      "correct": 0,
+      "confidence": 0.1059,
+      "seconds": 52.7665
+    },
+    {
+      "id": "p27:proof-2",
+      "participant": "p27",
+      "item": "proof-2",
+      "time": 2,
+      "correct": null,
+      "confidence": null,
+      "seconds": null
+    },
+    {
+      "id": "p27:proof-3",
+      "participant": "p27",
+      "item": "proof-3",
+      "time": 3,
+      "correct": 0,
+      "confidence": 0.1389,
+      "seconds": 64.817
+    },
+    {
+      "id": "p27:proof-4",
+      "participant": "p27",
+      "item": "proof-4",
+      "time": 4,
+      "correct": 0,
+      "confidence": 0.2284,
+      "seconds": 63.135
+    },
+    {
+      "id": "p27:proof-5",
+      "participant": "p27",
+      "item": "proof-5",
+      "time": 5,
+      "correct": 0,
+      "confidence": 0.1432,
+      "seconds": 60.0069
+    },
+    {
+      "id": "p27:transfer-0",
+      "participant": "p27",
+      "item": "transfer-0",
+      "time": 0,
+      "correct": 1,
+      "confidence": 0.7262,
+      "seconds": 38.5898
+    },
+    {
+      "id": "p27:transfer-1",
+      "participant": "p27",
+      "item": "transfer-1",
+      "time": 1,
+      "correct": 1,
+      "confidence": 0.9662,
+      "seconds": 28.8534
+    },
+    {
+      "id": "p27:transfer-2",
+      "participant": "p27",
+      "item": "transfer-2",
+      "time": 2,
+      "correct": null,
+      "confidence": null,
+      "seconds": null
+    },
+    {
+      "id": "p27:transfer-3",
+      "participant": "p27",
+      "item": "transfer-3",
+      "time": 3,
+      "correct": 0,
+      "confidence": 0.7641,
+      "seconds": 33.8166
+    },
+    {
+      "id": "p27:transfer-4",
+      "participant": "p27",
+      "item": "transfer-4",
+      "time": 4,
+      "correct": 1,
+      "confidence": 0.849,
+      "seconds": 32.1137
+    },
+    {
+      "id": "p27:transfer-5",
+      "participant": "p27",
+      "item": "transfer-5",
+      "time": 5,
+      "correct": 1,
+      "confidence": 0.6123,
+      "seconds": 29.8089
+    },
+    {
+      "id": "p28:definition-0",
+      "participant": "p28",
+      "item": "definition-0",
+      "time": 0,
+      "correct": 1,
+      "confidence": 0.6726,
+      "seconds": 49.0661
+    },
+    {
+      "id": "p28:definition-1",
+      "participant": "p28",
+      "item": "definition-1",
+      "time": 1,
+      "correct": null,
+      "confidence": null,
+      "seconds": null
+    },
+    {
+      "id": "p28:definition-2",
+      "participant": "p28",
+      "item": "definition-2",
+      "time": 2,
+      "correct": 1,
+      "confidence": 0.5154,
+      "seconds": 45.8113
+    },
+    {
+      "id": "p28:definition-3",
+      "participant": "p28",
+      "item": "definition-3",
+      "time": 3,
+      "correct": 0,
+      "confidence": 0.5062,
+      "seconds": 48.3537
+    },
+    {
+      "id": "p28:definition-4",
+      "participant": "p28",
+      "item": "definition-4",
+      "time": 4,
+      "correct": 1,
+      "confidence": 0.587,
+      "seconds": 48.8117
+    },
+    {
+      "id": "p28:definition-5",
+      "participant": "p28",
+      "item": "definition-5",
+      "time": 5,
+      "correct": 0,
+      "confidence": 0.4382,
+      "seconds": 53.0754
+    },
+    {
+      "id": "p28:calculation-0",
+      "participant": "p28",
+      "item": "calculation-0",
+      "time": 0,
+      "correct": 1,
+      "confidence": 0.3465,
+      "seconds": 51.4797
+    },
+    {
+      "id": "p28:calculation-1",
+      "participant": "p28",
+      "item": "calculation-1",
+      "time": 1,
+      "correct": null,
+      "confidence": null,
+      "seconds": null
+    },
+    {
+      "id": "p28:calculation-2",
+      "participant": "p28",
+      "item": "calculation-2",
+      "time": 2,
+      "correct": 0,
+      "confidence": 0.4427,
+      "seconds": 49.1882
+    },
+    {
+      "id": "p28:calculation-3",
+      "participant": "p28",
+      "item": "calculation-3",
+      "time": 3,
+      "correct": 1,
+      "confidence": 0.474,
+      "seconds": 44.1803
+    },
+    {
+      "id": "p28:calculation-4",
+      "participant": "p28",
+      "item": "calculation-4",
+      "time": 4,
+      "correct": 1,
+      "confidence": 0.5318,
+      "seconds": 49.4555
+    },
+    {
+      "id": "p28:calculation-5",
+      "participant": "p28",
+      "item": "calculation-5",
+      "time": 5,
+      "correct": 0,
+      "confidence": 0.4055,
+      "seconds": 51.0889
+    },
+    {
+      "id": "p28:proof-0",
+      "participant": "p28",
+      "item": "proof-0",
+      "time": 0,
+      "correct": 0,
+      "confidence": 0.4401,
+      "seconds": 53.2714
+    },
+    {
+      "id": "p28:proof-1",
+      "participant": "p28",
+      "item": "proof-1",
+      "time": 1,
+      "correct": null,
+      "confidence": null,
+      "seconds": null
+    },
+    {
+      "id": "p28:proof-2",
+      "participant": "p28",
+      "item": "proof-2",
+      "time": 2,
+      "correct": 1,
+      "confidence": 0.4183,
+      "seconds": 53.1714
+    },
+    {
+      "id": "p28:proof-3",
+      "participant": "p28",
+      "item": "proof-3",
+      "time": 3,
+      "correct": 0,
+      "confidence": 0.3562,
+      "seconds": 57.3103
+    },
+    {
+      "id": "p28:proof-4",
+      "participant": "p28",
+      "item": "proof-4",
+      "time": 4,
+      "correct": 0,
+      "confidence": 0.2042,
+      "seconds": 55.0612
+    },
+    {
+      "id": "p28:proof-5",
+      "participant": "p28",
+      "item": "proof-5",
+      "time": 5,
+      "correct": 1,
+      "confidence": 0.3056,
+      "seconds": 53.7382
+    },
+    {
+      "id": "p28:transfer-0",
+      "participant": "p28",
+      "item": "transfer-0",
+      "time": 0,
+      "correct": 1,
+      "confidence": 0.2935,
+      "seconds": 58.0429
+    },
+    {
+      "id": "p28:transfer-1",
+      "participant": "p28",
+      "item": "transfer-1",
+      "time": 1,
+      "correct": null,
+      "confidence": null,
+      "seconds": null
+    },
+    {
+      "id": "p28:transfer-2",
+      "participant": "p28",
+      "item": "transfer-2",
+      "time": 2,
+      "correct": 1,
+      "confidence": 0.3043,
+      "seconds": 58.7053
+    },
+    {
+      "id": "p28:transfer-3",
+      "participant": "p28",
+      "item": "transfer-3",
+      "time": 3,
+      "correct": 0,
+      "confidence": 0.3378,
+      "seconds": 54.2055
+    },
+    {
+      "id": "p28:transfer-4",
+      "participant": "p28",
+      "item": "transfer-4",
+      "time": 4,
+      "correct": 0,
+      "confidence": 0.3979,
+      "seconds": 52.5122
+    },
+    {
+      "id": "p28:transfer-5",
+      "participant": "p28",
+      "item": "transfer-5",
+      "time": 5,
+      "correct": 1,
+      "confidence": 0.4357,
+      "seconds": 53.1497
+    },
+    {
+      "id": "p29:definition-0",
+      "participant": "p29",
+      "item": "definition-0",
+      "time": 0,
+      "correct": null,
+      "confidence": null,
+      "seconds": null
+    },
+    {
+      "id": "p29:definition-1",
+      "participant": "p29",
+      "item": "definition-1",
+      "time": 1,
+      "correct": 0,
+      "confidence": 0.492,
+      "seconds": 51.1267
+    },
+    {
+      "id": "p29:definition-2",
+      "participant": "p29",
+      "item": "definition-2",
+      "time": 2,
+      "correct": 1,
+      "confidence": 0.6053,
+      "seconds": 45.3462
+    },
+    {
+      "id": "p29:definition-3",
+      "participant": "p29",
+      "item": "definition-3",
+      "time": 3,
+      "correct": 1,
+      "confidence": 0.7003,
+      "seconds": 38.4843
+    },
+    {
+      "id": "p29:definition-4",
+      "participant": "p29",
+      "item": "definition-4",
+      "time": 4,
+      "correct": 0,
+      "confidence": 0.6848,
+      "seconds": 47.87
+    },
+    {
+      "id": "p29:definition-5",
+      "participant": "p29",
+      "item": "definition-5",
+      "time": 5,
+      "correct": 1,
+      "confidence": 0.5887,
+      "seconds": 49.8871
+    },
+    {
+      "id": "p29:calculation-0",
+      "participant": "p29",
+      "item": "calculation-0",
+      "time": 0,
+      "correct": null,
+      "confidence": null,
+      "seconds": null
+    },
+    {
+      "id": "p29:calculation-1",
+      "participant": "p29",
+      "item": "calculation-1",
+      "time": 1,
+      "correct": 0,
+      "confidence": 0.5434,
+      "seconds": 44.7364
+    },
+    {
+      "id": "p29:calculation-2",
+      "participant": "p29",
+      "item": "calculation-2",
+      "time": 2,
+      "correct": 0,
+      "confidence": 0.8155,
+      "seconds": 48.9064
+    },
+    {
+      "id": "p29:calculation-3",
+      "participant": "p29",
+      "item": "calculation-3",
+      "time": 3,
+      "correct": 0,
+      "confidence": 0.5433,
+      "seconds": 40.3655
+    },
+    {
+      "id": "p29:calculation-4",
+      "participant": "p29",
+      "item": "calculation-4",
+      "time": 4,
+      "correct": 0,
+      "confidence": 0.7687,
+      "seconds": 41.7163
+    },
+    {
+      "id": "p29:calculation-5",
+      "participant": "p29",
+      "item": "calculation-5",
+      "time": 5,
+      "correct": 1,
+      "confidence": 0.4906,
+      "seconds": 35.4299
+    },
+    {
+      "id": "p29:proof-0",
+      "participant": "p29",
+      "item": "proof-0",
+      "time": 0,
+      "correct": null,
+      "confidence": null,
+      "seconds": null
+    },
+    {
+      "id": "p29:proof-1",
+      "participant": "p29",
+      "item": "proof-1",
+      "time": 1,
+      "correct": 0,
+      "confidence": 0.1418,
+      "seconds": 50.1273
+    },
+    {
+      "id": "p29:proof-2",
+      "participant": "p29",
+      "item": "proof-2",
+      "time": 2,
+      "correct": 0,
+      "confidence": 0.4853,
+      "seconds": 56.9207
+    },
+    {
+      "id": "p29:proof-3",
+      "participant": "p29",
+      "item": "proof-3",
+      "time": 3,
+      "correct": 1,
+      "confidence": 0.4448,
+      "seconds": 58.4887
+    },
+    {
+      "id": "p29:proof-4",
+      "participant": "p29",
+      "item": "proof-4",
+      "time": 4,
+      "correct": 1,
+      "confidence": 0.1263,
+      "seconds": 53.5046
+    },
+    {
+      "id": "p29:proof-5",
+      "participant": "p29",
+      "item": "proof-5",
+      "time": 5,
+      "correct": 1,
+      "confidence": 0.1691,
+      "seconds": 61.2775
+    },
+    {
+      "id": "p29:transfer-0",
+      "participant": "p29",
+      "item": "transfer-0",
+      "time": 0,
+      "correct": null,
+      "confidence": null,
+      "seconds": null
+    },
+    {
+      "id": "p29:transfer-1",
+      "participant": "p29",
+      "item": "transfer-1",
+      "time": 1,
+      "correct": 1,
+      "confidence": 0.2893,
+      "seconds": 53.4212
+    },
+    {
+      "id": "p29:transfer-2",
+      "participant": "p29",
+      "item": "transfer-2",
+      "time": 2,
+      "correct": 0,
+      "confidence": 0.1209,
+      "seconds": 51.8299
+    },
+    {
+      "id": "p29:transfer-3",
+      "participant": "p29",
+      "item": "transfer-3",
+      "time": 3,
+      "correct": 1,
+      "confidence": 0.3672,
+      "seconds": 58.0282
+    },
+    {
+      "id": "p29:transfer-4",
+      "participant": "p29",
+      "item": "transfer-4",
+      "time": 4,
+      "correct": 0,
+      "confidence": 0.3093,
+      "seconds": 56.6886
+    },
+    {
+      "id": "p29:transfer-5",
+      "participant": "p29",
+      "item": "transfer-5",
+      "time": 5,
+      "correct": 0,
+      "confidence": 0.2564,
+      "seconds": 59.3565
+    },
+    {
+      "id": "p30:definition-0",
+      "participant": "p30",
+      "item": "definition-0",
+      "time": 0,
+      "correct": 0,
+      "confidence": 0.4348,
+      "seconds": 49.7308
+    },
+    {
+      "id": "p30:definition-1",
+      "participant": "p30",
+      "item": "definition-1",
+      "time": 1,
+      "correct": 1,
+      "confidence": 0.3374,
+      "seconds": 51.739
+    },
+    {
+      "id": "p30:definition-2",
+      "participant": "p30",
+      "item": "definition-2",
+      "time": 2,
+      "correct": 1,
+      "confidence": 0.4129,
+      "seconds": 40.6561
+    },
+    {
+      "id": "p30:definition-3",
+      "participant": "p30",
+      "item": "definition-3",
+      "time": 3,
+      "correct": 0,
+      "confidence": 0.4917,
+      "seconds": 53.3675
+    },
+    {
+      "id": "p30:definition-4",
+      "participant": "p30",
+      "item": "definition-4",
+      "time": 4,
+      "correct": 0,
+      "confidence": 0.4104,
+      "seconds": 43.3012
+    },
+    {
+      "id": "p30:definition-5",
+      "participant": "p30",
+      "item": "definition-5",
+      "time": 5,
+      "correct": 1,
+      "confidence": 0.6114,
+      "seconds": 54.9131
+    },
+    {
+      "id": "p30:calculation-0",
+      "participant": "p30",
+      "item": "calculation-0",
+      "time": 0,
+      "correct": 0,
+      "confidence": 0.125,
+      "seconds": 58.8453
+    },
+    {
+      "id": "p30:calculation-1",
+      "participant": "p30",
+      "item": "calculation-1",
+      "time": 1,
+      "correct": 0,
+      "confidence": 0.0691,
+      "seconds": 58.0461
+    },
+    {
+      "id": "p30:calculation-2",
+      "participant": "p30",
+      "item": "calculation-2",
+      "time": 2,
+      "correct": 0,
+      "confidence": 0.243,
+      "seconds": 51.6227
+    },
+    {
+      "id": "p30:calculation-3",
+      "participant": "p30",
+      "item": "calculation-3",
+      "time": 3,
+      "correct": 1,
+      "confidence": 0.1886,
+      "seconds": 61.936
+    },
+    {
+      "id": "p30:calculation-4",
+      "participant": "p30",
+      "item": "calculation-4",
+      "time": 4,
+      "correct": 0,
+      "confidence": 0.4239,
+      "seconds": 58.0864
+    },
+    {
+      "id": "p30:calculation-5",
+      "participant": "p30",
+      "item": "calculation-5",
+      "time": 5,
+      "correct": 0,
+      "confidence": 0.4156,
+      "seconds": 65.592
+    },
+    {
+      "id": "p30:proof-0",
+      "participant": "p30",
+      "item": "proof-0",
+      "time": 0,
+      "correct": 0,
+      "confidence": 0.3414,
+      "seconds": 60.2433
+    },
+    {
+      "id": "p30:proof-1",
+      "participant": "p30",
+      "item": "proof-1",
+      "time": 1,
+      "correct": 0,
+      "confidence": 0.3134,
+      "seconds": 57.5232
+    },
+    {
+      "id": "p30:proof-2",
+      "participant": "p30",
+      "item": "proof-2",
+      "time": 2,
+      "correct": 0,
+      "confidence": 0.2164,
+      "seconds": 54.6329
+    },
+    {
+      "id": "p30:proof-3",
+      "participant": "p30",
+      "item": "proof-3",
+      "time": 3,
+      "correct": 0,
+      "confidence": 0.1165,
+      "seconds": 61.4594
+    },
+    {
+      "id": "p30:proof-4",
+      "participant": "p30",
+      "item": "proof-4",
+      "time": 4,
+      "correct": 1,
+      "confidence": 0.2628,
+      "seconds": 62.5111
+    },
+    {
+      "id": "p30:proof-5",
+      "participant": "p30",
+      "item": "proof-5",
+      "time": 5,
+      "correct": 0,
+      "confidence": 0.0735,
+      "seconds": 60.45
+    },
+    {
+      "id": "p30:transfer-0",
+      "participant": "p30",
+      "item": "transfer-0",
+      "time": 0,
+      "correct": 0,
+      "confidence": 0.585,
+      "seconds": 48.0299
+    },
+    {
+      "id": "p30:transfer-1",
+      "participant": "p30",
+      "item": "transfer-1",
+      "time": 1,
+      "correct": 1,
+      "confidence": 0.6522,
+      "seconds": 53.2911
+    },
+    {
+      "id": "p30:transfer-2",
+      "participant": "p30",
+      "item": "transfer-2",
+      "time": 2,
+      "correct": 0,
+      "confidence": 0.2702,
+      "seconds": 53.3616
+    },
+    {
+      "id": "p30:transfer-3",
+      "participant": "p30",
+      "item": "transfer-3",
+      "time": 3,
+      "correct": 1,
+      "confidence": 0.332,
+      "seconds": 42.2068
+    },
+    {
+      "id": "p30:transfer-4",
+      "participant": "p30",
+      "item": "transfer-4",
+      "time": 4,
+      "correct": 1,
+      "confidence": 0.6195,
+      "seconds": 53.9904
+    },
+    {
+      "id": "p30:transfer-5",
+      "participant": "p30",
+      "item": "transfer-5",
+      "time": 5,
+      "correct": 0,
+      "confidence": 0.4013,
+      "seconds": 46.0342
+    },
+    {
+      "id": "p31:definition-0",
+      "participant": "p31",
+      "item": "definition-0",
+      "time": 0,
+      "correct": 1,
+      "confidence": 0.8904,
+      "seconds": 38.5821
+    },
+    {
+      "id": "p31:definition-1",
+      "participant": "p31",
+      "item": "definition-1",
+      "time": 1,
+      "correct": 1,
+      "confidence": 0.7426,
+      "seconds": 34.1285
+    },
+    {
+      "id": "p31:definition-2",
+      "participant": "p31",
+      "item": "definition-2",
+      "time": 2,
+      "correct": 1,
+      "confidence": 0.9,
+      "seconds": 38.8433
+    },
+    {
+      "id": "p31:definition-3",
+      "participant": "p31",
+      "item": "definition-3",
+      "time": 3,
+      "correct": 1,
+      "confidence": 0.8863,
+      "seconds": 35.5058
+    },
+    {
+      "id": "p31:definition-4",
+      "participant": "p31",
+      "item": "definition-4",
+      "time": 4,
+      "correct": 0,
+      "confidence": 0.9294,
+      "seconds": 31.0015
+    },
+    {
+      "id": "p31:definition-5",
+      "participant": "p31",
+      "item": "definition-5",
+      "time": 5,
+      "correct": 1,
+      "confidence": 0.6944,
+      "seconds": 29.2103
+    },
+    {
+      "id": "p31:calculation-0",
+      "participant": "p31",
+      "item": "calculation-0",
+      "time": 0,
+      "correct": 1,
+      "confidence": 0.4791,
+      "seconds": 47.4806
+    },
+    {
+      "id": "p31:calculation-1",
+      "participant": "p31",
+      "item": "calculation-1",
+      "time": 1,
+      "correct": 1,
+      "confidence": 0.4826,
+      "seconds": 36.7231
+    },
+    {
+      "id": "p31:calculation-2",
+      "participant": "p31",
+      "item": "calculation-2",
+      "time": 2,
+      "correct": 0,
+      "confidence": 0.6152,
+      "seconds": 39.3496
+    },
+    {
+      "id": "p31:calculation-3",
+      "participant": "p31",
+      "item": "calculation-3",
+      "time": 3,
+      "correct": 1,
+      "confidence": 0.5069,
+      "seconds": 40.172
+    },
+    {
+      "id": "p31:calculation-4",
+      "participant": "p31",
+      "item": "calculation-4",
+      "time": 4,
+      "correct": 1,
+      "confidence": 0.5598,
+      "seconds": 35.4617
+    },
+    {
+      "id": "p31:calculation-5",
+      "participant": "p31",
+      "item": "calculation-5",
+      "time": 5,
+      "correct": 0,
+      "confidence": 0.7785,
+      "seconds": 46.786
+    },
+    {
+      "id": "p31:proof-0",
+      "participant": "p31",
+      "item": "proof-0",
+      "time": 0,
+      "correct": 1,
+      "confidence": 0.6624,
+      "seconds": 32.1744
+    },
+    {
+      "id": "p31:proof-1",
+      "participant": "p31",
+      "item": "proof-1",
+      "time": 1,
+      "correct": 1,
+      "confidence": 0.8463,
+      "seconds": 29.9038
+    },
+    {
+      "id": "p31:proof-2",
+      "participant": "p31",
+      "item": "proof-2",
+      "time": 2,
+      "correct": 0,
+      "confidence": 0.7027,
+      "seconds": 38.5312
+    },
+    {
+      "id": "p31:proof-3",
+      "participant": "p31",
+      "item": "proof-3",
+      "time": 3,
+      "correct": 1,
+      "confidence": 0.9668,
+      "seconds": 30.3428
+    },
+    {
+      "id": "p31:proof-4",
+      "participant": "p31",
+      "item": "proof-4",
+      "time": 4,
+      "correct": 1,
+      "confidence": 0.5961,
+      "seconds": 40.8374
+    },
+    {
+      "id": "p31:proof-5",
+      "participant": "p31",
+      "item": "proof-5",
+      "time": 5,
+      "correct": 1,
+      "confidence": 0.8421,
+      "seconds": 39.7583
+    },
+    {
+      "id": "p31:transfer-0",
+      "participant": "p31",
+      "item": "transfer-0",
+      "time": 0,
+      "correct": 0,
+      "confidence": 0.3195,
+      "seconds": 53.9864
+    },
+    {
+      "id": "p31:transfer-1",
+      "participant": "p31",
+      "item": "transfer-1",
+      "time": 1,
+      "correct": 0,
+      "confidence": 0.4262,
+      "seconds": 50.9859
+    },
+    {
+      "id": "p31:transfer-2",
+      "participant": "p31",
+      "item": "transfer-2",
+      "time": 2,
+      "correct": 1,
+      "confidence": 0.5286,
+      "seconds": 59.0088
+    },
+    {
+      "id": "p31:transfer-3",
+      "participant": "p31",
+      "item": "transfer-3",
+      "time": 3,
+      "correct": 1,
+      "confidence": 0.2995,
+      "seconds": 48.8533
+    },
+    {
+      "id": "p31:transfer-4",
+      "participant": "p31",
+      "item": "transfer-4",
+      "time": 4,
+      "correct": 1,
+      "confidence": 0.4513,
+      "seconds": 46.0046
+    },
+    {
+      "id": "p31:transfer-5",
+      "participant": "p31",
+      "item": "transfer-5",
+      "time": 5,
+      "correct": 0,
+      "confidence": 0.4417,
+      "seconds": 50.951
+    },
+    {
+      "id": "p32:definition-0",
+      "participant": "p32",
+      "item": "definition-0",
+      "time": 0,
+      "correct": 0,
+      "confidence": 0.6396,
+      "seconds": 54.2336
+    },
+    {
+      "id": "p32:definition-1",
+      "participant": "p32",
+      "item": "definition-1",
+      "time": 1,
+      "correct": 1,
+      "confidence": 0.3564,
+      "seconds": 49.2387
+    },
+    {
+      "id": "p32:definition-2",
+      "participant": "p32",
+      "item": "definition-2",
+      "time": 2,
+      "correct": 1,
+      "confidence": 0.349,
+      "seconds": 47.9621
+    },
+    {
+      "id": "p32:definition-3",
+      "participant": "p32",
+      "item": "definition-3",
+      "time": 3,
+      "correct": 1,
+      "confidence": 0.3571,
+      "seconds": 51.8957
+    },
+    {
+      "id": "p32:definition-4",
+      "participant": "p32",
+      "item": "definition-4",
+      "time": 4,
+      "correct": 1,
+      "confidence": 0.3583,
+      "seconds": 56.3706
+    },
+    {
+      "id": "p32:definition-5",
+      "participant": "p32",
+      "item": "definition-5",
+      "time": 5,
+      "correct": 1,
+      "confidence": 0.2503,
+      "seconds": 50.2634
+    },
+    {
+      "id": "p32:calculation-0",
+      "participant": "p32",
+      "item": "calculation-0",
+      "time": 0,
+      "correct": 1,
+      "confidence": 0.5465,
+      "seconds": 45.0736
+    },
+    {
+      "id": "p32:calculation-1",
+      "participant": "p32",
+      "item": "calculation-1",
+      "time": 1,
+      "correct": 0,
+      "confidence": 0.7199,
+      "seconds": 39.5457
+    },
+    {
+      "id": "p32:calculation-2",
+      "participant": "p32",
+      "item": "calculation-2",
+      "time": 2,
+      "correct": 1,
+      "confidence": 0.5882,
+      "seconds": 34.734
+    },
+    {
+      "id": "p32:calculation-3",
+      "participant": "p32",
+      "item": "calculation-3",
+      "time": 3,
+      "correct": 1,
+      "confidence": 0.5715,
+      "seconds": 42.5779
+    },
+    {
+      "id": "p32:calculation-4",
+      "participant": "p32",
+      "item": "calculation-4",
+      "time": 4,
+      "correct": 1,
+      "confidence": 0.4956,
+      "seconds": 43.3473
+    },
+    {
+      "id": "p32:calculation-5",
+      "participant": "p32",
+      "item": "calculation-5",
+      "time": 5,
+      "correct": 0,
+      "confidence": 0.4597,
+      "seconds": 34.5712
+    },
+    {
+      "id": "p32:proof-0",
+      "participant": "p32",
+      "item": "proof-0",
+      "time": 0,
+      "correct": 0,
+      "confidence": 0.0458,
+      "seconds": 63.0919
+    },
+    {
+      "id": "p32:proof-1",
+      "participant": "p32",
+      "item": "proof-1",
+      "time": 1,
+      "correct": 1,
+      "confidence": 0.2906,
+      "seconds": 62.7899
+    },
+    {
+      "id": "p32:proof-2",
+      "participant": "p32",
+      "item": "proof-2",
+      "time": 2,
+      "correct": 0,
+      "confidence": 0.2782,
+      "seconds": 66.0851
+    },
+    {
+      "id": "p32:proof-3",
+      "participant": "p32",
+      "item": "proof-3",
+      "time": 3,
+      "correct": 0,
+      "confidence": 0.1158,
+      "seconds": 58.5419
+    },
+    {
+      "id": "p32:proof-4",
+      "participant": "p32",
+      "item": "proof-4",
+      "time": 4,
+      "correct": 0,
+      "confidence": 0.1809,
+      "seconds": 61.2398
+    },
+    {
+      "id": "p32:proof-5",
+      "participant": "p32",
+      "item": "proof-5",
+      "time": 5,
+      "correct": 0,
+      "confidence": 0.0777,
+      "seconds": 55.3216
+    },
+    {
+      "id": "p32:transfer-0",
+      "participant": "p32",
+      "item": "transfer-0",
+      "time": 0,
+      "correct": 0,
+      "confidence": 0.222,
+      "seconds": 53.535
+    },
+    {
+      "id": "p32:transfer-1",
+      "participant": "p32",
+      "item": "transfer-1",
+      "time": 1,
+      "correct": 0,
+      "confidence": 0.5022,
+      "seconds": 51.1411
+    },
+    {
+      "id": "p32:transfer-2",
+      "participant": "p32",
+      "item": "transfer-2",
+      "time": 2,
+      "correct": 1,
+      "confidence": 0.5473,
+      "seconds": 53.8003
+    },
+    {
+      "id": "p32:transfer-3",
+      "participant": "p32",
+      "item": "transfer-3",
+      "time": 3,
+      "correct": 1,
+      "confidence": 0.295,
+      "seconds": 54.5542
+    },
+    {
+      "id": "p32:transfer-4",
+      "participant": "p32",
+      "item": "transfer-4",
+      "time": 4,
+      "correct": 1,
+      "confidence": 0.2709,
+      "seconds": 49.6195
+    },
+    {
+      "id": "p32:transfer-5",
+      "participant": "p32",
+      "item": "transfer-5",
+      "time": 5,
+      "correct": 0,
+      "confidence": 0.2423,
+      "seconds": 45.9484
+    },
+    {
+      "id": "p33:definition-0",
+      "participant": "p33",
+      "item": "definition-0",
+      "time": 0,
+      "correct": 0,
+      "confidence": 0.2414,
+      "seconds": 47.9127
+    },
+    {
+      "id": "p33:definition-1",
+      "participant": "p33",
+      "item": "definition-1",
+      "time": 1,
+      "correct": 1,
+      "confidence": 0.3623,
+      "seconds": 46.6001
+    },
+    {
+      "id": "p33:definition-2",
+      "participant": "p33",
+      "item": "definition-2",
+      "time": 2,
+      "correct": 0,
+      "confidence": 0.2936,
+      "seconds": 47.8774
+    },
+    {
+      "id": "p33:definition-3",
+      "participant": "p33",
+      "item": "definition-3",
+      "time": 3,
+      "correct": 0,
+      "confidence": 0.2186,
+      "seconds": 58.3464
+    },
+    {
+      "id": "p33:definition-4",
+      "participant": "p33",
+      "item": "definition-4",
+      "time": 4,
+      "correct": 1,
+      "confidence": 0.5398,
+      "seconds": 47.0413
+    },
+    {
+      "id": "p33:definition-5",
+      "participant": "p33",
+      "item": "definition-5",
+      "time": 5,
+      "correct": 1,
+      "confidence": 0.4353,
+      "seconds": 53.9934
+    },
+    {
+      "id": "p33:calculation-0",
+      "participant": "p33",
+      "item": "calculation-0",
+      "time": 0,
+      "correct": 1,
+      "confidence": 0.7726,
+      "seconds": 44.2837
+    },
+    {
+      "id": "p33:calculation-1",
+      "participant": "p33",
+      "item": "calculation-1",
+      "time": 1,
+      "correct": 0,
+      "confidence": 0.5857,
+      "seconds": 40.3717
+    },
+    {
+      "id": "p33:calculation-2",
+      "participant": "p33",
+      "item": "calculation-2",
+      "time": 2,
+      "correct": 1,
+      "confidence": 0.5143,
+      "seconds": 38.4101
+    },
+    {
+      "id": "p33:calculation-3",
+      "participant": "p33",
+      "item": "calculation-3",
+      "time": 3,
+      "correct": 1,
+      "confidence": 0.7827,
+      "seconds": 44.5461
+    },
+    {
+      "id": "p33:calculation-4",
+      "participant": "p33",
+      "item": "calculation-4",
+      "time": 4,
+      "correct": 1,
+      "confidence": 0.5692,
+      "seconds": 37.629
+    },
+    {
+      "id": "p33:calculation-5",
+      "participant": "p33",
+      "item": "calculation-5",
+      "time": 5,
+      "correct": 1,
+      "confidence": 0.4855,
+      "seconds": 49.8095
+    },
+    {
+      "id": "p33:proof-0",
+      "participant": "p33",
+      "item": "proof-0",
+      "time": 0,
+      "correct": 1,
+      "confidence": 0.5167,
+      "seconds": 49.6884
+    },
+    {
+      "id": "p33:proof-1",
+      "participant": "p33",
+      "item": "proof-1",
+      "time": 1,
+      "correct": 0,
+      "confidence": 0.5582,
+      "seconds": 38.8237
+    },
+    {
+      "id": "p33:proof-2",
+      "participant": "p33",
+      "item": "proof-2",
+      "time": 2,
+      "correct": 0,
+      "confidence": 0.5139,
+      "seconds": 41.2297
+    },
+    {
+      "id": "p33:proof-3",
+      "participant": "p33",
+      "item": "proof-3",
+      "time": 3,
+      "correct": 1,
+      "confidence": 0.5537,
+      "seconds": 45.5787
+    },
+    {
+      "id": "p33:proof-4",
+      "participant": "p33",
+      "item": "proof-4",
+      "time": 4,
+      "correct": 1,
+      "confidence": 0.6162,
+      "seconds": 44.1893
+    },
+    {
+      "id": "p33:proof-5",
+      "participant": "p33",
+      "item": "proof-5",
+      "time": 5,
+      "correct": 1,
+      "confidence": 0.5298,
+      "seconds": 37.1342
+    },
+    {
+      "id": "p33:transfer-0",
+      "participant": "p33",
+      "item": "transfer-0",
+      "time": 0,
+      "correct": 1,
+      "confidence": 0.8169,
+      "seconds": 37.2276
+    },
+    {
+      "id": "p33:transfer-1",
+      "participant": "p33",
+      "item": "transfer-1",
+      "time": 1,
+      "correct": 1,
+      "confidence": 0.6079,
+      "seconds": 33.4809
+    },
+    {
+      "id": "p33:transfer-2",
+      "participant": "p33",
+      "item": "transfer-2",
+      "time": 2,
+      "correct": 1,
+      "confidence": 0.8195,
+      "seconds": 32.8943
+    },
+    {
+      "id": "p33:transfer-3",
+      "participant": "p33",
+      "item": "transfer-3",
+      "time": 3,
+      "correct": 1,
+      "confidence": 0.5193,
+      "seconds": 33.6223
+    },
+    {
+      "id": "p33:transfer-4",
+      "participant": "p33",
+      "item": "transfer-4",
+      "time": 4,
+      "correct": 1,
+      "confidence": 0.7005,
+      "seconds": 32.9897
+    },
+    {
+      "id": "p33:transfer-5",
+      "participant": "p33",
+      "item": "transfer-5",
+      "time": 5,
+      "correct": 1,
+      "confidence": 0.6977,
+      "seconds": 40.9495
+    },
+    {
+      "id": "p34:definition-0",
+      "participant": "p34",
+      "item": "definition-0",
+      "time": 0,
+      "correct": 0,
+      "confidence": 0.2934,
+      "seconds": 53.9813
+    },
+    {
+      "id": "p34:definition-1",
+      "participant": "p34",
+      "item": "definition-1",
+      "time": 1,
+      "correct": 1,
+      "confidence": 0.4814,
+      "seconds": 44.389
+    },
+    {
+      "id": "p34:definition-2",
+      "participant": "p34",
+      "item": "definition-2",
+      "time": 2,
+      "correct": 1,
+      "confidence": 0.2591,
+      "seconds": 48.6399
+    },
+    {
+      "id": "p34:definition-3",
+      "participant": "p34",
+      "item": "definition-3",
+      "time": 3,
+      "correct": 1,
+      "confidence": 0.2755,
+      "seconds": 50.9886
+    },
+    {
+      "id": "p34:definition-4",
+      "participant": "p34",
+      "item": "definition-4",
+      "time": 4,
+      "correct": 0,
+      "confidence": 0.2546,
+      "seconds": 43.2083
+    },
+    {
+      "id": "p34:definition-5",
+      "participant": "p34",
+      "item": "definition-5",
+      "time": 5,
+      "correct": 0,
+      "confidence": 0.4377,
+      "seconds": 43.4834
+    },
+    {
+      "id": "p34:calculation-0",
+      "participant": "p34",
+      "item": "calculation-0",
+      "time": 0,
+      "correct": 1,
+      "confidence": 0.5999,
+      "seconds": 29.8459
+    },
+    {
+      "id": "p34:calculation-1",
+      "participant": "p34",
+      "item": "calculation-1",
+      "time": 1,
+      "correct": 0,
+      "confidence": 0.8082,
+      "seconds": 42.2304
+    },
+    {
+      "id": "p34:calculation-2",
+      "participant": "p34",
+      "item": "calculation-2",
+      "time": 2,
+      "correct": 1,
+      "confidence": 0.8158,
+      "seconds": 41.517
+    },
+    {
+      "id": "p34:calculation-3",
+      "participant": "p34",
+      "item": "calculation-3",
+      "time": 3,
+      "correct": 0,
+      "confidence": 0.6738,
+      "seconds": 33.7792
+    },
+    {
+      "id": "p34:calculation-4",
+      "participant": "p34",
+      "item": "calculation-4",
+      "time": 4,
+      "correct": 1,
+      "confidence": 0.8745,
+      "seconds": 31.7331
+    },
+    {
+      "id": "p34:calculation-5",
+      "participant": "p34",
+      "item": "calculation-5",
+      "time": 5,
+      "correct": 0,
+      "confidence": 0.9108,
+      "seconds": 41.1684
+    },
+    {
+      "id": "p34:proof-0",
+      "participant": "p34",
+      "item": "proof-0",
+      "time": 0,
+      "correct": 1,
+      "confidence": 0.2016,
+      "seconds": 61.4877
+    },
+    {
+      "id": "p34:proof-1",
+      "participant": "p34",
+      "item": "proof-1",
+      "time": 1,
+      "correct": 0,
+      "confidence": 0.0508,
+      "seconds": 55.5972
+    },
+    {
+      "id": "p34:proof-2",
+      "participant": "p34",
+      "item": "proof-2",
+      "time": 2,
+      "correct": 0,
+      "confidence": 0.3791,
+      "seconds": 57.1052
+    },
+    {
+      "id": "p34:proof-3",
+      "participant": "p34",
+      "item": "proof-3",
+      "time": 3,
+      "correct": 1,
+      "confidence": 0.3145,
+      "seconds": 53.451
+    },
+    {
+      "id": "p34:proof-4",
+      "participant": "p34",
+      "item": "proof-4",
+      "time": 4,
+      "correct": 0,
+      "confidence": 0.3083,
+      "seconds": 60.4601
+    },
+    {
+      "id": "p34:proof-5",
+      "participant": "p34",
+      "item": "proof-5",
+      "time": 5,
+      "correct": 0,
+      "confidence": 0.1714,
+      "seconds": 58.4684
+    },
+    {
+      "id": "p34:transfer-0",
+      "participant": "p34",
+      "item": "transfer-0",
+      "time": 0,
+      "correct": 0,
+      "confidence": 0.1968,
+      "seconds": 51.1423
+    },
+    {
+      "id": "p34:transfer-1",
+      "participant": "p34",
+      "item": "transfer-1",
+      "time": 1,
+      "correct": 0,
+      "confidence": 0.0795,
+      "seconds": 63.0029
+    },
+    {
+      "id": "p34:transfer-2",
+      "participant": "p34",
+      "item": "transfer-2",
+      "time": 2,
+      "correct": 1,
+      "confidence": 0.288,
+      "seconds": 63.4047
+    },
+    {
+      "id": "p34:transfer-3",
+      "participant": "p34",
+      "item": "transfer-3",
+      "time": 3,
+      "correct": 1,
+      "confidence": 0.2012,
+      "seconds": 60.9746
+    },
+    {
+      "id": "p34:transfer-4",
+      "participant": "p34",
+      "item": "transfer-4",
+      "time": 4,
+      "correct": 0,
+      "confidence": 0.2907,
+      "seconds": 64.6056
+    },
+    {
+      "id": "p34:transfer-5",
+      "participant": "p34",
+      "item": "transfer-5",
+      "time": 5,
+      "correct": 0,
+      "confidence": 0.1713,
+      "seconds": 54.6094
+    },
+    {
+      "id": "p35:definition-0",
+      "participant": "p35",
+      "item": "definition-0",
+      "time": 0,
+      "correct": 1,
+      "confidence": 0.5186,
+      "seconds": 43.8791
+    },
+    {
+      "id": "p35:definition-1",
+      "participant": "p35",
+      "item": "definition-1",
+      "time": 1,
+      "correct": 1,
+      "confidence": 0.6624,
+      "seconds": 49.0386
+    },
+    {
+      "id": "p35:definition-2",
+      "participant": "p35",
+      "item": "definition-2",
+      "time": 2,
+      "correct": 1,
+      "confidence": 0.3538,
+      "seconds": 44.0779
+    },
+    {
+      "id": "p35:definition-3",
+      "participant": "p35",
+      "item": "definition-3",
+      "time": 3,
+      "correct": 1,
+      "confidence": 0.6231,
+      "seconds": 48.8466
+    },
+    {
+      "id": "p35:definition-4",
+      "participant": "p35",
+      "item": "definition-4",
+      "time": 4,
+      "correct": 1,
+      "confidence": 0.4185,
+      "seconds": 52.5025
+    },
+    {
+      "id": "p35:definition-5",
+      "participant": "p35",
+      "item": "definition-5",
+      "time": 5,
+      "correct": 0,
+      "confidence": 0.4661,
+      "seconds": 42.8639
+    },
+    {
+      "id": "p35:calculation-0",
+      "participant": "p35",
+      "item": "calculation-0",
+      "time": 0,
+      "correct": 0,
+      "confidence": 0.4346,
+      "seconds": 53.2432
+    },
+    {
+      "id": "p35:calculation-1",
+      "participant": "p35",
+      "item": "calculation-1",
+      "time": 1,
+      "correct": 0,
+      "confidence": 0.3142,
+      "seconds": 54.6709
+    },
+    {
+      "id": "p35:calculation-2",
+      "participant": "p35",
+      "item": "calculation-2",
+      "time": 2,
+      "correct": 1,
+      "confidence": 0.2863,
+      "seconds": 53.5682
+    },
+    {
+      "id": "p35:calculation-3",
+      "participant": "p35",
+      "item": "calculation-3",
+      "time": 3,
+      "correct": 1,
+      "confidence": 0.2846,
+      "seconds": 61.4607
+    },
+    {
+      "id": "p35:calculation-4",
+      "participant": "p35",
+      "item": "calculation-4",
+      "time": 4,
+      "correct": 0,
+      "confidence": 0.1434,
+      "seconds": 51.8687
+    },
+    {
+      "id": "p35:calculation-5",
+      "participant": "p35",
+      "item": "calculation-5",
+      "time": 5,
+      "correct": 1,
+      "confidence": 0.3195,
+      "seconds": 60.4584
+    },
+    {
+      "id": "p35:proof-0",
+      "participant": "p35",
+      "item": "proof-0",
+      "time": 0,
+      "correct": 1,
+      "confidence": 0.8079,
+      "seconds": 38.1835
+    },
+    {
+      "id": "p35:proof-1",
+      "participant": "p35",
+      "item": "proof-1",
+      "time": 1,
+      "correct": 1,
+      "confidence": 0.537,
+      "seconds": 40.8329
+    },
+    {
+      "id": "p35:proof-2",
+      "participant": "p35",
+      "item": "proof-2",
+      "time": 2,
+      "correct": 1,
+      "confidence": 0.5835,
+      "seconds": 43.8099
+    },
+    {
+      "id": "p35:proof-3",
+      "participant": "p35",
+      "item": "proof-3",
+      "time": 3,
+      "correct": 0,
+      "confidence": 0.7468,
+      "seconds": 46.8201
+    },
+    {
+      "id": "p35:proof-4",
+      "participant": "p35",
+      "item": "proof-4",
+      "time": 4,
+      "correct": 1,
+      "confidence": 0.533,
+      "seconds": 44.0003
+    },
+    {
+      "id": "p35:proof-5",
+      "participant": "p35",
+      "item": "proof-5",
+      "time": 5,
+      "correct": 0,
+      "confidence": 0.6208,
+      "seconds": 38.064
+    },
+    {
+      "id": "p35:transfer-0",
+      "participant": "p35",
+      "item": "transfer-0",
+      "time": 0,
+      "correct": 1,
+      "confidence": 0.619,
+      "seconds": 42.6094
+    },
+    {
+      "id": "p35:transfer-1",
+      "participant": "p35",
+      "item": "transfer-1",
+      "time": 1,
+      "correct": 0,
+      "confidence": 0.6788,
+      "seconds": 31.6041
+    },
+    {
+      "id": "p35:transfer-2",
+      "participant": "p35",
+      "item": "transfer-2",
+      "time": 2,
+      "correct": 0,
+      "confidence": 0.9216,
+      "seconds": 42.2687
+    },
+    {
+      "id": "p35:transfer-3",
+      "participant": "p35",
+      "item": "transfer-3",
+      "time": 3,
+      "correct": 0,
+      "confidence": 0.9448,
+      "seconds": 38.7067
+    },
+    {
+      "id": "p35:transfer-4",
+      "participant": "p35",
+      "item": "transfer-4",
+      "time": 4,
+      "correct": 0,
+      "confidence": 0.7765,
+      "seconds": 41.7391
+    },
+    {
+      "id": "p35:transfer-5",
+      "participant": "p35",
+      "item": "transfer-5",
+      "time": 5,
+      "correct": 1,
+      "confidence": 0.8349,
+      "seconds": 34.1176
+    }
+  ],
+  "model_assumptions": {
+    "prior": [
+      1,
+      1
+    ],
+    "learning_rate": {
+      "analogy": 0.15,
+      "deduction": 0.1
+    },
+    "forgetting": 0.05,
+    "cost": {
+      "analogy": 1,
+      "deduction": 2
+    },
+    "note": "stipulated transition and cost, NOT empirically fitted"
+  },
+  "comparison": {
+    "nodes": [
+      "a",
+      "b",
+      "c",
+      "g"
+    ],
+    "goal": "g",
+    "horizon": 3,
+    "budget": 3,
+    "actions": [
+      {
+        "id": "ab",
+        "inputs": [
+          "a",
+          "b"
+        ],
+        "output": "g",
+        "kind": "certified",
+        "cost": 2
+      },
+      {
+        "id": "c",
+        "inputs": [
+          "c"
+        ],
+        "output": "g",
+        "kind": "certified",
+        "cost": 1
+      },
+      {
+        "id": "show_b",
+        "inputs": [],
+        "output": "b",
+        "kind": "presentation",
+        "cost": 1
+      },
+      {
+        "id": "prove_b",
+        "inputs": [
+          "a"
+        ],
+        "output": "b",
+        "kind": "certified",
+        "cost": 1
+      }
+    ]
+  }
+}

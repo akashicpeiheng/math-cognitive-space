@@ -1,0 +1,62 @@
+# Render 蓝图：一条命令拉起公网模式（2026-10-05 加）
+#
+# 用法：把这份文件放在**仓库根目录**（它现在就在根目录），在 Render 里选
+# "New → Blueprint"，指向这个仓库即可。标了 `sync: false` 的值 Render 会
+# 在网页上问你要，不会写进仓库。
+#
+# 为什么不用 Docker 而是 `runtime: node`：免费实例用原生 Node 环境启动更快、
+# 构建更省额度；需要镜像时用仓库根目录的 `Dockerfile`（Fly / K8s / 自建）。
+services:
+  - type: web
+    name: mcs-web
+    runtime: node
+    plan: free
+    region: singapore
+    # 仓库根是"仓库"：服务代码在 mcs-web/，理论专稿与证书检查器在 mcs-foundations/。
+    # 证书重放要跑 mcs-foundations/validation/certification/kernel.py，所以不能只部署 mcs-web。
+    buildCommand: cd mcs-web && npm ci && npm run build
+    startCommand: node mcs-web/server/index.mjs
+    healthCheckPath: /api/v2/health
+    autoDeploy: true
+    envVars:
+      # 只写主版本：Render 会挑当前可用的最新 24.x。
+      # 写死补丁号（如 24.21.0）在平台侧不一定存在，构建会直接失败在这个与业务无关的地方。
+      - key: NODE_VERSION
+        value: '24'
+      # 容器里必须绑 0.0.0.0；Render 注入 PORT，服务会读它。
+      - key: MCS_WEB_HOST
+        value: 0.0.0.0
+      - key: MCS_WEB_PUBLIC_MODE
+        value: '1'
+      # 站点对外地址。先按 name 猜一个填上（https://mcs-web.onrender.com），
+      # 部署完如果域名不同，改这一项再重启即可。
+      - key: MCS_WEB_PUBLIC_ORIGIN
+        sync: false
+      # Host 白名单：**必须**包含站点域名，否则健康检查与所有请求都会 403。
+      - key: MCS_WEB_ALLOWED_HOSTS
+        sync: false
+      # PostgreSQL 连接串（Supabase → 项目页顶部 Connect → **Session pooler**）。
+      # 公网模式没有它就是拒绝启动，不是警告。
+      - key: DATABASE_URL
+        sync: false
+      # Supabase 的连接池要求 TLS；`require` = 加密但不校验证书链（托管数据库的常见做法）。
+      - key: MCS_WEB_DB_SSL
+        value: require
+      - key: MCS_WEB_AUTH_URL
+        sync: false
+      - key: MCS_WEB_AUTH_PUBLISHABLE_KEY
+        sync: false
+      # 会话加密密钥：Render 直接生成 32 字节随机值，人手不要碰它。
+      - key: MCS_WEB_AUTH_SESSION_KEY
+        generateValue: true
+      # 管理员按认证服务的用户 id 指定（Supabase → Authentication → Users 里那一列）。
+      # **先填占位值** `bootstrap`：至少一个管理员是启动的硬条件，而你的 UID 要等
+      # 第一次 GitHub 登录之后才存在。登录后拿到 UID 再回来改成真实值（会自动重启）。
+      - key: MCS_WEB_AUTH_ADMIN_IDS
+        sync: false
+      # 第一版不走邮箱发信：注册与找回如实回 503，登录走 GitHub。
+      - key: MCS_WEB_AUTH_EMAIL_ENABLED
+        value: '0'
+      # 站点没有 DeepTutor 就不接：界面会如实显示"未连接"。
+      - key: MCS_WEB_TUTOR_ENABLED
+        value: '0'

@@ -1,0 +1,15 @@
+Title: MCS: A Formal Framework for Mathematical Knowledge and Learning Routes with External Learner Models
+Authors: Peiheng Liu
+Contact email (author supplied): peihengmath@gmail.com
+Affiliation: omitted (none supplied)
+Primary category suggestion: cs.AI
+Optional cross-list suggestion: cs.LO, subject to author fit and arXiv moderation
+Comments: 16 pages, 2 figures; Python reproducibility artifact included as ancillary files
+Compiler: pdfLaTeX
+Top-level file: main.tex
+Source archive: dist/mcs-arxiv-source-20261001-final.zip
+License: not selected; choose in the submission system
+Submission status: prepared locally; not submitted
+
+Abstract:
+Relations in mathematical learning resources may encode joint requirements, alternative entries, proof dependencies, or presentation choices. These meanings must remain distinguishable when a learner model selects a route or a view hides part of its context. We present MCS, a specification separating versioned public mathematical resources, external learner models, and derived views and event routes. Resource ports retain evidence kind, theory, assumptions, version, and provenance. We prove a conditional saturation result for concept occurrence aggregated over unrestricted equivalent expressions; distinguish route-relative requirements from alternative sufficient supports; and give a compositional resource-preservation theorem and a bounded exhaustive-search guarantee. A lossless encoding into an annotated incidence graph makes the representational boundary explicit. A standard-library Python artifact replays local mathematical certificates, finite comparison experiments, and a limit-based route example. On the tested fragment, typed action graphs, annotated bipartite graphs, and MCS give identical classifications. The contribution is a precise, auditable integration of interfaces and their guarantees; the results establish neither unique graph expressiveness nor empirical learning benefits. General correctness of the Python proof checker and complete machine certification of the mathematical case studies remain open.

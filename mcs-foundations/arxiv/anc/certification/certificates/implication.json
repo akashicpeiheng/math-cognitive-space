@@ -1,0 +1,125 @@
+{
+  "format": "mcs-nd-subset/1",
+  "theory": {
+    "id": "implication-demo",
+    "version": "1",
+    "bases": [
+      "o",
+      "i"
+    ],
+    "constants": {},
+    "axioms": [],
+    "definitions": []
+  },
+  "proofs": {
+    "identity-implication": {
+      "checker": "mcs-nd-subset/1",
+      "theory_sha256": "743de919e50eb5a9ecd8699959c1ef2516cbc4ae5e5a0838104a2d3c6e6067f9",
+      "hypotheses": {
+        "h": [
+          "eq",
+          [
+            "v",
+            "x",
+            "i"
+          ],
+          [
+            "v",
+            "y",
+            "i"
+          ]
+        ]
+      },
+      "steps": [
+        {
+          "id": "s0",
+          "rule": "assume",
+          "conclusion": [
+            "eq",
+            [
+              "v",
+              "x",
+              "i"
+            ],
+            [
+              "v",
+              "y",
+              "i"
+            ]
+          ],
+          "premises": [],
+          "hypothesis": "h"
+        },
+        {
+          "id": "s1",
+          "rule": "imp_i",
+          "conclusion": [
+            "imp",
+            [
+              "eq",
+              [
+                "v",
+                "x",
+                "i"
+              ],
+              [
+                "v",
+                "y",
+                "i"
+              ]
+            ],
+            [
+              "eq",
+              [
+                "v",
+                "x",
+                "i"
+              ],
+              [
+                "v",
+                "y",
+                "i"
+              ]
+            ]
+          ],
+          "premises": [
+            "s0"
+          ],
+          "discharge": "h"
+        }
+      ],
+      "root": "s1",
+      "conclusion": [
+        "imp",
+        [
+          "eq",
+          [
+            "v",
+            "x",
+            "i"
+          ],
+          [
+            "v",
+            "y",
+            "i"
+          ]
+        ],
+        [
+          "eq",
+          [
+            "v",
+            "x",
+            "i"
+          ],
+          [
+            "v",
+            "y",
+            "i"
+          ]
+        ]
+      ],
+      "open_hypotheses": {}
+    }
+  },
+  "target": "identity-implication"
+}

@@ -1,0 +1,23 @@
+{
+  "date": "2026-10-01",
+  "status": "passed",
+  "pdf_pages": 16,
+  "visual_review": "All 16 final rendered pages visually inspected; diagrams, tables and references checked. No observed clipping or overlaps.",
+  "tex": "Local pdfLaTeX build and extracted archive compilation passed with no unresolved references or overfull boxes.",
+  "replay": "Four stable reports from extracted final archive match reference results byte for byte.",
+  "original_manuscript_unchanged": true,
+  "files": {
+    "main.tex": "2f19a4ec6bbfe40970d705529767d3cdf54508683f6ef1222af81362d50490ae",
+    "references.bib": "45da34336f6c4ff07d4049c59d3fb51afa361710c074def0288172c3f2279f7f",
+    "submission-metadata.txt": "7748849755ce4c60cece19383d2b7543630b899b645fba9bd61edf4acf843d12",
+    "中文导读与修订对照.md": "c370baae98114dedc917e3fafec7d88e8f4ec1da0a76ce290825a77ed74c0fc1",
+    "output/pdf/MCS-arXiv-Peiheng-Liu.pdf": "f72a8e5eb31dd3632e0e80590f1415bc1b7d91fbb967102b36ff4b4acd121e0c",
+    "dist/mcs-arxiv-source-20261001-final.zip": "a7f96cecf8ddecf3757ece5ba86d406e0c07ec6bc5ea333f1580ec825d27f8c7"
+  },
+  "not_verified": [
+    "arXiv server compilation/acceptance",
+    "independent mathematical peer review",
+    "general correctness of Python checker or planner",
+    "educational effectiveness"
+  ]
+}

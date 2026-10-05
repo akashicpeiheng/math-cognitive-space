@@ -1,0 +1,25 @@
+{
+  "status": "passed",
+  "scope": "isolated replay; diagnostic timings excluded from deterministic comparison",
+  "records": [
+    {
+      "script": "test_kernel.py",
+      "exit_code": 0,
+      "stdout": "{\"status\": \"passed\", \"checks\": 28, \"negative_certificates\": 19, \"semantic_comparisons\": 175}",
+      "stderr": ""
+    },
+    {
+      "script": "actions.py",
+      "exit_code": 0,
+      "stdout": "{\"status\": \"passed\", \"case_fragments\": 4, \"negative_actions\": 5}",
+      "stderr": ""
+    },
+    {
+      "script": "research.py",
+      "exit_code": 0,
+      "stdout": "{\"status\": \"passed\", \"synthetic\": true, \"splits\": [\"participant\", \"time\"], \"comparison_candidates_per_representation\": 2295}",
+      "stderr": ""
+    }
+  ],
+  "claims_sha256": "2e63aeae965810f5ffdf7faaacd14177a898aa11a65b0924cb8afd6d51350651"
+}

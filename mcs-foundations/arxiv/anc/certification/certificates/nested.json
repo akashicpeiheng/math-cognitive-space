@@ -1,0 +1,210 @@
+{
+  "format": "mcs-nd-subset/1",
+  "theory": {
+    "id": "nested-lambda",
+    "version": "1",
+    "bases": [
+      "o",
+      "i"
+    ],
+    "constants": {},
+    "axioms": [],
+    "definitions": []
+  },
+  "proofs": {
+    "nested-lambda": {
+      "checker": "mcs-nd-subset/1",
+      "theory_sha256": "d4afcabe9ca670a1f26b71a7d644f46458f93205909f67c11108f75d8fed1ba8",
+      "hypotheses": {},
+      "steps": [
+        {
+          "id": "s0",
+          "rule": "h_axiom",
+          "conclusion": [
+            "all",
+            [
+              "v",
+              "z0",
+              "i"
+            ],
+            [
+              "eq",
+              [
+                "app",
+                [
+                  "lift",
+                  [
+                    "lam",
+                    "i",
+                    [
+                      "lam",
+                      "i",
+                      [
+                        "b",
+                        1,
+                        "i"
+                      ]
+                    ]
+                  ],
+                  []
+                ],
+                [
+                  "v",
+                  "z0",
+                  "i"
+                ]
+              ],
+              [
+                "lift",
+                [
+                  "lam",
+                  "i",
+                  [
+                    "v",
+                    "z0",
+                    "i"
+                  ]
+                ],
+                [
+                  [
+                    "v",
+                    "z0",
+                    "i"
+                  ]
+                ]
+              ]
+            ]
+          ],
+          "premises": [],
+          "instance": {
+            "schema": "abstraction",
+            "term": [
+              "lambda",
+              "x",
+              "i",
+              [
+                "lambda",
+                "y",
+                "i",
+                [
+                  "v",
+                  "x",
+                  "i"
+                ]
+              ]
+            ]
+          }
+        },
+        {
+          "id": "s1",
+          "rule": "all_e",
+          "conclusion": [
+            "eq",
+            [
+              "app",
+              [
+                "lift",
+                [
+                  "lam",
+                  "i",
+                  [
+                    "lam",
+                    "i",
+                    [
+                      "b",
+                      1,
+                      "i"
+                    ]
+                  ]
+                ],
+                []
+              ],
+              [
+                "v",
+                "z",
+                "i"
+              ]
+            ],
+            [
+              "lift",
+              [
+                "lam",
+                "i",
+                [
+                  "v",
+                  "z0",
+                  "i"
+                ]
+              ],
+              [
+                [
+                  "v",
+                  "z",
+                  "i"
+                ]
+              ]
+            ]
+          ],
+          "premises": [
+            "s0"
+          ],
+          "term": [
+            "v",
+            "z",
+            "i"
+          ]
+        }
+      ],
+      "root": "s1",
+      "conclusion": [
+        "eq",
+        [
+          "app",
+          [
+            "lift",
+            [
+              "lam",
+              "i",
+              [
+                "lam",
+                "i",
+                [
+                  "b",
+                  1,
+                  "i"
+                ]
+              ]
+            ],
+            []
+          ],
+          [
+            "v",
+            "z",
+            "i"
+          ]
+        ],
+        [
+          "lift",
+          [
+            "lam",
+            "i",
+            [
+              "v",
+              "z0",
+              "i"
+            ]
+          ],
+          [
+            [
+              "v",
+              "z",
+              "i"
+            ]
+          ]
+        ]
+      ],
+      "open_hypotheses": {}
+    }
+  },
+  "target": "nested-lambda"
+}

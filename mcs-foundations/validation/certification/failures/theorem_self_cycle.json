@@ -1,0 +1,131 @@
+{
+  "format": "mcs-nd-subset/1",
+  "theory": {
+    "id": "nested-lambda",
+    "version": "1",
+    "bases": [
+      "o",
+      "i"
+    ],
+    "constants": {},
+    "axioms": [],
+    "definitions": []
+  },
+  "proofs": {
+    "nested-lambda": {
+      "checker": "mcs-nd-subset/1",
+      "theory_sha256": "d4afcabe9ca670a1f26b71a7d644f46458f93205909f67c11108f75d8fed1ba8",
+      "hypotheses": {},
+      "steps": [
+        {
+          "id": "ref",
+          "rule": "theorem",
+          "premises": [],
+          "conclusion": [
+            "eq",
+            [
+              "app",
+              [
+                "lift",
+                [
+                  "lam",
+                  "i",
+                  [
+                    "lam",
+                    "i",
+                    [
+                      "b",
+                      1,
+                      "i"
+                    ]
+                  ]
+                ],
+                []
+              ],
+              [
+                "v",
+                "z",
+                "i"
+              ]
+            ],
+            [
+              "lift",
+              [
+                "lam",
+                "i",
+                [
+                  "v",
+                  "z0",
+                  "i"
+                ]
+              ],
+              [
+                [
+                  "v",
+                  "z",
+                  "i"
+                ]
+              ]
+            ]
+          ],
+          "reference": {
+            "id": "nested-lambda",
+            "checker": "mcs-nd-subset/1",
+            "theory_sha256": "d4afcabe9ca670a1f26b71a7d644f46458f93205909f67c11108f75d8fed1ba8",
+            "proof_sha256": "self"
+          }
+        }
+      ],
+      "root": "ref",
+      "conclusion": [
+        "eq",
+        [
+          "app",
+          [
+            "lift",
+            [
+              "lam",
+              "i",
+              [
+                "lam",
+                "i",
+                [
+                  "b",
+                  1,
+                  "i"
+                ]
+              ]
+            ],
+            []
+          ],
+          [
+            "v",
+            "z",
+            "i"
+          ]
+        ],
+        [
+          "lift",
+          [
+            "lam",
+            "i",
+            [
+              "v",
+              "z0",
+              "i"
+            ]
+          ],
+          [
+            [
+              "v",
+              "z",
+              "i"
+            ]
+          ]
+        ]
+      ],
+      "open_hypotheses": {}
+    }
+  },
+  "target": "nested-lambda"
+}

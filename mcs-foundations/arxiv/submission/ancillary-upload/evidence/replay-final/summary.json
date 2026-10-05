@@ -1,0 +1,88 @@
+{
+  "status": "passed",
+  "python": "3.14.7 (tags/v3.14.7:823f032, Aug  5 2026, 10:51:32) [MSC v.1944 64 bit (AMD64)]",
+  "runs": [
+    {
+      "script": "test_kernel.py",
+      "exit_code": 0,
+      "stdout": "{\"status\": \"passed\", \"checks\": 28, \"negative_certificates\": 19, \"semantic_comparisons\": 175}",
+      "stderr": ""
+    },
+    {
+      "script": "actions.py",
+      "exit_code": 0,
+      "stdout": "{\"status\": \"passed\", \"case_fragments\": 4, \"negative_actions\": 5}",
+      "stderr": ""
+    },
+    {
+      "script": "research.py",
+      "exit_code": 0,
+      "stdout": "{\"status\": \"passed\", \"synthetic\": true, \"splits\": [\"participant\", \"time\"], \"comparison_candidates_per_representation\": 2295}",
+      "stderr": ""
+    }
+  ],
+  "new_route_fragment": {
+    "status": "passed",
+    "negative_cases": 11,
+    "scale": [
+      {
+        "horizon": 0,
+        "action_words": 1,
+        "source_certified_routes": 0,
+        "status": "InfeasibleWithinBound"
+      },
+      {
+        "horizon": 1,
+        "action_words": 5,
+        "source_certified_routes": 0,
+        "status": "InfeasibleWithinBound"
+      },
+      {
+        "horizon": 2,
+        "action_words": 21,
+        "source_certified_routes": 0,
+        "status": "InfeasibleWithinBound"
+      },
+      {
+        "horizon": 3,
+        "action_words": 85,
+        "source_certified_routes": 2,
+        "status": "Found"
+      },
+      {
+        "horizon": 4,
+        "action_words": 341,
+        "source_certified_routes": 30,
+        "status": "Found"
+      }
+    ]
+  },
+  "inputs": {
+    "certification/actions-fixture.json": "af03d0de4f8aad05ab3a46650c232d2fdcf428e15a3856708960d98d21241c3e",
+    "certification/actions.py": "c103ba05d0653cec107892d2a1b2e8b7b5345394ae4b64dd5cc95e012e1a537f",
+    "certification/certificates/definition.json": "04258143f207c03ad5270ea1c5cf329efab697f2c99b9ab5ab271381df6531c6",
+    "certification/certificates/group.json": "a730f28138041ea63c237029f8ac5e52a1e26ce5a8c6921376772189e527a529",
+    "certification/certificates/implication.json": "a4385cc38935359068356cd7e46ee88d4e6ffca40718dfc23c454cea756051d7",
+    "certification/certificates/limit.json": "14cc5d2c666c9f0c4c200a9e90136aa4417b3af6b03a3e29d1ed358dfdd5122b",
+    "certification/certificates/manifold.json": "8ed9540e6b0865449d6033c9a593b9bbcffad1819c5bbfd41b21f08e7ffb55f4",
+    "certification/certificates/nested.json": "23234daf17773c3255b6bf69d046c23a3ecf71033fdcb1d0335ec15a762e7a34",
+    "certification/certificates/quantifiers.json": "0898d137b1ea53ca8afa08e6b5df1d7ead87ac794125d6ad0142ffe4a31dcb73",
+    "certification/certificates/tensor.json": "01812b0c9035b18b8e8c49693909606c37935bc9d90a80f86f5d48850a85ed35",
+    "certification/examples.py": "54b200853fdb2e844dded5c79c40c6b129a50e344604fbd3ae65996260e9dd6f",
+    "certification/independent.py": "39a7cf66e9e1eb1ad25565c192813e0a449b3ede287eec005028383a6f924e15",
+    "certification/kernel.py": "25130be0e90d0336af0d4505bf664ccbc0d2ca69beda02dd6c501e124a4a4e5e",
+    "certification/research-input.json": "6068e082ecd7c5c1cb306ef9896dbaa34e3438f5bd66b5f73db82752eac05c0c",
+    "certification/research.py": "70c17654984770c525838e4dbb74ff38c0850350c4e6fab887e4d196a5235f82",
+    "certification/test_kernel.py": "2f9182b951b389f16882a7397006818376e77636b75927e8058655bdd2357b37",
+    "route_demo.py": "0020c4a3416e415d5d276da71f2267769c19553292a232dbda297005ae4eb400",
+    "run.py": "390826fc8121c1570c307723e3b02c5b9460bbf2c1ddca420c44862e36b2e7df",
+    "upstream-manifest.json": "5aeab63c9278e9e06ce54258bed3aeac709ef75af0b64472ac81636bb2041143"
+  },
+  "reports": {
+    "action-report.json": "6e0a80dd178d7fd79c14528be3d83ff97697b369e175336af05a434027d6e6d0",
+    "kernel-report.json": "b49b95eb78120d18b404bad8e9fa1d07c404d212a668040e66c5f403c5e72f21",
+    "research-report.json": "f2c38b5b2884ae3a76b695df2f4beb1185a96484244c4fa300bfe54443c3a0f3",
+    "route-report.json": "60be70110698dcfef312104eafde8883e67f385d7f81cfa3087eb532882edbb8"
+  },
+  "scope": "Finite replays; no general proof of kernel or planner implementation; no real learners"
+}

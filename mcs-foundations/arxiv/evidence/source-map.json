@@ -1,0 +1,70 @@
+{
+  "date": "2026-10-01",
+  "source_root": "mcs-foundations/",
+  "paper_revision_source": "arxiv/main.tex",
+  "files": [
+    {
+      "source": "02-对象语言：简单类型论.md",
+      "sha256": "1ce70beae9f60adcf6a295c9e113834dfa55eb0b644470372a5facff62f42f5e",
+      "paper_use": "Sections 4-5: language and evidence boundary"
+    },
+    {
+      "source": "03-语义：Henkin与标准.md",
+      "sha256": "0f62bb06426d16a651707e3c2bdd89254b758ceaeab299ab13fb3ec3d4d5c680",
+      "paper_use": "Section 4: logical soundness boundary"
+    },
+    {
+      "source": "04-节点生成与身份.md",
+      "sha256": "80cff5b8e1bee14b7d136efc283dd51accdb8bfbdc8c9ec6b6f3c36dc5deb481",
+      "paper_use": "Section 4: versioned public resource identifiers"
+    },
+    {
+      "source": "05-概念函数与支持族.md",
+      "sha256": "ae27c03b11e7618cdd7da16eab523c2833c7b4c0d5f3d2aab18851af97d4e2f5",
+      "paper_use": "Section 5: saturation and purpose-indexed support"
+    },
+    {
+      "source": "06-硬关系.md",
+      "sha256": "65c74a5408942c601a52c098cf779de5831fed6ccc64b5f085cfd2527b492992",
+      "paper_use": "Sections 4 and 6: conditions and exact source matching"
+    },
+    {
+      "source": "07-软关系与认知状态.md",
+      "sha256": "d1f1544da4e2443068fd5c6b0a8f6c117c9e76686824545b3c9f50ef63f4f811",
+      "paper_use": "Sections 4 and 10: external learner models and nonidentifiability"
+    },
+    {
+      "source": "08-关系代数与结构.md",
+      "sha256": "effca40729e035854a9ff44e56c405ddda1c26f90b767ac2ad01d4131ec05366",
+      "paper_use": "Section 6: event occurrences and resource preservation"
+    },
+    {
+      "source": "11-局部化36方案.md",
+      "sha256": "6357c567827779c819ffab6d831cec42d91dc3b18696b309e07f12b36f3ff17e",
+      "paper_use": "Section 7: views with hidden-resource boundary"
+    },
+    {
+      "source": "12-视图转换与路径规划.md",
+      "sha256": "f3833ba8d3d98d99f4a88213461bb3844c00d2b5d5722d0841134122d0cdfacd",
+      "paper_use": "Section 8: bounded enumeration and statuses"
+    },
+    {
+      "source": "15-验证与完成标准.md",
+      "sha256": "c5f0c89aa0df6cf90115a2a813373e90a77d451638712ca4271f3e5b7f51bf0a",
+      "paper_use": "Sections 1 and 9, Appendix A: evidence scope"
+    },
+    {
+      "source": "16-开放问题.md",
+      "sha256": "9d4b9dbb0ec97310771adcb93cc4f2ef0ec605ab307c1391bcee3b89225be2af",
+      "paper_use": "Section 10: limitations and future questions"
+    },
+    {
+      "source": "cases/01-极限与连续.md",
+      "sha256": "b0daa34abc1cb30b63e5ff4da5eeeac89c892bcb1a7a6c98f2fab379da06e362",
+      "paper_use": "Section 3: running mathematical example"
+    }
+  ],
+  "original_user_monograph_sha256": "443fc1c49cf23d881c0666320eac1260028c43f18a93d9bb37fe7116b78518b3",
+  "original_user_monograph_unchanged": true,
+  "editing_scope": "New arxiv/ package only; no edits to original chapters or generated monograph."
+}

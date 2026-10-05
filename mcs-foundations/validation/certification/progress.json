@@ -1,0 +1,100 @@
+{
+  "schema": "mcs-certification-progress/1",
+  "scope": "2026-09-29 execution prompt, stages 0-6",
+  "baseline": "../revisions/20260929-certification/baseline.json",
+  "commands": "../revisions/20260929-certification/commands.jsonl",
+  "task_matrix": "TASKS.md",
+  "stages": {
+    "0": {
+      "status": "passed",
+      "evidence": [
+        {
+          "path": "validation/certification/TASKS.md",
+          "sha256": "d47604c8bf984b97508d0136cbd218106099785813375e4092ac31d254624767"
+        }
+      ],
+      "scope": "scoped minimal deliverable; external obligations retained"
+    },
+    "1": {
+      "status": "passed",
+      "evidence": [
+        {
+          "path": "validation/certification/evidence-report.json",
+          "sha256": "0567b70e5b079421a6e2312303f7ac9369b66f27aea661274e930d2efd6d2ff3"
+        }
+      ],
+      "scope": "scoped minimal deliverable; external obligations retained"
+    },
+    "2": {
+      "status": "passed",
+      "evidence": [
+        {
+          "path": "validation/certification/kernel-report.json",
+          "sha256": "b49b95eb78120d18b404bad8e9fa1d07c404d212a668040e66c5f403c5e72f21"
+        }
+      ],
+      "scope": "scoped minimal deliverable; external obligations retained"
+    },
+    "3": {
+      "status": "passed",
+      "evidence": [
+        {
+          "path": "validation/certification/kernel-report.json",
+          "sha256": "b49b95eb78120d18b404bad8e9fa1d07c404d212a668040e66c5f403c5e72f21"
+        }
+      ],
+      "scope": "scoped minimal deliverable; external obligations retained"
+    },
+    "4": {
+      "status": "passed",
+      "evidence": [
+        {
+          "path": "validation/certification/action-report.json",
+          "sha256": "6e0a80dd178d7fd79c14528be3d83ff97697b369e175336af05a434027d6e6d0"
+        },
+        {
+          "path": "validation/certification/CASES.md",
+          "sha256": "68b786dce311d2a363537f953fc5eee3142a3a9ef7344911a458d4c2c769dde7"
+        }
+      ],
+      "scope": "scoped minimal deliverable; external obligations retained"
+    },
+    "5": {
+      "status": "passed",
+      "evidence": [
+        {
+          "path": "validation/certification/research-report.json",
+          "sha256": "3236df70db4303169cf8b8b1d81f77f7da2e947c32be4a53ad9d560ac7a66edf"
+        },
+        {
+          "path": "validation/certification/RESEARCH.md",
+          "sha256": "911ec8209b2bf7a7fa1d30105aecc7acf82f336b44e7567b91057969e88827f8"
+        }
+      ],
+      "scope": "scoped minimal deliverable; external obligations retained"
+    },
+    "6": {
+      "status": "passed",
+      "evidence": [
+        {
+          "path": "validation/certification/replay-report.json",
+          "sha256": "e0036448d8ee365eadb2bac5890aa75fd80ef09efeebcfba7b0f58bbde63c63f"
+        }
+      ],
+      "scope": "scoped minimal deliverable; external obligations retained"
+    }
+  },
+  "external_obligations": [
+    "complete calculus",
+    "kernel machine meta-proof",
+    "four full case bridges",
+    "real learning data and causal/measurement validation"
+  ],
+  "completed_utc": "2026-09-29T08:35:42.494850+00:00",
+  "final_checks": {
+    "monograph_sources_verified": 26,
+    "finite_regressions": 15,
+    "site": "33 Node semantic checks; no site code change; browser not rerun",
+    "tex_pdf": "old exports, not rebuilt"
+  }
+}

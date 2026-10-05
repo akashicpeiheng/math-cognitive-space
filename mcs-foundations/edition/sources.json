@@ -1,0 +1,106 @@
+[
+  {
+    "source": "D-接口契约.md",
+    "sha256": "6c0d7d213d50491d90c2f1876fc7112135d9460fdad47b14a5d940e279dbebfb"
+  },
+  {
+    "source": "01-元理论与可构造宇宙.md",
+    "sha256": "d93133313fc066361162deed0e6138e2f5189a8b201e71bf0e27fabbba2ae08d"
+  },
+  {
+    "source": "02-对象语言：简单类型论.md",
+    "sha256": "1ce70beae9f60adcf6a295c9e113834dfa55eb0b644470372a5facff62f42f5e"
+  },
+  {
+    "source": "03-语义：Henkin与标准.md",
+    "sha256": "0f62bb06426d16a651707e3c2bdd89254b758ceaeab299ab13fb3ec3d4d5c680"
+  },
+  {
+    "source": "04-节点生成与身份.md",
+    "sha256": "80cff5b8e1bee14b7d136efc283dd51accdb8bfbdc8c9ec6b6f3c36dc5deb481"
+  },
+  {
+    "source": "05-概念函数与支持族.md",
+    "sha256": "ae27c03b11e7618cdd7da16eab523c2833c7b4c0d5f3d2aab18851af97d4e2f5"
+  },
+  {
+    "source": "06-硬关系.md",
+    "sha256": "65c74a5408942c601a52c098cf779de5831fed6ccc64b5f085cfd2527b492992"
+  },
+  {
+    "source": "07-软关系与认知状态.md",
+    "sha256": "d1f1544da4e2443068fd5c6b0a8f6c117c9e76686824545b3c9f50ef63f4f811"
+  },
+  {
+    "source": "08-关系代数与结构.md",
+    "sha256": "effca40729e035854a9ff44e56c405ddda1c26f90b767ac2ad01d4131ec05366"
+  },
+  {
+    "source": "09-话题、领域、学科与元理论.md",
+    "sha256": "a09226a102a47eb2c79528f813550c10ce5a1520ab9a68301de1d2b4fb99e3ce"
+  },
+  {
+    "source": "10-节点模板.md",
+    "sha256": "d6e436350351efd11036ebe98fc6aa76264a96e5e128615b91af4f9d51787c33"
+  },
+  {
+    "source": "11-局部化36方案.md",
+    "sha256": "6357c567827779c819ffab6d831cec42d91dc3b18696b309e07f12b36f3ff17e"
+  },
+  {
+    "source": "12-视图转换与路径规划.md",
+    "sha256": "f3833ba8d3d98d99f4a88213461bb3844c00d2b5d5722d0841134122d0cdfacd"
+  },
+  {
+    "source": "13-贯通案例.md",
+    "sha256": "0a792a26f1dbca8812265549e9d4d80cfda1aba65b6498961717890de3cd0674"
+  },
+  {
+    "source": "cases/01-极限与连续.md",
+    "sha256": "b0daa34abc1cb30b63e5ff4da5eeeac89c892bcb1a7a6c98f2fab379da06e362"
+  },
+  {
+    "source": "cases/02-Ck与光滑流形.md",
+    "sha256": "799f48a45a3aeced2b40ee246a40fa800181192bdff1569649766d9b955b30e9"
+  },
+  {
+    "source": "cases/03-张量与张量场.md",
+    "sha256": "72f2e17b4be5d94e888aacba61eb72c4c5291c9fd9fd8cc9e986ea16ef0a673e"
+  },
+  {
+    "source": "cases/04-群概念的多来源.md",
+    "sha256": "885aef46e2564827d395fbd0a0c95a012aeb474afd8fcf67cea7137e87aade01"
+  },
+  {
+    "source": "14-反例集.md",
+    "sha256": "746217ce4491b908a178da0916634c1fa9863259452a390c88b632fef9d811ae"
+  },
+  {
+    "source": "15-验证与完成标准.md",
+    "sha256": "c5f0c89aa0df6cf90115a2a813373e90a77d451638712ca4271f3e5b7f51bf0a"
+  },
+  {
+    "source": "16-开放问题.md",
+    "sha256": "9d4b9dbb0ec97310771adcb93cc4f2ef0ec605ab307c1391bcee3b89225be2af"
+  },
+  {
+    "source": "E-核心公理与验证条件.md",
+    "sha256": "207893b08ba0b66374342f6f538d43151aca3a311ad0e54efc0c970921734f6a"
+  },
+  {
+    "source": "A-定义与定理索引.md",
+    "sha256": "b8a132c1eae85f9e6e7bcf6466742508d39ce9627df7fda67257fbf2cb6baae4"
+  },
+  {
+    "source": "B-文献证据表.md",
+    "sha256": "6731d624a668b375e05fb5ad92274b6a73b3645f05e8ee79d2d8b6d749a534e7"
+  },
+  {
+    "source": "C-记号索引.md",
+    "sha256": "7c63d164714b644606d0f2f70993fc0e0e88c299fae781479ec86d0c2ed8144f"
+  },
+  {
+    "source": "validation/REPORT.md",
+    "sha256": "e7faad4efc3b290102451b9a217f668c830c528c1b2b7a3d438262fe75966c3b"
+  }
+]

@@ -1,0 +1,33 @@
+# 依赖与运行状态
+node_modules/
+runtime/
+tmp/
+*.sqlite3
+*.sqlite3-shm
+*.sqlite3-wal
+*.log
+*.pid
+
+# 本机配置与凭据
+config.local.json
+credentials.json
+.env
+.env.*
+.vercel/
+
+# 构建产物
+mcs-web/web/dist/
+mcs-foundations/arxiv/output/
+mcs-foundations/arxiv/package-staging/
+__pycache__/
+*.pyc
+*.pyo
+*.aux
+*.out
+*.toc
+*.synctex.gz
+*.tsbuildinfo
+
+# 编辑器与系统
+.DS_Store
+Thumbs.db

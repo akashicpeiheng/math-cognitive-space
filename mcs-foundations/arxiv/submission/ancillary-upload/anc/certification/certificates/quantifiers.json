@@ -1,0 +1,220 @@
+{
+  "format": "mcs-nd-subset/1",
+  "theory": {
+    "id": "quantifier-demo",
+    "version": "1",
+    "bases": [
+      "o",
+      "i"
+    ],
+    "constants": {},
+    "axioms": [],
+    "definitions": []
+  },
+  "proofs": {
+    "quantifiers": {
+      "checker": "mcs-nd-subset/1",
+      "theory_sha256": "8f6e3e1cc6ed2f5a96d831358a7a1ec801bc406a010ad55ad56d5d47f0546c69",
+      "hypotheses": {
+        "witness": [
+          "eq",
+          [
+            "v",
+            "y",
+            "i"
+          ],
+          [
+            "v",
+            "y",
+            "i"
+          ]
+        ]
+      },
+      "steps": [
+        {
+          "id": "s0",
+          "rule": "refl",
+          "conclusion": [
+            "eq",
+            [
+              "v",
+              "y",
+              "i"
+            ],
+            [
+              "v",
+              "y",
+              "i"
+            ]
+          ],
+          "premises": []
+        },
+        {
+          "id": "s1",
+          "rule": "all_i",
+          "conclusion": [
+            "all",
+            [
+              "v",
+              "x",
+              "i"
+            ],
+            [
+              "eq",
+              [
+                "v",
+                "x",
+                "i"
+              ],
+              [
+                "v",
+                "x",
+                "i"
+              ]
+            ]
+          ],
+          "premises": [
+            "s0"
+          ],
+          "variable": [
+            "v",
+            "y",
+            "i"
+          ]
+        },
+        {
+          "id": "s2",
+          "rule": "all_e",
+          "conclusion": [
+            "eq",
+            [
+              "v",
+              "y",
+              "i"
+            ],
+            [
+              "v",
+              "y",
+              "i"
+            ]
+          ],
+          "premises": [
+            "s1"
+          ],
+          "term": [
+            "v",
+            "y",
+            "i"
+          ]
+        },
+        {
+          "id": "s3",
+          "rule": "ex_i",
+          "conclusion": [
+            "ex",
+            [
+              "v",
+              "x",
+              "i"
+            ],
+            [
+              "eq",
+              [
+                "v",
+                "x",
+                "i"
+              ],
+              [
+                "v",
+                "x",
+                "i"
+              ]
+            ]
+          ],
+          "premises": [
+            "s2"
+          ],
+          "term": [
+            "v",
+            "y",
+            "i"
+          ]
+        },
+        {
+          "id": "s4",
+          "rule": "assume",
+          "conclusion": [
+            "eq",
+            [
+              "v",
+              "y",
+              "i"
+            ],
+            [
+              "v",
+              "y",
+              "i"
+            ]
+          ],
+          "premises": [],
+          "hypothesis": "witness"
+        },
+        {
+          "id": "s5",
+          "rule": "refl",
+          "conclusion": [
+            "eq",
+            [
+              "logic",
+              "true"
+            ],
+            [
+              "logic",
+              "true"
+            ]
+          ],
+          "premises": []
+        },
+        {
+          "id": "s6",
+          "rule": "ex_e",
+          "conclusion": [
+            "eq",
+            [
+              "logic",
+              "true"
+            ],
+            [
+              "logic",
+              "true"
+            ]
+          ],
+          "premises": [
+            "s3",
+            "s5"
+          ],
+          "variable": [
+            "v",
+            "y",
+            "i"
+          ],
+          "discharge": "witness"
+        }
+      ],
+      "root": "s6",
+      "conclusion": [
+        "eq",
+        [
+          "logic",
+          "true"
+        ],
+        [
+          "logic",
+          "true"
+        ]
+      ],
+      "open_hypotheses": {}
+    }
+  },
+  "target": "quantifiers"
+}

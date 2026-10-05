@@ -1,0 +1,21 @@
+{
+  "scope": "Byte-identical selected files from the existing MCS certification implementation; no general soundness claim.",
+  "files": {
+    "certification/actions-fixture.json": "af03d0de4f8aad05ab3a46650c232d2fdcf428e15a3856708960d98d21241c3e",
+    "certification/actions.py": "c103ba05d0653cec107892d2a1b2e8b7b5345394ae4b64dd5cc95e012e1a537f",
+    "certification/certificates/definition.json": "04258143f207c03ad5270ea1c5cf329efab697f2c99b9ab5ab271381df6531c6",
+    "certification/certificates/group.json": "a730f28138041ea63c237029f8ac5e52a1e26ce5a8c6921376772189e527a529",
+    "certification/certificates/implication.json": "a4385cc38935359068356cd7e46ee88d4e6ffca40718dfc23c454cea756051d7",
+    "certification/certificates/limit.json": "14cc5d2c666c9f0c4c200a9e90136aa4417b3af6b03a3e29d1ed358dfdd5122b",
+    "certification/certificates/manifold.json": "8ed9540e6b0865449d6033c9a593b9bbcffad1819c5bbfd41b21f08e7ffb55f4",
+    "certification/certificates/nested.json": "23234daf17773c3255b6bf69d046c23a3ecf71033fdcb1d0335ec15a762e7a34",
+    "certification/certificates/quantifiers.json": "0898d137b1ea53ca8afa08e6b5df1d7ead87ac794125d6ad0142ffe4a31dcb73",
+    "certification/certificates/tensor.json": "01812b0c9035b18b8e8c49693909606c37935bc9d90a80f86f5d48850a85ed35",
+    "certification/examples.py": "54b200853fdb2e844dded5c79c40c6b129a50e344604fbd3ae65996260e9dd6f",
+    "certification/independent.py": "39a7cf66e9e1eb1ad25565c192813e0a449b3ede287eec005028383a6f924e15",
+    "certification/kernel.py": "25130be0e90d0336af0d4505bf664ccbc0d2ca69beda02dd6c501e124a4a4e5e",
+    "certification/research-input.json": "6068e082ecd7c5c1cb306ef9896dbaa34e3438f5bd66b5f73db82752eac05c0c",
+    "certification/research.py": "70c17654984770c525838e4dbb74ff38c0850350c4e6fab887e4d196a5235f82",
+    "certification/test_kernel.py": "2f9182b951b389f16882a7397006818376e77636b75927e8058655bdd2357b37"
+  }
+}

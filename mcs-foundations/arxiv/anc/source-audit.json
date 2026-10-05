@@ -1,0 +1,66 @@
+{
+  "access_date": "2026-10-01",
+  "method": "Primary source pages/PDF passages read with the web tool. Scope is recorded per reference; no claim to have read every complete work or exhausted related literature.",
+  "references": [
+    {
+      "key": "omdoc",
+      "url": "https://www.omdoc.org/format/",
+      "read_scope": "Project format overview and its document/statement/theory organization. Not an audit of all OMDoc specifications.",
+      "use": "Section 2: levels of mathematical documents.",
+      "metadata": "Project documentation has no explicit publication year; cited as n.d."
+    },
+    {
+      "key": "mmt",
+      "url": "https://arxiv.org/abs/1105.0548",
+      "text_url": "https://arxiv.org/pdf/1105.0548",
+      "read_scope": "Abstract and relevant excerpts of sections 3-5 concerning theories, constants, and theory morphisms/views. Not an exhaustive proof audit.",
+      "use": "Section 2: modular representations; MMT views distinguished from display restrictions.",
+      "metadata": "Rabe and Kohlhase; arXiv manuscript first submitted 2011; no guessed journal metadata."
+    },
+    {
+      "key": "spaces",
+      "url": "https://arxiv.org/abs/1511.06757",
+      "text_url": "https://arxiv.org/pdf/1511.06757",
+      "read_scope": "Abstract and section 3, including Definition 9 and Theorem 10 on quasi-ordinal spaces and quasi-orders.",
+      "use": "Sections 2 and 5: distinction between general knowledge spaces and intersection-closed families.",
+      "metadata": "Doignon and Falmagne, 2015."
+    },
+    {
+      "key": "vhpop",
+      "url": "https://www.cs.cmu.edu/afs/cs/project/jair/pub/volume20/younes03a-html/index.html",
+      "read_scope": "Paper overview and basic POCL formulation (action instances, causal links, ordering constraints, threats). Not an audit of its complete solver or experiments.",
+      "use": "Section 2: direct planning comparison and the persistent-resource simplification.",
+      "metadata": "Younes and Simmons, JAIR 20, 405-430, 2003; title/authors/pages checked against author institutional bibliography and primary publication listing."
+    },
+    {
+      "key": "brusilovsky",
+      "url": "https://sites.pitt.edu/~peterb/papers/EWED.html",
+      "read_scope": "Opening material and section 2 on domain models, student models, and learning materials; publication metadata on the author-hosted text.",
+      "use": "Section 2: prior separation of public domain content and learner information.",
+      "metadata": "Brusilovsky, 1997, 129-140, Twente University Press; editors checked on the author-hosted page."
+    }
+  ],
+  "policy_sources": [
+    {
+      "url": "https://info.arxiv.org/help/faq/multilang.html",
+      "read_scope": "English full-version requirement"
+    },
+    {
+      "url": "https://info.arxiv.org/help/submit_tex.html",
+      "read_scope": "Source organization, supported processing, and bibliography inclusion"
+    },
+    {
+      "url": "https://info.arxiv.org/help/ancillary_files.html",
+      "read_scope": "Ancillary directory organization"
+    },
+    {
+      "url": "https://info.arxiv.org/help/license/index.html",
+      "read_scope": "License choice remains with the submitting author"
+    }
+  ],
+  "not_claimed": [
+    "independent peer review",
+    "exhaustive novelty search",
+    "all cited works read in full"
+  ]
+}

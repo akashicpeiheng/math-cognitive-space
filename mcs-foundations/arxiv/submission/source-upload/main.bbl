@@ -1,0 +1,46 @@
+\begin{thebibliography}{5}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi: #1}\else
+  \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[Brusilovsky(1997)]{brusilovsky}
+Peter Brusilovsky.
+\newblock Integrating hypermedia and intelligent tutoring technologies: From
+  systems to authoring tools.
+\newblock In P.~Kommers, A.~Dovgiallo, V.~Petrushin, and P.~Brusilovsky,
+  editors, \emph{New Media and Telematic Technologies for Education in Eastern
+  European Countries}, pages 129--140. Twente University Press, Enschede, 1997.
+\newblock URL \url{https://sites.pitt.edu/~peterb/papers/EWED.html}.
+
+\bibitem[Doignon and Falmagne(2015)]{spaces}
+Jean-Paul Doignon and Jean-Claude Falmagne.
+\newblock Knowledge spaces and learning spaces.
+\newblock arXiv:1511.06757, 2015.
+\newblock URL \url{https://arxiv.org/abs/1511.06757}.
+\newblock Especially section 3, Definition 9 and Theorem 10.
+
+\bibitem[{OMDoc Project}(n.d.)]{omdoc}
+{OMDoc Project}.
+\newblock The {OMDoc} format.
+\newblock Project documentation, n.d.
+\newblock URL \url{https://www.omdoc.org/format/}.
+\newblock Accessed October 1, 2026.
+
+\bibitem[Rabe and Kohlhase(2011)]{mmt}
+Florian Rabe and Michael Kohlhase.
+\newblock A scalable module system.
+\newblock arXiv:1105.0548, 2011.
+\newblock URL \url{https://arxiv.org/abs/1105.0548}.
+\newblock The arXiv manuscript; especially sections 3--5.
+
+\bibitem[Younes and Simmons(2003)]{vhpop}
+H{\aa}kan L.~S. Younes and Reid~G. Simmons.
+\newblock {VHPOP}: Versatile heuristic partial order planner.
+\newblock \emph{Journal of Artificial Intelligence Research}, 20:\penalty0
+  405--430, 2003.
+\newblock URL
+  \url{https://www.cs.cmu.edu/afs/cs/project/jair/pub/volume20/younes03a-html/index.html}.
+
+\end{thebibliography}

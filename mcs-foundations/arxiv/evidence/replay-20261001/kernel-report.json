@@ -1,0 +1,255 @@
+{
+  "status": "passed",
+  "checker": "mcs-nd-subset/1",
+  "checker_sha256": "25130be0e90d0336af0d4505bf664ccbc0d2ca69beda02dd6c501e124a4a4e5e",
+  "checks": [
+    {
+      "id": "positive_certificates",
+      "status": "passed",
+      "detail": 8
+    },
+    {
+      "id": "existential_nonvacuous_case",
+      "status": "passed",
+      "detail": 1
+    },
+    {
+      "id": "all_eigen_leak",
+      "status": "passed",
+      "detail": {
+        "rejected": "failed",
+        "step": "bad-all:s1",
+        "reason": "universal eigenvariable leaks into open assumptions"
+      }
+    },
+    {
+      "id": "ex_eigen_leak",
+      "status": "passed",
+      "detail": {
+        "rejected": "failed",
+        "step": "bad-ex:s2",
+        "reason": "existential eigenvariable leaks"
+      }
+    },
+    {
+      "id": "hidden_open_hypothesis",
+      "status": "passed",
+      "detail": {
+        "rejected": "failed",
+        "step": null,
+        "reason": "declared open hypotheses differ from recomputed ones"
+      }
+    },
+    {
+      "id": "illegal_discharge",
+      "status": "passed",
+      "detail": {
+        "rejected": "failed",
+        "step": "identity-implication:s1",
+        "reason": "undeclared discharge label"
+      }
+    },
+    {
+      "id": "unsupported_rule",
+      "status": "passed",
+      "detail": {
+        "rejected": "unsupported",
+        "step": "quantifiers:s6",
+        "reason": "unsupported rule: classical_refutation"
+      }
+    },
+    {
+      "id": "forged_h_axiom",
+      "status": "passed",
+      "detail": {
+        "rejected": "failed",
+        "step": "constant-sequence-value:s0",
+        "reason": "forged H_Sigma instance"
+      }
+    },
+    {
+      "id": "forged_axiom_witness",
+      "status": "passed",
+      "detail": {
+        "rejected": "failed",
+        "step": "cayley-evaluation-injective:s18",
+        "reason": "invalid finite theory member witness"
+      }
+    },
+    {
+      "id": "undeclared_axiom",
+      "status": "passed",
+      "detail": {
+        "rejected": "failed",
+        "step": "cayley-evaluation-injective:s18",
+        "reason": "invalid finite theory member witness"
+      }
+    },
+    {
+      "id": "proof_cycle",
+      "status": "passed",
+      "detail": {
+        "rejected": "failed",
+        "step": "nested-lambda:s1",
+        "reason": "cyclic step dependency: s1"
+      }
+    },
+    {
+      "id": "forged_proof_id",
+      "status": "passed",
+      "detail": {
+        "rejected": "failed",
+        "step": "nested-lambda:s1",
+        "reason": "unresolved step ID: fake-proof"
+      }
+    },
+    {
+      "id": "checker_version",
+      "status": "passed",
+      "detail": {
+        "rejected": "failed",
+        "step": null,
+        "reason": "proof checker version mismatch"
+      }
+    },
+    {
+      "id": "theory_version",
+      "status": "passed",
+      "detail": {
+        "rejected": "failed",
+        "step": null,
+        "reason": "proof theory version/hash mismatch"
+      }
+    },
+    {
+      "id": "object_fol_confusion",
+      "status": "passed",
+      "detail": {
+        "rejected": "unsupported",
+        "step": "nested-lambda:s1",
+        "reason": "unsupported certification formula: app"
+      }
+    },
+    {
+      "id": "lift_parameter_omission",
+      "status": "passed",
+      "detail": {
+        "rejected": "failed",
+        "step": "constant-sequence-value:s7",
+        "reason": "lift parameter arity"
+      }
+    },
+    {
+      "id": "lift_parameter_swap",
+      "status": "passed",
+      "detail": {
+        "rejected": "failed",
+        "step": "swap:s0",
+        "reason": "forged H_Sigma instance"
+      }
+    },
+    {
+      "id": "specification_without_realization",
+      "status": "passed",
+      "detail": {
+        "rejected": "unsupported",
+        "step": null,
+        "reason": "specification definition requires separate domain-realization certification; unsupported"
+      }
+    },
+    {
+      "id": "self_definition",
+      "status": "passed",
+      "detail": {
+        "rejected": "failed",
+        "step": null,
+        "reason": "undeclared constant"
+      }
+    },
+    {
+      "id": "theorem_self_cycle",
+      "status": "passed",
+      "detail": {
+        "rejected": "failed",
+        "step": "nested-lambda:ref",
+        "reason": "cyclic theorem dependency: nested-lambda"
+      }
+    },
+    {
+      "id": "cross_version_reference",
+      "status": "passed",
+      "detail": {
+        "rejected": "failed",
+        "step": "client:ref",
+        "reason": "cross-version theorem reference"
+      }
+    },
+    {
+      "id": "binding_and_capture",
+      "status": "passed",
+      "detail": 5
+    },
+    {
+      "id": "independent_translation",
+      "status": "passed",
+      "detail": {
+        "terms": 35,
+        "comparisons": 175,
+        "bound": "exact AST size 1..5, three result types i, i->i, i->i->i; depth<=2; free x,y:i; base size 1,2; all assignments"
+      }
+    },
+    {
+      "id": "independent_case_models",
+      "status": "passed",
+      "detail": {
+        "assignments": 42,
+        "scope": "C2, two-valued constant sequence, identity charts, 1D vector space over F2; not full cases"
+      }
+    },
+    {
+      "id": "quantifier_countermodels",
+      "status": "passed",
+      "detail": 2
+    },
+    {
+      "id": "independent_background_schemas",
+      "status": "passed",
+      "detail": 11
+    },
+    {
+      "id": "controlled_mutations",
+      "status": "passed",
+      "detail": [
+        {
+          "removed_guard": "all_eigen_leak",
+          "negative_harness_exit": 1,
+          "output": "NEGATIVE TEST FAILED: invalid certificate accepted",
+          "production_untouched": "25130be0e90d0336af0d4505bf664ccbc0d2ca69beda02dd6c501e124a4a4e5e"
+        },
+        {
+          "removed_guard": "ex_eigen_leak",
+          "negative_harness_exit": 1,
+          "output": "NEGATIVE TEST FAILED: invalid certificate accepted",
+          "production_untouched": "25130be0e90d0336af0d4505bf664ccbc0d2ca69beda02dd6c501e124a4a4e5e"
+        }
+      ]
+    },
+    {
+      "id": "cli_exit_classes",
+      "status": "passed",
+      "detail": {
+        "accepted": 0,
+        "invalid": 1,
+        "unsupported": 2,
+        "resource_exhausted": 3,
+        "corrupt": 4
+      }
+    }
+  ],
+  "not_claimed": [
+    "general kernel soundness",
+    "completeness",
+    "all lambda closure",
+    "empirical effects"
+  ]
+}

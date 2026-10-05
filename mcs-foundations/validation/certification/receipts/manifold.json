@@ -1,0 +1,151 @@
+{
+  "status": "passed",
+  "checker": "mcs-nd-subset/1",
+  "checker_sha256": "25130be0e90d0336af0d4505bf664ccbc0d2ca69beda02dd6c501e124a4a4e5e",
+  "theory_id": "chart-transition-algebra",
+  "theory_version": "1",
+  "theory_sha256": "74d51bc205d37dd16691ca9ee47fdbd13761a0262b2b023eaa4ac3a5678951c1",
+  "proof_id": "chart-self-transition",
+  "proof_sha256": "c75e9583f98aa79a21f59e0f969a0ffcba59388b97fddcb4b86fab042eb37a46",
+  "conclusion": [
+    "eq",
+    [
+      "app",
+      [
+        "app",
+        [
+          "logic",
+          "eq",
+          "Y"
+        ],
+        [
+          "app",
+          [
+            "lift",
+            [
+              "lam",
+              "Y",
+              [
+                "app",
+                [
+                  "c",
+                  "chart"
+                ],
+                [
+                  "app",
+                  [
+                    "c",
+                    "inverse"
+                  ],
+                  [
+                    "b",
+                    0,
+                    "Y"
+                  ]
+                ]
+              ]
+            ],
+            []
+          ],
+          [
+            "v",
+            "y",
+            "Y"
+          ]
+        ]
+      ],
+      [
+        "v",
+        "y",
+        "Y"
+      ]
+    ],
+    [
+      "logic",
+      "true"
+    ]
+  ],
+  "conclusion_type": "FOL-formula",
+  "object_conclusion": [
+    "app",
+    [
+      "app",
+      [
+        "logic",
+        "eq",
+        "Y"
+      ],
+      [
+        "app",
+        [
+          "lambda",
+          "u",
+          "Y",
+          [
+            "app",
+            [
+              "c",
+              "chart"
+            ],
+            [
+              "app",
+              [
+                "c",
+                "inverse"
+              ],
+              [
+                "v",
+                "u",
+                "Y"
+              ]
+            ]
+          ]
+        ],
+        [
+          "v",
+          "y",
+          "Y"
+        ]
+      ]
+    ],
+    [
+      "v",
+      "y",
+      "Y"
+    ]
+  ],
+  "open_hypotheses": {
+    "right_inverse_at_y": [
+      "eq",
+      [
+        "app",
+        [
+          "c",
+          "chart"
+        ],
+        [
+          "app",
+          [
+            "c",
+            "inverse"
+          ],
+          [
+            "v",
+            "y",
+            "Y"
+          ]
+        ]
+      ],
+      [
+        "v",
+        "y",
+        "Y"
+      ]
+    ]
+  },
+  "dependencies": [
+    "H:{\"schema\":\"abstraction\",\"term\":[\"lambda\",\"u\",\"Y\",[\"app\",[\"c\",\"chart\"],[\"app\",[\"c\",\"inverse\"],[\"v\",\"u\",\"Y\"]]]]}",
+    "H:{\"schema\":\"equality\",\"type\":\"Y\"}"
+  ],
+  "kernel_formally_verified": false
+}

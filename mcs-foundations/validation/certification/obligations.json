@@ -1,0 +1,103 @@
+{
+  "schema": "mcs-proof-obligations/1",
+  "obligations": [
+    {
+      "id": "O-TYPE",
+      "source": {
+        "path": "02-对象语言：简单类型论.md",
+        "anchor": "命题 2.8",
+        "line": 32,
+        "sha256": "1ce70beae9f60adcf6a295c9e113834dfa55eb0b644470372a5facff62f42f5e"
+      },
+      "implementation": "infer, canonical, object_substitute",
+      "natural_language_proof": "present; depends on stated hypotheses and references",
+      "implementation_correspondence_review": "finite/manual only",
+      "machine_meta_proof": "not_run",
+      "remaining": "all supported well-typed inputs"
+    },
+    {
+      "id": "O-LIFT",
+      "source": {
+        "path": "03-语义：Henkin与标准.md",
+        "anchor": "命题 3.7",
+        "line": 48,
+        "sha256": "0f62bb06426d16a651707e3c2bdd89254b758ceaeab299ab13fb3ec3d4d5c680"
+      },
+      "implementation": "lift, axiom(abstraction)",
+      "natural_language_proof": "present; depends on stated hypotheses and references",
+      "implementation_correspondence_review": "finite/manual only",
+      "machine_meta_proof": "not_run",
+      "remaining": "all type trees, terms and legal valuations"
+    },
+    {
+      "id": "O-SUBST",
+      "source": {
+        "path": "02-对象语言：简单类型论.md",
+        "anchor": "翻译—替换交换",
+        "line": 209,
+        "sha256": "1ce70beae9f60adcf6a295c9e113834dfa55eb0b644470372a5facff62f42f5e"
+      },
+      "implementation": "fsub, term_sub",
+      "natural_language_proof": "present; depends on stated hypotheses and references",
+      "implementation_correspondence_review": "finite/manual only",
+      "machine_meta_proof": "not_run",
+      "remaining": "translation/substitution equality is provable, not syntactic identity"
+    },
+    {
+      "id": "O-RULES",
+      "source": {
+        "path": "03-语义：Henkin与标准.md",
+        "anchor": "定理 3.9",
+        "line": 48,
+        "sha256": "0f62bb06426d16a651707e3c2bdd89254b758ceaeab299ab13fb3ec3d4d5c680"
+      },
+      "implementation": "check.visit",
+      "natural_language_proof": "present; depends on stated hypotheses and references",
+      "implementation_correspondence_review": "finite/manual only",
+      "machine_meta_proof": "not_run",
+      "remaining": "rule preservation incl. discharge/eigenvariables"
+    },
+    {
+      "id": "O-DEFINITIONS",
+      "source": {
+        "path": "03-语义：Henkin与标准.md",
+        "anchor": "命题 3.13",
+        "line": 117,
+        "sha256": "0f62bb06426d16a651707e3c2bdd89254b758ceaeab299ab13fb3ec3d4d5c680"
+      },
+      "implementation": "environment",
+      "natural_language_proof": "present; depends on stated hypotheses and references",
+      "implementation_correspondence_review": "finite/manual only",
+      "machine_meta_proof": "not_run",
+      "remaining": "old-language closed term definitions only"
+    },
+    {
+      "id": "O-MODELS",
+      "source": {
+        "path": "03-语义：Henkin与标准.md",
+        "anchor": "命题 3.8",
+        "line": 52,
+        "sha256": "0f62bb06426d16a651707e3c2bdd89254b758ceaeab299ab13fb3ec3d4d5c680"
+      },
+      "implementation": "no general machine model construction",
+      "natural_language_proof": "present; depends on stated hypotheses and references",
+      "implementation_correspondence_review": "not implemented",
+      "machine_meta_proof": "not_run",
+      "remaining": "general externalization and lambda closure"
+    },
+    {
+      "id": "O-COMPLETENESS",
+      "source": {
+        "path": "03-语义：Henkin与标准.md",
+        "anchor": "定理 3.9",
+        "line": 48,
+        "sha256": "0f62bb06426d16a651707e3c2bdd89254b758ceaeab299ab13fb3ec3d4d5c680"
+      },
+      "implementation": "unsupported full calculus",
+      "natural_language_proof": "present; depends on stated hypotheses and references",
+      "implementation_correspondence_review": "not implemented",
+      "machine_meta_proof": "not_run",
+      "remaining": "subset has no completeness claim"
+    }
+  ]
+}

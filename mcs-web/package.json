@@ -1,0 +1,45 @@
+{
+  "name": "mcs-web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "数学认知空间 MCS：本机运行、学习与研究一体的数学工作台",
+  "engines": {
+    "node": ">=22.12"
+  },
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "build": "tsc -p web/tsconfig.json --noEmit && vite build --config web/vite.config.ts",
+    "start": "node server/index.mjs",
+    "check": "node scripts/doctor.mjs",
+    "test": "node tests/run-all.mjs",
+    "test:core": "node --test tests/core.test.mjs tests/planner.test.mjs tests/localization.test.mjs tests/tutor.test.mjs",
+    "test:api": "node tests/api.test.mjs",
+    "test:browser": "node tests/browser.mjs",
+    "verify:relations": "node scripts/verify-relations.mjs",
+    "release:export": "node scripts/export-open-source.mjs"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.117.2",
+    "katex": "^0.16.25",
+    "pg": "^8.23.1",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "react-markdown": "^10.1.0",
+    "react-router-dom": "^7.13.0",
+    "rehype-katex": "^7.0.1",
+    "remark-gfm": "^4.0.1",
+    "remark-math": "^6.0.0",
+    "ws": "^8.18.3"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "^0.5.8",
+    "@types/node": "^24.10.0",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "@vitejs/plugin-react": "^5.1.0",
+    "playwright-core": "^1.63.0",
+    "typescript": "^5.9.3",
+    "vite": "^8.3.2"
+  }
+}

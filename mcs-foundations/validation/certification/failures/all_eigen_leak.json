@@ -1,0 +1,127 @@
+{
+  "format": "mcs-nd-subset/1",
+  "theory": {
+    "id": "bad-all",
+    "version": "1",
+    "bases": [
+      "o",
+      "i"
+    ],
+    "constants": {},
+    "axioms": [],
+    "definitions": []
+  },
+  "proofs": {
+    "bad-all": {
+      "checker": "mcs-nd-subset/1",
+      "theory_sha256": "09c4f708ca37be05c8670fe505a799a8627474a3df18203795e6671aac4b42d7",
+      "hypotheses": {
+        "h": [
+          "eq",
+          [
+            "v",
+            "y",
+            "i"
+          ],
+          [
+            "v",
+            "x",
+            "i"
+          ]
+        ]
+      },
+      "steps": [
+        {
+          "id": "s0",
+          "rule": "assume",
+          "conclusion": [
+            "eq",
+            [
+              "v",
+              "y",
+              "i"
+            ],
+            [
+              "v",
+              "x",
+              "i"
+            ]
+          ],
+          "premises": [],
+          "hypothesis": "h"
+        },
+        {
+          "id": "s1",
+          "rule": "all_i",
+          "conclusion": [
+            "all",
+            [
+              "v",
+              "y",
+              "i"
+            ],
+            [
+              "eq",
+              [
+                "v",
+                "y",
+                "i"
+              ],
+              [
+                "v",
+                "x",
+                "i"
+              ]
+            ]
+          ],
+          "premises": [
+            "s0"
+          ],
+          "variable": [
+            "v",
+            "y",
+            "i"
+          ]
+        }
+      ],
+      "root": "s1",
+      "conclusion": [
+        "all",
+        [
+          "v",
+          "y",
+          "i"
+        ],
+        [
+          "eq",
+          [
+            "v",
+            "y",
+            "i"
+          ],
+          [
+            "v",
+            "x",
+            "i"
+          ]
+        ]
+      ],
+      "open_hypotheses": {
+        "h": [
+          "eq",
+          [
+            "v",
+            "y",
+            "i"
+          ],
+          [
+            "v",
+            "x",
+            "i"
+          ]
+        ]
+      }
+    }
+  },
+  "target": "bad-all"
+}

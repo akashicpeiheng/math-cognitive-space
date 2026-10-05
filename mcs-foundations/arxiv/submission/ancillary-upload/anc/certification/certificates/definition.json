@@ -1,0 +1,87 @@
+{
+  "format": "mcs-nd-subset/1",
+  "theory": {
+    "id": "old-term-definition",
+    "version": "1",
+    "bases": [
+      "o",
+      "i"
+    ],
+    "constants": {},
+    "axioms": [],
+    "definitions": [
+      {
+        "kind": "term",
+        "name": "identity",
+        "term": [
+          "lambda",
+          "x",
+          "i",
+          [
+            "v",
+            "x",
+            "i"
+          ]
+        ]
+      }
+    ]
+  },
+  "proofs": {
+    "identity-definition": {
+      "checker": "mcs-nd-subset/1",
+      "theory_sha256": "69668cdd36c12e69b6e5a15b1f03b06b4a108d465bb52de69fb971f3af4717ec",
+      "hypotheses": {},
+      "steps": [
+        {
+          "id": "s0",
+          "rule": "definition",
+          "conclusion": [
+            "eq",
+            [
+              "c",
+              "identity"
+            ],
+            [
+              "lift",
+              [
+                "lam",
+                "i",
+                [
+                  "b",
+                  0,
+                  "i"
+                ]
+              ],
+              []
+            ]
+          ],
+          "premises": [],
+          "name": "identity"
+        }
+      ],
+      "root": "s0",
+      "conclusion": [
+        "eq",
+        [
+          "c",
+          "identity"
+        ],
+        [
+          "lift",
+          [
+            "lam",
+            "i",
+            [
+              "b",
+              0,
+              "i"
+            ]
+          ],
+          []
+        ]
+      ],
+      "open_hypotheses": {}
+    }
+  },
+  "target": "identity-definition"
+}

@@ -1,0 +1,63 @@
+arXiv submission form fields (suggested)
+========================================
+
+Title (paste as one line)
+-------------------------
+MCS: A Formal Framework for Mathematical Knowledge and Learning Routes with External Learner Models
+
+Authors and submitter
+---------------------
+Peiheng Liu
+peihengmath@gmail.com
+
+Primary category
+----------------
+cs.AI
+
+Cross-list
+----------
+cs.LO
+
+MSC classes
+-----------
+68T30; 68T05; 68T20; 97C30
+
+ACM classes (if the form offers them)
+-------------------------------------
+F.4.1; I.2.4; I.2.6; I.2.8
+
+Comments
+--------
+16 pages, 2 figures, 4 tables. Ancillary Python 3.10+ code and finite evidence
+reproduce the reported checks. The full limit bridge is a written proof;
+machine certificates cover four local fragments. No unique graph expressiveness
+or empirical learning benefit is claimed.
+
+Abstract
+--------
+Relations in mathematical learning resources may encode joint
+requirements, alternative entries, proof dependencies, or presentation
+choices. These meanings must remain distinguishable when a learner model
+selects a route or a view hides part of its context. We present MCS, a
+specification separating versioned public mathematical resources, external
+learner models, and derived views and event routes. Resource ports retain
+evidence kind, theory, assumptions, version, and provenance. We prove a
+conditional saturation result for concept occurrence aggregated over
+unrestricted equivalent expressions; distinguish route-relative requirements
+from alternative sufficient supports; and give a compositional
+resource-preservation theorem and a bounded exhaustive-search guarantee. A
+lossless encoding into an annotated incidence graph makes the representational
+boundary explicit. A standard-library Python artifact replays local
+mathematical certificates, finite comparison experiments, and a limit-based
+route example. On the tested fragment, typed action graphs, annotated bipartite
+graphs, and MCS give identical classifications. The contribution is a precise,
+auditable integration of interfaces and their guarantees; the results establish
+neither unique graph expressiveness nor empirical learning benefits. General
+correctness of the Python proof checker and complete machine certification of
+the mathematical case studies remain open.
+
+License
+-------
+Choose CC BY 4.0 for broad reuse with attribution, or the arXiv perpetual
+non-exclusive license. The choice belongs to the author and must be made in the
+submission form.

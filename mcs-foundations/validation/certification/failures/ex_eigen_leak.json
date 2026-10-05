@@ -1,0 +1,169 @@
+{
+  "format": "mcs-nd-subset/1",
+  "theory": {
+    "id": "bad-ex",
+    "version": "1",
+    "bases": [
+      "o",
+      "i"
+    ],
+    "constants": {},
+    "axioms": [],
+    "definitions": []
+  },
+  "proofs": {
+    "bad-ex": {
+      "checker": "mcs-nd-subset/1",
+      "theory_sha256": "56b15808cab447f5cf9e9bc61ab043d74225e07886fddc2a5f07bc4b64fbc1d3",
+      "hypotheses": {
+        "ex": [
+          "ex",
+          [
+            "v",
+            "x",
+            "i"
+          ],
+          [
+            "eq",
+            [
+              "v",
+              "x",
+              "i"
+            ],
+            [
+              "v",
+              "c",
+              "i"
+            ]
+          ]
+        ],
+        "w": [
+          "eq",
+          [
+            "v",
+            "y",
+            "i"
+          ],
+          [
+            "v",
+            "c",
+            "i"
+          ]
+        ]
+      },
+      "steps": [
+        {
+          "id": "s0",
+          "rule": "assume",
+          "conclusion": [
+            "ex",
+            [
+              "v",
+              "x",
+              "i"
+            ],
+            [
+              "eq",
+              [
+                "v",
+                "x",
+                "i"
+              ],
+              [
+                "v",
+                "c",
+                "i"
+              ]
+            ]
+          ],
+          "premises": [],
+          "hypothesis": "ex"
+        },
+        {
+          "id": "s1",
+          "rule": "assume",
+          "conclusion": [
+            "eq",
+            [
+              "v",
+              "y",
+              "i"
+            ],
+            [
+              "v",
+              "c",
+              "i"
+            ]
+          ],
+          "premises": [],
+          "hypothesis": "w"
+        },
+        {
+          "id": "s2",
+          "rule": "ex_e",
+          "conclusion": [
+            "eq",
+            [
+              "v",
+              "y",
+              "i"
+            ],
+            [
+              "v",
+              "c",
+              "i"
+            ]
+          ],
+          "premises": [
+            "s0",
+            "s1"
+          ],
+          "discharge": "w",
+          "variable": [
+            "v",
+            "y",
+            "i"
+          ]
+        }
+      ],
+      "root": "s2",
+      "conclusion": [
+        "eq",
+        [
+          "v",
+          "y",
+          "i"
+        ],
+        [
+          "v",
+          "c",
+          "i"
+        ]
+      ],
+      "open_hypotheses": {
+        "ex": [
+          "ex",
+          [
+            "v",
+            "x",
+            "i"
+          ],
+          [
+            "eq",
+            [
+              "v",
+              "x",
+              "i"
+            ],
+            [
+              "v",
+              "c",
+              "i"
+            ]
+          ]
+        ]
+      }
+    }
+  },
+  "target": "bad-ex"
+}

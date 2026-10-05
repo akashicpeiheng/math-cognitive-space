@@ -1,0 +1,1217 @@
+{
+  "status": "passed",
+  "successes": {
+    "group": {
+      "status": "passed",
+      "output_node": "group-fragment",
+      "node_version": "1",
+      "certificate": {
+        "status": "passed",
+        "checker": "mcs-nd-subset/1",
+        "checker_sha256": "25130be0e90d0336af0d4505bf664ccbc0d2ca69beda02dd6c501e124a4a4e5e",
+        "theory_id": "right-unital-magma",
+        "theory_version": "1",
+        "theory_sha256": "bafb1e68454a2e7e1b1dff44598c8c1c839ab580018d4daa461eb5b07da48157",
+        "proof_id": "cayley-evaluation-injective",
+        "proof_sha256": "0ad45aa56db0896e17ba5bd8983416641e4f65196aa5f43d7f817a2f1bd13bac",
+        "conclusion": [
+          "eq",
+          [
+            "app",
+            [
+              "app",
+              [
+                "logic",
+                "eq",
+                "G"
+              ],
+              [
+                "v",
+                "g",
+                "G"
+              ]
+            ],
+            [
+              "v",
+              "h",
+              "G"
+            ]
+          ],
+          [
+            "logic",
+            "true"
+          ]
+        ],
+        "conclusion_type": "FOL-formula",
+        "object_conclusion": [
+          "app",
+          [
+            "app",
+            [
+              "logic",
+              "eq",
+              "G"
+            ],
+            [
+              "v",
+              "g",
+              "G"
+            ]
+          ],
+          [
+            "v",
+            "h",
+            "G"
+          ]
+        ],
+        "open_hypotheses": {
+          "equal_left_translations": [
+            "eq",
+            [
+              "app",
+              [
+                "app",
+                [
+                  "logic",
+                  "eq",
+                  [
+                    "->",
+                    "G",
+                    "G"
+                  ]
+                ],
+                [
+                  "lift",
+                  [
+                    "lam",
+                    "G",
+                    [
+                      "app",
+                      [
+                        "app",
+                        [
+                          "c",
+                          "mul"
+                        ],
+                        [
+                          "v",
+                          "g",
+                          "G"
+                        ]
+                      ],
+                      [
+                        "b",
+                        0,
+                        "G"
+                      ]
+                    ]
+                  ],
+                  [
+                    [
+                      "v",
+                      "g",
+                      "G"
+                    ]
+                  ]
+                ]
+              ],
+              [
+                "lift",
+                [
+                  "lam",
+                  "G",
+                  [
+                    "app",
+                    [
+                      "app",
+                      [
+                        "c",
+                        "mul"
+                      ],
+                      [
+                        "v",
+                        "h",
+                        "G"
+                      ]
+                    ],
+                    [
+                      "b",
+                      0,
+                      "G"
+                    ]
+                  ]
+                ],
+                [
+                  [
+                    "v",
+                    "h",
+                    "G"
+                  ]
+                ]
+              ]
+            ],
+            [
+              "logic",
+              "true"
+            ]
+          ]
+        },
+        "dependencies": [
+          "H:{\"schema\":\"abstraction\",\"term\":[\"lambda\",\"x\",\"G\",[\"app\",[\"app\",[\"c\",\"mul\"],[\"v\",\"g\",\"G\"]],[\"v\",\"x\",\"G\"]]]}",
+          "H:{\"schema\":\"abstraction\",\"term\":[\"lambda\",\"x\",\"G\",[\"app\",[\"app\",[\"c\",\"mul\"],[\"v\",\"h\",\"G\"]],[\"v\",\"x\",\"G\"]]]}",
+          "H:{\"schema\":\"equality\",\"type\":\"G\"}",
+          "H:{\"schema\":\"equality\",\"type\":[\"->\",\"G\",\"G\"]}",
+          "T:right_identity"
+        ],
+        "kernel_formally_verified": false
+      },
+      "conditions": {
+        "equal_left_translations": [
+          "eq",
+          [
+            "app",
+            [
+              "app",
+              [
+                "logic",
+                "eq",
+                [
+                  "->",
+                  "G",
+                  "G"
+                ]
+              ],
+              [
+                "lift",
+                [
+                  "lam",
+                  "G",
+                  [
+                    "app",
+                    [
+                      "app",
+                      [
+                        "c",
+                        "mul"
+                      ],
+                      [
+                        "v",
+                        "g",
+                        "G"
+                      ]
+                    ],
+                    [
+                      "b",
+                      0,
+                      "G"
+                    ]
+                  ]
+                ],
+                [
+                  [
+                    "v",
+                    "g",
+                    "G"
+                  ]
+                ]
+              ]
+            ],
+            [
+              "lift",
+              [
+                "lam",
+                "G",
+                [
+                  "app",
+                  [
+                    "app",
+                    [
+                      "c",
+                      "mul"
+                    ],
+                    [
+                      "v",
+                      "h",
+                      "G"
+                    ]
+                  ],
+                  [
+                    "b",
+                    0,
+                    "G"
+                  ]
+                ]
+              ],
+              [
+                [
+                  "v",
+                  "h",
+                  "G"
+                ]
+              ]
+            ]
+          ],
+          [
+            "logic",
+            "true"
+          ]
+        ]
+      },
+      "unconditional": false,
+      "scope": "fragment only; conditional on theory and declared assumptions",
+      "personal_mastery": "NOT-CLAIMED",
+      "public_sha256": "2d25906f00e7eb6e678bac8f59be1a689d1eac4b2169710597162a92cc63d45f"
+    },
+    "limit": {
+      "status": "passed",
+      "output_node": "limit-fragment",
+      "node_version": "1",
+      "certificate": {
+        "status": "passed",
+        "checker": "mcs-nd-subset/1",
+        "checker_sha256": "25130be0e90d0336af0d4505bf664ccbc0d2ca69beda02dd6c501e124a4a4e5e",
+        "theory_id": "constant-sequence-evaluation",
+        "theory_version": "1",
+        "theory_sha256": "e7b07aba6f10316a9f6e8fafbe0f01e45a4f4f494952f622db114c4d77b0c4dd",
+        "proof_id": "constant-sequence-value",
+        "proof_sha256": "2efbca59ddfe46ab597501c4fa5229c04726c4768639a95a2efd73eb3cac0399",
+        "conclusion": [
+          "eq",
+          [
+            "app",
+            [
+              "app",
+              [
+                "logic",
+                "eq",
+                "R"
+              ],
+              [
+                "app",
+                [
+                  "lift",
+                  [
+                    "lam",
+                    "N",
+                    [
+                      "v",
+                      "a",
+                      "R"
+                    ]
+                  ],
+                  [
+                    [
+                      "v",
+                      "a",
+                      "R"
+                    ]
+                  ]
+                ],
+                [
+                  "v",
+                  "n",
+                  "N"
+                ]
+              ]
+            ],
+            [
+              "v",
+              "a",
+              "R"
+            ]
+          ],
+          [
+            "logic",
+            "true"
+          ]
+        ],
+        "conclusion_type": "FOL-formula",
+        "object_conclusion": [
+          "app",
+          [
+            "app",
+            [
+              "logic",
+              "eq",
+              "R"
+            ],
+            [
+              "app",
+              [
+                "lambda",
+                "k",
+                "N",
+                [
+                  "v",
+                  "a",
+                  "R"
+                ]
+              ],
+              [
+                "v",
+                "n",
+                "N"
+              ]
+            ]
+          ],
+          [
+            "v",
+            "a",
+            "R"
+          ]
+        ],
+        "open_hypotheses": {},
+        "dependencies": [
+          "H:{\"schema\":\"abstraction\",\"term\":[\"lambda\",\"k\",\"N\",[\"v\",\"a\",\"R\"]]}",
+          "H:{\"schema\":\"equality\",\"type\":\"R\"}"
+        ],
+        "kernel_formally_verified": false
+      },
+      "conditions": {},
+      "unconditional": true,
+      "scope": "fragment only; conditional on theory and declared assumptions",
+      "personal_mastery": "NOT-CLAIMED",
+      "public_sha256": "2d25906f00e7eb6e678bac8f59be1a689d1eac4b2169710597162a92cc63d45f"
+    },
+    "manifold": {
+      "status": "passed",
+      "output_node": "manifold-fragment",
+      "node_version": "1",
+      "certificate": {
+        "status": "passed",
+        "checker": "mcs-nd-subset/1",
+        "checker_sha256": "25130be0e90d0336af0d4505bf664ccbc0d2ca69beda02dd6c501e124a4a4e5e",
+        "theory_id": "chart-transition-algebra",
+        "theory_version": "1",
+        "theory_sha256": "74d51bc205d37dd16691ca9ee47fdbd13761a0262b2b023eaa4ac3a5678951c1",
+        "proof_id": "chart-self-transition",
+        "proof_sha256": "c75e9583f98aa79a21f59e0f969a0ffcba59388b97fddcb4b86fab042eb37a46",
+        "conclusion": [
+          "eq",
+          [
+            "app",
+            [
+              "app",
+              [
+                "logic",
+                "eq",
+                "Y"
+              ],
+              [
+                "app",
+                [
+                  "lift",
+                  [
+                    "lam",
+                    "Y",
+                    [
+                      "app",
+                      [
+                        "c",
+                        "chart"
+                      ],
+                      [
+                        "app",
+                        [
+                          "c",
+                          "inverse"
+                        ],
+                        [
+                          "b",
+                          0,
+                          "Y"
+                        ]
+                      ]
+                    ]
+                  ],
+                  []
+                ],
+                [
+                  "v",
+                  "y",
+                  "Y"
+                ]
+              ]
+            ],
+            [
+              "v",
+              "y",
+              "Y"
+            ]
+          ],
+          [
+            "logic",
+            "true"
+          ]
+        ],
+        "conclusion_type": "FOL-formula",
+        "object_conclusion": [
+          "app",
+          [
+            "app",
+            [
+              "logic",
+              "eq",
+              "Y"
+            ],
+            [
+              "app",
+              [
+                "lambda",
+                "u",
+                "Y",
+                [
+                  "app",
+                  [
+                    "c",
+                    "chart"
+                  ],
+                  [
+                    "app",
+                    [
+                      "c",
+                      "inverse"
+                    ],
+                    [
+                      "v",
+                      "u",
+                      "Y"
+                    ]
+                  ]
+                ]
+              ],
+              [
+                "v",
+                "y",
+                "Y"
+              ]
+            ]
+          ],
+          [
+            "v",
+            "y",
+            "Y"
+          ]
+        ],
+        "open_hypotheses": {
+          "right_inverse_at_y": [
+            "eq",
+            [
+              "app",
+              [
+                "c",
+                "chart"
+              ],
+              [
+                "app",
+                [
+                  "c",
+                  "inverse"
+                ],
+                [
+                  "v",
+                  "y",
+                  "Y"
+                ]
+              ]
+            ],
+            [
+              "v",
+              "y",
+              "Y"
+            ]
+          ]
+        },
+        "dependencies": [
+          "H:{\"schema\":\"abstraction\",\"term\":[\"lambda\",\"u\",\"Y\",[\"app\",[\"c\",\"chart\"],[\"app\",[\"c\",\"inverse\"],[\"v\",\"u\",\"Y\"]]]]}",
+          "H:{\"schema\":\"equality\",\"type\":\"Y\"}"
+        ],
+        "kernel_formally_verified": false
+      },
+      "conditions": {
+        "right_inverse_at_y": [
+          "eq",
+          [
+            "app",
+            [
+              "c",
+              "chart"
+            ],
+            [
+              "app",
+              [
+                "c",
+                "inverse"
+              ],
+              [
+                "v",
+                "y",
+                "Y"
+              ]
+            ]
+          ],
+          [
+            "v",
+            "y",
+            "Y"
+          ]
+        ]
+      },
+      "unconditional": false,
+      "scope": "fragment only; conditional on theory and declared assumptions",
+      "personal_mastery": "NOT-CLAIMED",
+      "public_sha256": "2d25906f00e7eb6e678bac8f59be1a689d1eac4b2169710597162a92cc63d45f"
+    },
+    "tensor": {
+      "status": "passed",
+      "output_node": "tensor-fragment",
+      "node_version": "1",
+      "certificate": {
+        "status": "passed",
+        "checker": "mcs-nd-subset/1",
+        "checker_sha256": "25130be0e90d0336af0d4505bf664ccbc0d2ca69beda02dd6c501e124a4a4e5e",
+        "theory_id": "module-additive-fragment",
+        "theory_version": "1",
+        "theory_sha256": "d7ae1f756e8238eea4d9368bd71cc948f49d08306abf1af125c907bdc156798f",
+        "proof_id": "rank-one-additivity",
+        "proof_sha256": "d820fde32be9f19ec0cbcd33a636ff7a140bd160b970854208466c9dadefa847",
+        "conclusion": [
+          "eq",
+          [
+            "app",
+            [
+              "app",
+              [
+                "logic",
+                "eq",
+                "Vec"
+              ],
+              [
+                "app",
+                [
+                  "lift",
+                  [
+                    "lam",
+                    "Vec",
+                    [
+                      "app",
+                      [
+                        "app",
+                        [
+                          "c",
+                          "scalar"
+                        ],
+                        [
+                          "app",
+                          [
+                            "v",
+                            "alpha",
+                            [
+                              "->",
+                              "Vec",
+                              "F"
+                            ]
+                          ],
+                          [
+                            "b",
+                            0,
+                            "Vec"
+                          ]
+                        ]
+                      ],
+                      [
+                        "v",
+                        "v",
+                        "Vec"
+                      ]
+                    ]
+                  ],
+                  [
+                    [
+                      "v",
+                      "alpha",
+                      [
+                        "->",
+                        "Vec",
+                        "F"
+                      ]
+                    ],
+                    [
+                      "v",
+                      "v",
+                      "Vec"
+                    ]
+                  ]
+                ],
+                [
+                  "app",
+                  [
+                    "app",
+                    [
+                      "c",
+                      "vadd"
+                    ],
+                    [
+                      "v",
+                      "x",
+                      "Vec"
+                    ]
+                  ],
+                  [
+                    "v",
+                    "y",
+                    "Vec"
+                  ]
+                ]
+              ]
+            ],
+            [
+              "app",
+              [
+                "app",
+                [
+                  "c",
+                  "vadd"
+                ],
+                [
+                  "app",
+                  [
+                    "lift",
+                    [
+                      "lam",
+                      "Vec",
+                      [
+                        "app",
+                        [
+                          "app",
+                          [
+                            "c",
+                            "scalar"
+                          ],
+                          [
+                            "app",
+                            [
+                              "v",
+                              "alpha",
+                              [
+                                "->",
+                                "Vec",
+                                "F"
+                              ]
+                            ],
+                            [
+                              "b",
+                              0,
+                              "Vec"
+                            ]
+                          ]
+                        ],
+                        [
+                          "v",
+                          "v",
+                          "Vec"
+                        ]
+                      ]
+                    ],
+                    [
+                      [
+                        "v",
+                        "alpha",
+                        [
+                          "->",
+                          "Vec",
+                          "F"
+                        ]
+                      ],
+                      [
+                        "v",
+                        "v",
+                        "Vec"
+                      ]
+                    ]
+                  ],
+                  [
+                    "v",
+                    "x",
+                    "Vec"
+                  ]
+                ]
+              ],
+              [
+                "app",
+                [
+                  "lift",
+                  [
+                    "lam",
+                    "Vec",
+                    [
+                      "app",
+                      [
+                        "app",
+                        [
+                          "c",
+                          "scalar"
+                        ],
+                        [
+                          "app",
+                          [
+                            "v",
+                            "alpha",
+                            [
+                              "->",
+                              "Vec",
+                              "F"
+                            ]
+                          ],
+                          [
+                            "b",
+                            0,
+                            "Vec"
+                          ]
+                        ]
+                      ],
+                      [
+                        "v",
+                        "v",
+                        "Vec"
+                      ]
+                    ]
+                  ],
+                  [
+                    [
+                      "v",
+                      "alpha",
+                      [
+                        "->",
+                        "Vec",
+                        "F"
+                      ]
+                    ],
+                    [
+                      "v",
+                      "v",
+                      "Vec"
+                    ]
+                  ]
+                ],
+                [
+                  "v",
+                  "y",
+                  "Vec"
+                ]
+              ]
+            ]
+          ],
+          [
+            "logic",
+            "true"
+          ]
+        ],
+        "conclusion_type": "FOL-formula",
+        "object_conclusion": [
+          "app",
+          [
+            "app",
+            [
+              "logic",
+              "eq",
+              "Vec"
+            ],
+            [
+              "app",
+              [
+                "lambda",
+                "w",
+                "Vec",
+                [
+                  "app",
+                  [
+                    "app",
+                    [
+                      "c",
+                      "scalar"
+                    ],
+                    [
+                      "app",
+                      [
+                        "v",
+                        "alpha",
+                        [
+                          "->",
+                          "Vec",
+                          "F"
+                        ]
+                      ],
+                      [
+                        "v",
+                        "w",
+                        "Vec"
+                      ]
+                    ]
+                  ],
+                  [
+                    "v",
+                    "v",
+                    "Vec"
+                  ]
+                ]
+              ],
+              [
+                "app",
+                [
+                  "app",
+                  [
+                    "c",
+                    "vadd"
+                  ],
+                  [
+                    "v",
+                    "x",
+                    "Vec"
+                  ]
+                ],
+                [
+                  "v",
+                  "y",
+                  "Vec"
+                ]
+              ]
+            ]
+          ],
+          [
+            "app",
+            [
+              "app",
+              [
+                "c",
+                "vadd"
+              ],
+              [
+                "app",
+                [
+                  "lambda",
+                  "w",
+                  "Vec",
+                  [
+                    "app",
+                    [
+                      "app",
+                      [
+                        "c",
+                        "scalar"
+                      ],
+                      [
+                        "app",
+                        [
+                          "v",
+                          "alpha",
+                          [
+                            "->",
+                            "Vec",
+                            "F"
+                          ]
+                        ],
+                        [
+                          "v",
+                          "w",
+                          "Vec"
+                        ]
+                      ]
+                    ],
+                    [
+                      "v",
+                      "v",
+                      "Vec"
+                    ]
+                  ]
+                ],
+                [
+                  "v",
+                  "x",
+                  "Vec"
+                ]
+              ]
+            ],
+            [
+              "app",
+              [
+                "lambda",
+                "w",
+                "Vec",
+                [
+                  "app",
+                  [
+                    "app",
+                    [
+                      "c",
+                      "scalar"
+                    ],
+                    [
+                      "app",
+                      [
+                        "v",
+                        "alpha",
+                        [
+                          "->",
+                          "Vec",
+                          "F"
+                        ]
+                      ],
+                      [
+                        "v",
+                        "w",
+                        "Vec"
+                      ]
+                    ]
+                  ],
+                  [
+                    "v",
+                    "v",
+                    "Vec"
+                  ]
+                ]
+              ],
+              [
+                "v",
+                "y",
+                "Vec"
+              ]
+            ]
+          ]
+        ],
+        "open_hypotheses": {
+          "alpha_additive": [
+            "all",
+            [
+              "v",
+              "s",
+              "Vec"
+            ],
+            [
+              "all",
+              [
+                "v",
+                "t",
+                "Vec"
+              ],
+              [
+                "eq",
+                [
+                  "app",
+                  [
+                    "v",
+                    "alpha",
+                    [
+                      "->",
+                      "Vec",
+                      "F"
+                    ]
+                  ],
+                  [
+                    "app",
+                    [
+                      "app",
+                      [
+                        "c",
+                        "vadd"
+                      ],
+                      [
+                        "v",
+                        "s",
+                        "Vec"
+                      ]
+                    ],
+                    [
+                      "v",
+                      "t",
+                      "Vec"
+                    ]
+                  ]
+                ],
+                [
+                  "app",
+                  [
+                    "app",
+                    [
+                      "c",
+                      "fadd"
+                    ],
+                    [
+                      "app",
+                      [
+                        "v",
+                        "alpha",
+                        [
+                          "->",
+                          "Vec",
+                          "F"
+                        ]
+                      ],
+                      [
+                        "v",
+                        "s",
+                        "Vec"
+                      ]
+                    ]
+                  ],
+                  [
+                    "app",
+                    [
+                      "v",
+                      "alpha",
+                      [
+                        "->",
+                        "Vec",
+                        "F"
+                      ]
+                    ],
+                    [
+                      "v",
+                      "t",
+                      "Vec"
+                    ]
+                  ]
+                ]
+              ]
+            ]
+          ]
+        },
+        "dependencies": [
+          "H:{\"schema\":\"abstraction\",\"term\":[\"lambda\",\"w\",\"Vec\",[\"app\",[\"app\",[\"c\",\"scalar\"],[\"app\",[\"v\",\"alpha\",[\"->\",\"Vec\",\"F\"]],[\"v\",\"w\",\"Vec\"]]],[\"v\",\"v\",\"Vec\"]]]}",
+          "H:{\"schema\":\"equality\",\"type\":\"Vec\"}",
+          "T:scalar_distributes"
+        ],
+        "kernel_formally_verified": false
+      },
+      "conditions": {
+        "alpha_additive": [
+          "all",
+          [
+            "v",
+            "s",
+            "Vec"
+          ],
+          [
+            "all",
+            [
+              "v",
+              "t",
+              "Vec"
+            ],
+            [
+              "eq",
+              [
+                "app",
+                [
+                  "v",
+                  "alpha",
+                  [
+                    "->",
+                    "Vec",
+                    "F"
+                  ]
+                ],
+                [
+                  "app",
+                  [
+                    "app",
+                    [
+                      "c",
+                      "vadd"
+                    ],
+                    [
+                      "v",
+                      "s",
+                      "Vec"
+                    ]
+                  ],
+                  [
+                    "v",
+                    "t",
+                    "Vec"
+                  ]
+                ]
+              ],
+              [
+                "app",
+                [
+                  "app",
+                  [
+                    "c",
+                    "fadd"
+                  ],
+                  [
+                    "app",
+                    [
+                      "v",
+                      "alpha",
+                      [
+                        "->",
+                        "Vec",
+                        "F"
+                      ]
+                    ],
+                    [
+                      "v",
+                      "s",
+                      "Vec"
+                    ]
+                  ]
+                ],
+                [
+                  "app",
+                  [
+                    "v",
+                    "alpha",
+                    [
+                      "->",
+                      "Vec",
+                      "F"
+                    ]
+                  ],
+                  [
+                    "v",
+                    "t",
+                    "Vec"
+                  ]
+                ]
+              ]
+            ]
+          ]
+        ]
+      },
+      "unconditional": false,
+      "scope": "fragment only; conditional on theory and declared assumptions",
+      "personal_mastery": "NOT-CLAIMED",
+      "public_sha256": "2d25906f00e7eb6e678bac8f59be1a689d1eac4b2169710597162a92cc63d45f"
+    }
+  },
+  "rejected": [
+    {
+      "case": "display_without_proof",
+      "status": "rejected",
+      "reason": "presentation is not proof evidence"
+    },
+    {
+      "case": "unsatisfied_assumption",
+      "status": "rejected",
+      "reason": "open assumption has no declared source: equal_left_translations"
+    },
+    {
+      "case": "old_certificate_new_node",
+      "status": "rejected",
+      "reason": "node/version mismatch"
+    },
+    {
+      "case": "changed_theory",
+      "status": "rejected",
+      "reason": "proof theory version/hash mismatch"
+    },
+    {
+      "case": "personal_confirmation_is_not_assumption",
+      "status": "rejected",
+      "reason": "open assumption has no declared source: equal_left_translations"
+    }
+  ],
+  "site_integration": "standalone adapter only"
+}

@@ -1,0 +1,37 @@
+{
+  "host": "127.0.0.1",
+  "port": 3784,
+  "dbFile": "runtime/mcs-web.sqlite3",
+  "backupDir": "runtime/backups",
+  "dev": false,
+
+  "publicMode": false,
+  "publicOrigin": null,
+  "allowedHosts": [],
+
+  "dbUrl": null,
+  "dbSsl": null,
+  "dbPoolMax": 10,
+
+  "auth": {
+    "mode": "none",
+    "provider": null,
+    "url": null,
+    "publishableKey": null,
+    "sessionKey": null,
+    "adminUserIds": [],
+    "emailEnabled": true
+  },
+  "authFile": "runtime/auth.sqlite3",
+
+  "tutor": {
+    "enabled": true,
+    "adapter": "deeptutor-1.5",
+    "baseUrl": "http://127.0.0.1:8001",
+    "frontendUrl": "http://localhost:3782",
+    "authTokenEnv": "DEEPTUTOR_AUTH_TOKEN",
+    "timeoutMs": 180000,
+    "healthTimeoutMs": 2500,
+    "liveVerified": false
+  }
+}

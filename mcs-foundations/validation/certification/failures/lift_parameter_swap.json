@@ -1,0 +1,253 @@
+{
+  "format": "mcs-nd-subset/1",
+  "theory": {
+    "id": "swap",
+    "version": "1",
+    "bases": [
+      "o",
+      "i"
+    ],
+    "constants": {},
+    "axioms": [],
+    "definitions": []
+  },
+  "proofs": {
+    "swap": {
+      "checker": "mcs-nd-subset/1",
+      "theory_sha256": "ecb838569c4cfbd7a82b38eee8c46b5bcaf83b04742ac12687b1b276269758b4",
+      "hypotheses": {},
+      "steps": [
+        {
+          "id": "s0",
+          "rule": "h_axiom",
+          "conclusion": [
+            "all",
+            [
+              "v",
+              "x",
+              "i"
+            ],
+            [
+              "all",
+              [
+                "v",
+                "y",
+                "i"
+              ],
+              [
+                "all",
+                [
+                  "v",
+                  "z0",
+                  "i"
+                ],
+                [
+                  "eq",
+                  [
+                    "app",
+                    [
+                      "lift",
+                      [
+                        "lam",
+                        "i",
+                        [
+                          "app",
+                          [
+                            "lam",
+                            "i",
+                            [
+                              "v",
+                              "x",
+                              "i"
+                            ]
+                          ],
+                          [
+                            "v",
+                            "y",
+                            "i"
+                          ]
+                        ]
+                      ],
+                      [
+                        [
+                          "v",
+                          "y",
+                          "i"
+                        ],
+                        [
+                          "v",
+                          "x",
+                          "i"
+                        ]
+                      ]
+                    ],
+                    [
+                      "v",
+                      "z0",
+                      "i"
+                    ]
+                  ],
+                  [
+                    "app",
+                    [
+                      "lift",
+                      [
+                        "lam",
+                        "i",
+                        [
+                          "v",
+                          "x",
+                          "i"
+                        ]
+                      ],
+                      [
+                        [
+                          "v",
+                          "x",
+                          "i"
+                        ]
+                      ]
+                    ],
+                    [
+                      "v",
+                      "y",
+                      "i"
+                    ]
+                  ]
+                ]
+              ]
+            ]
+          ],
+          "premises": [],
+          "instance": {
+            "schema": "abstraction",
+            "term": [
+              "lambda",
+              "z",
+              "i",
+              [
+                "app",
+                [
+                  "lambda",
+                  "unused",
+                  "i",
+                  [
+                    "v",
+                    "x",
+                    "i"
+                  ]
+                ],
+                [
+                  "v",
+                  "y",
+                  "i"
+                ]
+              ]
+            ]
+          }
+        }
+      ],
+      "root": "s0",
+      "conclusion": [
+        "all",
+        [
+          "v",
+          "x",
+          "i"
+        ],
+        [
+          "all",
+          [
+            "v",
+            "y",
+            "i"
+          ],
+          [
+            "all",
+            [
+              "v",
+              "z0",
+              "i"
+            ],
+            [
+              "eq",
+              [
+                "app",
+                [
+                  "lift",
+                  [
+                    "lam",
+                    "i",
+                    [
+                      "app",
+                      [
+                        "lam",
+                        "i",
+                        [
+                          "v",
+                          "x",
+                          "i"
+                        ]
+                      ],
+                      [
+                        "v",
+                        "y",
+                        "i"
+                      ]
+                    ]
+                  ],
+                  [
+                    [
+                      "v",
+                      "y",
+                      "i"
+                    ],
+                    [
+                      "v",
+                      "x",
+                      "i"
+                    ]
+                  ]
+                ],
+                [
+                  "v",
+                  "z0",
+                  "i"
+                ]
+              ],
+              [
+                "app",
+                [
+                  "lift",
+                  [
+                    "lam",
+                    "i",
+                    [
+                      "v",
+                      "x",
+                      "i"
+                    ]
+                  ],
+                  [
+                    [
+                      "v",
+                      "x",
+                      "i"
+                    ]
+                  ]
+                ],
+                [
+                  "v",
+                  "y",
+                  "i"
+                ]
+              ]
+            ]
+          ]
+        ]
+      ],
+      "open_hypotheses": {}
+    }
+  },
+  "target": "swap"
+}

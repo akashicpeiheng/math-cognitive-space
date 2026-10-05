@@ -1,0 +1,378 @@
+{
+  "status": "passed",
+  "scope": "finite persistent-resource presentation/reviewed-proof fragment",
+  "synthetic_learner_states": true,
+  "background": [
+    {
+      "node": "Metric",
+      "version": "1",
+      "theory": "ZFC-real-analysis/1",
+      "kind": "content",
+      "assumptions": [
+        "a-is-an-accumulation-point-of-D"
+      ]
+    },
+    {
+      "node": "Quantifiers",
+      "version": "1",
+      "theory": "ZFC-real-analysis/1",
+      "kind": "content",
+      "assumptions": [
+        "a-is-an-accumulation-point-of-D"
+      ]
+    },
+    {
+      "node": "Sequences",
+      "version": "1",
+      "theory": "ZFC-real-analysis/1",
+      "kind": "content",
+      "assumptions": [
+        "a-is-an-accumulation-point-of-D"
+      ]
+    }
+  ],
+  "goal": [
+    {
+      "node": "Bridge",
+      "version": "1",
+      "theory": "ZFC-real-analysis/1",
+      "kind": "reviewed-proof",
+      "assumptions": [
+        "a-is-an-accumulation-point-of-D"
+      ]
+    }
+  ],
+  "public_sha256": "dd53509eb8a2272d1a5ebc36143d98b8b0d60a645aafccab97a5b460e9f1e7b3",
+  "horizon": 3,
+  "budget": 3,
+  "action_words": 85,
+  "source_certified_routes": 2,
+  "independent_schedule_checks": 4,
+  "routes": [
+    {
+      "route": {
+        "events": [
+          "define_ed",
+          "define_seq",
+          "bridge"
+        ],
+        "sources": [
+          [
+            [
+              "B",
+              0
+            ],
+            [
+              "B",
+              1
+            ]
+          ],
+          [
+            [
+              "B",
+              0
+            ],
+            [
+              "B",
+              2
+            ]
+          ],
+          [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ]
+          ]
+        ],
+        "goals": [
+          [
+            2,
+            0
+          ]
+        ],
+        "policy": []
+      },
+      "check": {
+        "status": "Found",
+        "orders": [
+          [
+            0,
+            1,
+            2
+          ],
+          [
+            1,
+            0,
+            2
+          ]
+        ],
+        "edges": [
+          [
+            0,
+            2
+          ],
+          [
+            1,
+            2
+          ]
+        ],
+        "used_background": [
+          0,
+          1,
+          2
+        ],
+        "public_sha256": "dd53509eb8a2272d1a5ebc36143d98b8b0d60a645aafccab97a5b460e9f1e7b3",
+        "teaching_success": "NOT-CLAIMED"
+      }
+    },
+    {
+      "route": {
+        "events": [
+          "define_seq",
+          "define_ed",
+          "bridge"
+        ],
+        "sources": [
+          [
+            [
+              "B",
+              0
+            ],
+            [
+              "B",
+              2
+            ]
+          ],
+          [
+            [
+              "B",
+              0
+            ],
+            [
+              "B",
+              1
+            ]
+          ],
+          [
+            [
+              1,
+              0
+            ],
+            [
+              0,
+              0
+            ]
+          ]
+        ],
+        "goals": [
+          [
+            2,
+            0
+          ]
+        ],
+        "policy": []
+      },
+      "check": {
+        "status": "Found",
+        "orders": [
+          [
+            0,
+            1,
+            2
+          ],
+          [
+            1,
+            0,
+            2
+          ]
+        ],
+        "edges": [
+          [
+            0,
+            2
+          ],
+          [
+            1,
+            2
+          ]
+        ],
+        "used_background": [
+          0,
+          1,
+          2
+        ],
+        "public_sha256": "dd53509eb8a2272d1a5ebc36143d98b8b0d60a645aafccab97a5b460e9f1e7b3",
+        "teaching_success": "NOT-CLAIMED"
+      }
+    }
+  ],
+  "conditional_example": {
+    "status": "Conditional",
+    "orders": [
+      [
+        0,
+        1,
+        2
+      ],
+      [
+        1,
+        0,
+        2
+      ]
+    ],
+    "edges": [
+      [
+        0,
+        2
+      ],
+      [
+        1,
+        2
+      ]
+    ],
+    "used_background": [
+      0,
+      1,
+      2
+    ],
+    "public_sha256": "dd53509eb8a2272d1a5ebc36143d98b8b0d60a645aafccab97a5b460e9f1e7b3",
+    "teaching_success": "NOT-CLAIMED"
+  },
+  "cold_start": "Conditional",
+  "hidden_boundary": [
+    {
+      "node": "LimitED",
+      "version": "1",
+      "theory": "ZFC-real-analysis/1",
+      "kind": "content",
+      "assumptions": [
+        "a-is-an-accumulation-point-of-D"
+      ]
+    },
+    {
+      "node": "LimitSeq",
+      "version": "1",
+      "theory": "ZFC-real-analysis/1",
+      "kind": "content",
+      "assumptions": [
+        "a-is-an-accumulation-point-of-D"
+      ]
+    },
+    {
+      "node": "Metric",
+      "version": "1",
+      "theory": "ZFC-real-analysis/1",
+      "kind": "content",
+      "assumptions": [
+        "a-is-an-accumulation-point-of-D"
+      ]
+    },
+    {
+      "node": "Quantifiers",
+      "version": "1",
+      "theory": "ZFC-real-analysis/1",
+      "kind": "content",
+      "assumptions": [
+        "a-is-an-accumulation-point-of-D"
+      ]
+    },
+    {
+      "node": "Sequences",
+      "version": "1",
+      "theory": "ZFC-real-analysis/1",
+      "kind": "content",
+      "assumptions": [
+        "a-is-an-accumulation-point-of-D"
+      ]
+    }
+  ],
+  "rejected": [
+    {
+      "name": "entry_version",
+      "reason": "resource kind, theory, assumptions, node or version mismatch"
+    },
+    {
+      "name": "entry_theory",
+      "reason": "resource kind, theory, assumptions, node or version mismatch"
+    },
+    {
+      "name": "entry_assumptions",
+      "reason": "resource kind, theory, assumptions, node or version mismatch"
+    },
+    {
+      "name": "entry_kind",
+      "reason": "resource kind, theory, assumptions, node or version mismatch"
+    },
+    {
+      "name": "presentation_as_proof",
+      "reason": "goal resource mismatch"
+    },
+    {
+      "name": "combined_cycle",
+      "reason": "combined source and policy graph is cyclic"
+    },
+    {
+      "name": "dangling_goal",
+      "reason": "missing producer event"
+    },
+    {
+      "name": "missing_input_port",
+      "reason": "wrong input arity"
+    },
+    {
+      "name": "budget",
+      "reason": "budget exceeded"
+    },
+    {
+      "name": "unavailable_entry",
+      "reason": "unavailable external entry"
+    },
+    {
+      "name": "hidden_boundary",
+      "reason": "hidden obligation missing from boundary"
+    }
+  ],
+  "annotated_graph_equal": true,
+  "scale": [
+    {
+      "horizon": 0,
+      "action_words": 1,
+      "source_certified_routes": 0,
+      "status": "InfeasibleWithinBound"
+    },
+    {
+      "horizon": 1,
+      "action_words": 5,
+      "source_certified_routes": 0,
+      "status": "InfeasibleWithinBound"
+    },
+    {
+      "horizon": 2,
+      "action_words": 21,
+      "source_certified_routes": 0,
+      "status": "InfeasibleWithinBound"
+    },
+    {
+      "horizon": 3,
+      "action_words": 85,
+      "source_certified_routes": 2,
+      "status": "Found"
+    },
+    {
+      "horizon": 4,
+      "action_words": 341,
+      "source_certified_routes": 30,
+      "status": "Found"
+    }
+  ],
+  "not_claimed": [
+    "machine proof of the limit bridge",
+    "complete general planner",
+    "teaching effectiveness",
+    "unique representation advantage"
+  ]
+}

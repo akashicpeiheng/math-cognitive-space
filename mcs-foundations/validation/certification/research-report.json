@@ -1,0 +1,2764 @@
+{
+  "status": "passed",
+  "synthetic": true,
+  "seed": 20260929,
+  "model": "beta-observation-and-stipulated-transition/1",
+  "input_sha256": "6068e082ecd7c5c1cb306ef9896dbaa34e3438f5bd66b5f73db82752eac05c0c",
+  "implementation_sha256": "70c17654984770c525838e4dbb74ff38c0850350c4e6fab887e4d196a5235f82",
+  "evaluation": [
+    {
+      "split": "participant",
+      "train_rows": 384,
+      "test_rows": 96,
+      "context_rows": 96,
+      "scored": 92,
+      "missing_test": 4,
+      "brier": 0.2638589553495472,
+      "log_loss": 0.7357609660405021,
+      "accuracy_at_half": 0.6086956521739131,
+      "population_beta": {
+        "definition": [
+          56.0,
+          38.0
+        ],
+        "calculation": [
+          43.0,
+          51.0
+        ],
+        "proof": [
+          49.0,
+          45.0
+        ],
+        "transfer": [
+          48.0,
+          46.0
+        ]
+      },
+      "predictions": [
+        {
+          "observation": "p02:definition-4",
+          "predicted_correct": 0.5319148936170213,
+          "outcome": 0,
+          "ability": "definition"
+        },
+        {
+          "observation": "p02:definition-5",
+          "predicted_correct": 0.5319148936170213,
+          "outcome": 0,
+          "ability": "definition"
+        },
+        {
+          "observation": "p02:calculation-4",
+          "predicted_correct": 0.8191489361702128,
+          "outcome": 1,
+          "ability": "calculation"
+        },
+        {
+          "observation": "p02:calculation-5",
+          "predicted_correct": 0.8191489361702128,
+          "outcome": 0,
+          "ability": "calculation"
+        },
+        {
+          "observation": "p02:proof-4",
+          "predicted_correct": 0.5070921985815603,
+          "outcome": 0,
+          "ability": "proof"
+        },
+        {
+          "observation": "p02:proof-5",
+          "predicted_correct": 0.5070921985815603,
+          "outcome": 1,
+          "ability": "proof"
+        },
+        {
+          "observation": "p02:transfer-4",
+          "predicted_correct": 0.8368794326241135,
+          "outcome": 0,
+          "ability": "transfer"
+        },
+        {
+          "observation": "p02:transfer-5",
+          "predicted_correct": 0.8368794326241135,
+          "outcome": 1,
+          "ability": "transfer"
+        },
+        {
+          "observation": "p07:definition-4",
+          "predicted_correct": 0.19858156028368792,
+          "outcome": 1,
+          "ability": "definition"
+        },
+        {
+          "observation": "p07:definition-5",
+          "predicted_correct": 0.19858156028368792,
+          "outcome": 0,
+          "ability": "definition"
+        },
+        {
+          "observation": "p07:calculation-4",
+          "predicted_correct": 0.4858156028368794,
+          "outcome": 0,
+          "ability": "calculation"
+        },
+        {
+          "observation": "p07:calculation-5",
+          "predicted_correct": 0.4858156028368794,
+          "outcome": 0,
+          "ability": "calculation"
+        },
+        {
+          "observation": "p07:proof-4",
+          "predicted_correct": 0.17375886524822692,
+          "outcome": 0,
+          "ability": "proof"
+        },
+        {
+          "observation": "p07:proof-5",
+          "predicted_correct": 0.17375886524822692,
+          "outcome": 0,
+          "ability": "proof"
+        },
+        {
+          "observation": "p07:transfer-4",
+          "predicted_correct": 0.8368794326241135,
+          "outcome": 1,
+          "ability": "transfer"
+        },
+        {
+          "observation": "p07:transfer-5",
+          "predicted_correct": 0.8368794326241135,
+          "outcome": 1,
+          "ability": "transfer"
+        },
+        {
+          "observation": "p09:definition-4",
+          "predicted_correct": 0.8652482269503546,
+          "outcome": 1,
+          "ability": "definition"
+        },
+        {
+          "observation": "p09:definition-5",
+          "predicted_correct": 0.8652482269503546,
+          "outcome": 1,
+          "ability": "definition"
+        },
+        {
+          "observation": "p09:calculation-4",
+          "predicted_correct": 0.1524822695035461,
+          "outcome": 0,
+          "ability": "calculation"
+        },
+        {
+          "observation": "p09:calculation-5",
+          "predicted_correct": 0.1524822695035461,
+          "outcome": 1,
+          "ability": "calculation"
+        },
+        {
+          "observation": "p09:proof-4",
+          "predicted_correct": 0.5070921985815603,
+          "outcome": 0,
+          "ability": "proof"
+        },
+        {
+          "observation": "p09:proof-5",
+          "predicted_correct": 0.5070921985815603,
+          "outcome": 1,
+          "ability": "proof"
+        },
+        {
+          "observation": "p09:transfer-4",
+          "predicted_correct": 0.1702127659574468,
+          "outcome": 0,
+          "ability": "transfer"
+        },
+        {
+          "observation": "p09:transfer-5",
+          "predicted_correct": 0.1702127659574468,
+          "outcome": 1,
+          "ability": "transfer"
+        },
+        {
+          "observation": "p11:definition-4",
+          "predicted_correct": 0.8652482269503546,
+          "outcome": 1,
+          "ability": "definition"
+        },
+        {
+          "observation": "p11:definition-5",
+          "predicted_correct": 0.8652482269503546,
+          "outcome": 0,
+          "ability": "definition"
+        },
+        {
+          "observation": "p11:calculation-4",
+          "predicted_correct": 0.8191489361702128,
+          "outcome": 0,
+          "ability": "calculation"
+        },
+        {
+          "observation": "p11:calculation-5",
+          "predicted_correct": 0.8191489361702128,
+          "outcome": 0,
+          "ability": "calculation"
+        },
+        {
+          "observation": "p11:proof-4",
+          "predicted_correct": 0.5070921985815603,
+          "outcome": 1,
+          "ability": "proof"
+        },
+        {
+          "observation": "p11:proof-5",
+          "predicted_correct": 0.5070921985815603,
+          "outcome": 0,
+          "ability": "proof"
+        },
+        {
+          "observation": "p11:transfer-4",
+          "predicted_correct": 0.5035460992907801,
+          "outcome": 1,
+          "ability": "transfer"
+        },
+        {
+          "observation": "p11:transfer-5",
+          "predicted_correct": 0.5035460992907801,
+          "outcome": 1,
+          "ability": "transfer"
+        },
+        {
+          "observation": "p13:definition-4",
+          "predicted_correct": 0.5319148936170213,
+          "outcome": 1,
+          "ability": "definition"
+        },
+        {
+          "observation": "p13:definition-5",
+          "predicted_correct": 0.5319148936170213,
+          "outcome": 1,
+          "ability": "definition"
+        },
+        {
+          "observation": "p13:calculation-4",
+          "predicted_correct": 0.4858156028368794,
+          "outcome": 0,
+          "ability": "calculation"
+        },
+        {
+          "observation": "p13:calculation-5",
+          "predicted_correct": 0.4858156028368794,
+          "outcome": 0,
+          "ability": "calculation"
+        },
+        {
+          "observation": "p13:proof-4",
+          "predicted_correct": 0.5070921985815603,
+          "outcome": 0,
+          "ability": "proof"
+        },
+        {
+          "observation": "p13:proof-5",
+          "predicted_correct": 0.5070921985815603,
+          "outcome": 0,
+          "ability": "proof"
+        },
+        {
+          "observation": "p13:transfer-4",
+          "predicted_correct": 0.8368794326241135,
+          "outcome": 0,
+          "ability": "transfer"
+        },
+        {
+          "observation": "p13:transfer-5",
+          "predicted_correct": 0.8368794326241135,
+          "outcome": 0,
+          "ability": "transfer"
+        },
+        {
+          "observation": "p15:definition-4",
+          "predicted_correct": 0.19858156028368792,
+          "outcome": 0,
+          "ability": "definition"
+        },
+        {
+          "observation": "p15:definition-5",
+          "predicted_correct": 0.19858156028368792,
+          "outcome": 0,
+          "ability": "definition"
+        },
+        {
+          "observation": "p15:calculation-4",
+          "predicted_correct": 0.4858156028368794,
+          "outcome": 1,
+          "ability": "calculation"
+        },
+        {
+          "observation": "p15:calculation-5",
+          "predicted_correct": 0.4858156028368794,
+          "outcome": 0,
+          "ability": "calculation"
+        },
+        {
+          "observation": "p15:proof-4",
+          "predicted_correct": 0.8404255319148937,
+          "outcome": 1,
+          "ability": "proof"
+        },
+        {
+          "observation": "p15:proof-5",
+          "predicted_correct": 0.8404255319148937,
+          "outcome": 0,
+          "ability": "proof"
+        },
+        {
+          "observation": "p15:transfer-4",
+          "predicted_correct": 0.1702127659574468,
+          "outcome": 1,
+          "ability": "transfer"
+        },
+        {
+          "observation": "p15:transfer-5",
+          "predicted_correct": 0.1702127659574468,
+          "outcome": 1,
+          "ability": "transfer"
+        },
+        {
+          "observation": "p16:definition-4",
+          "predicted_correct": 0.5319148936170213,
+          "outcome": 1,
+          "ability": "definition"
+        },
+        {
+          "observation": "p16:definition-5",
+          "predicted_correct": 0.5319148936170213,
+          "outcome": 1,
+          "ability": "definition"
+        },
+        {
+          "observation": "p16:calculation-4",
+          "predicted_correct": 0.1524822695035461,
+          "outcome": 0,
+          "ability": "calculation"
+        },
+        {
+          "observation": "p16:calculation-5",
+          "predicted_correct": 0.1524822695035461,
+          "outcome": 0,
+          "ability": "calculation"
+        },
+        {
+          "observation": "p16:proof-4",
+          "predicted_correct": 0.5070921985815603,
+          "outcome": 0,
+          "ability": "proof"
+        },
+        {
+          "observation": "p16:proof-5",
+          "predicted_correct": 0.5070921985815603,
+          "outcome": 1,
+          "ability": "proof"
+        },
+        {
+          "observation": "p16:transfer-4",
+          "predicted_correct": 0.1702127659574468,
+          "outcome": 1,
+          "ability": "transfer"
+        },
+        {
+          "observation": "p16:transfer-5",
+          "predicted_correct": 0.1702127659574468,
+          "outcome": 0,
+          "ability": "transfer"
+        },
+        {
+          "observation": "p18:definition-4",
+          "predicted_correct": 0.5319148936170213,
+          "outcome": 0,
+          "ability": "definition"
+        },
+        {
+          "observation": "p18:definition-5",
+          "predicted_correct": 0.5319148936170213,
+          "outcome": 1,
+          "ability": "definition"
+        },
+        {
+          "observation": "p18:calculation-4",
+          "predicted_correct": 0.8191489361702128,
+          "outcome": 1,
+          "ability": "calculation"
+        },
+        {
+          "observation": "p18:calculation-5",
+          "predicted_correct": 0.8191489361702128,
+          "outcome": 1,
+          "ability": "calculation"
+        },
+        {
+          "observation": "p18:proof-4",
+          "predicted_correct": 0.8404255319148937,
+          "outcome": 1,
+          "ability": "proof"
+        },
+        {
+          "observation": "p18:proof-5",
+          "predicted_correct": 0.8404255319148937,
+          "outcome": 1,
+          "ability": "proof"
+        },
+        {
+          "observation": "p18:transfer-4",
+          "predicted_correct": 0.5035460992907801,
+          "outcome": 0,
+          "ability": "transfer"
+        },
+        {
+          "observation": "p18:transfer-5",
+          "predicted_correct": 0.5035460992907801,
+          "outcome": 0,
+          "ability": "transfer"
+        },
+        {
+          "observation": "p19:definition-4",
+          "predicted_correct": 0.5319148936170213,
+          "outcome": 1,
+          "ability": "definition"
+        },
+        {
+          "observation": "p19:definition-5",
+          "predicted_correct": 0.5319148936170213,
+          "outcome": 0,
+          "ability": "definition"
+        },
+        {
+          "observation": "p19:calculation-4",
+          "predicted_correct": 0.4858156028368794,
+          "outcome": 0,
+          "ability": "calculation"
+        },
+        {
+          "observation": "p19:calculation-5",
+          "predicted_correct": 0.4858156028368794,
+          "outcome": 0,
+          "ability": "calculation"
+        },
+        {
+          "observation": "p19:proof-4",
+          "predicted_correct": 0.17375886524822692,
+          "outcome": 0,
+          "ability": "proof"
+        },
+        {
+          "observation": "p19:proof-5",
+          "predicted_correct": 0.17375886524822692,
+          "outcome": 0,
+          "ability": "proof"
+        },
+        {
+          "observation": "p19:transfer-4",
+          "predicted_correct": 0.5035460992907801,
+          "outcome": 1,
+          "ability": "transfer"
+        },
+        {
+          "observation": "p19:transfer-5",
+          "predicted_correct": 0.5035460992907801,
+          "outcome": 1,
+          "ability": "transfer"
+        },
+        {
+          "observation": "p24:definition-4",
+          "predicted_correct": 0.5319148936170213,
+          "outcome": 0,
+          "ability": "definition"
+        },
+        {
+          "observation": "p24:definition-5",
+          "predicted_correct": 0.5319148936170213,
+          "outcome": null,
+          "ability": "definition"
+        },
+        {
+          "observation": "p24:calculation-4",
+          "predicted_correct": 0.1524822695035461,
+          "outcome": 0,
+          "ability": "calculation"
+        },
+        {
+          "observation": "p24:calculation-5",
+          "predicted_correct": 0.1524822695035461,
+          "outcome": null,
+          "ability": "calculation"
+        },
+        {
+          "observation": "p24:proof-4",
+          "predicted_correct": 0.5070921985815603,
+          "outcome": 1,
+          "ability": "proof"
+        },
+        {
+          "observation": "p24:proof-5",
+          "predicted_correct": 0.5070921985815603,
+          "outcome": null,
+          "ability": "proof"
+        },
+        {
+          "observation": "p24:transfer-4",
+          "predicted_correct": 0.8368794326241135,
+          "outcome": 1,
+          "ability": "transfer"
+        },
+        {
+          "observation": "p24:transfer-5",
+          "predicted_correct": 0.8368794326241135,
+          "outcome": null,
+          "ability": "transfer"
+        },
+        {
+          "observation": "p29:definition-4",
+          "predicted_correct": 0.2978723404255319,
+          "outcome": 0,
+          "ability": "definition"
+        },
+        {
+          "observation": "p29:definition-5",
+          "predicted_correct": 0.2978723404255319,
+          "outcome": 1,
+          "ability": "definition"
+        },
+        {
+          "observation": "p29:calculation-4",
+          "predicted_correct": 0.22872340425531917,
+          "outcome": 0,
+          "ability": "calculation"
+        },
+        {
+          "observation": "p29:calculation-5",
+          "predicted_correct": 0.22872340425531917,
+          "outcome": 1,
+          "ability": "calculation"
+        },
+        {
+          "observation": "p29:proof-4",
+          "predicted_correct": 0.26063829787234044,
+          "outcome": 1,
+          "ability": "proof"
+        },
+        {
+          "observation": "p29:proof-5",
+          "predicted_correct": 0.26063829787234044,
+          "outcome": 1,
+          "ability": "proof"
+        },
+        {
+          "observation": "p29:transfer-4",
+          "predicted_correct": 0.7553191489361702,
+          "outcome": 0,
+          "ability": "transfer"
+        },
+        {
+          "observation": "p29:transfer-5",
+          "predicted_correct": 0.7553191489361702,
+          "outcome": 0,
+          "ability": "transfer"
+        },
+        {
+          "observation": "p33:definition-4",
+          "predicted_correct": 0.5319148936170213,
+          "outcome": 1,
+          "ability": "definition"
+        },
+        {
+          "observation": "p33:definition-5",
+          "predicted_correct": 0.5319148936170213,
+          "outcome": 1,
+          "ability": "definition"
+        },
+        {
+          "observation": "p33:calculation-4",
+          "predicted_correct": 0.4858156028368794,
+          "outcome": 1,
+          "ability": "calculation"
+        },
+        {
+          "observation": "p33:calculation-5",
+          "predicted_correct": 0.4858156028368794,
+          "outcome": 1,
+          "ability": "calculation"
+        },
+        {
+          "observation": "p33:proof-4",
+          "predicted_correct": 0.5070921985815603,
+          "outcome": 1,
+          "ability": "proof"
+        },
+        {
+          "observation": "p33:proof-5",
+          "predicted_correct": 0.5070921985815603,
+          "outcome": 1,
+          "ability": "proof"
+        },
+        {
+          "observation": "p33:transfer-4",
+          "predicted_correct": 0.8368794326241135,
+          "outcome": 1,
+          "ability": "transfer"
+        },
+        {
+          "observation": "p33:transfer-5",
+          "predicted_correct": 0.8368794326241135,
+          "outcome": 1,
+          "ability": "transfer"
+        }
+      ],
+      "train_ids_sha256": "513e27b21599088d33ababbacff12a7edad0d4c59c3d869dfe07d894a4842360",
+      "test_ids_sha256": "891c2e7b5fd6a3d15f3f107739e4f45736eafd0246e9710c4399a8a5a3d0593a",
+      "holdout_item_ids": [
+        "calculation-4",
+        "calculation-5",
+        "definition-4",
+        "definition-5",
+        "proof-4",
+        "proof-5",
+        "transfer-4",
+        "transfer-5"
+      ],
+      "transition_demo": {
+        "analogy": 0.46549999999999997,
+        "deduction": 0.437
+      },
+      "unknown_transition": null,
+      "public_sha256": "a78cf9c66074d4276b436e7b8abbf23109f11d55318c925797f0c103c3356f32",
+      "confidence_mean": 0.48263260869565217,
+      "seconds_mean": 47.579340217391305,
+      "heldout_outcome_mutation_does_not_change_fit": true
+    },
+    {
+      "split": "time",
+      "train_rows": 576,
+      "test_rows": 288,
+      "context_rows": 0,
+      "scored": 280,
+      "missing_test": 8,
+      "brier": 0.24929634899078087,
+      "log_loss": 0.6917411387463306,
+      "accuracy_at_half": 0.5321428571428571,
+      "population_beta": {
+        "definition": [
+          77.0,
+          64.0
+        ],
+        "calculation": [
+          65.0,
+          76.0
+        ],
+        "proof": [
+          71.0,
+          70.0
+        ],
+        "transfer": [
+          73.0,
+          68.0
+        ]
+      },
+      "predictions": [
+        {
+          "observation": "p00:definition-4",
+          "predicted_correct": 0.5460992907801419,
+          "outcome": 0,
+          "ability": "definition"
+        },
+        {
+          "observation": "p00:definition-5",
+          "predicted_correct": 0.5460992907801419,
+          "outcome": 1,
+          "ability": "definition"
+        },
+        {
+          "observation": "p00:calculation-4",
+          "predicted_correct": 0.46099290780141844,
+          "outcome": 0,
+          "ability": "calculation"
+        },
+        {
+          "observation": "p00:calculation-5",
+          "predicted_correct": 0.46099290780141844,
+          "outcome": 0,
+          "ability": "calculation"
+        },
+        {
+          "observation": "p00:proof-4",
+          "predicted_correct": 0.5035460992907801,
+          "outcome": 1,
+          "ability": "proof"
+        },
+        {
+          "observation": "p00:proof-5",
+          "predicted_correct": 0.5035460992907801,
+          "outcome": 1,
+          "ability": "proof"
+        },
+        {
+          "observation": "p00:transfer-4",
+          "predicted_correct": 0.5177304964539007,
+          "outcome": 0,
+          "ability": "transfer"
+        },
+        {
+          "observation": "p00:transfer-5",
+          "predicted_correct": 0.5177304964539007,
+          "outcome": 0,
+          "ability": "transfer"
+        },
+        {
+          "observation": "p01:definition-4",
+          "predicted_correct": 0.5460992907801419,
+          "outcome": 0,
+          "ability": "definition"
+        },
+        {
+          "observation": "p01:definition-5",
+          "predicted_correct": 0.5460992907801419,
+          "outcome": 1,
+          "ability": "definition"
+        },
+        {
+          "observation": "p01:calculation-4",
+          "predicted_correct": 0.46099290780141844,
+          "outcome": 1,
+          "ability": "calculation"
+        },
+        {
+          "observation": "p01:calculation-5",
+          "predicted_correct": 0.46099290780141844,
+          "outcome": 1,
+          "ability": "calculation"
+        },
+        {
+          "observation": "p01:proof-4",
+          "predicted_correct": 0.5035460992907801,
+          "outcome": 1,
+          "ability": "proof"
+        },
+        {
+          "observation": "p01:proof-5",
+          "predicted_correct": 0.5035460992907801,
+          "outcome": 1,
+          "ability": "proof"
+        },
+        {
+          "observation": "p01:transfer-4",
+          "predicted_correct": 0.5177304964539007,
+          "outcome": 1,
+          "ability": "transfer"
+        },
+        {
+          "observation": "p01:transfer-5",
+          "predicted_correct": 0.5177304964539007,
+          "outcome": 1,
+          "ability": "transfer"
+        },
+        {
+          "observation": "p02:definition-4",
+          "predicted_correct": 0.5460992907801419,
+          "outcome": 0,
+          "ability": "definition"
+        },
+        {
+          "observation": "p02:definition-5",
+          "predicted_correct": 0.5460992907801419,
+          "outcome": 0,
+          "ability": "definition"
+        },
+        {
+          "observation": "p02:calculation-4",
+          "predicted_correct": 0.46099290780141844,
+          "outcome": 1,
+          "ability": "calculation"
+        },
+        {
+          "observation": "p02:calculation-5",
+          "predicted_correct": 0.46099290780141844,
+          "outcome": 0,
+          "ability": "calculation"
+        },
+        {
+          "observation": "p02:proof-4",
+          "predicted_correct": 0.5035460992907801,
+          "outcome": 0,
+          "ability": "proof"
+        },
+        {
+          "observation": "p02:proof-5",
+          "predicted_correct": 0.5035460992907801,
+          "outcome": 1,
+          "ability": "proof"
+        },
+        {
+          "observation": "p02:transfer-4",
+          "predicted_correct": 0.5177304964539007,
+          "outcome": 0,
+          "ability": "transfer"
+        },
+        {
+          "observation": "p02:transfer-5",
+          "predicted_correct": 0.5177304964539007,
+          "outcome": 1,
+          "ability": "transfer"
+        },
+        {
+          "observation": "p03:definition-4",
+          "predicted_correct": 0.5460992907801419,
+          "outcome": 0,
+          "ability": "definition"
+        },
+        {
+          "observation": "p03:definition-5",
+          "predicted_correct": 0.5460992907801419,
+          "outcome": 0,
+          "ability": "definition"
+        },
+        {
+          "observation": "p03:calculation-4",
+          "predicted_correct": 0.46099290780141844,
+          "outcome": 0,
+          "ability": "calculation"
+        },
+        {
+          "observation": "p03:calculation-5",
+          "predicted_correct": 0.46099290780141844,
+          "outcome": 1,
+          "ability": "calculation"
+        },
+        {
+          "observation": "p03:proof-4",
+          "predicted_correct": 0.5035460992907801,
+          "outcome": 0,
+          "ability": "proof"
+        },
+        {
+          "observation": "p03:proof-5",
+          "predicted_correct": 0.5035460992907801,
+          "outcome": 1,
+          "ability": "proof"
+        },
+        {
+          "observation": "p03:transfer-4",
+          "predicted_correct": 0.5177304964539007,
+          "outcome": 0,
+          "ability": "transfer"
+        },
+        {
+          "observation": "p03:transfer-5",
+          "predicted_correct": 0.5177304964539007,
+          "outcome": 0,
+          "ability": "transfer"
+        },
+        {
+          "observation": "p04:definition-4",
+          "predicted_correct": 0.5460992907801419,
+          "outcome": 1,
+          "ability": "definition"
+        },
+        {
+          "observation": "p04:definition-5",
+          "predicted_correct": 0.5460992907801419,
+          "outcome": 1,
+          "ability": "definition"
+        },
+        {
+          "observation": "p04:calculation-4",
+          "predicted_correct": 0.46099290780141844,
+          "outcome": 0,
+          "ability": "calculation"
+        },
+        {
+          "observation": "p04:calculation-5",
+          "predicted_correct": 0.46099290780141844,
+          "outcome": 1,
+          "ability": "calculation"
+        },
+        {
+          "observation": "p04:proof-4",
+          "predicted_correct": 0.5035460992907801,
+          "outcome": 1,
+          "ability": "proof"
+        },
+        {
+          "observation": "p04:proof-5",
+          "predicted_correct": 0.5035460992907801,
+          "outcome": 1,
+          "ability": "proof"
+        },
+        {
+          "observation": "p04:transfer-4",
+          "predicted_correct": 0.5177304964539007,
+          "outcome": 0,
+          "ability": "transfer"
+        },
+        {
+          "observation": "p04:transfer-5",
+          "predicted_correct": 0.5177304964539007,
+          "outcome": 0,
+          "ability": "transfer"
+        },
+        {
+          "observation": "p05:definition-4",
+          "predicted_correct": 0.5460992907801419,
+          "outcome": 0,
+          "ability": "definition"
+        },
+        {
+          "observation": "p05:definition-5",
+          "predicted_correct": 0.5460992907801419,
+          "outcome": 1,
+          "ability": "definition"
+        },
+        {
+          "observation": "p05:calculation-4",
+          "predicted_correct": 0.46099290780141844,
+          "outcome": 0,
+          "ability": "calculation"
+        },
+        {
+          "observation": "p05:calculation-5",
+          "predicted_correct": 0.46099290780141844,
+          "outcome": 1,
+          "ability": "calculation"
+        },
+        {
+          "observation": "p05:proof-4",
+          "predicted_correct": 0.5035460992907801,
+          "outcome": 0,
+          "ability": "proof"
+        },
+        {
+          "observation": "p05:proof-5",
+          "predicted_correct": 0.5035460992907801,
+          "outcome": 1,
+          "ability": "proof"
+        },
+        {
+          "observation": "p05:transfer-4",
+          "predicted_correct": 0.5177304964539007,
+          "outcome": 0,
+          "ability": "transfer"
+        },
+        {
+          "observation": "p05:transfer-5",
+          "predicted_correct": 0.5177304964539007,
+          "outcome": 1,
+          "ability": "transfer"
+        },
+        {
+          "observation": "p06:definition-4",
+          "predicted_correct": 0.5460992907801419,
+          "outcome": 1,
+          "ability": "definition"
+        },
+        {
+          "observation": "p06:definition-5",
+          "predicted_correct": 0.5460992907801419,
+          "outcome": 0,
+          "ability": "definition"
+        },
+        {
+          "observation": "p06:calculation-4",
+          "predicted_correct": 0.46099290780141844,
+          "outcome": 1,
+          "ability": "calculation"
+        },
+        {
+          "observation": "p06:calculation-5",
+          "predicted_correct": 0.46099290780141844,
+          "outcome": 0,
+          "ability": "calculation"
+        },
+        {
+          "observation": "p06:proof-4",
+          "predicted_correct": 0.5035460992907801,
+          "outcome": 1,
+          "ability": "proof"
+        },
+        {
+          "observation": "p06:proof-5",
+          "predicted_correct": 0.5035460992907801,
+          "outcome": 1,
+          "ability": "proof"
+        },
+        {
+          "observation": "p06:transfer-4",
+          "predicted_correct": 0.5177304964539007,
+          "outcome": 1,
+          "ability": "transfer"
+        },
+        {
+          "observation": "p06:transfer-5",
+          "predicted_correct": 0.5177304964539007,
+          "outcome": 1,
+          "ability": "transfer"
+        },
+        {
+          "observation": "p07:definition-4",
+          "predicted_correct": 0.5460992907801419,
+          "outcome": 1,
+          "ability": "definition"
+        },
+        {
+          "observation": "p07:definition-5",
+          "predicted_correct": 0.5460992907801419,
+          "outcome": 0,
+          "ability": "definition"
+        },
+        {
+          "observation": "p07:calculation-4",
+          "predicted_correct": 0.46099290780141844,
+          "outcome": 0,
+          "ability": "calculation"
+        },
+        {
+          "observation": "p07:calculation-5",
+          "predicted_correct": 0.46099290780141844,
+          "outcome": 0,
+          "ability": "calculation"
+        },
+        {
+          "observation": "p07:proof-4",
+          "predicted_correct": 0.5035460992907801,
+          "outcome": 0,
+          "ability": "proof"
+        },
+        {
+          "observation": "p07:proof-5",
+          "predicted_correct": 0.5035460992907801,
+          "outcome": 0,
+          "ability": "proof"
+        },
+        {
+          "observation": "p07:transfer-4",
+          "predicted_correct": 0.5177304964539007,
+          "outcome": 1,
+          "ability": "transfer"
+        },
+        {
+          "observation": "p07:transfer-5",
+          "predicted_correct": 0.5177304964539007,
+          "outcome": 1,
+          "ability": "transfer"
+        },
+        {
+          "observation": "p08:definition-4",
+          "predicted_correct": 0.5460992907801419,
+          "outcome": 1,
+          "ability": "definition"
+        },
+        {
+          "observation": "p08:definition-5",
+          "predicted_correct": 0.5460992907801419,
+          "outcome": 0,
+          "ability": "definition"
+        },
+        {
+          "observation": "p08:calculation-4",
+          "predicted_correct": 0.46099290780141844,
+          "outcome": 0,
+          "ability": "calculation"
+        },
+        {
+          "observation": "p08:calculation-5",
+          "predicted_correct": 0.46099290780141844,
+          "outcome": 1,
+          "ability": "calculation"
+        },
+        {
+          "observation": "p08:proof-4",
+          "predicted_correct": 0.5035460992907801,
+          "outcome": 1,
+          "ability": "proof"
+        },
+        {
+          "observation": "p08:proof-5",
+          "predicted_correct": 0.5035460992907801,
+          "outcome": 1,
+          "ability": "proof"
+        },
+        {
+          "observation": "p08:transfer-4",
+          "predicted_correct": 0.5177304964539007,
+          "outcome": 1,
+          "ability": "transfer"
+        },
+        {
+          "observation": "p08:transfer-5",
+          "predicted_correct": 0.5177304964539007,
+          "outcome": 1,
+          "ability": "transfer"
+        },
+        {
+          "observation": "p09:definition-4",
+          "predicted_correct": 0.5460992907801419,
+          "outcome": 1,
+          "ability": "definition"
+        },
+        {
+          "observation": "p09:definition-5",
+          "predicted_correct": 0.5460992907801419,
+          "outcome": 1,
+          "ability": "definition"
+        },
+        {
+          "observation": "p09:calculation-4",
+          "predicted_correct": 0.46099290780141844,
+          "outcome": 0,
+          "ability": "calculation"
+        },
+        {
+          "observation": "p09:calculation-5",
+          "predicted_correct": 0.46099290780141844,
+          "outcome": 1,
+          "ability": "calculation"
+        },
+        {
+          "observation": "p09:proof-4",
+          "predicted_correct": 0.5035460992907801,
+          "outcome": 0,
+          "ability": "proof"
+        },
+        {
+          "observation": "p09:proof-5",
+          "predicted_correct": 0.5035460992907801,
+          "outcome": 1,
+          "ability": "proof"
+        },
+        {
+          "observation": "p09:transfer-4",
+          "predicted_correct": 0.5177304964539007,
+          "outcome": 0,
+          "ability": "transfer"
+        },
+        {
+          "observation": "p09:transfer-5",
+          "predicted_correct": 0.5177304964539007,
+          "outcome": 1,
+          "ability": "transfer"
+        },
+        {
+          "observation": "p10:definition-4",
+          "predicted_correct": 0.5460992907801419,
+          "outcome": 1,
+          "ability": "definition"
+        },
+        {
+          "observation": "p10:definition-5",
+          "predicted_correct": 0.5460992907801419,
+          "outcome": 0,
+          "ability": "definition"
+        },
+        {
+          "observation": "p10:calculation-4",
+          "predicted_correct": 0.46099290780141844,
+          "outcome": 0,
+          "ability": "calculation"
+        },
+        {
+          "observation": "p10:calculation-5",
+          "predicted_correct": 0.46099290780141844,
+          "outcome": 1,
+          "ability": "calculation"
+        },
+        {
+          "observation": "p10:proof-4",
+          "predicted_correct": 0.5035460992907801,
+          "outcome": 0,
+          "ability": "proof"
+        },
+        {
+          "observation": "p10:proof-5",
+          "predicted_correct": 0.5035460992907801,
+          "outcome": 1,
+          "ability": "proof"
+        },
+        {
+          "observation": "p10:transfer-4",
+          "predicted_correct": 0.5177304964539007,
+          "outcome": 0,
+          "ability": "transfer"
+        },
+        {
+          "observation": "p10:transfer-5",
+          "predicted_correct": 0.5177304964539007,
+          "outcome": 1,
+          "ability": "transfer"
+        },
+        {
+          "observation": "p11:definition-4",
+          "predicted_correct": 0.5460992907801419,
+          "outcome": 1,
+          "ability": "definition"
+        },
+        {
+          "observation": "p11:definition-5",
+          "predicted_correct": 0.5460992907801419,
+          "outcome": 0,
+          "ability": "definition"
+        },
+        {
+          "observation": "p11:calculation-4",
+          "predicted_correct": 0.46099290780141844,
+          "outcome": 0,
+          "ability": "calculation"
+        },
+        {
+          "observation": "p11:calculation-5",
+          "predicted_correct": 0.46099290780141844,
+          "outcome": 0,
+          "ability": "calculation"
+        },
+        {
+          "observation": "p11:proof-4",
+          "predicted_correct": 0.5035460992907801,
+          "outcome": 1,
+          "ability": "proof"
+        },
+        {
+          "observation": "p11:proof-5",
+          "predicted_correct": 0.5035460992907801,
+          "outcome": 0,
+          "ability": "proof"
+        },
+        {
+          "observation": "p11:transfer-4",
+          "predicted_correct": 0.5177304964539007,
+          "outcome": 1,
+          "ability": "transfer"
+        },
+        {
+          "observation": "p11:transfer-5",
+          "predicted_correct": 0.5177304964539007,
+          "outcome": 1,
+          "ability": "transfer"
+        },
+        {
+          "observation": "p12:definition-4",
+          "predicted_correct": 0.5460992907801419,
+          "outcome": 0,
+          "ability": "definition"
+        },
+        {
+          "observation": "p12:definition-5",
+          "predicted_correct": 0.5460992907801419,
+          "outcome": 1,
+          "ability": "definition"
+        },
+        {
+          "observation": "p12:calculation-4",
+          "predicted_correct": 0.46099290780141844,
+          "outcome": 1,
+          "ability": "calculation"
+        },
+        {
+          "observation": "p12:calculation-5",
+          "predicted_correct": 0.46099290780141844,
+          "outcome": 1,
+          "ability": "calculation"
+        },
+        {
+          "observation": "p12:proof-4",
+          "predicted_correct": 0.5035460992907801,
+          "outcome": 0,
+          "ability": "proof"
+        },
+        {
+          "observation": "p12:proof-5",
+          "predicted_correct": 0.5035460992907801,
+          "outcome": 0,
+          "ability": "proof"
+        },
+        {
+          "observation": "p12:transfer-4",
+          "predicted_correct": 0.5177304964539007,
+          "outcome": 1,
+          "ability": "transfer"
+        },
+        {
+          "observation": "p12:transfer-5",
+          "predicted_correct": 0.5177304964539007,
+          "outcome": 1,
+          "ability": "transfer"
+        },
+        {
+          "observation": "p13:definition-4",
+          "predicted_correct": 0.5460992907801419,
+          "outcome": 1,
+          "ability": "definition"
+        },
+        {
+          "observation": "p13:definition-5",
+          "predicted_correct": 0.5460992907801419,
+          "outcome": 1,
+          "ability": "definition"
+        },
+        {
+          "observation": "p13:calculation-4",
+          "predicted_correct": 0.46099290780141844,
+          "outcome": 0,
+          "ability": "calculation"
+        },
+        {
+          "observation": "p13:calculation-5",
+          "predicted_correct": 0.46099290780141844,
+          "outcome": 0,
+          "ability": "calculation"
+        },
+        {
+          "observation": "p13:proof-4",
+          "predicted_correct": 0.5035460992907801,
+          "outcome": 0,
+          "ability": "proof"
+        },
+        {
+          "observation": "p13:proof-5",
+          "predicted_correct": 0.5035460992907801,
+          "outcome": 0,
+          "ability": "proof"
+        },
+        {
+          "observation": "p13:transfer-4",
+          "predicted_correct": 0.5177304964539007,
+          "outcome": 0,
+          "ability": "transfer"
+        },
+        {
+          "observation": "p13:transfer-5",
+          "predicted_correct": 0.5177304964539007,
+          "outcome": 0,
+          "ability": "transfer"
+        },
+        {
+          "observation": "p14:definition-4",
+          "predicted_correct": 0.5460992907801419,
+          "outcome": 0,
+          "ability": "definition"
+        },
+        {
+          "observation": "p14:definition-5",
+          "predicted_correct": 0.5460992907801419,
+          "outcome": 0,
+          "ability": "definition"
+        },
+        {
+          "observation": "p14:calculation-4",
+          "predicted_correct": 0.46099290780141844,
+          "outcome": 1,
+          "ability": "calculation"
+        },
+        {
+          "observation": "p14:calculation-5",
+          "predicted_correct": 0.46099290780141844,
+          "outcome": 0,
+          "ability": "calculation"
+        },
+        {
+          "observation": "p14:proof-4",
+          "predicted_correct": 0.5035460992907801,
+          "outcome": 1,
+          "ability": "proof"
+        },
+        {
+          "observation": "p14:proof-5",
+          "predicted_correct": 0.5035460992907801,
+          "outcome": 0,
+          "ability": "proof"
+        },
+        {
+          "observation": "p14:transfer-4",
+          "predicted_correct": 0.5177304964539007,
+          "outcome": 1,
+          "ability": "transfer"
+        },
+        {
+          "observation": "p14:transfer-5",
+          "predicted_correct": 0.5177304964539007,
+          "outcome": 1,
+          "ability": "transfer"
+        },
+        {
+          "observation": "p15:definition-4",
+          "predicted_correct": 0.5460992907801419,
+          "outcome": 0,
+          "ability": "definition"
+        },
+        {
+          "observation": "p15:definition-5",
+          "predicted_correct": 0.5460992907801419,
+          "outcome": 0,
+          "ability": "definition"
+        },
+        {
+          "observation": "p15:calculation-4",
+          "predicted_correct": 0.46099290780141844,
+          "outcome": 1,
+          "ability": "calculation"
+        },
+        {
+          "observation": "p15:calculation-5",
+          "predicted_correct": 0.46099290780141844,
+          "outcome": 0,
+          "ability": "calculation"
+        },
+        {
+          "observation": "p15:proof-4",
+          "predicted_correct": 0.5035460992907801,
+          "outcome": 1,
+          "ability": "proof"
+        },
+        {
+          "observation": "p15:proof-5",
+          "predicted_correct": 0.5035460992907801,
+          "outcome": 0,
+          "ability": "proof"
+        },
+        {
+          "observation": "p15:transfer-4",
+          "predicted_correct": 0.5177304964539007,
+          "outcome": 1,
+          "ability": "transfer"
+        },
+        {
+          "observation": "p15:transfer-5",
+          "predicted_correct": 0.5177304964539007,
+          "outcome": 1,
+          "ability": "transfer"
+        },
+        {
+          "observation": "p16:definition-4",
+          "predicted_correct": 0.5460992907801419,
+          "outcome": 1,
+          "ability": "definition"
+        },
+        {
+          "observation": "p16:definition-5",
+          "predicted_correct": 0.5460992907801419,
+          "outcome": 1,
+          "ability": "definition"
+        },
+        {
+          "observation": "p16:calculation-4",
+          "predicted_correct": 0.46099290780141844,
+          "outcome": 0,
+          "ability": "calculation"
+        },
+        {
+          "observation": "p16:calculation-5",
+          "predicted_correct": 0.46099290780141844,
+          "outcome": 0,
+          "ability": "calculation"
+        },
+        {
+          "observation": "p16:proof-4",
+          "predicted_correct": 0.5035460992907801,
+          "outcome": 0,
+          "ability": "proof"
+        },
+        {
+          "observation": "p16:proof-5",
+          "predicted_correct": 0.5035460992907801,
+          "outcome": 1,
+          "ability": "proof"
+        },
+        {
+          "observation": "p16:transfer-4",
+          "predicted_correct": 0.5177304964539007,
+          "outcome": 1,
+          "ability": "transfer"
+        },
+        {
+          "observation": "p16:transfer-5",
+          "predicted_correct": 0.5177304964539007,
+          "outcome": 0,
+          "ability": "transfer"
+        },
+        {
+          "observation": "p17:definition-4",
+          "predicted_correct": 0.5460992907801419,
+          "outcome": 0,
+          "ability": "definition"
+        },
+        {
+          "observation": "p17:definition-5",
+          "predicted_correct": 0.5460992907801419,
+          "outcome": 1,
+          "ability": "definition"
+        },
+        {
+          "observation": "p17:calculation-4",
+          "predicted_correct": 0.46099290780141844,
+          "outcome": 1,
+          "ability": "calculation"
+        },
+        {
+          "observation": "p17:calculation-5",
+          "predicted_correct": 0.46099290780141844,
+          "outcome": 1,
+          "ability": "calculation"
+        },
+        {
+          "observation": "p17:proof-4",
+          "predicted_correct": 0.5035460992907801,
+          "outcome": 0,
+          "ability": "proof"
+        },
+        {
+          "observation": "p17:proof-5",
+          "predicted_correct": 0.5035460992907801,
+          "outcome": 0,
+          "ability": "proof"
+        },
+        {
+          "observation": "p17:transfer-4",
+          "predicted_correct": 0.5177304964539007,
+          "outcome": 0,
+          "ability": "transfer"
+        },
+        {
+          "observation": "p17:transfer-5",
+          "predicted_correct": 0.5177304964539007,
+          "outcome": 1,
+          "ability": "transfer"
+        },
+        {
+          "observation": "p18:definition-4",
+          "predicted_correct": 0.5460992907801419,
+          "outcome": 0,
+          "ability": "definition"
+        },
+        {
+          "observation": "p18:definition-5",
+          "predicted_correct": 0.5460992907801419,
+          "outcome": 1,
+          "ability": "definition"
+        },
+        {
+          "observation": "p18:calculation-4",
+          "predicted_correct": 0.46099290780141844,
+          "outcome": 1,
+          "ability": "calculation"
+        },
+        {
+          "observation": "p18:calculation-5",
+          "predicted_correct": 0.46099290780141844,
+          "outcome": 1,
+          "ability": "calculation"
+        },
+        {
+          "observation": "p18:proof-4",
+          "predicted_correct": 0.5035460992907801,
+          "outcome": 1,
+          "ability": "proof"
+        },
+        {
+          "observation": "p18:proof-5",
+          "predicted_correct": 0.5035460992907801,
+          "outcome": 1,
+          "ability": "proof"
+        },
+        {
+          "observation": "p18:transfer-4",
+          "predicted_correct": 0.5177304964539007,
+          "outcome": 0,
+          "ability": "transfer"
+        },
+        {
+          "observation": "p18:transfer-5",
+          "predicted_correct": 0.5177304964539007,
+          "outcome": 0,
+          "ability": "transfer"
+        },
+        {
+          "observation": "p19:definition-4",
+          "predicted_correct": 0.5460992907801419,
+          "outcome": 1,
+          "ability": "definition"
+        },
+        {
+          "observation": "p19:definition-5",
+          "predicted_correct": 0.5460992907801419,
+          "outcome": 0,
+          "ability": "definition"
+        },
+        {
+          "observation": "p19:calculation-4",
+          "predicted_correct": 0.46099290780141844,
+          "outcome": 0,
+          "ability": "calculation"
+        },
+        {
+          "observation": "p19:calculation-5",
+          "predicted_correct": 0.46099290780141844,
+          "outcome": 0,
+          "ability": "calculation"
+        },
+        {
+          "observation": "p19:proof-4",
+          "predicted_correct": 0.5035460992907801,
+          "outcome": 0,
+          "ability": "proof"
+        },
+        {
+          "observation": "p19:proof-5",
+          "predicted_correct": 0.5035460992907801,
+          "outcome": 0,
+          "ability": "proof"
+        },
+        {
+          "observation": "p19:transfer-4",
+          "predicted_correct": 0.5177304964539007,
+          "outcome": 1,
+          "ability": "transfer"
+        },
+        {
+          "observation": "p19:transfer-5",
+          "predicted_correct": 0.5177304964539007,
+          "outcome": 1,
+          "ability": "transfer"
+        },
+        {
+          "observation": "p20:definition-4",
+          "predicted_correct": 0.5460992907801419,
+          "outcome": 1,
+          "ability": "definition"
+        },
+        {
+          "observation": "p20:definition-5",
+          "predicted_correct": 0.5460992907801419,
+          "outcome": 0,
+          "ability": "definition"
+        },
+        {
+          "observation": "p20:calculation-4",
+          "predicted_correct": 0.46099290780141844,
+          "outcome": 0,
+          "ability": "calculation"
+        },
+        {
+          "observation": "p20:calculation-5",
+          "predicted_correct": 0.46099290780141844,
+          "outcome": 1,
+          "ability": "calculation"
+        },
+        {
+          "observation": "p20:proof-4",
+          "predicted_correct": 0.5035460992907801,
+          "outcome": 0,
+          "ability": "proof"
+        },
+        {
+          "observation": "p20:proof-5",
+          "predicted_correct": 0.5035460992907801,
+          "outcome": 1,
+          "ability": "proof"
+        },
+        {
+          "observation": "p20:transfer-4",
+          "predicted_correct": 0.5177304964539007,
+          "outcome": 0,
+          "ability": "transfer"
+        },
+        {
+          "observation": "p20:transfer-5",
+          "predicted_correct": 0.5177304964539007,
+          "outcome": 0,
+          "ability": "transfer"
+        },
+        {
+          "observation": "p21:definition-4",
+          "predicted_correct": 0.5460992907801419,
+          "outcome": 0,
+          "ability": "definition"
+        },
+        {
+          "observation": "p21:definition-5",
+          "predicted_correct": 0.5460992907801419,
+          "outcome": 0,
+          "ability": "definition"
+        },
+        {
+          "observation": "p21:calculation-4",
+          "predicted_correct": 0.46099290780141844,
+          "outcome": 1,
+          "ability": "calculation"
+        },
+        {
+          "observation": "p21:calculation-5",
+          "predicted_correct": 0.46099290780141844,
+          "outcome": 1,
+          "ability": "calculation"
+        },
+        {
+          "observation": "p21:proof-4",
+          "predicted_correct": 0.5035460992907801,
+          "outcome": 1,
+          "ability": "proof"
+        },
+        {
+          "observation": "p21:proof-5",
+          "predicted_correct": 0.5035460992907801,
+          "outcome": 1,
+          "ability": "proof"
+        },
+        {
+          "observation": "p21:transfer-4",
+          "predicted_correct": 0.5177304964539007,
+          "outcome": 0,
+          "ability": "transfer"
+        },
+        {
+          "observation": "p21:transfer-5",
+          "predicted_correct": 0.5177304964539007,
+          "outcome": 1,
+          "ability": "transfer"
+        },
+        {
+          "observation": "p22:definition-4",
+          "predicted_correct": 0.5460992907801419,
+          "outcome": 1,
+          "ability": "definition"
+        },
+        {
+          "observation": "p22:definition-5",
+          "predicted_correct": 0.5460992907801419,
+          "outcome": 1,
+          "ability": "definition"
+        },
+        {
+          "observation": "p22:calculation-4",
+          "predicted_correct": 0.46099290780141844,
+          "outcome": 1,
+          "ability": "calculation"
+        },
+        {
+          "observation": "p22:calculation-5",
+          "predicted_correct": 0.46099290780141844,
+          "outcome": 1,
+          "ability": "calculation"
+        },
+        {
+          "observation": "p22:proof-4",
+          "predicted_correct": 0.5035460992907801,
+          "outcome": 0,
+          "ability": "proof"
+        },
+        {
+          "observation": "p22:proof-5",
+          "predicted_correct": 0.5035460992907801,
+          "outcome": 1,
+          "ability": "proof"
+        },
+        {
+          "observation": "p22:transfer-4",
+          "predicted_correct": 0.5177304964539007,
+          "outcome": 1,
+          "ability": "transfer"
+        },
+        {
+          "observation": "p22:transfer-5",
+          "predicted_correct": 0.5177304964539007,
+          "outcome": 0,
+          "ability": "transfer"
+        },
+        {
+          "observation": "p23:definition-4",
+          "predicted_correct": 0.5460992907801419,
+          "outcome": 0,
+          "ability": "definition"
+        },
+        {
+          "observation": "p23:definition-5",
+          "predicted_correct": 0.5460992907801419,
+          "outcome": 1,
+          "ability": "definition"
+        },
+        {
+          "observation": "p23:calculation-4",
+          "predicted_correct": 0.46099290780141844,
+          "outcome": 0,
+          "ability": "calculation"
+        },
+        {
+          "observation": "p23:calculation-5",
+          "predicted_correct": 0.46099290780141844,
+          "outcome": 0,
+          "ability": "calculation"
+        },
+        {
+          "observation": "p23:proof-4",
+          "predicted_correct": 0.5035460992907801,
+          "outcome": 0,
+          "ability": "proof"
+        },
+        {
+          "observation": "p23:proof-5",
+          "predicted_correct": 0.5035460992907801,
+          "outcome": 0,
+          "ability": "proof"
+        },
+        {
+          "observation": "p23:transfer-4",
+          "predicted_correct": 0.5177304964539007,
+          "outcome": 0,
+          "ability": "transfer"
+        },
+        {
+          "observation": "p23:transfer-5",
+          "predicted_correct": 0.5177304964539007,
+          "outcome": 1,
+          "ability": "transfer"
+        },
+        {
+          "observation": "p24:definition-4",
+          "predicted_correct": 0.5460992907801419,
+          "outcome": 0,
+          "ability": "definition"
+        },
+        {
+          "observation": "p24:definition-5",
+          "predicted_correct": 0.5460992907801419,
+          "outcome": null,
+          "ability": "definition"
+        },
+        {
+          "observation": "p24:calculation-4",
+          "predicted_correct": 0.46099290780141844,
+          "outcome": 0,
+          "ability": "calculation"
+        },
+        {
+          "observation": "p24:calculation-5",
+          "predicted_correct": 0.46099290780141844,
+          "outcome": null,
+          "ability": "calculation"
+        },
+        {
+          "observation": "p24:proof-4",
+          "predicted_correct": 0.5035460992907801,
+          "outcome": 1,
+          "ability": "proof"
+        },
+        {
+          "observation": "p24:proof-5",
+          "predicted_correct": 0.5035460992907801,
+          "outcome": null,
+          "ability": "proof"
+        },
+        {
+          "observation": "p24:transfer-4",
+          "predicted_correct": 0.5177304964539007,
+          "outcome": 1,
+          "ability": "transfer"
+        },
+        {
+          "observation": "p24:transfer-5",
+          "predicted_correct": 0.5177304964539007,
+          "outcome": null,
+          "ability": "transfer"
+        },
+        {
+          "observation": "p25:definition-4",
+          "predicted_correct": 0.5460992907801419,
+          "outcome": null,
+          "ability": "definition"
+        },
+        {
+          "observation": "p25:definition-5",
+          "predicted_correct": 0.5460992907801419,
+          "outcome": 0,
+          "ability": "definition"
+        },
+        {
+          "observation": "p25:calculation-4",
+          "predicted_correct": 0.46099290780141844,
+          "outcome": null,
+          "ability": "calculation"
+        },
+        {
+          "observation": "p25:calculation-5",
+          "predicted_correct": 0.46099290780141844,
+          "outcome": 0,
+          "ability": "calculation"
+        },
+        {
+          "observation": "p25:proof-4",
+          "predicted_correct": 0.5035460992907801,
+          "outcome": null,
+          "ability": "proof"
+        },
+        {
+          "observation": "p25:proof-5",
+          "predicted_correct": 0.5035460992907801,
+          "outcome": 1,
+          "ability": "proof"
+        },
+        {
+          "observation": "p25:transfer-4",
+          "predicted_correct": 0.5177304964539007,
+          "outcome": null,
+          "ability": "transfer"
+        },
+        {
+          "observation": "p25:transfer-5",
+          "predicted_correct": 0.5177304964539007,
+          "outcome": 1,
+          "ability": "transfer"
+        },
+        {
+          "observation": "p26:definition-4",
+          "predicted_correct": 0.5460992907801419,
+          "outcome": 1,
+          "ability": "definition"
+        },
+        {
+          "observation": "p26:definition-5",
+          "predicted_correct": 0.5460992907801419,
+          "outcome": 1,
+          "ability": "definition"
+        },
+        {
+          "observation": "p26:calculation-4",
+          "predicted_correct": 0.46099290780141844,
+          "outcome": 0,
+          "ability": "calculation"
+        },
+        {
+          "observation": "p26:calculation-5",
+          "predicted_correct": 0.46099290780141844,
+          "outcome": 0,
+          "ability": "calculation"
+        },
+        {
+          "observation": "p26:proof-4",
+          "predicted_correct": 0.5035460992907801,
+          "outcome": 0,
+          "ability": "proof"
+        },
+        {
+          "observation": "p26:proof-5",
+          "predicted_correct": 0.5035460992907801,
+          "outcome": 0,
+          "ability": "proof"
+        },
+        {
+          "observation": "p26:transfer-4",
+          "predicted_correct": 0.5177304964539007,
+          "outcome": 1,
+          "ability": "transfer"
+        },
+        {
+          "observation": "p26:transfer-5",
+          "predicted_correct": 0.5177304964539007,
+          "outcome": 0,
+          "ability": "transfer"
+        },
+        {
+          "observation": "p27:definition-4",
+          "predicted_correct": 0.5460992907801419,
+          "outcome": 1,
+          "ability": "definition"
+        },
+        {
+          "observation": "p27:definition-5",
+          "predicted_correct": 0.5460992907801419,
+          "outcome": 0,
+          "ability": "definition"
+        },
+        {
+          "observation": "p27:calculation-4",
+          "predicted_correct": 0.46099290780141844,
+          "outcome": 1,
+          "ability": "calculation"
+        },
+        {
+          "observation": "p27:calculation-5",
+          "predicted_correct": 0.46099290780141844,
+          "outcome": 0,
+          "ability": "calculation"
+        },
+        {
+          "observation": "p27:proof-4",
+          "predicted_correct": 0.5035460992907801,
+          "outcome": 0,
+          "ability": "proof"
+        },
+        {
+          "observation": "p27:proof-5",
+          "predicted_correct": 0.5035460992907801,
+          "outcome": 0,
+          "ability": "proof"
+        },
+        {
+          "observation": "p27:transfer-4",
+          "predicted_correct": 0.5177304964539007,
+          "outcome": 1,
+          "ability": "transfer"
+        },
+        {
+          "observation": "p27:transfer-5",
+          "predicted_correct": 0.5177304964539007,
+          "outcome": 1,
+          "ability": "transfer"
+        },
+        {
+          "observation": "p28:definition-4",
+          "predicted_correct": 0.5460992907801419,
+          "outcome": 1,
+          "ability": "definition"
+        },
+        {
+          "observation": "p28:definition-5",
+          "predicted_correct": 0.5460992907801419,
+          "outcome": 0,
+          "ability": "definition"
+        },
+        {
+          "observation": "p28:calculation-4",
+          "predicted_correct": 0.46099290780141844,
+          "outcome": 1,
+          "ability": "calculation"
+        },
+        {
+          "observation": "p28:calculation-5",
+          "predicted_correct": 0.46099290780141844,
+          "outcome": 0,
+          "ability": "calculation"
+        },
+        {
+          "observation": "p28:proof-4",
+          "predicted_correct": 0.5035460992907801,
+          "outcome": 0,
+          "ability": "proof"
+        },
+        {
+          "observation": "p28:proof-5",
+          "predicted_correct": 0.5035460992907801,
+          "outcome": 1,
+          "ability": "proof"
+        },
+        {
+          "observation": "p28:transfer-4",
+          "predicted_correct": 0.5177304964539007,
+          "outcome": 0,
+          "ability": "transfer"
+        },
+        {
+          "observation": "p28:transfer-5",
+          "predicted_correct": 0.5177304964539007,
+          "outcome": 1,
+          "ability": "transfer"
+        },
+        {
+          "observation": "p29:definition-4",
+          "predicted_correct": 0.5460992907801419,
+          "outcome": 0,
+          "ability": "definition"
+        },
+        {
+          "observation": "p29:definition-5",
+          "predicted_correct": 0.5460992907801419,
+          "outcome": 1,
+          "ability": "definition"
+        },
+        {
+          "observation": "p29:calculation-4",
+          "predicted_correct": 0.46099290780141844,
+          "outcome": 0,
+          "ability": "calculation"
+        },
+        {
+          "observation": "p29:calculation-5",
+          "predicted_correct": 0.46099290780141844,
+          "outcome": 1,
+          "ability": "calculation"
+        },
+        {
+          "observation": "p29:proof-4",
+          "predicted_correct": 0.5035460992907801,
+          "outcome": 1,
+          "ability": "proof"
+        },
+        {
+          "observation": "p29:proof-5",
+          "predicted_correct": 0.5035460992907801,
+          "outcome": 1,
+          "ability": "proof"
+        },
+        {
+          "observation": "p29:transfer-4",
+          "predicted_correct": 0.5177304964539007,
+          "outcome": 0,
+          "ability": "transfer"
+        },
+        {
+          "observation": "p29:transfer-5",
+          "predicted_correct": 0.5177304964539007,
+          "outcome": 0,
+          "ability": "transfer"
+        },
+        {
+          "observation": "p30:definition-4",
+          "predicted_correct": 0.5460992907801419,
+          "outcome": 0,
+          "ability": "definition"
+        },
+        {
+          "observation": "p30:definition-5",
+          "predicted_correct": 0.5460992907801419,
+          "outcome": 1,
+          "ability": "definition"
+        },
+        {
+          "observation": "p30:calculation-4",
+          "predicted_correct": 0.46099290780141844,
+          "outcome": 0,
+          "ability": "calculation"
+        },
+        {
+          "observation": "p30:calculation-5",
+          "predicted_correct": 0.46099290780141844,
+          "outcome": 0,
+          "ability": "calculation"
+        },
+        {
+          "observation": "p30:proof-4",
+          "predicted_correct": 0.5035460992907801,
+          "outcome": 1,
+          "ability": "proof"
+        },
+        {
+          "observation": "p30:proof-5",
+          "predicted_correct": 0.5035460992907801,
+          "outcome": 0,
+          "ability": "proof"
+        },
+        {
+          "observation": "p30:transfer-4",
+          "predicted_correct": 0.5177304964539007,
+          "outcome": 1,
+          "ability": "transfer"
+        },
+        {
+          "observation": "p30:transfer-5",
+          "predicted_correct": 0.5177304964539007,
+          "outcome": 0,
+          "ability": "transfer"
+        },
+        {
+          "observation": "p31:definition-4",
+          "predicted_correct": 0.5460992907801419,
+          "outcome": 0,
+          "ability": "definition"
+        },
+        {
+          "observation": "p31:definition-5",
+          "predicted_correct": 0.5460992907801419,
+          "outcome": 1,
+          "ability": "definition"
+        },
+        {
+          "observation": "p31:calculation-4",
+          "predicted_correct": 0.46099290780141844,
+          "outcome": 1,
+          "ability": "calculation"
+        },
+        {
+          "observation": "p31:calculation-5",
+          "predicted_correct": 0.46099290780141844,
+          "outcome": 0,
+          "ability": "calculation"
+        },
+        {
+          "observation": "p31:proof-4",
+          "predicted_correct": 0.5035460992907801,
+          "outcome": 1,
+          "ability": "proof"
+        },
+        {
+          "observation": "p31:proof-5",
+          "predicted_correct": 0.5035460992907801,
+          "outcome": 1,
+          "ability": "proof"
+        },
+        {
+          "observation": "p31:transfer-4",
+          "predicted_correct": 0.5177304964539007,
+          "outcome": 1,
+          "ability": "transfer"
+        },
+        {
+          "observation": "p31:transfer-5",
+          "predicted_correct": 0.5177304964539007,
+          "outcome": 0,
+          "ability": "transfer"
+        },
+        {
+          "observation": "p32:definition-4",
+          "predicted_correct": 0.5460992907801419,
+          "outcome": 1,
+          "ability": "definition"
+        },
+        {
+          "observation": "p32:definition-5",
+          "predicted_correct": 0.5460992907801419,
+          "outcome": 1,
+          "ability": "definition"
+        },
+        {
+          "observation": "p32:calculation-4",
+          "predicted_correct": 0.46099290780141844,
+          "outcome": 1,
+          "ability": "calculation"
+        },
+        {
+          "observation": "p32:calculation-5",
+          "predicted_correct": 0.46099290780141844,
+          "outcome": 0,
+          "ability": "calculation"
+        },
+        {
+          "observation": "p32:proof-4",
+          "predicted_correct": 0.5035460992907801,
+          "outcome": 0,
+          "ability": "proof"
+        },
+        {
+          "observation": "p32:proof-5",
+          "predicted_correct": 0.5035460992907801,
+          "outcome": 0,
+          "ability": "proof"
+        },
+        {
+          "observation": "p32:transfer-4",
+          "predicted_correct": 0.5177304964539007,
+          "outcome": 1,
+          "ability": "transfer"
+        },
+        {
+          "observation": "p32:transfer-5",
+          "predicted_correct": 0.5177304964539007,
+          "outcome": 0,
+          "ability": "transfer"
+        },
+        {
+          "observation": "p33:definition-4",
+          "predicted_correct": 0.5460992907801419,
+          "outcome": 1,
+          "ability": "definition"
+        },
+        {
+          "observation": "p33:definition-5",
+          "predicted_correct": 0.5460992907801419,
+          "outcome": 1,
+          "ability": "definition"
+        },
+        {
+          "observation": "p33:calculation-4",
+          "predicted_correct": 0.46099290780141844,
+          "outcome": 1,
+          "ability": "calculation"
+        },
+        {
+          "observation": "p33:calculation-5",
+          "predicted_correct": 0.46099290780141844,
+          "outcome": 1,
+          "ability": "calculation"
+        },
+        {
+          "observation": "p33:proof-4",
+          "predicted_correct": 0.5035460992907801,
+          "outcome": 1,
+          "ability": "proof"
+        },
+        {
+          "observation": "p33:proof-5",
+          "predicted_correct": 0.5035460992907801,
+          "outcome": 1,
+          "ability": "proof"
+        },
+        {
+          "observation": "p33:transfer-4",
+          "predicted_correct": 0.5177304964539007,
+          "outcome": 1,
+          "ability": "transfer"
+        },
+        {
+          "observation": "p33:transfer-5",
+          "predicted_correct": 0.5177304964539007,
+          "outcome": 1,
+          "ability": "transfer"
+        },
+        {
+          "observation": "p34:definition-4",
+          "predicted_correct": 0.5460992907801419,
+          "outcome": 0,
+          "ability": "definition"
+        },
+        {
+          "observation": "p34:definition-5",
+          "predicted_correct": 0.5460992907801419,
+          "outcome": 0,
+          "ability": "definition"
+        },
+        {
+          "observation": "p34:calculation-4",
+          "predicted_correct": 0.46099290780141844,
+          "outcome": 1,
+          "ability": "calculation"
+        },
+        {
+          "observation": "p34:calculation-5",
+          "predicted_correct": 0.46099290780141844,
+          "outcome": 0,
+          "ability": "calculation"
+        },
+        {
+          "observation": "p34:proof-4",
+          "predicted_correct": 0.5035460992907801,
+          "outcome": 0,
+          "ability": "proof"
+        },
+        {
+          "observation": "p34:proof-5",
+          "predicted_correct": 0.5035460992907801,
+          "outcome": 0,
+          "ability": "proof"
+        },
+        {
+          "observation": "p34:transfer-4",
+          "predicted_correct": 0.5177304964539007,
+          "outcome": 0,
+          "ability": "transfer"
+        },
+        {
+          "observation": "p34:transfer-5",
+          "predicted_correct": 0.5177304964539007,
+          "outcome": 0,
+          "ability": "transfer"
+        },
+        {
+          "observation": "p35:definition-4",
+          "predicted_correct": 0.5460992907801419,
+          "outcome": 1,
+          "ability": "definition"
+        },
+        {
+          "observation": "p35:definition-5",
+          "predicted_correct": 0.5460992907801419,
+          "outcome": 0,
+          "ability": "definition"
+        },
+        {
+          "observation": "p35:calculation-4",
+          "predicted_correct": 0.46099290780141844,
+          "outcome": 0,
+          "ability": "calculation"
+        },
+        {
+          "observation": "p35:calculation-5",
+          "predicted_correct": 0.46099290780141844,
+          "outcome": 1,
+          "ability": "calculation"
+        },
+        {
+          "observation": "p35:proof-4",
+          "predicted_correct": 0.5035460992907801,
+          "outcome": 1,
+          "ability": "proof"
+        },
+        {
+          "observation": "p35:proof-5",
+          "predicted_correct": 0.5035460992907801,
+          "outcome": 0,
+          "ability": "proof"
+        },
+        {
+          "observation": "p35:transfer-4",
+          "predicted_correct": 0.5177304964539007,
+          "outcome": 0,
+          "ability": "transfer"
+        },
+        {
+          "observation": "p35:transfer-5",
+          "predicted_correct": 0.5177304964539007,
+          "outcome": 1,
+          "ability": "transfer"
+        }
+      ],
+      "train_ids_sha256": "5163dcad3fc7d873a66dce1dbe01b49d7af6847eaf2181204e4765180af9bff5",
+      "test_ids_sha256": "f37355dbe845a091d8d78b63f27ea404d3acacb9c497a0a412b4d8ddba2afdc5",
+      "holdout_item_ids": [
+        "calculation-4",
+        "calculation-5",
+        "definition-4",
+        "definition-5",
+        "proof-4",
+        "proof-5",
+        "transfer-4",
+        "transfer-5"
+      ],
+      "transition_demo": {
+        "analogy": 0.46549999999999997,
+        "deduction": 0.437
+      },
+      "unknown_transition": null,
+      "public_sha256": "a78cf9c66074d4276b436e7b8abbf23109f11d55318c925797f0c103c3356f32",
+      "confidence_mean": 0.48609285714285716,
+      "seconds_mean": 48.04902357142857,
+      "heldout_outcome_mutation_does_not_change_fit": true
+    }
+  ],
+  "comparison": {
+    "bound": {
+      "actions": 4,
+      "words": 85,
+      "initial_information_states": 27,
+      "horizon": 3,
+      "budget": 3
+    },
+    "representations": {
+      "plain-dependency-graph": {
+        "candidates": 2295,
+        "legal_route_misses": 140,
+        "unjustified_found": 2,
+        "conditional_classification_errors": 130,
+        "candidates_with_resource_trace": 0,
+        "evidence_trace_supported": false,
+        "mismatch_examples": [
+          {
+            "initial": {
+              "a": false,
+              "b": false,
+              "c": true
+            },
+            "word": [
+              "c"
+            ],
+            "reference": "Found",
+            "observed": "InfeasibleWithinBound"
+          },
+          {
+            "initial": {
+              "a": false,
+              "b": false,
+              "c": true
+            },
+            "word": [
+              "c",
+              "c"
+            ],
+            "reference": "Found",
+            "observed": "InfeasibleWithinBound"
+          },
+          {
+            "initial": {
+              "a": false,
+              "b": false,
+              "c": true
+            },
+            "word": [
+              "c",
+              "show_b"
+            ],
+            "reference": "Found",
+            "observed": "InfeasibleWithinBound"
+          }
+        ],
+        "encoding": {
+          "nodes": [
+            "a",
+            "b",
+            "c",
+            "g"
+          ],
+          "edges": [
+            [
+              "a",
+              "b"
+            ],
+            [
+              "a",
+              "g"
+            ],
+            [
+              "b",
+              "g"
+            ],
+            [
+              "c",
+              "g"
+            ]
+          ],
+          "convention": "all incoming edges required; task/action labels retained for common candidate domain"
+        },
+        "encoding_sha256": "e7363986f7ee617583daf44f6aa9447096df8d5a7bf2942890e661b0aa2a9f4d",
+        "encoding_json_bytes": 192,
+        "elapsed_seconds_diagnostic": 0.007431400001223665
+      },
+      "typed-action-graph": {
+        "candidates": 2295,
+        "legal_route_misses": 0,
+        "unjustified_found": 0,
+        "conditional_classification_errors": 0,
+        "candidates_with_resource_trace": 1575,
+        "evidence_trace_supported": true,
+        "mismatch_examples": [],
+        "encoding": {
+          "hyperarcs": [
+            {
+              "id": "ab",
+              "tail": [
+                "a",
+                "b"
+              ],
+              "head": "g",
+              "resource": "certified",
+              "cost": 2
+            },
+            {
+              "id": "c",
+              "tail": [
+                "c"
+              ],
+              "head": "g",
+              "resource": "certified",
+              "cost": 1
+            },
+            {
+              "id": "show_b",
+              "tail": [],
+              "head": "b",
+              "resource": "presentation",
+              "cost": 1
+            },
+            {
+              "id": "prove_b",
+              "tail": [
+                "a"
+              ],
+              "head": "b",
+              "resource": "certified",
+              "cost": 1
+            }
+          ]
+        },
+        "encoding_sha256": "16041119bb54750dae3c4c725b3eee3ebf7b4c3f1c72c0eae4a9f50eee0ac162",
+        "encoding_json_bytes": 340,
+        "elapsed_seconds_diagnostic": 0.006348099999740953
+      },
+      "MCS": {
+        "candidates": 2295,
+        "legal_route_misses": 0,
+        "unjustified_found": 0,
+        "conditional_classification_errors": 0,
+        "candidates_with_resource_trace": 1575,
+        "evidence_trace_supported": true,
+        "mismatch_examples": [],
+        "encoding": {
+          "version": "finite-mcs/1",
+          "nodes": [
+            {
+              "id": "a",
+              "version": "1"
+            },
+            {
+              "id": "b",
+              "version": "1"
+            },
+            {
+              "id": "c",
+              "version": "1"
+            },
+            {
+              "id": "g",
+              "version": "1"
+            }
+          ],
+          "contracts": [
+            {
+              "id": "ab",
+              "inputs": [
+                "a",
+                "b"
+              ],
+              "output": "g",
+              "kind": "certified",
+              "cost": 2,
+              "witness": {
+                "kind": "symbolic-structure-fixture",
+                "source": "common-comparison-input"
+              }
+            },
+            {
+              "id": "c",
+              "inputs": [
+                "c"
+              ],
+              "output": "g",
+              "kind": "certified",
+              "cost": 1,
+              "witness": {
+                "kind": "symbolic-structure-fixture",
+                "source": "common-comparison-input"
+              }
+            },
+            {
+              "id": "show_b",
+              "inputs": [],
+              "output": "b",
+              "kind": "presentation",
+              "cost": 1,
+              "witness": {
+                "kind": "symbolic-structure-fixture",
+                "source": "common-comparison-input"
+              }
+            },
+            {
+              "id": "prove_b",
+              "inputs": [
+                "a"
+              ],
+              "output": "b",
+              "kind": "certified",
+              "cost": 1,
+              "witness": {
+                "kind": "symbolic-structure-fixture",
+                "source": "common-comparison-input"
+              }
+            }
+          ]
+        },
+        "encoding_sha256": "b4608fa11e4839fe8d310f6045fe56ce91a9e5d190eb22be27243aaacf045bb8",
+        "encoding_json_bytes": 846,
+        "elapsed_seconds_diagnostic": 0.006265600000915583
+      },
+      "annotated-bipartite-graph": {
+        "candidates": 2295,
+        "legal_route_misses": 0,
+        "unjustified_found": 0,
+        "conditional_classification_errors": 0,
+        "candidates_with_resource_trace": 1575,
+        "evidence_trace_supported": true,
+        "mismatch_examples": [],
+        "encoding": {
+          "resource_nodes": [
+            "a",
+            "b",
+            "c",
+            "g"
+          ],
+          "action_nodes": [
+            {
+              "id": "ab",
+              "kind": "certified",
+              "cost": 2
+            },
+            {
+              "id": "c",
+              "kind": "certified",
+              "cost": 1
+            },
+            {
+              "id": "show_b",
+              "kind": "presentation",
+              "cost": 1
+            },
+            {
+              "id": "prove_b",
+              "kind": "certified",
+              "cost": 1
+            }
+          ],
+          "edges": [
+            [
+              "a",
+              "act:ab",
+              "input"
+            ],
+            [
+              "b",
+              "act:ab",
+              "input"
+            ],
+            [
+              "c",
+              "act:c",
+              "input"
+            ],
+            [
+              "a",
+              "act:prove_b",
+              "input"
+            ],
+            [
+              "act:ab",
+              "g",
+              "output"
+            ],
+            [
+              "act:c",
+              "g",
+              "output"
+            ],
+            [
+              "act:show_b",
+              "b",
+              "output"
+            ],
+            [
+              "act:prove_b",
+              "b",
+              "output"
+            ]
+          ]
+        },
+        "encoding_sha256": "955cebb0c942d6d051b56ce652c009c20c54e68d105bfcfe17d3e1b19066c0ca",
+        "encoding_json_bytes": 488,
+        "elapsed_seconds_diagnostic": 0.006546500000695232
+      }
+    },
+    "identifiability": {
+      "same_records": [
+        [],
+        [
+          1
+        ],
+        [
+          1,
+          1
+        ],
+        [
+          1,
+          1,
+          1
+        ],
+        [
+          1,
+          1,
+          1,
+          1
+        ]
+      ],
+      "new_b_predictions": {
+        "E1": 1,
+        "E2": 0
+      },
+      "needed_observation": "prospectively observe b under a design controlling initial state and allocation"
+    },
+    "interpretation": "Typed action graph and annotated bipartite graph can match MCS on this fragment. No unique MCS advantage or teaching effect inferred."
+  },
+  "not_claimed": [
+    "teaching effectiveness",
+    "causal benefit",
+    "measurement validity",
+    "general model identifiability",
+    "general representation superiority"
+  ]
+}

@@ -1,0 +1,62 @@
+{
+  "schema": "mcs-source-audit/1",
+  "sources": [
+    {
+      "id": "S01",
+      "title": "Henkin, Completeness in the Theory of Types (1950)",
+      "url": "https://aaronxyliu.github.io/download/PL/Henkin.pdf",
+      "review_level": "partial_full_text",
+      "checked_utc": "2026-09-30T06:17:52.265886+00:00",
+      "printed_pages": [
+        83,
+        84,
+        85
+      ],
+      "pdf_pages": [
+        4,
+        5,
+        6
+      ],
+      "location": "axiom 11 / logical constant interpretation; general model definition; Theorem 1",
+      "basis": "web PDF extracted text, local appendix B independently compared; not a full paper audit",
+      "finding": "Original calculus includes choice facilities. General-model theorem is not a direct certificate for the no-default-choice MCS subset.",
+      "version": "JSL 15(2),81-91,DOI:10.2307/2266967",
+      "source_file_sha256": null,
+      "boundary": "No local PDF hash captured by web reader; printed/PDF positions refer to accessed 12-page scan."
+    },
+    {
+      "id": "S07",
+      "title": "Harrison, Towards self-verification of HOL Light",
+      "url": "https://www.cl.cam.ac.uk/~jrh13/papers/holhol.pdf",
+      "review_level": "partial_full_text",
+      "checked_utc": "2026-09-30T06:17:52.265903+00:00",
+      "printed_pages": null,
+      "pdf_pages": [
+        1,
+        2
+      ],
+      "location": "abstract and section 2 LCF opening",
+      "basis": "author-hosted PDF extracted text; no complete proof or versioned source audit",
+      "finding": "Separates logic and implementation validation; historical modeled core excludes definitions.",
+      "version": "author-hosted 15-page manuscript; publication version not newly verified",
+      "source_file_sha256": null,
+      "boundary": "Not evidence that this Python kernel is formally verified."
+    },
+    {
+      "id": "R03-b",
+      "title": "Prestel–Delzell, Mathematical Logic and Model Theory, section 1.5",
+      "url": null,
+      "review_level": "inherited_local_register",
+      "printed_pages": "36–46",
+      "pdf_pages": "46–56",
+      "location": "Appendix B R03-b; evidence/foundations_prestel_verified.txt",
+      "basis": "Appendix B registration and extraction-file inventory inspected; this extraction does not contain the cited section1.5 pages; original pages not re-read this run",
+      "finding": "First-order baseline remains an explicit external mathematical dependency.",
+      "version": "local reference edition registered in B.1",
+      "source_file_sha256": null,
+      "boundary": "Does not by itself verify the Python implementation or all many-sorted translation obligations."
+    }
+  ],
+  "advice_search_mismatches": "References 1,2,4 in the advice are not adopted as HOL engineering evidence; empty lambda-lifting search is not evidence of absence.",
+  "truncated_conclusion": "No requirements inferred after the final word 以及."
+}
