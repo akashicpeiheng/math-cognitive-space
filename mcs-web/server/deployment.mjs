@@ -128,20 +128,30 @@ export function assertDeploymentSafety(config) {
     );
   }
   /*
-   * 公网模式必须用 PostgreSQL（2026-10-05 加）。
+   * 公网模式默认必须用 PostgreSQL（2026-10-05 加）。
    *
    * 容器本地 SQLite 在重启、重新部署或换实例时**整个消失**——学习记录不是缓存，
-   * 丢一次就是数据事故。所以这里不是提醒，是硬拒绝：要么给出连接串，要么留在本机模式。
+   * 丢一次就是数据事故。所以默认是硬拒绝：要么给出连接串，要么留在本机模式。
+   *
+   * ## 例外：自托管（`MCS_WEB_ALLOW_LOCAL_DB=1`）
+   *
+   * 把服务跑在**自己的机器**上时，本地磁盘就是那台"持久磁盘"，
+   * SQLite 不再有"随实例消失"的问题。这条例外必须**显式打开**：
+   * 默认关闭意味着误配到容器平台上的部署仍然起不来，而不是悄悄跑起来再丢数据。
    */
   if (!config.dbUrl) {
-    throw new McsError(
-      CODES.BAD_REQUEST,
-      '公网模式必须配置 PostgreSQL 连接串（环境变量 MCS_WEB_DB_URL 或 DATABASE_URL）。'
-      + '容器本地 SQLite 会在重启 / 换实例时丢失全部学习记录，因此拒绝以公网模式启动。',
-      500,
-    );
+    if (config.allowLocalDb !== true) {
+      throw new McsError(
+        CODES.BAD_REQUEST,
+        '公网模式必须配置 PostgreSQL 连接串（环境变量 MCS_WEB_DB_URL 或 DATABASE_URL）。'
+        + '容器本地 SQLite 会在重启 / 换实例时丢失全部学习记录，因此默认拒绝启动；'
+        + '若你是把服务跑在**自己的机器**上（磁盘持久），可以显式设置 MCS_WEB_ALLOW_LOCAL_DB=1 走本地 SQLite。',
+        500,
+      );
+    }
+    return { mode: 'public', origin: parsed.origin, storage: 'sqlite-local' };
   }
-  return { mode: 'public', origin: parsed.origin };
+  return { mode: 'public', origin: parsed.origin, storage: 'postgres' };
 }
 
 /**

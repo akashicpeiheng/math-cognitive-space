@@ -67,13 +67,28 @@ test('公网模式：账号体系未接入时拒绝启动（失败朝安全一�
  * 公网模式不许用容器本地 SQLite（2026-10-05 加）。
  * 学习记录不是缓存：重启、重新部署、换实例都会让它整个消失，
  * 所以这条同样是"宁可不启动"。
+ *
+ * 同日补的例外：**自托管**（服务跑在自己的机器上，磁盘本来就是持久的）
+ * 可以显式开 `allowLocalDb`；关键在于它是**显式**的——默认仍然拒绝。
  */
-test('公网模式：没有 PostgreSQL 连接串时拒绝启动', () => {
+test('公网模式：没有 PostgreSQL 连接串时拒绝启动（自托管需显式开例外）', () => {
   assert.throws(
     () => assertDeploymentSafety(publicConfig({ dbUrl: null })),
     (error) => error.status === 500 && /必须配置 PostgreSQL 连接串/.test(error.message),
   );
+  assert.throws(
+    () => assertDeploymentSafety(publicConfig({ dbUrl: null, allowLocalDb: false })),
+    /必须配置 PostgreSQL 连接串/,
+  );
   assert.equal(assertDeploymentSafety(publicConfig({ dbUrl: 'postgres://db/mcs' })).mode, 'public');
+  const selfHosted = assertDeploymentSafety(publicConfig({ dbUrl: null, allowLocalDb: true }));
+  assert.equal(selfHosted.mode, 'public');
+  assert.equal(selfHosted.storage, 'sqlite-local', '自托管时要如实标出存储是本地 SQLite');
+  assert.equal(assertDeploymentSafety(publicConfig({ dbUrl: 'postgres://db/mcs' })).storage, 'postgres');
+});
+
+test('本机配置默认不允许自托管例外（不能靠环境变量漏进来）', () => {
+  assert.equal(loadConfig().allowLocalDb, false);
 });
 
 test('Host 白名单：本机只认回环，公网只认显式清单（含子域通配）', () => {

@@ -33,6 +33,15 @@ export function loadConfig() {
      * `dbSsl`：`disable` / `require`；不设时交给驱动按连接串判断。
      */
     dbUrl: null,
+    /*
+     * 自托管例外：公网模式 + 本地 SQLite（默认关闭，必须显式开）。
+     *
+     * 容器平台上本地文件会随实例消失，所以公网模式默认要求 PostgreSQL；
+     * 但把服务跑在**自己的机器**上时，这块磁盘本来就是持久的，
+     * 这时本地 SQLite 反而最省事（不必依赖任何外部数据库）。
+     * 判断与拒绝逻辑在 `server/deployment.mjs`，这里只存这个开关。
+     */
+    allowLocalDb: false,
     dbSsl: null,
     dbPoolMax: 10,
     /*
@@ -104,6 +113,7 @@ export function loadConfig() {
   else if (process.env.PORT) merged.port = Number(process.env.PORT);
   if (process.env.MCS_WEB_DB) merged.dbFile = resolve(process.env.MCS_WEB_DB);
   merged.dbUrl = process.env.MCS_WEB_DB_URL || process.env.DATABASE_URL || merged.dbUrl || null;
+  if (process.env.MCS_WEB_ALLOW_LOCAL_DB === '1') merged.allowLocalDb = true;
   if (process.env.MCS_WEB_DB_SSL) merged.dbSsl = process.env.MCS_WEB_DB_SSL;
   if (process.env.MCS_WEB_DB_POOL_MAX) merged.dbPoolMax = Number(process.env.MCS_WEB_DB_POOL_MAX);
   if (process.env.MCS_WEB_AUTHORING_DB) merged.authoringDbFile = resolve(process.env.MCS_WEB_AUTHORING_DB);

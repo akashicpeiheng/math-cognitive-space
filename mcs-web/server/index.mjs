@@ -176,11 +176,19 @@ export async function startServer({ config = loadConfig(), ontologySource = null
 const isMain = process.argv[1] && resolve(process.argv[1]) === resolve(new URL(import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1'));
 if (isMain) {
   const config = loadConfig();
-  startServer({ config }).then(({ origin, ontology, db }) => {
+  startServer({ config }).then(({ origin, ontology, db, deployment }) => {
     const info = db.describe();
     console.log(`MCS Web 已启动：${origin}`);
     console.log(`本体版本：${ontology.version}`);
     console.log(info.dialect === 'sqlite' ? `数据文件：${info.file}` : `数据库：PostgreSQL（${info.label}）`);
+    /*
+     * 自托管（公网 + 本地 SQLite）要在启动时把代价说明白：
+     * 数据不会因为重启消失，但**它只在这台机器上**——换机器或删掉目录就没了。
+     */
+    if (deployment?.storage === 'sqlite-local') {
+      console.log('提示：公网模式正在用本地 SQLite（自托管）。学习数据只存在这台机器上，'
+        + '请定期备份该文件；要搬到容器平台必须先换成 PostgreSQL。');
+    }
   }).catch((error) => {
     console.error('MCS Web 启动失败：', error);
     process.exit(1);
