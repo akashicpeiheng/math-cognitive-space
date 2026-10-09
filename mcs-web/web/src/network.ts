@@ -1,6 +1,6 @@
-import { relationLabel } from './labels.ts';
-import { edgeVisual } from './relation-visual.ts';
+import { edgeVisual, relationKindLabel } from './relation-visual.ts';
 import type { NodeSummary } from './types';
+import type { Locale } from './i18n/locales.ts';
 
 /**
  * 「节点网络」的派生层：加法式组网、推荐理由与确定性布局。
@@ -94,6 +94,44 @@ export const EDGE_FAMILY_NOTES: Record<EdgeFamily, string> = {
   evidence: '同一份证据记录同时引用的节点。这是「一起被论证」，不是因果。',
   support: '支持族里列出的依赖节点。它比行动契约更宽：除了直接输入，还包含传递依赖。',
 };
+
+/**
+ * 上面两张表的英文版（2026-10 双语化，键与中文逐字对应）。
+ *
+ * 中文表保持 `Record<EdgeFamily, string>` 不变：它被 `tests/network-edges.mjs` 与
+ * `components/ContinueNetwork.tsx`、`StatusBadge` 等按中文逐字读取，也直接进 SVG 文本。
+ */
+export const EDGE_FAMILY_LABELS_EN: Record<EdgeFamily, string> = {
+  contract: 'Action contracts',
+  relation: 'Registered relations',
+  topic: 'Same topic',
+  pattern: 'Misconception anchors',
+  sharedInput: 'Shared prerequisites',
+  evidence: 'Same evidence',
+  support: 'Support-family dependencies',
+};
+
+export const EDGE_FAMILY_NOTES_EN: Record<EdgeFamily, string> = {
+  contract: 'Which inputs it takes to produce the node (prerequisites → output). Grouped by mode: definition and deduction are semantic dependencies, the rest (construction / method / task / evidence / representation) are the structural skeleton.',
+  relation: 'Registered semantic relations, with kind, witness status and scope.',
+  topic: 'Members of the same aggregate topic block. Topics may overlap; this is not a required relation.',
+  pattern: 'A misconception-pattern node and its anchor nodes.',
+  sharedInput: 'Two inputs of the same action are mutual shared prerequisites.',
+  evidence: 'Nodes cited together by the same evidence record. This is “argued together”, not causation.',
+  support: 'Dependency nodes listed in the support family. Broader than action contracts: it includes transitive dependencies besides direct inputs.',
+};
+
+/** 取边源家族名；未登记的家族回退原值。 */
+export function edgeFamilyLabel(family: EdgeFamily, locale: Locale = 'zh'): string {
+  const table = locale === 'en' ? EDGE_FAMILY_LABELS_EN : EDGE_FAMILY_LABELS;
+  return table[family] ?? family;
+}
+
+/** 取边源家族说明；未登记的家族回退空串。 */
+export function edgeFamilyNote(family: EdgeFamily, locale: Locale = 'zh'): string {
+  const table = locale === 'en' ? EDGE_FAMILY_NOTES_EN : EDGE_FAMILY_NOTES;
+  return table[family] ?? '';
+}
 
 /**
  * 默认全开。全库 102 节点的实测：五类给 320 条边、平均度 6.27；
@@ -681,7 +719,10 @@ export function recommend(graph: NetworkGraph, added: Set<string>, limit = 24, f
  * 这里既本地使用（自动加入判据），也转出给调用方。
  */
 import { groupOfNode } from './node-groups.ts';
-export { NODE_GROUP_LABELS, NODE_GROUP_NOTES, NODE_GROUP_ORDER, groupOfNode } from './node-groups.ts';
+export {
+  NODE_GROUP_LABELS, NODE_GROUP_LABELS_EN, NODE_GROUP_NOTES, NODE_GROUP_NOTES_EN, NODE_GROUP_ORDER,
+  groupOfNode, nodeGroupLabel, nodeGroupNote,
+} from './node-groups.ts';
 export type { NodeGroup } from './node-groups.ts';
 
 /** 自动加入的判定结果：某个局部技巧为什么被自动加进视图。 */
@@ -770,16 +811,46 @@ export function autoAddCandidates(
   return result.sort((a, b) => b.links - a.links || a.node.localeCompare(b.node, 'en'));
 }
 
-/** 把推荐理由渲染成一句中文；每个分支都指向具体依据，不写空话。 */
-export function reasonText(rec: Recommendation, titleOf: (id: string) => string): string {
+/**
+ * 把推荐理由渲染成一句人话；每个分支都指向具体依据，不写空话。
+ *
+ * `locale` 默认中文：中文串是**逐字**被测试与界面读的源语言（`tests/thread-layer.test.mjs`
+ * 直接比对 `THREAD_LAYER.note`，推荐理由也在若干验收里出现过），改一个字都会红。
+ * 英文只换措辞与顿号，不动依据本身。
+ */
+export function reasonText(rec: Recommendation, titleOf: (id: string) => string, locale: Locale = 'zh'): string {
   const viaTitles = rec.evidence.via.map(titleOf);
+  // 中文用顿号、英文用逗号：这是标点，不是措辞。
+  const sep = locale === 'en' ? ', ' : '、';
+  if (locale === 'en') {
+    switch (rec.kind) {
+      case 'background':
+        return 'Background node: no action can produce it, so you confirm it first.';
+      case 'ready':
+        return `Prerequisites already in the graph: every input of the action “${rec.evidence.actionTitle}”${viaTitles.length ? ` (${viaTitles.join(sep)})` : ''} is in the network. This only says the current view has what it takes, not that you have mastered them.`;
+      case 'relation': {
+        const kind = relationKindLabel(rec.evidence.relationKind ?? '', 'en');
+        const witness = rec.evidence.witnessStatus ? `, witness ${rec.evidence.witnessStatus}` : '';
+        const scope = rec.evidence.scope ? `. Scope: ${rec.evidence.scope}` : '';
+        return `${viaTitles.join(sep)} has a registered “${kind}” relation to it${witness}${scope}`;
+      }
+      case 'shares-input':
+        return `Shares prerequisites with ${viaTitles.join(sep)}; the action “${rec.evidence.actionTitle}” still lacks ${(rec.evidence.missing ?? []).map(titleOf).join(sep)}.`;
+      case 'same-topic':
+        return `Belongs to the same topic “${rec.evidence.aggregateTitle}” as ${viaTitles.join(sep)}. Topic blocks may overlap; this is not a required relation.`;
+      case 'pattern':
+        return `One of the anchors of the misconception pattern “${rec.evidence.patternTitle}”; the related anchors ${viaTitles.join(sep)} are already in the network.`;
+      default:
+        return '';
+    }
+  }
   switch (rec.kind) {
     case 'background':
       return '背景节点：没有任何行动能产出它，需要先由你确认。';
     case 'ready':
       return `图中前提已加入：行动「${rec.evidence.actionTitle}」的全部输入${viaTitles.length ? `（${viaTitles.join('、')}）` : ''}都在网络里。这只说明当前视图已经具备条件，不代表你已经掌握它们。`;
     case 'relation': {
-      const kind = relationLabel(rec.evidence.relationKind ?? '');
+      const kind = relationKindLabel(rec.evidence.relationKind ?? '');
       const witness = rec.evidence.witnessStatus ? `，见证状态 ${rec.evidence.witnessStatus}` : '';
       const scope = rec.evidence.scope ? `。适用范围：${rec.evidence.scope}` : '';
       return `${viaTitles.join('、')} 与它登记了「${kind}」关系${witness}${scope}`;
@@ -1140,7 +1211,7 @@ export interface TopicAssignment {
  * 顺序按「聚合 id → 块序」固定，因此分配是确定的。
  * 只取 `topic` 类型的聚合：`discipline` 粒度过粗（「分析」会把极限与微分几何混在一起）。
  */
-export function topicAssignment(graph: NetworkGraph): TopicAssignment {
+export function topicAssignment(graph: NetworkGraph, locale: Locale = 'zh'): TopicAssignment {
   const index = new Map<string, number>();
   const title = new Map<string, string>();
   const topics: string[] = [];
@@ -1152,7 +1223,10 @@ export function topicAssignment(graph: NetworkGraph): TopicAssignment {
     aggregate.blocks.forEach((block, blockIndex) => {
       // 块标题：多块聚合用「聚合标题 · 组号」。**不在这里截断**——
       // 截断由界面层做，且界面必须优先保留组号（见 NetworkPage 的 visibleTopics）。
-      const label = aggregate.blocks.length > 1 ? `${aggregate.title} · 组${blockIndex + 1}` : aggregate.title;
+      // 组号本身也是文案：英文站上不能留中文（`组1` → `Group 1`）。
+      const label = aggregate.blocks.length > 1
+        ? (locale === 'en' ? `${aggregate.title} · Group ${blockIndex + 1}` : `${aggregate.title} · 组${blockIndex + 1}`)
+        : aggregate.title;
       const colorIndex = topics.length % TOPIC_PALETTE.length;
       topics.push(label);
       for (const id of block) {

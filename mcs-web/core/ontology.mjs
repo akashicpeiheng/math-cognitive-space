@@ -278,14 +278,23 @@ export function validateOntologyShape(ontology, { repoRoot = REPO_ROOT } = {}) {
   return problems;
 }
 
-export function createOntology(ontology, { validate = true, repoRoot = REPO_ROOT } = {}) {
+/**
+ * 由 raw 本体装配实例。
+ *
+ * `contentHash` 可以**显式传入**，这是给语言视图用的（`data/i18n/overlay.mjs`）：
+ * 语言视图的 raw 已经是「结构相同、文本不同」的副本，再算一次哈希会得到另一个版本号，
+ * 于是换语言等于换本体——档案里的 `ontologyVersion` 对不上，两套证据互不可见。
+ * 传进来的哈希因此必须是**中文源**在覆盖之前算出的那一个。这是唯一允许绕开自算哈希的
+ * 调用点；其它调用方一律不传，哈希继续由结构决定。
+ */
+export function createOntology(ontology, { validate = true, repoRoot = REPO_ROOT, contentHash: hashOverride = null } = {}) {
   if (validate) {
     const problems = validateOntologyShape(ontology, { repoRoot });
     if (problems.length) {
       throw new McsError(CODES.ONTOLOGY_INVALID, `公共本体未通过检查（${problems.length} 项）`, 500, { problems });
     }
   }
-  const contentHash = sha256(ontology);
+  const contentHash = typeof hashOverride === 'string' && hashOverride ? hashOverride : sha256(ontology);
   const nodesById = new Map(ontology.nodes.map((node) => [node.id, node]));
   const actionsById = new Map(ontology.actions.map((action) => [action.id, action]));
   const evidenceById = new Map(ontology.evidence.map((record) => [record.id, record]));
@@ -349,16 +358,60 @@ export function createOntology(ontology, { validate = true, repoRoot = REPO_ROOT
   };
 }
 
-let cached = null;
+/**
+ * 装配缓存：键是 `dataDir ?? '(默认)'`，值是首次装载时的那一份实例。
+ *
+ * 为什么按 `dataDir` 分开而不是只留一份：测试夹具、`doctor`、快照源会各自传自己的
+ * 目录，只留一份会让「谁先装载谁生效」——那是随测试顺序漂移的隐性状态。
+ */
+const baseCache = new Map();
+/** 语言视图缓存：键是 `version::locale`。同一份数据在不同目录下重复装配也共用。 */
+const localeCache = new Map();
+
+/**
+ * 装载公共本体。
+ *
+ * `locale` 只影响**呈现层的文本**：装配（`buildOntology`）→ 校验 → 哈希都在基础数据上做，
+ * 之后才套语言覆盖。因此 `zh` 与 `en` 的 `version` / `contentHash` 逐字相同——
+ * 档案与事件挂在 `ontologyVersion` 上，两个哈希等于两套互不可见的证据。
+ *
+ * 语言覆盖走 `data/i18n/`：它是**内容目录**，由它反过来依赖内核，而不是内核依赖它，
+ * 这样 `core/` 不必知道有哪些语种存在（新增语种只改 `data/i18n/index.mjs` 的注册表）。
+ */
 export async function loadOntology(options = {}) {
-  if (cached && !options.dataDir) return cached;
-  const ontology = await buildOntology(options);
-  const instance = createOntology(ontology, options);
-  if (!options.dataDir) cached = instance;
-  return instance;
+  const { locale, dataDir = null, ...rest } = options;
+  const localization = await import('../data/i18n/index.mjs');
+  const target = localization.normalizeLocale(locale ?? 'zh');
+  const cacheKey = dataDir ?? '(默认)';
+
+  let base = baseCache.get(cacheKey);
+  if (!base) {
+    /*
+     * `dataDir` 只在**显式给出**时才传下去：`buildOntology` 的缺省是仓库内的 `data/`，
+     * 传 `null` 会让它去 `join(null, ...)` 而崩掉。默认值与「显式空值」必须分开。
+     */
+    const buildOptions = dataDir === null ? { ...rest } : { dataDir, ...rest };
+    base = createOntology(await buildOntology(buildOptions), rest);
+    baseCache.set(cacheKey, base);
+  }
+  if (target === 'zh') return base;
+
+  const viewKey = `${base.version}::${target}`;
+  const hit = localeCache.get(viewKey);
+  if (hit) return hit;
+  const overlay = await localization.overlayFor(target);
+  if (!overlay) return base;
+  const { localizedOntology } = await import('../data/i18n/overlay.mjs');
+  const view = localizedOntology(base, target, () => overlay);
+  localeCache.set(viewKey, view);
+  while (localeCache.size > 8) localeCache.delete(localeCache.keys().next().value);
+  return view;
 }
 
-export function resetOntologyCache() { cached = null; }
+export function resetOntologyCache() {
+  baseCache.clear();
+  localeCache.clear();
+}
 
 export function relativeToRepo(path, repoRoot = REPO_ROOT) {
   const absolute = isAbsolute(path) ? path : resolve(repoRoot, path);

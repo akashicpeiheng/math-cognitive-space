@@ -190,6 +190,83 @@ try {
   check('未选择档案时存进本机存储并在列表标注「本机」',
     localSaved.names.includes('本机视图') && localSaved.badge, JSON.stringify(localSaved));
 
+  // Same name, different camera/positions: migration must preserve both snapshots.
+  const originals = await anon.evaluate(() => {
+    const first = JSON.parse(localStorage.getItem('mcs-network-views-local-v1'))[0];
+    const second = { ...first, viewId: 'local-retry', payload: {
+      added: ['dg:manifold', 'dg:homeomorphism'], families: ['relation'],
+      positions: { 'dg:manifold': { x: 120.126, y: 250.234 } },
+      camera: { x: 10, y: -20, scale: 1.25 },
+    } };
+    localStorage.setItem('mcs-network-views-local-v1', JSON.stringify([first, second]));
+    return [first, second];
+  });
+  await anon.locator('#profile-select').selectOption(profileId);
+  await anon.locator('.saved-view-migration').waitFor();
+  check('选择档案后提示搬入两个本机视图，并说明目标档案',
+    (await anon.locator('.saved-view-migration').innerText()).includes('2 个视图'));
+
+  const viewUrl = `**/api/v2/profiles/${profileId}/network-views*`;
+  let posts = 0;
+  await anon.route(viewUrl, async (route) => {
+    if (route.request().method() !== 'POST' || ++posts !== 2) return route.continue();
+    await route.fulfill({ status: 503, contentType: 'application/json', body: JSON.stringify({ ok: false, error: { message: '模拟临时中断' } }) });
+  });
+  await anon.locator('.saved-view-migration button').click();
+  await anon.waitForFunction(() => document.querySelector('.saved-view-migration-status')?.textContent.includes('模拟临时中断'));
+  const remaining = await anon.evaluate(() => JSON.parse(localStorage.getItem('mcs-network-views-local-v1')));
+  check('部分失败只移除已回读确认的本机副本，剩余快照原样保留',
+    remaining.length === 1 && JSON.stringify(remaining[0]) === JSON.stringify(originals[1]));
+  check('部分失败报告已完成数量并允许重试',
+    (await anon.locator('.saved-view-migration-status').innerText()).includes('已确认 1 个'));
+
+  // The server commits, but the reply is lost: the next attempt must detect that copy.
+  await anon.unroute(viewUrl);
+  await anon.route(viewUrl, async (route) => {
+    if (route.request().method() !== 'POST') return route.continue();
+    await route.fetch();
+    await route.abort('failed');
+  });
+  await anon.locator('.saved-view-migration button').click();
+  await anon.waitForFunction(() => document.querySelector('.saved-view-migration-status')?.textContent.includes('其余本机视图已保留'));
+  check('保存回执丢失时保留本机原件',
+    await anon.evaluate(() => JSON.parse(localStorage.getItem('mcs-network-views-local-v1')).length) === 1);
+  await anon.unroute(viewUrl);
+  await anon.locator('.saved-view-migration button').click();
+  await anon.waitForFunction(() => document.querySelector('.saved-view-migration-status')?.textContent.includes('可以随档案导出'));
+  const migrated = await anon.evaluate(async (id) => {
+    const bundle = (await (await fetch(`/api/v2/profiles/${id}/export`)).json()).data;
+    const listed = (await (await fetch(`/api/v2/profiles/${id}/network-views`)).json()).data;
+    const ontology = (await (await fetch('/api/v2/ontology')).json()).data;
+    return { bundle, views: listed.views, version: ontology.version, local: JSON.parse(localStorage.getItem('mcs-network-views-local-v1')) };
+  }, profileId);
+  check('重试不会重复保存，同名不同内容的两个视图均保留', migrated.views.length === 2 && migrated.views.every((v) => v.name === '本机视图'));
+  const restoredSecond = migrated.views.find((v) => v.payload.added.length === 2);
+  check('迁移保留节点、边源、相机和按协议取两位小数的位置',
+    restoredSecond?.payload.camera.scale === 1.25 && restoredSecond.payload.camera.y === -20
+    && restoredSecond.payload.positions['dg:manifold'].x === 120.13
+    && restoredSecond.payload.families.join() === 'relation');
+  check('完成后本机待迁移列表清空，视图可随档案导出',
+    migrated.local.length === 0 && JSON.stringify(migrated.bundle).includes(restoredSecond?.viewId));
+  check('迁移不改本体，也不伪造学习事件', migrated.version === ontologyBefore.version
+    && (await anon.evaluate(async (id) => (await (await fetch(`/api/v2/profiles/${id}/events?limit=1`)).json()).data.events.length, profileId)) === eventsBefore);
+
+  // English + narrow viewport + storage failure are part of the same user flow.
+  await anon.evaluate((view) => localStorage.setItem('mcs-network-views-local-v1', JSON.stringify([view])), originals[0]);
+  await anon.setViewportSize({ width: 390, height: 844 });
+  await anon.goto(server.origin + '/en/network', { waitUntil: 'networkidle' });
+  await anon.getByLabel('Show the saved views panel').check();
+  await anon.locator('.saved-view-migration').waitFor();
+  check('英文版迁移入口已翻译', (await anon.locator('.saved-view-migration').innerText()).includes('Move to this profile (1)'));
+  check('手机宽度下迁移卡片没有横向溢出', await anon.locator('.saved-view-migration').evaluate((el) => el.scrollWidth <= el.clientWidth));
+  await anon.locator('.saved-view-migration').screenshot({ path: 'tmp/site-update-network-mobile.png' });
+  await anon.evaluate(() => localStorage.setItem('mcs-network-views-local-v1', '{broken'));
+  await anon.reload({ waitUntil: 'networkidle' });
+  await anon.getByLabel('Show the saved views panel').check();
+  check('损坏的本机记录明确提示且不被覆盖',
+    (await anon.locator('body').innerText()).includes('Browser views could not be read')
+    && await anon.evaluate(() => localStorage.getItem('mcs-network-views-local-v1')) === '{broken');
+
   check('保存 / 载入 / 重命名 / 删除全程没有控制台错误', consoleErrors.length === 0, consoleErrors.slice(0, 3).join(' | '));
 } finally {
   await browser?.close();

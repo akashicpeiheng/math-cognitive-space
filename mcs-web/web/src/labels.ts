@@ -1,117 +1,146 @@
-// 面向学习者的中文术语表。
-// 规则：显示中文为主标签，原始值保留在 title 供核查；未登记的键回退显示原值，绝不显示空标签。
+// 面向学习者的术语表（中英双语）。
+// 规则：显示中文为主标签时保留原始值在 title 供核查；未登记的键回退显示原值，绝不显示空标签。
+//
+// 双语实现：每张表都成对写出（`zh` / `en`），取用时走 `web/src/i18n/useLabels.tsx` 的
+// `useLabels()`（随语种重渲染）或显式传 `{ locale }`。**不翻译**受控词表键本身
+// （`Symbol`、`hardPrereq`、`DEF`…）——它们是本体与 API 的标识，只翻译它们的显示名。
+//
+// **这个文件不准 import React，也不准 import 组件/i18n 目录**：它被纯 Node 测试
+// 直接 import（`tests/relation-visual.test.mjs` 等），任何 React 依赖都会让那些测试
+// 以 `ERR_UNSUPPORTED_DIR_IMPORT` 整体失败。钩子在 `web/src/i18n/useLabels.tsx`。
 
-export const CONSTRUCT_LABELS: Record<string, string> = {
-  Symbol: '符号',
-  Term: '项',
-  Concept: '概念',
-  Definition: '定义',
-  Claim: '命题',
-  Proof: '证明',
-  Example: '例子',
-  Counterexample: '反例',
-  Problem: '问题',
-  Theory: '背景理论',
-  Construction: '构造',
-  Method: '方法',
-  Representation: '表征',
-  MisconceptionPattern: '误区模式',
+import type { Locale } from './i18n/locales';
+
+/** 成对的显示名。 */
+interface Pair { zh: string; en: string }
+
+/** 成对表：键是受控词表键（永不翻译），值是显示名。 */
+type PairedTable = Record<string, Pair>;
+
+function pickText(value: Pair | undefined, locale: Locale, fallback: string): string {
+  if (!value) return fallback;
+  return value[locale] ?? value.zh;
+}
+
+/** 把成对表摊平成某一语种的普通表（给 `<option>` 这类需要 `Object.keys` 的地方用）。 */
+export function tableFor(table: PairedTable, locale: Locale): Record<string, string> {
+  return Object.fromEntries(Object.entries(table).map(([key, value]) => [key, pickText(value, locale, key)]));
+}
+
+export const CONSTRUCT_LABELS: PairedTable = {
+  Symbol: { zh: '符号', en: 'Symbol' },
+  Term: { zh: '项', en: 'Term' },
+  Concept: { zh: '概念', en: 'Concept' },
+  Definition: { zh: '定义', en: 'Definition' },
+  Claim: { zh: '命题', en: 'Claim' },
+  Proof: { zh: '证明', en: 'Proof' },
+  Example: { zh: '例子', en: 'Example' },
+  Counterexample: { zh: '反例', en: 'Counterexample' },
+  Problem: { zh: '问题', en: 'Problem' },
+  Theory: { zh: '背景理论', en: 'Background theory' },
+  Construction: { zh: '构造', en: 'Construction' },
+  Method: { zh: '方法', en: 'Method' },
+  Representation: { zh: '表征', en: 'Representation' },
+  MisconceptionPattern: { zh: '误区模式', en: 'Misconception pattern' },
 };
 
-export const ROLE_LABELS: Record<string, string> = {
-  Concept: '概念',
-  Definition: '定义',
-  Axiom: '公理',
-  Theorem: '定理',
-  Property: '性质',
-  Proof: '证明',
-  Example: '例子',
-  Counterexample: '反例',
-  Problem: '问题',
-  Theory: '理论',
-  Construction: '构造',
-  GlobalMethod: '全局方法',
-  LocalMethod: '局部方法',
+export const ROLE_LABELS: PairedTable = {
+  Concept: { zh: '概念', en: 'Concept' },
+  Definition: { zh: '定义', en: 'Definition' },
+  Axiom: { zh: '公理', en: 'Axiom' },
+  Theorem: { zh: '定理', en: 'Theorem' },
+  Property: { zh: '性质', en: 'Property' },
+  Proof: { zh: '证明', en: 'Proof' },
+  Example: { zh: '例子', en: 'Example' },
+  Counterexample: { zh: '反例', en: 'Counterexample' },
+  Problem: { zh: '问题', en: 'Problem' },
+  Theory: { zh: '理论', en: 'Theory' },
+  Construction: { zh: '构造', en: 'Construction' },
+  GlobalMethod: { zh: '全局方法', en: 'Global method' },
+  LocalMethod: { zh: '局部方法', en: 'Local method' },
 };
 
-export const RELATION_LABELS: Record<string, string> = {
-  hardPrereq: '硬前置',
-  hardGeneralization: '硬泛化',
-  specialization: '特化',
-  bridge: '桥接',
-  application: '应用',
-  analogy: '类比',
-  duality: '对偶',
-  crossDomain: '跨域',
+export const RELATION_LABELS: PairedTable = {
+  hardPrereq: { zh: '硬前置', en: 'Hard prerequisite' },
+  hardGeneralization: { zh: '硬泛化', en: 'Hard generalization' },
+  specialization: { zh: '特化', en: 'Specialization' },
+  bridge: { zh: '桥接', en: 'Bridge' },
+  application: { zh: '应用', en: 'Application' },
+  analogy: { zh: '类比', en: 'Analogy' },
+  duality: { zh: '对偶', en: 'Duality' },
+  crossDomain: { zh: '跨域', en: 'Cross-domain' },
 };
 
-export const EVENT_KIND_LABELS: Record<string, string> = {
-  view: '已读',
-  hint: '用了提示',
-  answer: '作答',
-  evaluation: '模型评价',
-  mastery_estimate: '能力估计',
-  confirmation: '确认可用',
-  misconception: '误区实例',
-  goal: '学习目标',
-  note: '笔记',
-  tutor_message: '辅导回复',
+export const EVENT_KIND_LABELS: PairedTable = {
+  view: { zh: '已读', en: 'Read' },
+  hint: { zh: '用了提示', en: 'Hint used' },
+  answer: { zh: '作答', en: 'Answer' },
+  evaluation: { zh: '模型评价', en: 'Model evaluation' },
+  mastery_estimate: { zh: '能力估计', en: 'Ability estimate' },
+  confirmation: { zh: '确认可用', en: 'Confirmed usable' },
+  misconception: { zh: '误区实例', en: 'Misconception instance' },
+  goal: { zh: '学习目标', en: 'Learning goal' },
+  note: { zh: '笔记', en: 'Note' },
+  tutor_message: { zh: '辅导回复', en: 'Tutor reply' },
 };
 
-export const ACTION_MODE_LABELS: Record<string, string> = {
-  definition: '引入定义',
-  deduction: '推导',
-  evidence: '证据核验',
-  construction: '构造',
-  problem: '解题',
-  method: '方法应用',
+export const ACTION_MODE_LABELS: PairedTable = {
+  definition: { zh: '引入定义', en: 'Introduce a definition' },
+  deduction: { zh: '推导', en: 'Deduction' },
+  evidence: { zh: '证据核验', en: 'Evidence check' },
+  construction: { zh: '构造', en: 'Construction' },
+  problem: { zh: '解题', en: 'Problem solving' },
+  method: { zh: '方法应用', en: 'Method application' },
+  representation: { zh: '表征', en: 'Representation' },
+  task: { zh: '任务', en: 'Task' },
 };
 
-export const RESOURCE_LABELS: Record<string, string> = {
-  statement: '陈述',
-  definition: '定义',
-  proof: '证明',
-  certificate: '证书',
-  construction: '构造',
-  task: '任务',
-  method: '方法',
-  representation: '表征',
-  condition: '条件',
-  competence: '能力',
+export const RESOURCE_LABELS: PairedTable = {
+  statement: { zh: '陈述', en: 'Statement' },
+  definition: { zh: '定义', en: 'Definition' },
+  proof: { zh: '证明', en: 'Proof' },
+  certificate: { zh: '证书', en: 'Certificate' },
+  construction: { zh: '构造', en: 'Construction' },
+  task: { zh: '任务', en: 'Task' },
+  method: { zh: '方法', en: 'Method' },
+  representation: { zh: '表征', en: 'Representation' },
+  condition: { zh: '条件', en: 'Condition' },
+  competence: { zh: '能力', en: 'Competence' },
 };
 
-export const SUPPORT_USE_LABELS: Record<string, string> = {
-  expression: '表达',
-  proof: '证明',
-  route: '路线',
+export const SUPPORT_USE_LABELS: PairedTable = {
+  expression: { zh: '表达', en: 'Expression' },
+  proof: { zh: '证明', en: 'Proof' },
+  route: { zh: '路线', en: 'Route' },
 };
 
-export const SUPPORT_STATUS_LABELS: Record<string, string> = {
-  Known: '已知',
-  Unknown: '未知',
-  known: '已知',
-  unknown: '未知',
+export const SUPPORT_STATUS_LABELS: PairedTable = {
+  Known: { zh: '已知', en: 'Known' },
+  Unknown: { zh: '未知', en: 'Unknown' },
+  known: { zh: '已知', en: 'Known' },
+  unknown: { zh: '未知', en: 'Unknown' },
 };
 
-export const REPRESENTATION_KIND_LABELS: Record<string, string> = {
-  formula: '公式',
-  intuition: '直觉',
-  proof: '证明',
-  example: '例子',
-  definition: '定义',
-  construction: '构造',
-  counterexample: '反例',
+export const REPRESENTATION_KIND_LABELS: PairedTable = {
+  formula: { zh: '公式', en: 'Formula' },
+  intuition: { zh: '直觉', en: 'Intuition' },
+  proof: { zh: '证明', en: 'Proof' },
+  example: { zh: '例子', en: 'Example' },
+  definition: { zh: '定义', en: 'Definition' },
+  construction: { zh: '构造', en: 'Construction' },
+  counterexample: { zh: '反例', en: 'Counterexample' },
+  naturalLanguage: { zh: '自然语言', en: 'Natural language' },
 };
 
-export const CASE_LABELS: Record<string, string> = {
-  limit: '极限',
-  manifold: 'C^k 与光滑流形',
-  tensor: '张量',
-  group: '群',
-  background: '共享背景',
-  dg: '微分几何',
-  liang: '微分几何与广义相对论（上册）',
-  rudin: '数学分析原理（Rudin）',
+export const CASE_LABELS: PairedTable = {
+  limit: { zh: '极限', en: 'Limits' },
+  manifold: { zh: 'C^k 与光滑流形', en: 'C^k and smooth manifolds' },
+  tensor: { zh: '张量', en: 'Tensors' },
+  group: { zh: '群', en: 'Groups' },
+  background: { zh: '共享背景', en: 'Shared background' },
+  dg: { zh: '微分几何', en: 'Differential geometry' },
+  liang: { zh: '微分几何与广义相对论（上册）', en: 'Differential geometry and general relativity, Vol. 1' },
+  rudin: { zh: '数学分析原理（Rudin）', en: 'Principles of Mathematical Analysis (Rudin)' },
 };
 
 /**
@@ -174,121 +203,126 @@ export function mathify(text: string): string {
 }
 
 /** 聚合块类型：topic / discipline 等。未登记的值回退原值。 */
-export const AGGREGATE_KIND_LABELS: Record<string, string> = {
-  topic: '话题',
-  discipline: '学科',
-  case: '案例',
-  aggregate: '聚合',
+export const AGGREGATE_KIND_LABELS: PairedTable = {
+  topic: { zh: '话题', en: 'Topic' },
+  discipline: { zh: '学科', en: 'Discipline' },
+  case: { zh: '案例', en: 'Case' },
+  aggregate: { zh: '聚合', en: 'Aggregate' },
 };
 
-export const DISCIPLINE_LABELS: Record<string, string> = {
-  分析: '分析',
-  代数: '代数',
-  几何与拓扑: '几何与拓扑',
-  未分类: '未分类',
+/**
+ * 学科（知识的**本质领域**）的显示名。
+ *
+ * 键取自 `data/fields.mjs` 的受控词表——那是**唯一来源**，这里只给显示名。
+ * 表必须**逐支覆盖**：少一支的后果是英文站的下拉里出现「Analysis + 一堆中文」，
+ * 而这类缺口不会有任何报错（渲染时回退原值），只能靠逐项核对发现。
+ * `tests/granularity-fields.mjs` 会数受控词表的支数；两边数目对不上时应当被发现。
+ */
+export const DISCIPLINE_LABELS: PairedTable = {
+  分析: { zh: '分析', en: 'Analysis' },
+  测度论: { zh: '测度论', en: 'Measure theory' },
+  拓扑: { zh: '拓扑', en: 'Topology' },
+  微分几何: { zh: '微分几何', en: 'Differential geometry' },
+  群论: { zh: '群论', en: 'Group theory' },
+  线性代数: { zh: '线性代数', en: 'Linear algebra' },
+  多重线性与张量代数: { zh: '多重线性与张量代数', en: 'Multilinear and tensor algebra' },
+  域与数系: { zh: '域与数系', en: 'Fields and number systems' },
+  集合论: { zh: '集合论', en: 'Set theory' },
+  数理逻辑: { zh: '数理逻辑', en: 'Mathematical logic' },
+  相对论与宇宙论: { zh: '相对论与宇宙论', en: 'Relativity and cosmology' },
+  数学方法: { zh: '数学方法', en: 'Mathematical methods' },
+  未分类: { zh: '未分类', en: 'Uncategorized' },
 };
 
 /** formal 负载键的中文名。未登记的键回退显示原键名。 */
-export const FORMAL_FIELD_LABELS: Record<string, string> = {
-  objectType: '对象类型',
-  parameters: '参数',
-  predicate: '谓词',
-  type: '类型',
-  typeEnv: '类型环境',
-  theory: '背景理论',
-  symbols: '符号',
-  assumptions: '假设',
-  formationWitness: '形成见证',
-  boundary: '边界',
-  formula: '公式',
-  declaration: '声明',
-  signatureVersion: '签名版本',
-  language: '语言',
-  calculus: '演算',
-  axioms: '公理',
-  modules: '模块',
-  term: '项',
-  newSymbol: '新符号',
-  oldTerm: '旧语言中的表达式',
-  expansion: '展开方式',
-  conservative: '保守性',
-  target: '目标',
-  code: '证明项',
-  checkStatus: '检查状态',
-  openAssumptions: '开放假设',
-  concept: '所属概念',
-  objectSpec: '对象规格',
-  satisfaction: '满足情况',
-  failureWitness: '失败见证',
-  anchors: '锚点',
-  inputs: '输入',
-  outputs: '输出',
-  goal: '目标',
-  constraints: '约束',
-  steps: '步骤',
-  verificationTarget: '验证目标',
-  name: '名称',
-  scope: '适用范围',
-  In: '输入接口',
-  Out: '输出接口',
-  Pre: '前置条件',
-  Post: '后置条件',
-  Use: '使用位置',
-  Demo: '演示',
-  Fail: '失效情形（Fail）',
-  fail: '失效情形（fail）',
-  body: '启发体',
-  applicableTo: '适用对象',
-  medium: '载体',
-  correspondence: '对应说明',
-  wrongRule: '错误规则',
-  task: '任务',
-  counterexample: '反例',
-  generationDepth: '生成深度',
-  invariants: '不变量',
+export const FORMAL_FIELD_LABELS: PairedTable = {
+  objectType: { zh: '对象类型', en: 'Object type' },
+  parameters: { zh: '参数', en: 'Parameters' },
+  predicate: { zh: '谓词', en: 'Predicate' },
+  type: { zh: '类型', en: 'Type' },
+  typeEnv: { zh: '类型环境', en: 'Type environment' },
+  theory: { zh: '背景理论', en: 'Background theory' },
+  symbols: { zh: '符号', en: 'Symbols' },
+  assumptions: { zh: '假设', en: 'Assumptions' },
+  formationWitness: { zh: '形成见证', en: 'Formation witness' },
+  boundary: { zh: '边界', en: 'Boundary' },
+  formula: { zh: '公式', en: 'Formula' },
+  declaration: { zh: '声明', en: 'Declaration' },
+  signatureVersion: { zh: '签名版本', en: 'Signature version' },
+  language: { zh: '语言', en: 'Language' },
+  calculus: { zh: '演算', en: 'Calculus' },
+  axioms: { zh: '公理', en: 'Axioms' },
+  modules: { zh: '模块', en: 'Modules' },
+  term: { zh: '项', en: 'Term' },
+  newSymbol: { zh: '新符号', en: 'New symbol' },
+  oldTerm: { zh: '旧语言中的表达式', en: 'Expression in the old language' },
+  expansion: { zh: '展开方式', en: 'Expansion' },
+  conservative: { zh: '保守性', en: 'Conservativeness' },
+  target: { zh: '目标', en: 'Target' },
+  code: { zh: '证明项', en: 'Proof term' },
+  checkStatus: { zh: '检查状态', en: 'Check status' },
+  openAssumptions: { zh: '开放假设', en: 'Open assumptions' },
+  concept: { zh: '所属概念', en: 'Concept' },
+  objectSpec: { zh: '对象规格', en: 'Object specification' },
+  satisfaction: { zh: '满足情况', en: 'Satisfaction' },
+  failureWitness: { zh: '失败见证', en: 'Failure witness' },
+  anchors: { zh: '锚点', en: 'Anchors' },
+  inputs: { zh: '输入', en: 'Inputs' },
+  outputs: { zh: '输出', en: 'Outputs' },
+  goal: { zh: '目标', en: 'Goal' },
+  constraints: { zh: '约束', en: 'Constraints' },
+  steps: { zh: '步骤', en: 'Steps' },
+  verificationTarget: { zh: '验证目标', en: 'Verification target' },
+  name: { zh: '名称', en: 'Name' },
+  scope: { zh: '适用范围', en: 'Scope' },
+  In: { zh: '输入接口', en: 'Input interface' },
+  Out: { zh: '输出接口', en: 'Output interface' },
+  Pre: { zh: '前置条件', en: 'Preconditions' },
+  Post: { zh: '后置条件', en: 'Postconditions' },
+  Use: { zh: '使用位置', en: 'Where it is used' },
+  Demo: { zh: '演示', en: 'Demonstration' },
+  Fail: { zh: '失效情形（Fail）', en: 'Failure case (Fail)' },
+  fail: { zh: '失效情形（fail）', en: 'Failure case (fail)' },
+  body: { zh: '启发体', en: 'Heuristic body' },
+  applicableTo: { zh: '适用对象', en: 'Applies to' },
+  medium: { zh: '载体', en: 'Medium' },
+  correspondence: { zh: '对应说明', en: 'Correspondence' },
+  wrongRule: { zh: '错误规则', en: 'Wrong rule' },
+  task: { zh: '任务', en: 'Task' },
+  counterexample: { zh: '反例', en: 'Counterexample' },
+  generationDepth: { zh: '生成深度', en: 'Generation depth' },
+  invariants: { zh: '不变量', en: 'Invariants' },
 };
 
-/** 稳定的中文标签查找：找不到就回退原值，避免出现空白徽章。 */
-export function labelOf(table: Record<string, string>, value: string | null | undefined, fallback = ''): string {
+/** 稳定的显示名查找：找不到就回退原值，避免出现空白徽章。 */
+export function labelOf(table: PairedTable, value: string | null | undefined, fallback = '', locale: Locale = 'zh'): string {
   if (!value) return fallback;
-  return table[value] ?? value;
+  const pair = table[value];
+  return pair ? pickText(pair, locale, value) : value;
 }
 
-export function constructLabel(value: string | null | undefined): string {
-  return labelOf(CONSTRUCT_LABELS, value, '未分类');
-}
+/*
+ * 以下为**默认中文**的便捷函数。
+ *
+ * 语种用**选项对象**（`{ locale: 'en' }`）而不是第二个位置参数，这不是风格问题：
+ * 这些函数经常被 `.map(constructLabel)` 这样直接当回调传，第二个位置参数会被
+ * 数组下标占用（`map(constructLabel)` 会把 `1` 当语种），而对象参数不会——
+ * 传下标进去只是多一个被忽略的字段，不会静默换掉语言。
+ *
+ * 组件请一律用 `useLabels()`：只有它会随语种重渲染。
+ */
+interface LabelOptions { locale?: Locale }
 
-export function roleLabel(value: string | null | undefined): string {
-  return labelOf(ROLE_LABELS, value, '未分类');
-}
-
-export function relationLabel(value: string | null | undefined): string {
-  return labelOf(RELATION_LABELS, value, '未登记关系');
-}
-
-export function eventKindLabel(value: string | null | undefined): string {
-  return labelOf(EVENT_KIND_LABELS, value, '未知事件');
-}
-
-export function actionModeLabel(value: string | null | undefined): string {
-  return labelOf(ACTION_MODE_LABELS, value, '行动');
-}
-
-export function resourceLabel(value: string | null | undefined): string {
-  return labelOf(RESOURCE_LABELS, value, value ?? '');
-}
-
-export function supportUseLabel(value: string | null | undefined): string {
-  return labelOf(SUPPORT_USE_LABELS, value, value ?? '');
-}
-
-export function representationKindLabel(value: string | null | undefined): string {
-  return labelOf(REPRESENTATION_KIND_LABELS, value, '其他表征');
-}
-
-export function formalFieldLabel(key: string): string {
-  return FORMAL_FIELD_LABELS[key] ?? key;
-}
+export const constructLabel = (value: string | null | undefined, options: LabelOptions = {}): string => labelOf(CONSTRUCT_LABELS, value, options.locale === 'en' ? 'Uncategorized' : '未分类', options.locale ?? 'zh');
+export const roleLabel = (value: string | null | undefined, options: LabelOptions = {}): string => labelOf(ROLE_LABELS, value, options.locale === 'en' ? 'Uncategorized' : '未分类', options.locale ?? 'zh');
+export const relationLabel = (value: string | null | undefined, options: LabelOptions = {}): string => labelOf(RELATION_LABELS, value, options.locale === 'en' ? 'Unregistered relation' : '未登记关系', options.locale ?? 'zh');
+export const eventKindLabel = (value: string | null | undefined, options: LabelOptions = {}): string => labelOf(EVENT_KIND_LABELS, value, options.locale === 'en' ? 'Unknown event' : '未知事件', options.locale ?? 'zh');
+export const actionModeLabel = (value: string | null | undefined, options: LabelOptions = {}): string => labelOf(ACTION_MODE_LABELS, value, options.locale === 'en' ? 'Action' : '行动', options.locale ?? 'zh');
+export const resourceLabel = (value: string | null | undefined, options: LabelOptions = {}): string => labelOf(RESOURCE_LABELS, value, value ?? '', options.locale ?? 'zh');
+export const supportUseLabel = (value: string | null | undefined, options: LabelOptions = {}): string => labelOf(SUPPORT_USE_LABELS, value, value ?? '', options.locale ?? 'zh');
+export const representationKindLabel = (value: string | null | undefined, options: LabelOptions = {}): string => labelOf(REPRESENTATION_KIND_LABELS, value, options.locale === 'en' ? 'Other representation' : '其他表征', options.locale ?? 'zh');
+export const formalFieldLabel = (key: string, options: LabelOptions = {}): string => labelOf(FORMAL_FIELD_LABELS, key, key, options.locale ?? 'zh');
+export const caseLabel = (value: string | null | undefined, options: LabelOptions = {}): string => labelOf(CASE_LABELS, value, value ?? '', options.locale ?? 'zh');
 
 /**
  * 关系图例配色：与 GraphPage 的 SVG 线色保持一致。
@@ -364,3 +398,65 @@ export const CONSTRUCT_COLOR: Record<string, string> = {
   MisconceptionPattern: '#fbe9f0',
   Representation: '#e7f2f8',
 };
+
+/**
+ * 组件用的标签工具集：**跟着语种走**。
+ *
+ * 组件一律用它，而不是直接调上面的默认中文函数——后者不会在切换语言时重渲染，
+ * 表现就是「切到英文后类型徽章还是中文」，而且不报错。
+ *
+ * 钩子本身在 `web/src/i18n/useLabels.tsx`（这个文件不能 import React，见文件头说明）。
+ */
+export interface Labels {
+  constructLabel: (value: string | null | undefined) => string;
+  roleLabel: (value: string | null | undefined) => string;
+  relationLabel: (value: string | null | undefined) => string;
+  eventKindLabel: (value: string | null | undefined) => string;
+  actionModeLabel: (value: string | null | undefined) => string;
+  resourceLabel: (value: string | null | undefined) => string;
+  supportUseLabel: (value: string | null | undefined) => string;
+  representationKindLabel: (value: string | null | undefined) => string;
+  formalFieldLabel: (key: string) => string;
+  caseLabel: (value: string | null | undefined) => string;
+  /** 摊平后的表（给 `<option>` 的枚举与图例用）。 */
+  tables: {
+    constructs: Record<string, string>;
+    roles: Record<string, string>;
+    relations: Record<string, string>;
+    eventKinds: Record<string, string>;
+    actionModes: Record<string, string>;
+    resources: Record<string, string>;
+    representationKinds: Record<string, string>;
+    cases: Record<string, string>;
+    disciplines: Record<string, string>;
+    aggregateKinds: Record<string, string>;
+  };
+}
+
+export function makeLabels(locale: Locale): Labels {
+  const options: LabelOptions = { locale };
+  return {
+    constructLabel: (value) => constructLabel(value, options),
+    roleLabel: (value) => roleLabel(value, options),
+    relationLabel: (value) => relationLabel(value, options),
+    eventKindLabel: (value) => eventKindLabel(value, options),
+    actionModeLabel: (value) => actionModeLabel(value, options),
+    resourceLabel: (value) => resourceLabel(value, options),
+    supportUseLabel: (value) => supportUseLabel(value, options),
+    representationKindLabel: (value) => representationKindLabel(value, options),
+    formalFieldLabel: (key) => formalFieldLabel(key, options),
+    caseLabel: (value) => caseLabel(value, options),
+    tables: {
+      constructs: tableFor(CONSTRUCT_LABELS, locale),
+      roles: tableFor(ROLE_LABELS, locale),
+      relations: tableFor(RELATION_LABELS, locale),
+      eventKinds: tableFor(EVENT_KIND_LABELS, locale),
+      actionModes: tableFor(ACTION_MODE_LABELS, locale),
+      resources: tableFor(RESOURCE_LABELS, locale),
+      representationKinds: tableFor(REPRESENTATION_KIND_LABELS, locale),
+      cases: tableFor(CASE_LABELS, locale),
+      disciplines: tableFor(DISCIPLINE_LABELS, locale),
+      aggregateKinds: tableFor(AGGREGATE_KIND_LABELS, locale),
+    },
+  };
+}

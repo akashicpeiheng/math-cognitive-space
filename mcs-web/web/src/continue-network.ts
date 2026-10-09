@@ -17,6 +17,7 @@
  */
 
 import type { EdgeFamily, NetworkGraph } from './network';
+import type { Locale } from './i18n/locales.ts';
 
 export type ContinueDirection = 'up' | 'right' | 'down' | 'left';
 
@@ -52,6 +53,39 @@ export const BASIS_LABELS: Record<LinkBasis, string> = {
   sharedInput: '共用前提',
   sameTopic: '同一话题',
 };
+
+/**
+ * 上面两张表的英文版（2026-10 双语化，键与中文逐字对应）。
+ *
+ * 中文表形状保持 `Record<..., string>` 不变：它们直接进 SVG `<text>` 与 `<option>`，
+ * 且 `tests/browser.mjs`、`tests/network-edges.mjs` 会按中文逐字核对。
+ * 调用方（`components/ContinueNetwork.tsx`）按当前语种取，缺英文时回落中文。
+ */
+export const DIRECTION_LABELS_EN: Record<ContinueDirection, string> = {
+  up: 'Top', right: 'Right', down: 'Bottom', left: 'Left',
+};
+
+export const BASIS_LABELS_EN: Record<LinkBasis, string> = {
+  relation: 'Registered relation',
+  contract: 'Action contract',
+  sharedInput: 'Shared prerequisite',
+  sameTopic: 'Same topic',
+};
+
+/** 取方位名；未登记的方位回退原值。 */
+export function directionLabel(direction: ContinueDirection, locale: Locale = 'zh'): string {
+  const table = locale === 'en' ? DIRECTION_LABELS_EN : DIRECTION_LABELS;
+  return table[direction] ?? direction;
+}
+
+/** 取依据名；未登记的依据回退原值。 */
+export function basisLabel(basis: LinkBasis, locale: Locale = 'zh'): string {
+  const table = locale === 'en' ? BASIS_LABELS_EN : BASIS_LABELS;
+  return table[basis] ?? basis;
+}
+
+/** 「其他关联」这一兜底话题的显示名（英语境下不能再写中文）。 */
+const FALLBACK_TOPIC_TITLE = { zh: '其他关联', en: 'Other associations' } as const;
 
 export interface ContinueLink {
   node: string;
@@ -314,14 +348,19 @@ function layoutAlongDirection(
 export function buildContinueNetwork(
   centerId: string,
   graph: NetworkGraph,
-  options: { confirmed?: Set<string>; limit?: number } = {},
+  options: { confirmed?: Set<string>; limit?: number; locale?: Locale } = {},
 ): ContinueNetwork | null {
   const centerNode = graph.nodes.find((node) => node.id === centerId);
   if (!centerNode) return null;
   const topics = topicsOf(graph);
   const links = strongLinks(centerId, graph, topics, options);
   const centerTopic = topicOfNode(topics, centerId);
-  const fallback: TopicInfo = { id: 'other', title: '其他关联', members: new Set<string>() };
+  // 兜底话题名要跟着语种：它会显示在分组标题与卡片说明里（`options.locale` 默认中文）。
+  const fallback: TopicInfo = {
+    id: 'other',
+    title: FALLBACK_TOPIC_TITLE[options.locale ?? 'zh'],
+    members: new Set<string>(),
+  };
 
   // 归类
   const buckets = new Map<string, { topic: TopicInfo; links: ContinueLink[] }>();

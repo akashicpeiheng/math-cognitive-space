@@ -1,6 +1,50 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 
 const BASE = '/api/v2';
+
+/**
+ * 请求语种（2026-10 中英双语）。
+ *
+ * 与下面的 CSRF 令牌同一取舍：语种是**每个请求都要带**的东西，做成逐个调用点的参数
+ * 一定会漏（漏掉的那一处不报错，只是悄悄返回中文）。因此放在模块级，
+ * 由 `I18nProvider` 在语种变化时调用 `setApiLocale()` 写入。
+ *
+ * `api()` 把它拼成 `?locale=en`：服务端据此换成英文视图，而**本体版本号不变**
+ * （哈希只由中文源算出），所以换语言不会让手头的档案与证据失效。
+ *
+ * 为什么用「订阅 + `useSyncExternalStore`」而不是一个可变变量：语种变化后各个页面
+ * 必须重新取数，否则英文界面里留着上一次的中文响应。订阅把「重新取数」变成结构保证，
+ * 而不是靠每个人记得在自己的 effect 依赖里加 locale。
+ */
+let locale = 'zh';
+const localeListeners = new Set<() => void>();
+
+export function setApiLocale(next: string) {
+  const normalized = next === 'en' ? 'en' : 'zh';
+  if (normalized === locale) return;
+  locale = normalized;
+  for (const listener of localeListeners) listener();
+}
+
+export function getApiLocale(): string {
+  return locale;
+}
+
+function subscribeLocale(listener: () => void) {
+  localeListeners.add(listener);
+  return () => { localeListeners.delete(listener); };
+}
+
+/**
+ * 当前请求语种，并把它注册为 React 的依赖。
+ *
+ * 直接 `api()`（而不是 `useApi`）的 effect 要把它写进依赖数组：
+ * `useEffect(() => { api(path)… }, [path, localeKey])`。少写这一处的后果是
+ * 「切到英文后这个区块还显示中文」——不会报错，只会静默不对。
+ */
+export function useLocaleKey(): string {
+  return useSyncExternalStore(subscribeLocale, getApiLocale, getApiLocale);
+}
 
 /**
  * 写请求的 CSRF 令牌（2026-10 加，公网模式的账号层）。
@@ -60,7 +104,7 @@ export async function api<T>(path: string, options: ApiOptions = {}): Promise<T>
    * 这里一个键都不加——`fetch` 收到的头与从前逐字相同。
    */
   if (!READ_METHODS.has(method.toUpperCase()) && csrfToken) headers['x-mcs-csrf'] = csrfToken;
-  const response = await fetch(BASE + path, {
+  const response = await fetch(BASE + withLocaleQuery(path), {
     method,
     headers,
     body: options.body === undefined ? undefined : JSON.stringify(options.body),
@@ -71,6 +115,22 @@ export async function api<T>(path: string, options: ApiOptions = {}): Promise<T>
     throw new ApiError(payload?.error?.message ?? `请求失败（${response.status}）`, payload?.error?.code ?? 'INTERNAL', response.status, payload?.error?.details);
   }
   return payload.data as T;
+}
+
+/**
+ * 把语种拼进查询串。
+ *
+ * 三条边界：
+ * - 已经有 `locale=` 的路径**不覆盖**：调用方显式指定的语种优先（验收脚本要能钉住某一语种）；
+ * - 中文（默认语种）**一个参数都不加**：中文请求与从前逐字相同，服务端契约不变；
+ * - 锚点（`#`）必须留在最后：`…?a=1&locale=en#frag` 才对，拼在锚点之后就成了锚点的一部分。
+ */
+export function withLocaleQuery(path: string): string {
+  if (locale === 'zh' || /(?:[?&])locale=/.test(path)) return path;
+  const hashIndex = path.indexOf('#');
+  const head = hashIndex === -1 ? path : path.slice(0, hashIndex);
+  const hash = hashIndex === -1 ? '' : path.slice(hashIndex);
+  return `${head}${head.includes('?') ? '&' : '?'}locale=${locale}${hash}`;
 }
 
 /**
@@ -143,6 +203,11 @@ export function useApi<T>(path: string | null, deps: unknown[] = []) {
   const [data, setData] = useState<T | null>(null);
   const [loading, setLoading] = useState(Boolean(path));
   const [error, setError] = useState<ApiError | null>(null);
+  /*
+   * 语种是**内置依赖**：换语言后每个 `useApi` 都会重新取数，页面不必各自记得
+   * 把 locale 写进 deps。少了这一条，切到英文时列表页会留着一屏中文标题。
+   */
+  const localeKey = useLocaleKey();
   const counter = useRef(0);
   const reload = useCallback(() => {
     counter.current += 1;
@@ -155,7 +220,7 @@ export function useApi<T>(path: string | null, deps: unknown[] = []) {
       .catch((reason) => { if (current === counter.current && reason.name !== 'AbortError') setError(reason instanceof ApiError ? reason : new ApiError(String(reason))); })
       .finally(() => { if (current === counter.current) setLoading(false); });
     return () => controller.abort();
-  }, [path, ...deps]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [path, localeKey, ...deps]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => reload(), [reload]);
   return { data, loading, error, reload };
 }

@@ -23,6 +23,21 @@ import { MCS_WEB_ROOT } from '../core/ontology.mjs';
  * - `vocabulary-display`：展示**一整套词汇**（连接类型开关、契约 mode 条款），
  *   每一行都必须带当前视图的计数（0 也照实显示），不是「选项」；
  * - `lookup`：只用来查表（`find`/`[key]`），不产生可点条目。
+ *
+ * ## 2026-10 中英双语改造：扫描模式为什么变宽
+ *
+ * 标签表现在常按语种取用，写法扩成三种：`Object.entries(X_LABELS)`、
+ * `Object.entries(pick(X_LABELS_BY_LOCALE))`（`pick` 从 `useI18n()` 来）、
+ * `Object.entries(labels.tables.x)`（`useLabels()` 摊平后的表）。
+ *
+ * 第三种**在代码里看不到表名**，扫描不到——这是这套检查的已知边界，写在这里而不是
+ * 假装它还在覆盖：`tables.*` 的值全部来自 `makeLabels()`，是同一个 `labels.ts` 的
+ * 机械摊平，所以「表里有没有多余的值」仍由 `tests/granularity-fields.mjs` 与
+ * `tests/construct-registry.test.mjs` 从数据侧管。
+ *
+ * 前两种都扫得到，且**必须是内联写法**：`const x = pick(...)` 再 `Object.entries(x)`
+ * 会让这处用法从扫描里消失（白名单随即报「过期条目」），而这里要核对的
+ * 「附近真的渲染了计数、取不到显示 — 而不是 0」正是那六项指标不伪造数字的保证。
  */
 const ALLOWLIST = [
   {
@@ -69,9 +84,11 @@ const ALLOWLIST = [
   },
   {
     file: 'web/src/pages/IntroPage.tsx',
-    symbol: 'Object.entries(INTRO_COUNT_LABELS)',
+    symbol: 'Object.entries(pick(INTRO_COUNT_LABELS_BY_LOCALE))',
     reason: 'vocabulary-display',
-    note: '站内规模：固定的六项指标，取不到值显示「—」而不是 0',
+    note: '站内规模：固定的六项指标，取不到值显示「—」而不是 0；'
+      + '中英双语改造后标签表按语种取（`pick` 来自 `useI18n()`），'
+      + '并**保持内联**以便这处用法仍在扫描范围内',
   },
   {
     file: 'web/src/facets.ts',
@@ -92,16 +109,54 @@ function sourceFiles(dir) {
   return out;
 }
 
-const LABEL_KEYS = /Object\.(?:keys|entries)\(\s*([A-Z][A-Z0-9_]*_LABELS)\s*\)/g;
+/*
+ * 扫描模式：`Object.keys/entries( [pick(] TABLE [)] )`。
+ *
+ * 三种写法都要认：
+ *   `Object.entries(INTRO_COUNT_LABELS)`                  —— 老写法（表名直接给）
+ *   `Object.entries(pick(INTRO_COUNT_LABELS_BY_LOCALE))` —— 双语写法（表按语种取）
+ *
+ * 收尾的括号写成**可选且不吞多余的**（`(\))?`）：写成 `\)*` 会把外层调用
+ * （`buildFacet(…, Object.keys(CASE_LABELS))`）的括号一起吞进来，捕获文字与白名单
+ * 对不上，一律报「过期条目」（本轮踩过）。捕获到的文字再经 `canonicalSymbol()`
+ * 归一化后比较，就不必让正则去猜到底有几个闭括号。
+ */
+const LABEL_KEYS = /Object\.(?:keys|entries)\(\s*(pick\(\s*)?([A-Z][A-Z0-9_]*_LABELS[A-Z0-9_]*)\s*(\))?\s*\)/g;
+
+/** 归一到「调用开始 + 表名 + 一个右括号」，去掉外层调用多吃的括号与空白。 */
+function canonicalSymbol(match) {
+  const table = match[2];
+  const wrapped = Boolean(match[1]);
+  return wrapped ? `Object.entries(pick(${table}))` : `Object.${/^Object\.(\w+)/.exec(match[0])[1]}(${table})`;
+}
+
+/**
+ * 只扫**代码行**，跳过注释行。
+ *
+ * 为什么必须跳过：这些文件里正好有几条注释在**解释**这类写法
+ * （「原先这里直接用 `Object.keys(CONSTRUCT_LABELS)`：模板里 14 类全铺出来…」）。
+ * 被它们计入的后果不是误报「未登记」，而是更隐蔽的一种：白名单里的 `symbol`
+ * 必须与捕获文字逐字相同，注释里的写法与代码里的不同（注释里末尾只有一个 `)`），
+ * 于是一律匹配不上、白名单全成「过期条目」。
+ *
+ * 判据按行首：`//`、`/*`、`*` 开头的行是注释。这是文本层面的近似——不用 AST
+ * 是因为本测试的目的就是「扫源码文本里的写法」，而它自己的注释不该参与。
+ */
+function codeLines(text) {
+  return String(text).split('\n').filter((line) => {
+    const trimmed = line.trim();
+    return !(trimmed.startsWith('//') || trimmed.startsWith('/*') || trimmed.startsWith('*'));
+  }).join('\n');
+}
 
 test('全站扫描：每个「标签表当选项表」的用法都在白名单里，且理由成立', () => {
   const root = join(MCS_WEB_ROOT, 'web/src');
   const hits = [];
   for (const file of sourceFiles(root)) {
-    const text = readFileSync(file, 'utf8');
+    const text = codeLines(readFileSync(file, 'utf8'));
     const relativePath = relative(MCS_WEB_ROOT, file).replaceAll('\\', '/');
     for (const match of text.matchAll(LABEL_KEYS)) {
-      hits.push({ file: relativePath, symbol: match[0], table: match[1], text });
+      hits.push({ file: relativePath, symbol: canonicalSymbol(match), table: match[2], text });
     }
   }
   assert.ok(hits.length >= 8, '扫描没找到任何用法，扫描本身可能失效了：' + hits.length);

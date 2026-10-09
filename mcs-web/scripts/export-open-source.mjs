@@ -75,7 +75,12 @@ const SKIP_SUFFIXES = [
   '.aux', '.out', '.toc', '.synctex.gz', '.tsbuildinfo',
 ];
 // 只排除已确认的构建目录；正式 submission/ 与原创 PDF 仍保留。
-const SKIP_PATHS = ['mcs-foundations/arxiv/output', 'mcs-foundations/arxiv/package-staging'];
+const SKIP_PATHS = [
+  'mcs-foundations/arxiv/output', 'mcs-foundations/arxiv/package-staging',
+  // Local preview sandbox: contains junctions to the canonical web/src and web/public.
+  // Skip this exact tree; all other directory links still fail closed in copyTree.
+  'mcs-web/.tmp-shadow',
+];
 
 /** 发布包里绝对不能出现的路径片段。 */
 const FORBIDDEN_PARTS = [

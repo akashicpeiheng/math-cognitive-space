@@ -37,3 +37,42 @@ export const DEEPTUTOR_INTRO = {
   },
   boundary: '本站没有测量过辅导带来的教学收益；「已连通」只说明进程与一次真实回环跑通了，不代表回答正确，也不代表你掌握了。断开期间页面不会伪造模型回复。',
 };
+
+/* ======================================================================
+ * 英文版（2026-10 中英双语）
+ *
+ * 与中文那份**同结构、同外链、同数字**：`links[].href`、`recorded.version`、
+ * `recorded.license`（Apache-2.0）与 `recorded.basis` 里的本机检出路径一字不改
+ * ——它们是可核验的事实，不是文案。只译「说了什么」。
+ * ==================================================================== */
+
+export const DEEPTUTOR_INTRO_EN = {
+  what: 'DeepTutor is an open-source AI learning workbench from the HKUDS Data Intelligence Lab at the University of Hong Kong, licensed under Apache-2.0. It runs as a separate process, outside this site. It calls itself agent-native: tutoring, problem solving, question generation, retrieval-based research, visualisation and mastery practice live in one extensible runtime, with about a dozen modes (chat / ask / quiz / research / visualise / solve / course learning / mastery path / immersive reading / immersive viewing) sharing one session context. On the knowledge side it can connect engines such as LlamaIndex, PageIndex, GraphRAG, LightRAG, WeKnora, IMA, MarginNote 4, Kiwix and Obsidian; on the tool side it supports MCP servers and community skills (EduHub). This site connects its own “mathematical cognitive space” ontology and planner so that DeepTutor explains, asks and sets problems inside the context of **the mathematical object you chose**.',
+  how: [
+    { title: 'Same ontology version', detail: 'Tutoring reads the same version of the ontology (M) as the pages: nodes, relations and evidence boundaries agree; it does not tell a second story.' },
+    { title: 'Same planner', detail: 'Learning routes are computed by this site’s planner; tutoring does not compute its own. It works only in the context of the node you selected.' },
+    { title: 'Feedback writes only to E', detail: 'Model explanations and evaluations can only append events to the learner profile (E); they do not change the ontology (M) and never confirm “mastered” automatically.' },
+  ],
+  paths: [
+    { title: 'In-site adapter', detail: 'The tutoring page calls the DeepTutor backend directly: it injects node context and records turns as local events.' },
+    { title: 'Bridge service', detail: 'The other path (local port 3783) carries MCP tools and event registration and is the one that has been verified; the two paths must be read separately.' },
+  ],
+  /* 外部链接：与中文版逐条对应，`href` 完全相同。 */
+  links: [
+    { label: 'GitHub repository', href: 'https://github.com/HKUDS/DeepTutor', detail: 'HKUDS/DeepTutor · source, release notes and roadmap' },
+    { label: 'Official documentation', href: 'https://deeptutor.info', detail: 'deeptutor.info · installation, configuration and the individual modes' },
+    { label: 'Paper', href: 'https://arxiv.org/abs/2604.26962', detail: 'arXiv:2604.26962 — DeepTutor: Towards Agentic Personalized Tutoring (Bingxi Zhao et al., 2026)' },
+  ],
+  recorded: {
+    version: 'v1.6.12',
+    basis: 'Read from the local checkout .bridge-research/DeepTutor-ef2d9e5c/deeptutor/__version__.py（release v1.6.12, 2026-09-27）',
+    license: 'Apache-2.0',
+  },
+  boundary: 'This site has not measured any teaching benefit from tutoring; “connected” only means that the process and one real round trip ran through — it does not mean the answers are correct, and it does not mean you have mastered anything. While it is disconnected, the page does not fabricate model replies.',
+};
+
+/** 成对的两份介绍：页面用 `useI18n().pick(DEEPTUTOR_INTRO_BY_LOCALE)` 取。 */
+export const DEEPTUTOR_INTRO_BY_LOCALE: { zh: typeof DEEPTUTOR_INTRO; en: typeof DEEPTUTOR_INTRO_EN } = {
+  zh: DEEPTUTOR_INTRO,
+  en: DEEPTUTOR_INTRO_EN,
+};

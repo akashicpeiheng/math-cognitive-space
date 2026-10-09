@@ -308,6 +308,18 @@ li { margin-bottom: 0.25rem; }
   display: inline;
 }
 .byline a { font-family: var(--mono); font-size: 0.92em; }
+/*
+ * 触屏上把作者名的**可点范围**撑到手指够得着，外观一动不动（2026-10-05）。
+ *
+ * 手机上「沛恒」两个字按 0.8rem 排出来只有约 26×19px，实测很难点中——
+ * 而它是末幕人像唯一的入口。它是行内元素，**上下 padding 不参与行盒高度计算**，
+ * 所以署名那一行的排版、文字盒、与 `<strong>` 的逐项一致全都不受影响
+ * （`tests/browser.mjs` 那组「把真 <strong> 换进去量一遍」的断言照旧守着）。
+ * 只补纵向、不补横向：横向会压到旁边的「· 联系邮箱」，那一下不该算在它头上。
+ */
+@media (hover: none) {
+  .byline-author { padding: 0.8rem 0; }
+}
 
 .site-footer { margin-top: auto; display: flex; flex-wrap: wrap; gap: 0.3rem 1.2rem; align-items: baseline; justify-content: space-between; padding: 1rem 2rem 1.6rem; border-top: 1px solid var(--line); color: var(--ink-faint); font-size: 0.82rem; max-width: 1500px; width: 100%; }
 .site-footer strong { font-family: var(--serif); font-size: 0.95rem; color: var(--ink); }
@@ -1599,10 +1611,19 @@ label.checkbox { flex-direction: row; align-items: center; gap: 0.4rem; }
 .saved-view-list { list-style: none; padding: 0; margin: 0.5rem 0 0; }
 .saved-view-list li { border-bottom: 1px dashed var(--line); padding: 0.5rem 0.15rem; }
 .saved-view-list li:last-child { border-bottom: none; }
-.saved-view-head { display: flex; align-items: center; gap: 0.4rem; }
-.saved-view-name { font-weight: 600; }
+.saved-view-head { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; }
+.saved-view-name { font-weight: 600; overflow-wrap: anywhere; min-width: 0; }
+.saved-view-duplicate { font-size: 0.75rem; color: var(--emphasis-ink); background: var(--emphasis-bg); padding: 0.15rem 0.4rem; border-radius: 6px; white-space: nowrap; }
+.saved-view-tools { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0.5rem; margin: 0.8rem 0; }
+.saved-view-tools label { display: grid; gap: 0.25rem; font-size: 0.8rem; min-width: 0; }
+.saved-view-tools input, .saved-view-tools select { box-sizing: border-box; width: 100%; min-width: 0; }
+.saved-view-search-result { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap; font-size: 0.8rem; }
 .saved-view-list .muted { margin: 0.15rem 0 0.35rem; font-size: 0.78rem; }
 .saved-view-list .card-actions { margin: 0; }
+.saved-view-migration { margin: 0.75rem 0; padding: 0.85rem; border: 1px solid var(--line); border-radius: 12px; background: var(--emphasis-bg); }
+.saved-view-migration p { margin: 0.4rem 0 0.75rem; font-size: 0.85rem; line-height: 1.6; overflow-wrap: anywhere; }
+.saved-view-migration-status { font-size: 0.85rem; overflow-wrap: anywhere; }
+.saved-view-migration-status:empty { margin: 0; }
 
 .family-count-badge { margin-left: auto; font-family: var(--mono); font-size: 0.72rem; color: var(--ink-faint); background: var(--surface-2); border-radius: 999px; padding: 0.02rem 0.45rem; }
 
@@ -1700,7 +1721,8 @@ label.checkbox { flex-direction: row; align-items: center; gap: 0.4rem; }
   border: 1px solid var(--line); border-radius: 10px;
   padding: 0.35rem 0.7rem;
   font-size: 0.74rem; color: var(--ink-soft);
-  z-index: 6;
+  /* 图例位于操作面板下方，避免拦截滚动到面板底部的按钮。 */
+  z-index: 4;
   /* 单行 + 横向滚动：图例条目多，换行会把画布压掉一截，压缩又会把文字挤成重叠。
      每一项 flex:none 保证按自身宽度排布，超出部分滚动查看。 */
   flex-wrap: nowrap; overflow-x: auto; white-space: nowrap;
@@ -2780,8 +2802,10 @@ select, input, textarea { max-width: 100%; }
   100% { rotate: 7deg; scale: 0.985; }
 }
 @keyframes home-core-breathe {
-  0%, 100% { opacity: 0.2; filter: blur(0.2px); }
-  50% { opacity: 0.42; filter: blur(1px); }
+  /* 只动 opacity（2026-10-05）：`filter` 的动画每帧都要把那个元素重新栅格化一遍，
+     而它换来的只是 0.2→0.42 的呼吸感。静态 blur 仍留在 `.home-story-orbit-core` 上。 */
+  0%, 100% { opacity: 0.2; }
+  50% { opacity: 0.42; }
 }
 @keyframes home-signal-pulse {
   0%, 100% { opacity: 0.16; transform: scale(0.7); }
@@ -2844,7 +2868,7 @@ select, input, textarea { max-width: 100%; }
   display: grid;
   place-items: center;
   pointer-events: none;
-  will-change: opacity, transform;
+  /* 合成层提示只给有鼠标的设备，理由与 `.home-story-act` 那一处相同（见该处的注释）。 */
   /* 显式 z-index：层序（图形 0 → 柔光罩 1 → 正文 2）要能量、也要能读。 */
   z-index: 0;
 }
@@ -3287,9 +3311,16 @@ select, input, textarea { max-width: 100%; }
    */
   animation: home-copy-emerge 720ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
+/*
+ * 文字浮现：**只动 opacity 与 transform**（2026-10-05，安卓流畅度）。
+ *
+ * 原来还从 `blur(7px)` 收上来——首页一次挂六幕，19 个文字块会在载入时同时做模糊动画，
+ * 而 `filter` 的每一帧都要把那块文字重新栅格化一遍（实测载入阶段的任务时间因此多约 180ms，
+ * 安卓上就是首屏一顿）。位移 14px 已经在讲「从下面浮起来」，模糊那一点观感不值这个代价。
+ */
 @keyframes home-copy-emerge {
-  from { opacity: 0; transform: translateY(14px); filter: blur(7px); }
-  to { opacity: 1; transform: none; filter: blur(0); }
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: none; }
 }
 /* 六条现状依次浮现（每张卡 60ms 的错位），顺序感来自实际排布而不是额外装饰。 */
 .home-story-point { animation: home-copy-emerge 620ms cubic-bezier(0.22, 1, 0.36, 1) both; }
@@ -3336,7 +3367,19 @@ select, input, textarea { max-width: 100%; }
   justify-content: center;
   align-items: center;
   text-align: center;
-  will-change: opacity, transform;
+}
+
+/*
+ * 合成层提示只给**有鼠标的设备**（2026-10-05，安卓流畅度）。
+ *
+ * 宽屏安卓平板（≥1200px 宽）走的仍是固定舞台这条形态，于是这六个大合成层照旧挂着：
+ * 一幕在平板上约 800×1400 CSS px，DPR 2 就是 1600×2800×4B ≈ 18 MB，六个上百 MB。
+ * 安卓平板的栅格内存一紧就掉图块——这正是第七轮报的「滚动时整页发白」的机制之一，
+ * 也是相机/滚动动画一顿一顿的来源。触屏上不留这层，靠 `transform` 本身照样能合成。
+ */
+@media (hover: hover) {
+  .home-story-act,
+  .home-story-visual-layer { will-change: opacity, transform; }
 }
 
 .home-story-act-copy { max-width: 100%; width: 100%; }
@@ -3771,13 +3814,66 @@ select, input, textarea { max-width: 100%; }
 .home-story.is-flow .home-story-orbit { opacity: 0.24; }
 .home-story.is-flow .home-story-orbit-core { opacity: 0.16; }
 
-/* 移动端图形的进入动画：只影响当前进入视口的幕，离开后不保留状态。 */
+/*
+ * 自然滚动形态下这些幕**没有** opacity / transform 动画（那是桌面固定舞台的事，
+ * 见上面 `:not(.is-flow)` 那几条），所以 `will-change` 在这里一点用都没有，只是白占合成层。
+ *
+ * 代价不小：一幕在平板上约 800×1400 CSS px，DPR 2 就是 1600×2800×4B ≈ **18 MB**，
+ * 六幕一起就是上百 MB 的栅格内存——Android 平板的显存一紧就掉图块，
+ * 表现正是「滚动时整页发白」（2026-10-05，小米平板 + Edge 报的）。
+ */
+.home-story.is-flow .home-story-act { will-change: auto; }
+
+/*
+ * 星点、光圈、呼吸核只在**看得见的那一幕**里动（2026-10-05）。
+ *
+ * 窄屏是自然滚动，六幕的装饰层会一直跑：手机上只是费电，平板上会参与上面那个
+ * 「滚动时发白」——把常驻动画从 6 份压到 1 份。标记由 `useInView`（阈值 0.22）给，
+ * 滚进来就恢复，观感不变。
+ *
+ * 用 `:has()` 是因为装饰层是那一幕的**兄弟**（在它前面），兄弟选择器选不到前面。
+ * 认不出 `:has()` 的浏览器整条规则不生效——退化成改之前的样子，不会坏。
+ *
+ * 标记挂在**图形元素**上而不是 `<article>` 上（2026-10-05，安卓流畅度）：
+ * 实测切一次 `.home-story-act` 的类要 8.75ms 样式重算（它的子树 612 个元素、
+ * 且 `.home-story-act.X .home-story-scene` 这类后代选择器会要求整棵子树重新匹配），
+ * 切在同一个小元素上只要 0.25ms。一次全程滚动有十来次切换，省下的是每幕一次的可感卡顿。
+ */
+.home-story.is-flow .home-story-section:has(.home-story-scene:not(.is-shown)) .home-story-atmosphere * {
+  animation-play-state: paused;
+}
+
+/*
+ * 同一条纪律在**固定舞台**形态里也成立（2026-10-05，安卓流畅度）。
+ *
+ * 六段各自成段、一次只看得见一段，可另外五段的装饰层与图形层照样在跑
+ * （12 条轨道漂移、6 个呼吸核、54 颗星点、12 个场景层的漂移）。
+ * 逐项实测（1280×800 触屏，脚本化滚一趟首页，p50 帧间隔，预算 16.6ms）：
+ *
+ * | 关掉什么 | p50 | >32ms 的帧 |
+ * |---|---|---|
+ * | 什么都不关（基线） | 24.3ms | 14 |
+ * | 固定舞台图形层 | 12.0ms | 0 |
+ * | 六幕装饰层 | 12.5ms | 1 |
+ * | 两个都关（+报头不吸顶、去掉报头模糊） | 6.1ms | 0 |
+ *
+ * 这里用 `data-active` 把看不见的那些幕挂起——它本来就有（桌面形态下每段各一个）。
+ * 滚回来时从暂停处继续：那些漂移本来就是 18–24 秒一个来回，看不出接缝。
+ * 窄屏的对应规则在上面那条（`is-shown`，标记挂在图形元素上）。
+ */
+.home-story:not(.is-flow) .home-story-section:not([data-active]) .home-story-atmosphere *,
+.home-story:not(.is-flow) .home-story-section:not([data-active]) .home-story-visual-stage * {
+  animation-play-state: paused;
+}
+
+/* 移动端图形的进入动画：只影响当前进入视口的幕，离开后不保留状态。
+   同样把标记挂在图形自己身上（理由见上一条）。 */
 .home-story-act-mobile-visual .home-story-scene {
   opacity: 0.72;
   transform: translateY(10px);
   transition: opacity 520ms cubic-bezier(0.22, 1, 0.36, 1), transform 520ms cubic-bezier(0.22, 1, 0.36, 1);
 }
-.home-story-act.in-view .home-story-act-mobile-visual .home-story-scene {
+.home-story-act-mobile-visual .home-story-scene.is-shown {
   opacity: 1;
   transform: translateY(0);
 }
@@ -4363,6 +4459,38 @@ select, input, textarea { max-width: 100%; }
 }
 .story-portrait.is-visible { opacity: 1; }
 
+/*
+ * 窄屏（自然滚动）下的人像挂点（2026-10-05）。
+ *
+ * 手机与平板没有「正文列两侧的留白带」——上面那套 `--hs-band-px` 在那样的宽度下算出来是 0，
+ * 「右缘钉在正文列左侧」无从谈起（原来干脆整块视觉舞台都不渲染，于是署名里的入口点了没反应）。
+ * 现在的落点是**署名正下方**：挂点这一格高 0，人像在里面绝对定位向下长，
+ * 压在末幕插图的**上缘**——插图是 `aria-hidden` 的装饰，压在上面不遮任何文字；
+ * 人像本身仍是 `pointer-events: none`，不抢触摸，也不改变版面高度
+ * （点一下不会把页面顶下去，播完也不会弹回来）。
+ *
+ * 竖屏与横屏都成立：挂点是「跟着署名走」的，而署名正是刚才被点的那个东西，
+ * 所以人像一定出现在手指离开的地方附近，不需要知道插图有多高。
+ */
+.home-story-portrait-slot { display: none; }
+.home-story.is-flow .home-story-portrait-slot {
+  position: relative;
+  display: block;
+  height: 0;
+}
+.home-story.is-flow .home-story-portrait-slot .story-portrait {
+  /* 覆盖桌面那套「右缘钉在正文列左侧、贴着舞台底」的定位。 */
+  right: auto;
+  bottom: auto;
+  left: 0;
+  top: 0.5rem;
+  /* 手机竖屏约 150px 宽，横屏与平板封在 11rem：够看清手势，又不至于吃掉半屏。
+     末尾那个 `30vh` 只管矮视口（横屏手机）：挂点跟着署名走，署名若正好靠近屏幕下缘，
+     不先收一档就只剩半张脸在视口里。 */
+  width: min(clamp(7rem, 46%, 11rem), 30vh);
+  z-index: 3;
+}
+
 /* ==========================================================================
  * 账号层（2026-10 加）：页头状态 + 登录页 / 验证页
  *
@@ -4381,6 +4509,32 @@ select, input, textarea { max-width: 100%; }
 /* 邮箱过长时截断而不是把页头挤成两行；全文在 title 里。 */
 .auth-email { max-width: 16ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .auth-status-error { max-width: 34ch; }
+
+/* ---- 语言切换（2026-10 中英双语） ----
+ *
+ * 分段控件：两个选项都可见，当前项实心高亮。规格与站内其它「二级开关」一致
+ * （1px 边框 + 胶囊圆角 + 悬停加深），因此它读起来像一个控件，而不是一段文字。
+ * 高度与小按钮对齐（34px），页头在窄屏折行时不会因为这一个控件把别人的高度顶开。
+ *
+ * 「当前项」不只靠颜色：`aria-pressed` 已标注，另外未选中项是白底、选中项是品牌紫，
+ * 对色觉差异读者也分得清（这也是 `tests/a11y-contrast.test.mjs` 的检查口径）。
+ */
+.locale-switch { display: inline-flex; align-items: stretch; border: 1px solid var(--line-strong); border-radius: 999px; background: var(--surface); overflow: hidden; }
+.locale-option {
+  appearance: none; border: 0; background: transparent; cursor: pointer;
+  padding: 0 0.7rem; min-height: 34px; font: inherit; font-size: 0.8rem; font-weight: 600;
+  color: var(--ink-soft); letter-spacing: 0.02em;
+}
+.locale-option + .locale-option { border-left: 1px solid var(--line); }
+.locale-option:hover { background: var(--accent-wash); color: var(--accent-strong); }
+.locale-option.active { background: var(--accent); color: #fff; }
+.locale-option:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+/* ---- 尚未翻译的条目 ---- */
+/* 英文站上回落到中文原文的条目：用一个极轻的底纹标出来，并给 title 说明原因。
+   没有它，读者分不清「这条英文写得怪」与「这条还没翻」。 */
+.i18n-pending { background: var(--amber-soft); border-radius: 4px; box-shadow: 0 0 0 2px var(--amber-soft); }
+.i18n-pending-note { display: block; color: var(--amber); font-size: 0.76rem; font-style: normal; margin-top: 0.15rem; }
 
 /* ---- 登录页 / 验证页 ---- */
 /* 表单是阅读型内容：不给它铺满 1500px，否则一行字要横跨整个屏幕。 */
@@ -4403,5 +4557,64 @@ select, input, textarea { max-width: 100%; }
 @media (max-width: 860px) {
   .topbar-side { gap: 0.4rem; }
   .auth-email { max-width: 12ch; }
+}
+
+/* ==========================================================================
+ * 触屏设备的滚动降级（2026-10-05，文件末尾：**必须排在 `.topbar` / `.node-toc`
+ * 原规则之后**，同权重下靠顺序取胜）
+ *
+ * 症状：**小米平板 + Edge，滚动时整页发白、一闪一闪。** 那是 Android Chromium 系
+ * 滚动时来不及重新栅格化、露出还没画好的底（checkerboard / 掉图块）。
+ * 三处代价叠在一起，恰好都只在触屏上昂贵：
+ *
+ * 1. `background-attachment: fixed`——底图相对**视口**定位，等于每滚一帧都要重新
+ *    栅格化整张底图（1100×620 与 900×560 两块径向渐变）。桌面端这是免费的，
+ *    移动端是出了名的卡顿源；
+ * 2. 吸顶栏的 `backdrop-filter: blur(...)`——滚动时要逐帧读回并模糊栏身后的内容；
+ * 3. 平板屏幕大、DPR 高，栅格内存本来就紧（首页另有六幕各一个大合成层，
+ *    那一条在 `.is-flow` 那一段里按形态关掉，不在这里）。
+ *
+ * **只动触屏**：桌面端（`hover: hover` 的精细指针）保持原样——磨砂吸顶栏与固定底图都不变。
+ * 代价只有一个，且只在长页面的**首屏之外**看得出来：那层极淡的紫/青光晕（0.11 / 0.10）
+ * 改随文档定位，于是不再钉在视口上。
+ * ======================================================================== */
+@media (hover: none) {
+  body { background-attachment: scroll; }
+  /*
+   * 吸顶栏改成**不透明**的白（2026-10-05）。
+   *
+   * 小米平板上用户看到的是「滑动时整页发白、顶部那条框反复消失出现」——那是合成器
+   * 来不及重新栅格化、掉图块：浅色的吸顶栏和露出来的白底融成一片，看起来就是「框没了」。
+   * 半透明（0.94）还要求逐帧与身后的内容混合；改成不透明就只剩一层实色，
+   * 观感几乎一样（0.94 的白本来就看不出透明），但少了一次混合。
+   */
+  .topbar { backdrop-filter: none; background: #ffffff; }
+  /* 节点页目录条只在宽屏吸顶（窄屏本来就是 static），横屏平板上同样按触屏降级。 */
+  .node-toc { backdrop-filter: none; background: rgba(255, 255, 255, 0.96); }
+  /*
+   * 首页报头：窄屏（flow 形态）本来就是 none；这里补上**宽屏平板**那一档——
+   * 它 ≥1200px 宽、走的仍是固定舞台，而报头是吸顶的，于是滚动时逐帧模糊身后内容。
+   * 实测这一条值约 6ms/帧（p50 24.3 → 18.3ms）。底色本来就是 0.94–0.96 的深紫，
+   * 去掉模糊几乎看不出差别。
+   */
+  .home-story-masthead { backdrop-filter: none; }
+
+  /*
+   * 首页六幕的「环境层」在触屏上瘦身（2026-10-05，真机复测仍然发白之后）。
+   *
+   * 用 CDP 把 CPU 降到 4×（模拟平板算力）重测才看清：自然滚动形态在这台机器上
+   * p50 帧间隔 18.2ms、13 帧 >32ms——**全部来自 `.home-story-atmosphere`**：
+   * 把它整个去掉就是 6.1ms（满帧）。而四项（柔光的 blur(12px)、底纹环、两个轨道环、
+   * 54 颗星点）**各自都值约 6ms**：不是哪一项特别贵，是总量过了这一帧的预算。
+   *
+   * 所以这里只减掉最不显眼的部分，形状、位置、颜色一个不动：
+   * - 柔光去掉 `blur(12px)`，只留 `saturate`——那三层本来就是径向渐变，边缘自带羽化；
+   * - 星点的辉光从 13px 收到 5px（4px 的点配 13px 辉光，在平板上就是 54 个模糊阴影）；
+   * - 两个轨道环的内外阴影去掉，1px 描边留着（环的"实"来自描边，不是阴影）。
+   * 桌面端（`hover: hover`）一律保持原样。
+   */
+  .home-story-atmosphere-glow { filter: saturate(1.15); }
+  .home-story-signal-field i { box-shadow: 0 0 5px color-mix(in srgb, var(--act-color) 70%, transparent); }
+  .home-story-orbit { box-shadow: none; }
 }
 

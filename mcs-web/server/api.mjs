@@ -24,6 +24,7 @@ import {
 } from '../shared/contracts.mjs';
 import { makePlanner, explainPlanner } from '../core/planner.mjs';
 import { makeLocalizer, explainLocalizationFamilies } from '../core/localization.mjs';
+import { DEFAULT_LOCALE, normalizeLocale } from '../shared/locales.mjs';
 import { checkFormation, checkOntologyLegality, roleSummary } from '../core/formation.mjs';
 import { querySupport, supportSummary } from '../core/support.mjs';
 import { relationSummary, composeRelations } from '../core/relations.mjs';
@@ -159,6 +160,49 @@ export function createApi({ getOntology, ontology: ontologyRef, db, jobs, tutor,
     }
     return current;
   };
+
+  /* ==========================================================================
+   * 语种（2026-10 中英双语）
+   *
+   * ## 只换文本，不换结构
+   *
+   * `localizedOntology()` 返回的是同一份快照的**语言视图**：`version` / `contentHash`
+   * 逐字相同（覆盖在哈希之后应用），节点、行动、证据的 id 与受控词表值一律不动。
+   * 于是「换语言」不会换掉学习者档案里的 `ontologyVersion`，E 层天然跨语言共享。
+   *
+   * ## 语种从哪来
+   *
+   * 只认两个地方，优先级明确：`?locale=` 查询参数 → `x-mcs-locale` 请求头 → 默认 `zh`。
+   * **不读 `Accept-Language`**：浏览器每次请求都自动带它，用它做协商会让「分享出去的
+   * 英文链接在中文浏览器里打开变成中文」，而链接的路径前缀（`/en/...`）已经表达了意图。
+   * 未知语种回落 `zh`，并在响应头里如实回报实际使用的语种，不假装它就是请求的那一个。
+   * ======================================================================== */
+  const localizedCache = new Map();
+  async function localizedFor(current, locale) {
+    if (locale === DEFAULT_LOCALE) return current;
+    const key = `${current.version}::${locale}`;
+    const hit = localizedCache.get(key);
+    if (hit) return hit;
+    const module = await optionalModule('../data/i18n/index.mjs');
+    const overlay = await module.overlayFor(locale);
+    if (!overlay) {
+      /*
+       * 该语种没有覆盖目录（尚未开始翻译）：返回中文快照，但**不缓存**——
+       * 翻译文件一落地，下一个请求就该拿到新内容，不必重启。
+       */
+      return current;
+    }
+    const { localizedOntology } = await optionalModule('../data/i18n/overlay.mjs');
+    const localized = localizedOntology(current, locale, () => overlay);
+    localizedCache.set(key, localized);
+    while (localizedCache.size > 4) localizedCache.delete(localizedCache.keys().next().value);
+    return localized;
+  }
+  function resolveLocale(url, req) {
+    const fromQuery = url.searchParams.get('locale');
+    const fromHeader = typeof req?.headers?.['x-mcs-locale'] === 'string' ? req.headers['x-mcs-locale'] : null;
+    return normalizeLocale(fromQuery ?? fromHeader ?? DEFAULT_LOCALE);
+  }
 
   /*
    * 规划器与局部化器都是 ontology 的**纯函数**（只建索引，没有副作用），
@@ -1153,6 +1197,14 @@ export function createApi({ getOntology, ontology: ontologyRef, db, jobs, tutor,
     const url = new URL(req.url, `http://${req.headers.host ?? '127.0.0.1'}`);
     if (!url.pathname.startsWith('/api/v2/')) return false;
     const ontology = requestOntology();
+    const locale = resolveLocale(url, req);
+    /*
+     * 语种视图在这里换一次，交给路由处理体的 `ontology` 因此已经是该语种的。
+     * 处理体内部一律继续用传进来的这一份——别处再取快照会让「同一请求里
+     * 节点是英文、证据是中文」这种半截状态成为可能。
+     */
+    const localized = await localizedFor(ontology, locale);
+    res.setHeader('x-mcs-locale', locale);
     try {
       /*
        * 身份解析放在路由匹配**之前**：会话失效、Cookie 重复这类问题要在任何业务
@@ -1190,9 +1242,12 @@ export function createApi({ getOntology, ontology: ontologyRef, db, jobs, tutor,
          * 处理体用参数接收（而不是各自再 `requestOntology()`），这样「同一请求里的
          * 节点、证据、规划用的是同一份本体」由结构保证：取快照这件事在整条链上
          * 只有这一处，信封的 `ontologyVersion` 也就与 `data.version` 必然一致。
+         *
+         * `ontology` 是**该请求语种的那一份视图**（见上面「语种」一节）；`version`
+         * 在两种语言下逐字相同，所以版本核对与发布流程不受语言影响。
          */
-        const data = await entry.handler({ params: match.slice(1), query: url.searchParams, body, req, res, ontology, identity });
-        sendJson(res, 200, envelope(ontology.version, data));
+        const data = await entry.handler({ params: match.slice(1), query: url.searchParams, body, req, res, ontology: localized, identity });
+        sendJson(res, 200, envelope(localized.version, data));
         return true;
       }
       sendJson(res, 404, errorEnvelope(new McsError(CODES.NOT_FOUND, `未知接口：${req.method} ${url.pathname}`, 404)));

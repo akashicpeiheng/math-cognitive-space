@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { ApiError, api, formatError } from '../api';
+import { useI18n } from '../i18n';
 import { clearNoteDraft, readNoteDraft, writeNoteDraft } from '../drafts';
 
 /**
@@ -9,7 +10,36 @@ import { clearNoteDraft, readNoteDraft, writeNoteDraft } from '../drafts';
  * 提交时携带的 nodeId / profileId 也是重挂载时捕获的 props，不会被之后切换的节点改写。
  * 内容在每次输入时写入按「档案 + 节点」隔离的本机草稿，切换节点或档案后回来仍能看到未提交的文字。
  * 草稿不是 E 事件：只有点「保存笔记」才写入外部模型。
+ *
+ * 双语（2026-10）：文案成对写在下面；草稿时间走 `fmtDate()`（不再写死 `toLocaleTimeString('zh-CN')`）。
+ * 默认标题「回看问题」是**写进笔记内容**的初始值，在英文站给英文默认值，中文逐字不变。
  */
+
+const COPY = {
+  zh: {
+    defaultTitle: '回看问题',
+    titlePlaceholder: '标题',
+    bodyPlaceholder: '用自己的话重写；记录当时的错误路径与检验手段。',
+    saving: '保存中…',
+    save: '保存笔记',
+    draftAt: (time: string) => `草稿已自动存在本机（${time}），保存后才写入 E。`,
+    draftIdle: '输入时自动暂存在本机，点保存才写入 E。',
+    saved: '个人笔记已写入外部模型 E；公共本体 M 未改变。',
+    conflict: '已重新读取档案修订号，请再点一次「保存笔记」。',
+  },
+  en: {
+    defaultTitle: 'Review question',
+    titlePlaceholder: 'Title',
+    bodyPlaceholder: 'Rewrite it in your own words; record the wrong turns you took and how you checked them.',
+    saving: 'Saving…',
+    save: 'Save note',
+    draftAt: (time: string) => `Draft kept on this device (${time}); it is written to E only after saving.`,
+    draftIdle: 'Kept on this device as you type; written to E only when you save.',
+    saved: 'The note was written to the external model E; the public ontology M is unchanged.',
+    conflict: 'The profile revision has been reloaded; press “Save note” again.',
+  },
+} as const;
+
 export function NoteEditor({
   profileId,
   nodeId,
@@ -23,8 +53,10 @@ export function NoteEditor({
   onSaved: () => Promise<void> | void;
   onNotice: (message: string) => void;
 }) {
+  const { locale, fmtDate } = useI18n();
+  const text = COPY[locale];
   const restored = readNoteDraft(profileId, nodeId);
-  const [title, setTitle] = useState(restored?.title ?? '回看问题');
+  const [title, setTitle] = useState(restored?.title ?? text.defaultTitle);
   const [body, setBody] = useState(restored?.body ?? '');
   const [draftAt, setDraftAt] = useState(restored?.updatedAt ?? '');
   const [busy, setBusy] = useState(false);
@@ -53,7 +85,7 @@ export function NoteEditor({
       clearNoteDraft(profileId, nodeId);
       setBody('');
       setDraftAt('');
-      onNotice('个人笔记已写入外部模型 E；公共本体 M 未改变。');
+      onNotice(text.saved);
       await onSaved();
     } catch (reason) {
       /*
@@ -66,7 +98,7 @@ export function NoteEditor({
       const conflict = reason instanceof ApiError && (reason.status === 409 || reason.code === 'REVISION_CONFLICT');
       if (conflict) {
         try { await onSaved(); } catch { /* 刷新失败不掩盖原始冲突 */ }
-        setError(`${formatError(reason)}　已重新读取档案修订号，请再点一次「保存笔记」。`);
+        setError(`${formatError(reason)}　${text.conflict}`);
       } else {
         setError(formatError(reason));
       }
@@ -77,21 +109,19 @@ export function NoteEditor({
 
   return (
     <div className="note-editor">
-      <input value={title} onChange={(event) => update({ title: event.target.value })} placeholder="标题" />
+      <input value={title} onChange={(event) => update({ title: event.target.value })} placeholder={text.titlePlaceholder} />
       <textarea
         value={body}
         onChange={(event) => update({ body: event.target.value })}
-        placeholder="用自己的话重写；记录当时的错误路径与检验手段。"
+        placeholder={text.bodyPlaceholder}
         rows={5}
       />
       <div className="note-editor-actions">
         <button className="button primary" disabled={busy || !body.trim()} onClick={save}>
-          {busy ? '保存中…' : '保存笔记'}
+          {busy ? text.saving : text.save}
         </button>
         <span className="draft-note" role="status">
-          {draftAt
-            ? `草稿已自动存在本机（${new Date(draftAt).toLocaleTimeString('zh-CN')}），保存后才写入 E。`
-            : '输入时自动暂存在本机，点保存才写入 E。'}
+          {draftAt ? text.draftAt(fmtDate(draftAt, { timeStyle: 'medium' })) : text.draftIdle}
         </span>
       </div>
       {error && <p className="error">{error}</p>}

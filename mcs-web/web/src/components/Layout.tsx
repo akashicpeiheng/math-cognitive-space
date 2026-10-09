@@ -4,6 +4,10 @@ import { useProfileContext } from '../state';
 import { SITE } from '../site';
 import { PressFeedback } from './PressFeedback';
 import { AuthStatus } from './AuthStatus';
+import { LanguageSwitch } from './LanguageSwitch';
+import { useI18n } from '../i18n';
+import { stripLocale } from '../i18n/paths';
+import type { MessageKey } from '../i18n/messages';
 
 /**
  * 主导航只保留学习主线上的五步：开始学习 → 找对象 → 看结构 → 定路线 → 回看自己的记录。
@@ -13,21 +17,27 @@ import { AuthStatus } from './AuthStatus';
  * 点侧栏品牌即可回到首页，不单独占一个导航项。
  * 介绍、方法论、辅导与研究台属于「按需查阅」，放辅助导航；复习并入「我的学习」的标签页，
  * 不再单占一个一级入口。
+ *
+ * `to` 一律写**站内绝对路径**（`/start`、`/nodes`…），再经 `hrefFor()` 套上语种前缀
+ * （中文给 `/start`，英文给 `/en/start`）。**不能写相对路径**（`'start'`）：本站路由是
+ * 两层 `/*` 套 `/*`（见 `App.tsx`），Link 的相对解析基准在这种情况下是**当前 URL 的完整路径**，
+ * 于是在 `/nodes` 上点「开始学习」会去到 `/nodes/start` —— 全站导航呈指数级错位，
+ * 而这只有离开首页才看得出来（`tests/start-page.mjs` 当场抓到）。
  */
-const NAV = [
-  { to: '/start', label: '开始学习', icon: 'home' },
-  { to: '/nodes', label: '数学对象', icon: 'nodes' },
-  { to: '/network', label: '知识网络', icon: 'network' },
-  { to: '/plan', label: '学习路线', icon: 'plan' },
-  { to: '/profile', label: '我的学习', icon: 'profile', also: ['/review'] },
+const NAV: Array<{ to: string; key: MessageKey; icon: string; also?: string[] }> = [
+  { to: '/start', key: 'nav.start', icon: 'home' },
+  { to: '/nodes', key: 'nav.nodes', icon: 'nodes' },
+  { to: '/network', key: 'nav.network', icon: 'network' },
+  { to: '/plan', key: 'nav.plan', icon: 'plan' },
+  { to: '/profile', key: 'nav.profile', icon: 'profile', also: ['/review'] },
 ];
 
-const NAV_SECONDARY = [
-  { to: '/intro', label: '网站介绍', icon: 'intro' },
-  { to: '/method', label: '学习方法论', icon: 'method' },
+const NAV_SECONDARY: Array<{ to: string; key: MessageKey; icon: string; badge?: { text: string; titleKey: MessageKey } }> = [
+  { to: '/intro', key: 'nav.intro', icon: 'intro' },
+  { to: '/method', key: 'nav.method', icon: 'method' },
   {
     to: '/tutor',
-    label: '辅导',
+    key: 'nav.tutor',
     icon: 'tutor',
     /*
      * 「已接入 DeepTutor」必须写在侧栏上，而不是等人点进去才知道。
@@ -36,35 +46,37 @@ const NAV_SECONDARY = [
      * 断开时页面不伪造回复），所以徽标只断言「接入」这一件可核对的事，
      * 不断言「随时可用」或任何教学效果。连通状态由辅导页自己按证据显示。
      */
-    badge: {
-      text: 'DeepTutor',
-      title: '辅导已接入 DeepTutor：本机可选入口，导通状态在辅导页按证据显示',
-    },
+    badge: { text: 'DeepTutor', titleKey: 'nav.tutorBadgeTitle' },
   },
-  { to: '/lab', label: '前沿研究', icon: 'lab' },
-  { to: '/maintenance', label: '网站维护', icon: 'intro' },
+  { to: '/lab', key: 'nav.lab', icon: 'lab' },
+  { to: '/maintenance', key: 'nav.maintenance', icon: 'intro' },
   /*
    * 自动关联是**维护动作**（写入 data/extensions/），不是学习入口：
    * 它不改公共本体图，除非走到最后一步「确认入库」。
    */
-  { to: '/authoring', label: '自动关联', icon: 'authoring' },
+  { to: '/authoring', key: 'nav.authoring', icon: 'authoring' },
 ];
 
-/** 顶栏显示「当前在哪」；节点页与回放等二级页面沿用所属栏目名。 */
-function locationLabel(pathname: string): string {
-  if (pathname === '/') return '首页';
-  if (pathname.startsWith('/start')) return '开始学习';
-  if (pathname.startsWith('/nodes')) return '数学对象';
-  if (pathname.startsWith('/plan')) return '学习路线';
-  if (pathname.startsWith('/network') || pathname.startsWith('/graph')) return '知识网络';
-  if (pathname.startsWith('/profile') || pathname.startsWith('/review')) return '我的学习';
-  if (pathname.startsWith('/intro')) return '网站介绍';
-  if (pathname.startsWith('/method')) return '学习方法论';
-  if (pathname.startsWith('/tutor')) return '辅导';
-  if (pathname.startsWith('/lab') || pathname.startsWith('/research')) return '前沿研究';
-  if (pathname.startsWith('/maintenance')) return '网站维护';
-  if (pathname.startsWith('/authoring')) return '自动关联';
-  return '数学认知空间';
+/**
+ * 顶栏显示「当前在哪」；节点页与回放等二级页面沿用所属栏目名。
+ *
+ * 传入的是**去掉语种前缀**的站内路径：`/en/nodes` 与 `/nodes` 落在同一个栏目上，
+ * 否则英文页面顶栏会一直显示站名（`/en/...` 谁也匹配不上）。
+ */
+function locationKey(pathname: string): MessageKey {
+  if (pathname === '/' || pathname === '') return 'topbar.home';
+  if (pathname.startsWith('/start')) return 'nav.start';
+  if (pathname.startsWith('/nodes')) return 'nav.nodes';
+  if (pathname.startsWith('/plan')) return 'nav.plan';
+  if (pathname.startsWith('/network') || pathname.startsWith('/graph')) return 'nav.network';
+  if (pathname.startsWith('/profile') || pathname.startsWith('/review')) return 'nav.profile';
+  if (pathname.startsWith('/intro')) return 'nav.intro';
+  if (pathname.startsWith('/method')) return 'nav.method';
+  if (pathname.startsWith('/tutor')) return 'nav.tutor';
+  if (pathname.startsWith('/lab') || pathname.startsWith('/research')) return 'nav.lab';
+  if (pathname.startsWith('/maintenance')) return 'nav.maintenance';
+  if (pathname.startsWith('/authoring')) return 'nav.authoring';
+  return 'site.shortName';
 }
 
 const SIDEBAR_STORAGE_KEY = 'mcs-sidebar-collapsed-v1';
@@ -109,6 +121,7 @@ function NavIcon({ name }: { name: string }) {
 export function Layout() {
   const { profiles, profileId, setProfileId } = useProfileContext();
   const location = useLocation();
+  const { t, locale, hrefFor } = useI18n();
   const [desktopCollapsed, setDesktopCollapsed] = useState(initialDesktopSidebarState);
   const [isNarrow, setIsNarrow] = useState(() => typeof window !== 'undefined' && window.matchMedia('(max-width: 860px)').matches);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -136,11 +149,14 @@ export function Layout() {
    * 2. 正文区不留通用的 4rem 下内边距——末幕底部那行「滚轮提示」就是页面最后一行，
    *    留着它会在那一行之下再撑出 64px 空白（实测文档高 5899，内容只到 5835）。
    * 其它页面照旧：页脚是署名的落点，正文与页脚之间也需要那段留白。
+   *
+   * 语种前缀要去掉再判：`/en` 也是首页（`stripLocale()` 把它还原成 `/`）。
    */
-  const isHome = location.pathname === '/';
+  const bare = stripLocale(location.pathname);
+  const isHome = bare === '/';
   const toggleLabel = isNarrow
-    ? (mobileOpen ? '收起导航' : '展开导航')
-    : (desktopCollapsed ? '展开侧栏' : '收起侧栏');
+    ? (mobileOpen ? t('topbar.collapseNav') : t('topbar.expandNav'))
+    : (desktopCollapsed ? t('topbar.expandSidebar') : t('topbar.collapseSidebar'));
 
   return (
     <div className={`app-shell${compact ? ' sidebar-collapsed' : ''}`}>
@@ -149,22 +165,27 @@ export function Layout() {
         （见 PressFeedback.tsx 与 styles.css 的同一处说明）。挂在这里是因为全部路由都经过本组件。
       */}
       <PressFeedback />
-      <aside className="sidebar" aria-label="站点侧栏">
+      <aside className="sidebar" aria-label={t('topbar.sidebarAria')}>
         <div className="sidebar-head">
           {/*
             品牌位是回首页的唯一常驻入口：首页只有六幕动画，不占导航项。
+
+            `to` 用 `hrefFor('/')` 而不是 `"."`：`"."` 是**相对当前路由**解析的，
+            在 `/nodes` 上点它只会停在原地（本站的节点页恰恰是最常停留的页面）——
+            浏览器验收 `tests/browser.mjs` 的第一段就是「点品牌位回到首页」，当场抓到。
+            `hrefFor('/')` 在中文下给 `/`、英文下给 `/en`，由语种前缀统一决定。
 
             因此它必须**一眼看出是个按钮**，而不是一段站名文本。做法不是加一句说明，
             而是把可点击的样子直接做出来：整块有边框与底色的按钮面板、右上角一枚实心
             「首页」胶囊 + 房子图标、悬停时抬起并加深、按下时回落、键盘聚焦有描边。
             纯装饰件一律 aria-hidden，屏幕阅读器只念按钮本身（aria-label 已经写明去处）。
           */}
-          <Link className="brand" to="/" title="回到首页动画（六幕叙事）" aria-label="回到首页动画">
+          <Link className="brand" to={hrefFor('/')} title={t('topbar.brandTitle')} aria-label={t('topbar.brandAria')}>
             <span className="brand-cta" aria-hidden="true">
               <svg className="brand-cta-icon" viewBox="0 0 24 24">
                 <path d="M4 10.5 12 4l8 6.5V19a1 1 0 0 1-1 1h-4v-5h-6v5H5a1 1 0 0 1-1-1z" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" strokeLinecap="round" />
               </svg>
-              <span className="brand-cta-label">首页</span>
+              <span className="brand-cta-label">{t('topbar.home')}</span>
               <svg className="brand-cta-chevron" viewBox="0 0 24 24" aria-hidden="true">
                 <path d="m9 6 6 6-6 6" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
@@ -172,8 +193,8 @@ export function Layout() {
             {/* 小 logo：design/mcs-logo-v13 导出的一笔彩虹字标（透明底）；大 logo（v6 紫色徽记）在首页首屏。 */}
             <img className="brand-wordmark" src="/wordmark-256.png" alt="" aria-hidden="true" width={132} height={41} />
             <span className="brand-copy">
-              <strong>数学认知空间</strong>
-              <small>M / E / D 分离 · 本机工作台</small>
+              <strong>{t('site.shortName')}</strong>
+              <small>{t('site.tagline')}</small>
             </span>
           </Link>
           <button
@@ -191,41 +212,41 @@ export function Layout() {
             </svg>
           </button>
         </div>
-        <nav aria-label="主导航" className="nav-primary">
+        <nav aria-label={t('topbar.primaryNavAria')} className="nav-primary">
           {NAV.map((item) => (
             <NavLink
               key={item.to}
-              to={item.to}
-              title={compact ? item.label : undefined}
-              className={({ isActive }) => (isActive || (item.also ?? []).includes(location.pathname) ? 'nav-item active' : 'nav-item')}
+              to={hrefFor(item.to)}
+              title={compact ? t(item.key) : undefined}
+              className={({ isActive }) => (isActive || (item.also ?? []).includes(bare) ? 'nav-item active' : 'nav-item')}
             >
               <NavIcon name={item.icon} />
-              <span className="nav-label">{item.label}</span>
+              <span className="nav-label">{t(item.key)}</span>
             </NavLink>
           ))}</nav>
         <div className="nav-secondary">
-          <p className="nav-secondary-title">按需查阅</p>
+          <p className="nav-secondary-title">{t('nav.secondaryTitle')}</p>
           {NAV_SECONDARY.map((item) => (
             <NavLink
               key={item.to}
-              to={item.to}
-              title={compact ? `${item.label}${item.badge ? ` · ${item.badge.text}` : ''}` : item.badge?.title}
+              to={hrefFor(item.to)}
+              title={compact ? `${t(item.key)}${item.badge ? ` · ${item.badge.text}` : ''}` : (item.badge ? t(item.badge.titleKey) : undefined)}
               className={({ isActive }) => (isActive ? 'nav-item secondary active' : 'nav-item secondary')}
             >
               <NavIcon name={item.icon} />
-              <span className="nav-label">{item.label}</span>
+              <span className="nav-label">{t(item.key)}</span>
               {item.badge && (
-                <span className="nav-badge" title={item.badge.title}>
+                <span className="nav-badge" title={t(item.badge.titleKey)}>
                   <span className="nav-badge-dot" aria-hidden="true" />
                   {item.badge.text}
                 </span>
               )}
             </NavLink>
           ))}
-          <p className="nav-secondary-note">介绍、方法论、辅导（已接入 DeepTutor）、前沿研究，以及站点自身的维护材料与「自动关联」（把对象写成形式表达并自动找关系）。</p>
+          <p className="nav-secondary-note">{t('nav.secondaryNote')}</p>
         </div>
         <div className="sidebar-author">
-          <span>作者</span>
+          <span>{t('site.author')}</span>
           <strong>{SITE.author}</strong>
           <a href={SITE.mailto}>{SITE.email}</a>
         </div>
@@ -233,16 +254,18 @@ export function Layout() {
       </aside>
       <div className="main-column">
         <header className="topbar">
-          <nav className="topbar-crumbs" aria-label="当前位置">
-            <span className="topbar-title">{locationLabel(location.pathname)}</span>
+          <nav className="topbar-crumbs" aria-label={t('topbar.location')}>
+            <span className="topbar-title">{t(locationKey(bare))}</span>
           </nav>
           <div className="topbar-side">
+            {/* 语言切换按键：放在档案选择器之前，因为它是**页面级**的开关，不是个人数据。 */}
+            <LanguageSwitch />
             <div className="profile-picker">
-              <label htmlFor="profile-select">学习者档案（E）</label>
+              <label htmlFor="profile-select">{t('profile.pickerLabel')}</label>
               <select id="profile-select" value={profileId ?? ''} onChange={(event) => setProfileId(event.target.value || null)}>
-                <option value="">未选择档案</option>
+                <option value="">{t('profile.none')}</option>
                 {profiles.map((profile) => (
-                  <option key={profile.id} value={profile.id} title={`修订号 rev ${profile.revision}`}>{profile.name}</option>
+                  <option key={profile.id} value={profile.id} title={`${t('profile.revisionTitle')} ${profile.revision}`}>{profile.name}</option>
                 ))}
               </select>
             </div>
@@ -269,9 +292,9 @@ export function Layout() {
         */}
         {!isHome && (
           <footer className="site-footer">
-            <span>{SITE.name} · 作者 <strong>{SITE.author}</strong></span>
+            <span>{t('site.name')} · {t('site.author')} <strong>{SITE.author}</strong></span>
             <span className="site-contact">
-              联系邮箱 <a href={SITE.mailto}>{SITE.email}</a>
+              {t('site.contact')} <a href={SITE.mailto}>{SITE.email}</a>
             </span>
           </footer>
         )}

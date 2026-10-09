@@ -1,12 +1,24 @@
 import { useId } from 'react';
+import { useI18n } from '../i18n';
 
-const LABELS: Record<string, string> = {
-  limit: '极限：函数图像从两侧趋向被挖去的点',
-  manifold: '流形：弯曲曲面由多个局部坐标片拼接',
-  tensor: '张量：同一对象在两组基之间协同变换',
-  group: '群：不同对称操作组成同一个封闭结构',
-  dg: '微分几何：曲面、切向量与边界积分相互连接',
+/** 成对文案：漏写一边编译不过。 */
+interface Pair { zh: string; en: string }
+
+/**
+ * 缩略图的说明文字（`aria-label` 与 `figcaption` 共用一份）。
+ *
+ * 这些句子是每张图的**读法**，不是装饰说明：先让人看见趋近、坐标片、换基、对称与切空间，
+ * 再进入卡片里的形式化说明。中文逐字未改，英文按同一读法写。
+ */
+const LABELS: Record<string, Pair> = {
+  limit: { zh: '极限：函数图像从两侧趋向被挖去的点', en: 'Limits: the graph approaches the punctured point from both sides' },
+  manifold: { zh: '流形：弯曲曲面由多个局部坐标片拼接', en: 'Manifold: a curved surface glued from several local coordinate patches' },
+  tensor: { zh: '张量：同一对象在两组基之间协同变换', en: 'Tensor: one object transforms consistently between two bases' },
+  group: { zh: '群：不同对称操作组成同一个封闭结构', en: 'Group: different symmetry operations form one closed structure' },
+  dg: { zh: '微分几何：曲面、切向量与边界积分相互连接', en: 'Differential geometry: surfaces, tangent vectors and boundary integrals connected' },
 };
+
+const FALLBACK: Pair = { zh: '数学对象之间的结构关系图', en: 'A diagram of structural relations between mathematical objects' };
 
 interface CaseThumbnailProps {
   caseId: string;
@@ -21,11 +33,12 @@ interface CaseThumbnailProps {
  */
 export function CaseThumbnail({ caseId }: CaseThumbnailProps) {
   const uid = useId().replace(/:/g, '');
+  const { pick } = useI18n();
   const gradientId = `case-gradient-${uid}`;
   const glowId = `case-glow-${uid}`;
   const arrowId = `case-arrow-${uid}`;
   const clipId = `case-clip-${uid}`;
-  const label = LABELS[caseId] ?? '数学对象之间的结构关系图';
+  const label = pick(LABELS[caseId] ?? FALLBACK);
 
   return (
     <figure className="case-thumbnail" data-case={caseId}>

@@ -207,12 +207,30 @@ const LIANG_STAGES: StageSpec[] = [
 ];
 
 /**
+ * 起点说明的**中文**续程模板：第 n 程的起点是基础背景 + 前 n−1 程的全部里程碑。
+ *
+ * 抽成常量而不是写在内联处，是为了让英文版能换一条模板（中英词序不同），
+ * 而中文这条**逐字**保持原样。
+ */
+const ZH_ENTRY_CONTINUATION = (index: number, count: number): string => (
+  `起点是基础背景加上前 ${index} 程的全部里程碑，共 ${count} 项：走到这一程时它们已经在手里了。`
+);
+
+/**
  * 累进地算出每一程的起点：基础背景 + 前面各程的全部里程碑。
  *
  * 这样写而不是逐程手抄一份入口清单，是为了让「起点 = 前几程的成果」这件事**不可能写错**：
  * 改动任何一程的目标，后面各程的起点会自动跟着变。每套样本各跑一次。
+ *
+ * `continuation` 只换「续程起点」那句话的写法（英文用另一条模板）；
+ * 不传时走 `ZH_ENTRY_CONTINUATION`，中文输出逐字不变。
  */
-function buildPaths(baseEntries: string[], stages: StageSpec[], firstEntryNote: string): ExamplePath[] {
+function buildPaths(
+  baseEntries: string[],
+  stages: StageSpec[],
+  firstEntryNote: string,
+  continuation: (index: number, count: number) => string = ZH_ENTRY_CONTINUATION,
+): ExamplePath[] {
   let carried: string[] = [...baseEntries];
   const built: ExamplePath[] = [];
   let index = 0;
@@ -227,9 +245,7 @@ function buildPaths(baseEntries: string[], stages: StageSpec[], firstEntryNote: 
       goal: stage.goals[0],
       goals: [...stage.goals],
       entries,
-      entryNote: index === 0
-        ? firstEntryNote
-        : `起点是基础背景加上前 ${index} 程的全部里程碑，共 ${entries.length} 项：走到这一程时它们已经在手里了。`,
+      entryNote: index === 0 ? firstEntryNote : continuation(index, entries.length),
       horizon: stage.horizon,
       events: stage.events,
       feature: stage.feature,
@@ -405,3 +421,309 @@ export const EXAMPLE_SETS: ExampleSet[] = [
     paths: buildPaths(RUDIN_BASE_ENTRIES, RUDIN_STAGES, '起点是三个共享背景节点（集合与函数、量词、有限维线性代数；它们没有任何行动能产出，只能由学习者先确认）。'),
   },
 ];
+
+/* ======================================================================
+ * 英文版（2026-10 中英双语）
+ *
+ * **只有文字是英文**：`id` / `horizon` / `events` / `goals` / `entries` /
+ * 每套样本的 `paths` 条数全部与中文版逐字相同——`tests/example-paths.test.mjs`
+ * 会按 `horizon` 真跑规划器核对「实测最短 N 个事件」，数字因翻译改动就是造假。
+ *
+ * 出处（`source`）保留原书信息：梁书是中文出版物，引文按原文给出（ISBN 可核）；
+ * Rudin 的英文原版书名与本机扫描件路径同样原样保留，只把中文注解译出。
+ * ==================================================================== */
+
+/** 英文的续程起点模板：中英词序不同，因此另给一条，而不是逐程手写。 */
+const EN_ENTRY_CONTINUATION = (index: number, count: number): string => (
+  `Starts from the shared background plus every milestone of the previous ${index} stage${index > 1 ? 's' : ''}, ${count} items in all: by the time you reach this stage they are already in hand.`
+);
+
+const LIANG_STAGES_EN: StageSpec[] = [
+  {
+    id: 'liang-v1-stage-1',
+    ordinal: 'Stage 1',
+    title: 'Geometric foundations: from the open-set axioms to abstract indices',
+    chapters: 'Ch. 1 A brief introduction to topological spaces; Ch. 2 Manifolds and tensor fields',
+    pages: 'pp. 1–54 (print)',
+    goals: [
+      'liang:abstract-index', 'liang:continuous-map', 'liang:manifold', 'liang:tangent-vector',
+      'liang:vector-field', 'liang:dual-vector-field', 'liang:tensor-field', 'liang:metric-tensor',
+      'liang:topological-space',
+    ],
+    horizon: 12,
+    events: 9,
+    feature: 'Volume 1 starts at the lowest rung: sets and maps first, then the open-set axioms alone to make “nearness” precise, then coordinate patches glued into a manifold, and finally a tangent space built at each point. '
+      + 'Two things in this stage are easy to get wrong by intuition: a tangent vector is an equivalence class of curves, not an arrow; and a metric is extra structure attached on top, not something a manifold comes with. '
+      + 'Walk it once, and every later sentence about “locally” has somewhere to stand.',
+    highlights: ['Topological space', 'Continuous maps and homeomorphism', 'Differentiable manifold', 'Tangent vector', 'Vector field', 'Dual vector field', 'Tensor fields and contraction', 'Metric tensor field', 'Abstract index notation'],
+  },
+  {
+    id: 'liang-v1-stage-2',
+    ordinal: 'Stage 2',
+    title: 'Connection, geodesics and Riemann curvature',
+    chapters: 'Ch. 3 The Riemann (intrinsic) curvature tensor',
+    pages: 'pp. 55–85 (print)',
+    goals: [
+      'liang:ricci-einstein', 'liang:derivative-operator', 'liang:christoffel',
+      'liang:parallel-transport', 'liang:geodesic', 'liang:riemann-tensor',
+      'liang:intrinsic-extrinsic-curvature',
+    ],
+    horizon: 9,
+    events: 7,
+    feature: 'A metric is not enough: vectors at different points live in different spaces, so a derivative operator has to be added before they can be compared. '
+      + 'This stage is one chain reaction — “compatible with the metric and torsion-free” fixes the Christoffel symbols uniquely; the Christoffel symbols are not a tensor (flat space in polar coordinates has non-zero components); '
+      + 'and curvature comes from the dependence of parallel transport on the curve. A geodesic is defined here as “a curve whose tangent vector is parallel-transported along itself”, not as “the shortest line”.',
+    highlights: ['Derivative operator', 'Metric-compatible derivative operator and Christoffel symbols', 'Parallel transport along a curve', 'Geodesic', 'Riemann curvature tensor', 'Ricci tensor and Einstein tensor', 'Intrinsic and extrinsic curvature'],
+  },
+  {
+    id: 'liang-v1-stage-3',
+    ordinal: 'Stage 3',
+    title: 'Symmetry and integration: Lie derivatives, Killing fields and Stokes’ theorem',
+    chapters: 'Ch. 4 Lie derivatives, Killing fields and hypersurfaces; Ch. 5 Differential forms and their integrals',
+    pages: 'pp. 86–131 (print)',
+    goals: [
+      'liang:stokes-theorem', 'liang:pushforward-pullback', 'liang:lie-derivative', 'liang:killing-field',
+      'liang:hypersurface', 'liang:differential-form', 'liang:exterior-derivative',
+      'liang:volume-element', 'liang:gauss-theorem',
+    ],
+    horizon: 11,
+    events: 9,
+    feature: 'This stage changes tools. Talking about the symmetry of spacetime needs a derivative that does not depend on a connection, and that is the Lie derivative; writing “the metric does not change” down gives the Killing equation. '
+      + 'The other half takes integration all the way: the total antisymmetry of differential forms makes the signs come out right by themselves, and Stokes’ theorem collects Newton–Leibniz, Green and Gauss into one statement. '
+      + 'This is where the first five chapters close, and it is also the whole language of the relativity chapters that follow.',
+    highlights: ['Pushforward and pullback', 'Lie derivative', 'Killing vector field', 'Hypersurfaces and normal vectors', 'Differential forms and the wedge product', 'Exterior derivative', 'Volume element and integration', 'Stokes’ theorem', 'Gauss’ theorem and the dual form'],
+  },
+  {
+    id: 'liang-v1-stage-4',
+    ordinal: 'Stage 4',
+    title: 'Special relativity: time and space in one metric',
+    chapters: 'Ch. 6 Special relativity',
+    pages: 'pp. 132–187 (print)',
+    goals: [
+      'liang:electromagnetic-tensor', 'liang:minkowski-spacetime', 'liang:inertial-observer',
+      'liang:proper-time', 'liang:kinematic-effects', 'liang:four-momentum',
+      'liang:energy-momentum-tensor', 'liang:four-potential',
+    ],
+    horizon: 10,
+    events: 8,
+    feature: 'The tools built in the first five chapters are used at scale for the first time: change the metric to the Lorentzian signature and time and space enter one geometric object. '
+      + 'Two things to watch here: the three “paradoxes” all come down to one sentence — different worldlines have different proper times; and once the electromagnetic field is written as an antisymmetric tensor, Maxwell’s equations become two geometric equations, with charge conservation derived rather than assumed.',
+    highlights: ['Minkowski spacetime', 'Inertial observers and inertial frames', 'Proper time and coordinate time', 'Length contraction, time dilation and the twin effect', 'Four-momentum and particle dynamics', 'Energy–momentum tensor and perfect fluids', 'Electromagnetic field tensor and Maxwell’s equations', 'Electromagnetic four-potential and the Doppler effect for light'],
+  },
+  {
+    id: 'liang-v1-stage-5',
+    ordinal: 'Stage 5',
+    title: 'Foundations of general relativity: gravity is no longer a force',
+    chapters: 'Ch. 7 Foundations of general relativity',
+    pages: 'pp. 188–244 (print)',
+    goals: [
+      'liang:einstein-equation', 'liang:gravity-as-geometry', 'liang:equivalence-principle',
+      'liang:fermi-transport', 'liang:tidal-deviation', 'liang:linearized-gravity',
+    ],
+    horizon: 8,
+    events: 6,
+    feature: 'The book turns here. Two lines that do not replace each other: the equivalence principle says gravity can be removed locally (Riemann normal coordinates make Γ vanish at a point), '
+      + 'while the tidal effect says curvature cannot be removed (the geodesic deviation equation); the Einstein field equation is exactly what ties the part that cannot be removed to matter. '
+      + 'The linear approximation closes the stage: it recovers Newtonian gravity and immediately yields gravitational waves travelling at the speed of light.',
+    highlights: ['Gravity and spacetime geometry', 'Equivalence principle and local inertial frames', 'Fermi transport and non-rotating observers', 'Tidal forces and the geodesic deviation equation', 'Einstein field equation', 'Linear approximation, Newtonian limit and gravitational radiation'],
+  },
+  {
+    id: 'liang-v1-stage-6',
+    ordinal: 'Stage 6',
+    title: 'Solutions and black holes: from the Schwarzschild metric to the event horizon',
+    chapters: 'Ch. 8 Solving the Einstein equations; Ch. 9 Schwarzschild spacetime',
+    pages: 'pp. 245–357 (print)',
+    goals: [
+      'liang:schwarzschild-black-hole', 'liang:static-stationary', 'liang:schwarzschild-solution',
+      'liang:birkhoff-theorem', 'liang:reissner-nordstrom', 'liang:np-formalism',
+      'liang:schwarzschild-geodesics', 'liang:classical-tests', 'liang:stellar-interior',
+      'liang:kruskal-extension',
+    ],
+    horizon: 12,
+    events: 10,
+    feature: 'Before solving the field equations, cut the variables down: stationarity, staticity and spherical symmetry are all written with Killing fields, not with “it looks like a sphere”. '
+      + 'This stage runs all the way from one metric — the Schwarzschild solution → the three classical tests → interior solutions and the mass limit → the Kruskal extension and black holes. '
+      + 'The watershed is the difference between a coordinate singularity and a real one: at r = r_s the metric components diverge while the curvature stays finite; only at r = 0 does something genuinely break.',
+    highlights: ['Stationary, static and spherically symmetric spacetimes', 'Schwarzschild vacuum solution', 'Birkhoff’s theorem', 'Reissner–Nordström solution', 'Newman–Penrose formalism', 'Geodesics in Schwarzschild spacetime', 'Classical tests', 'Stellar interior solutions and evolution', 'Kruskal extension', 'Gravitational collapse and the Schwarzschild black hole'],
+  },
+  {
+    id: 'liang-v1-stage-7',
+    ordinal: 'Stage 7',
+    title: 'Cosmology: the field equations at the largest scale',
+    chapters: 'Ch. 10 Cosmology',
+    pages: 'pp. 358–417 (print)',
+    goals: [
+      'liang:new-standard-cosmology', 'liang:cosmological-principle', 'liang:rw-metric',
+      'liang:hubble-redshift', 'liang:scale-factor', 'liang:thermal-history', 'liang:inflation',
+    ],
+    horizon: 9,
+    events: 7,
+    feature: 'The last stage applies the field equations at the largest scale: the cosmological principle first pins the metric to the Robertson–Walker form, leaving only a scale factor a(t), '
+      + 'and Hubble’s law with cosmological redshift then become geometric conclusions rather than kinematic analogies. What matters is telling apart what the model concludes from what is put in beyond general relativity — '
+      + 'the thermal history depends on a particle-physics model, and the identity of dark matter and dark energy is still an open question.',
+    highlights: ['Cosmological principle and spatial geometry', 'Robertson–Walker metric', 'Hubble’s law and cosmological redshift', 'Evolution of the scale factor and the cosmological constant', 'Thermal history and the particle horizon', 'Inflation', 'Dark energy and the new standard cosmological model'],
+  },
+];
+
+const RUDIN_STAGES_EN: StageSpec[] = [
+  {
+    id: 'rudin-pma-stage-1',
+    ordinal: 'Stage 1',
+    title: 'The real number system and basic topology',
+    chapters: 'Ch. 1 The real and complex number systems; Ch. 2 Basic topology',
+    pages: 'pp. 3–46 (print)',
+    goals: [
+      'rudin:least-upper-bound', 'rudin:ordered-field', 'rudin:extended-real', 'rudin:complex-field',
+      'rudin:euclidean-space', 'rudin:countable-set', 'rudin:metric-space', 'rudin:compact-set',
+      'rudin:perfect-set', 'rudin:connected-set',
+    ],
+    horizon: 13,
+    events: 10,
+    feature: 'Rudin starts one step further back than most textbooks: the real numbers are not assumed, they are built from the field and order axioms, '
+      + 'with the least-upper-bound property taken as what separates them from the rationals. That step has to be solid before stage 2 — '
+      + 'almost every later proof ends by taking a supremum. Then point-set topology: countability, metric spaces, compactness and connectedness, '
+      + 'four notions that come back in every later chapter.',
+    highlights: ['Ordered fields', 'The real field and the least-upper-bound property', 'The extended real number system', 'The complex field', 'Euclidean space R^k', 'Countable and uncountable sets', 'Metric spaces', 'Compact sets and the Heine–Borel theorem', 'Perfect sets and the Cantor set', 'Connected sets'],
+  },
+  {
+    id: 'rudin-pma-stage-2',
+    ordinal: 'Stage 2',
+    title: 'Numerical sequences and series',
+    chapters: 'Ch. 3 Numerical sequences and series',
+    pages: 'pp. 47–82 (print)',
+    goals: [
+      'rudin:absolute-convergence', 'rudin:convergent-sequence', 'rudin:bolzano-weierstrass',
+      'rudin:cauchy-sequence', 'rudin:limit-superior', 'rudin:series-convergence', 'rudin:power-series',
+    ],
+    horizon: 10,
+    events: 7,
+    feature: 'This stage translates the topological notions of stage 1 into ε–N language and supplies the two tools the rest of the book uses most: completeness and the limit superior. '
+      + 'Watch how the two characterisations of convergence divide the work — Cauchy’s criterion needs no limit in advance, while the limit superior gives you something to say even when a sequence does not converge. '
+      + 'In the series part the watershed is absolute convergence: only there may terms be rearranged; a conditionally convergent series can be rearranged to any prescribed sum.',
+    highlights: ['Convergent sequences and subsequences', 'Bolzano–Weierstrass theorem', 'Cauchy sequences and completeness', 'Limit superior and limit inferior', 'Series and convergence tests', 'Power series', 'Absolute convergence and rearrangement'],
+  },
+  {
+    id: 'rudin-pma-stage-3',
+    ordinal: 'Stage 3',
+    title: 'Continuity and differentiation',
+    chapters: 'Ch. 4 Continuity; Ch. 5 Differentiation',
+    pages: 'pp. 83–119 (print)',
+    goals: [
+      'rudin:mean-value-theorem', 'rudin:function-limit', 'rudin:continuous-function',
+      'rudin:continuity-compactness', 'rudin:continuity-connectedness', 'rudin:derivative',
+      'rudin:lhospital-rule', 'rudin:taylor-theorem', 'rudin:vector-derivative',
+    ],
+    horizon: 12,
+    events: 9,
+    feature: 'Both “big theorems” of continuity are direct corollaries of the topology in stage 1: a continuous function on a compact set attains its extrema and is uniformly continuous, '
+      + 'and on a connected set it takes intermediate values. Differentiation then gives the most useful single result in the book — the mean value theorem, '
+      + 'of which L’Hospital’s rule and Taylor’s theorem are corollaries. The point to watch is the section on vector-valued functions: there the mean value theorem **fails**, '
+      + 'and must be replaced by an integral inequality — the standard example of one-dimensional intuition that cannot simply be carried over.',
+    highlights: ['Limits of functions', 'Continuous functions', 'Continuity and compactness', 'Continuity and connectedness (intermediate value theorem)', 'The derivative', 'Mean value theorem', 'L’Hospital’s rule', 'Taylor’s theorem', 'Differentiation of vector-valued functions'],
+  },
+  {
+    id: 'rudin-pma-stage-4',
+    ordinal: 'Stage 4',
+    title: 'The Riemann–Stieltjes integral',
+    chapters: 'Ch. 6 The Riemann–Stieltjes integral',
+    pages: 'pp. 120–142 (print)',
+    goals: [
+      'rudin:fundamental-theorem', 'rudin:riemann-stieltjes', 'rudin:integral-properties',
+      'rudin:rectifiable-curve',
+    ],
+    horizon: 7,
+    events: 4,
+    feature: 'Stieltjes rather than Riemann: replacing “integrate with respect to x” by “integrate with respect to an increasing function α” costs almost nothing in difficulty '
+      + 'and lets sums, series and integrals be written in one language. Watch the existence criterion (upper integral equals lower integral) '
+      + 'and the two halves of the fundamental theorem: first build a continuous F from f, then ask when F is differentiable and whether its derivative is f.',
+    highlights: ['The Riemann–Stieltjes integral and existence', 'Properties of the integral', 'The fundamental theorem of calculus', 'Rectifiable curves'],
+  },
+  {
+    id: 'rudin-pma-stage-5',
+    ordinal: 'Stage 5',
+    title: 'Sequences of functions and special functions',
+    chapters: 'Ch. 7 Sequences and series of functions; Ch. 8 Some special functions',
+    pages: 'pp. 143–203 (print)',
+    goals: [
+      'rudin:stone-weierstrass', 'rudin:uniform-convergence', 'rudin:uniform-convergence-properties',
+      'rudin:equicontinuous', 'rudin:exponential-logarithm', 'rudin:trigonometric-functions',
+      'rudin:algebraic-completeness', 'rudin:fourier-series', 'rudin:gamma-function',
+    ],
+    horizon: 12,
+    events: 9,
+    feature: '“May the limit be interchanged?” is the whole subject of this stage: under what conditions continuity, integration and differentiation commute with a limit. '
+      + 'The answer is uniform convergence, and on compact sets uniform convergence itself has a practical criterion in equicontinuity. '
+      + 'The second half uses these tools to build the elementary functions again — exponential, logarithm and trigonometric functions no longer rest on geometric intuition, '
+      + 'but are defined by power series and checked property by property. Analysis first, functions after.',
+    highlights: ['Uniform convergence', 'Uniform convergence with continuity, integration and differentiation', 'Equicontinuous families', 'Stone–Weierstrass theorem', 'The exponential and logarithmic functions', 'The trigonometric functions', 'Algebraic completeness of the complex field', 'Fourier series', 'The gamma function'],
+  },
+  {
+    id: 'rudin-pma-stage-6',
+    ordinal: 'Stage 6',
+    title: 'Functions of several variables',
+    chapters: 'Ch. 9 Functions of several variables',
+    pages: 'pp. 204–244 (print)',
+    goals: [
+      'rudin:rank-theorem', 'rudin:linear-transformation', 'rudin:several-variable-derivative',
+      'rudin:contraction-principle', 'rudin:inverse-function-theorem', 'rudin:implicit-function-theorem',
+    ],
+    horizon: 9,
+    events: 6,
+    feature: 'The core shift of multivariable differentiation: the derivative is no longer a number but the linear map that approximates f at a point. '
+      + 'Follow one chain of reasoning — the contraction principle gives a unique fixed point, the inverse function theorem is that principle applied to linearisation, '
+      + 'the implicit function theorem is a rewrite of the inverse function theorem, and the rank theorem says that where the rank is constant the map is locally a projection. '
+      + 'Existence of partial derivatives does **not** imply differentiability here, which is where one-dimensional intuition misleads most often.',
+    highlights: ['Linear transformations and the operator norm', 'The derivative of a function of several variables', 'The contraction principle', 'The inverse function theorem', 'The implicit function theorem', 'The rank theorem'],
+  },
+  {
+    id: 'rudin-pma-stage-7',
+    ordinal: 'Stage 7',
+    title: 'Differential forms and Lebesgue theory',
+    chapters: 'Ch. 10 Integration of differential forms; Ch. 11 The Lebesgue theory',
+    pages: 'pp. 245–334 (print)',
+    goals: [
+      'rudin:l2-space', 'rudin:primitive-mapping', 'rudin:differential-form', 'rudin:simplex-chain',
+      'rudin:stokes-theorem', 'rudin:closed-exact-form', 'rudin:set-function',
+      'rudin:lebesgue-measure', 'rudin:measurable-function', 'rudin:lebesgue-integral',
+    ],
+    horizon: 13,
+    events: 10,
+    feature: 'The last two chapters each close a line. Chapter 10 collects Green, Gauss, the classical Stokes theorem and the fundamental theorem of calculus into one statement ∫_Γ dω = ∫_{∂Γ} ω, '
+      + 'which first requires the language of chains and the boundary operator (∂² = 0); the difference between closed and exact forms then becomes a question about the topology of the region. '
+      + 'Chapter 11 replaces the integral itself: a measure is built from interval lengths, an integral is defined by approximation with simple functions, '
+      + 'Riemann-integrable functions stay integrable with the same value, and the dominated convergence theorem finally lets a limit move inside the integral sign.',
+    highlights: ['Primitive mappings and partitions of unity', 'Differential forms', 'Simplices and chains', 'Stokes’ theorem', 'Closed and exact forms', 'Set functions', 'Construction of the Lebesgue measure', 'Measurable functions', 'The Lebesgue integral', 'L² spaces'],
+  },
+];
+
+/** 英文版范例集：与 `EXAMPLE_SETS` 同 id、同顺序、同条数、同数字，只有文字是英文。 */
+export const EXAMPLE_SETS_EN: ExampleSet[] = [
+  {
+    id: 'liang-volume-1',
+    title: 'Liang Canbin & Zhou Bin, Differential Geometry: An Introduction to General Relativity, vol. 1 — a condensed path',
+    source: '梁灿彬、周彬《微分几何入门与广义相对论》上册（第二版），科学出版社，2006，现代物理基础丛书 7，ISBN 978-7-03-016460-5（xi + 442 页，共 10 章）。',
+    lead: 'The 442 pages of the ten chapters are condensed into 56 milestone nodes and cut, along the textbook’s own seams, into seven stages: the first five chapters introduce differential geometry, chapter 6 turns to special relativity, and chapters 7–10 are general relativity. '
+      + 'Every stage can be planned on this page right away; the event counts on the cards are measured values, not estimates.',
+    note: 'The sample covers volume 1 only, and it is a **condensation**, not the whole book: sections marked as optional reading in the original (§1.3, §5.7, §8.5–§8.8 and others) keep only one node or are left out entirely. '
+      + 'The node texts here are condensed notes, not a substitute for the textbook, and no complete proof from the book has been transcribed — the evidence is registered as “cites the textbook” (REF), not encoded as a machine-checkable certificate.',
+    paths: buildPaths(LIANG_BASE_ENTRIES, LIANG_STAGES_EN, 'The starting point is two shared background nodes (no action can produce them; the learner has to confirm them first).', EN_ENTRY_CONTINUATION),
+  },
+  {
+    id: 'rudin-pma',
+    title: 'Rudin, Principles of Mathematical Analysis, 3rd ed. — a condensed path',
+    source: 'Walter Rudin, Principles of Mathematical Analysis, 3rd ed., McGraw-Hill（本机扫描件：reference/paths/数学分析原理 英文版·原书第3版·典藏版.pdf，355 页；章节与页码取自扫描件目录页的 OCR）。',
+    lead: 'The 11 chapters are condensed into 55 milestone nodes in seven stages: chapters 1–2 establish the real numbers and topology, chapter 3 sequences and series, '
+      + 'chapters 4–5 continuity and differentiation, chapter 6 integration, chapters 7–8 sequences of functions and special functions, chapter 9 functions of several variables, and chapters 10–11 differential forms and Lebesgue theory.',
+    note: '**In this sample the nodes carry nothing but names; the body text is empty.** As required this round, the 54 concept/claim nodes and 2 method nodes register only '
+      + 'title, section/page and dependencies, with `contentRef: false` — opening a node page will say honestly that there is no body text rather than invent filler. '
+      + 'It can therefore be used to see **structure** (what comes before what, which step depends on which), but not yet to learn the content. '
+      + 'Evidence is registered throughout as “cites the textbook” (REF), `checkStatus: not_run`; the textbook’s statements have not been checked one by one.',
+    paths: buildPaths(RUDIN_BASE_ENTRIES, RUDIN_STAGES_EN, 'The starting point is three shared background nodes (sets and functions, quantifiers, finite-dimensional linear algebra; no action can produce them, so the learner has to confirm them first).', EN_ENTRY_CONTINUATION),
+  },
+];
+
+/** 成对的两套样本：页面用 `useI18n().pick(EXAMPLE_SETS_BY_LOCALE)` 取。 */
+export const EXAMPLE_SETS_BY_LOCALE: { zh: ExampleSet[]; en: ExampleSet[] } = {
+  zh: EXAMPLE_SETS,
+  en: EXAMPLE_SETS_EN,
+};

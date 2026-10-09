@@ -57,13 +57,72 @@ export const CONTRACT_MODE_LABELS: Record<string, string> = {
   representation: '表征输入',
 };
 
+/**
+ * 契约 mode 的英文名（与上面的中文表逐键对应）。
+ *
+ * 为什么纯模块自己成对维护、而不是从 `labels.ts` 取：`labels.ts` 为了 `useLabels()`
+ * 引入 React，任何 `import` 它的模块都无法再被 `node --test` 直接加载
+ * （`tests/relation-visual.test.mjs` 还按源码文本求值本文件）。
+ * 因此这里保留一份**只有文案**的成对表，中文值与 `labels.ts` 的口径逐字一致。
+ */
+export const CONTRACT_MODE_LABELS_EN: Record<string, string> = {
+  definition: 'Definitional prerequisite',
+  deduction: 'Deduction prerequisite',
+  construction: 'Construction input',
+  method: 'Method input',
+  task: 'Task input',
+  evidence: 'Evidence input',
+  representation: 'Representation input',
+};
+
+/** 取契约 mode 的显示名；未登记的 mode 回退原值（与 `labelOf` 同一条纪律）。 */
+export function contractModeLabel(mode: string, locale: string = 'zh'): string {
+  const table = locale === 'en' ? CONTRACT_MODE_LABELS_EN : CONTRACT_MODE_LABELS;
+  return table[mode] ?? mode;
+}
+
+/**
+ * 关系种类的显示名（纯模块用的副本，中文值与 `labels.ts` 的 `RELATION_LABELS` 逐字一致）。
+ *
+ * 放在这里而不是 `labels.ts`：`network.ts` 的 `reasonText` 与 `node-related.ts` 的候选说明
+ * 都要在**没有 React** 的前提下按语种取名字，而这两个模块是被 `node --test` 直接 import 的。
+ */
+export const RELATION_KIND_LABELS: Record<string, string> = {
+  hardPrereq: '硬前置',
+  hardGeneralization: '硬泛化',
+  specialization: '特化',
+  bridge: '桥接',
+  application: '应用',
+  analogy: '类比',
+  duality: '对偶',
+  crossDomain: '跨域',
+};
+
+export const RELATION_KIND_LABELS_EN: Record<string, string> = {
+  hardPrereq: 'Hard prerequisite',
+  hardGeneralization: 'Hard generalization',
+  specialization: 'Specialization',
+  bridge: 'Bridge',
+  application: 'Application',
+  analogy: 'Analogy',
+  duality: 'Duality',
+  crossDomain: 'Cross-domain',
+};
+
+/** 取关系种类的显示名；未登记的 kind 回退原值，不显示空白。 */
+export function relationKindLabel(kind: string, locale: string = 'zh'): string {
+  if (!kind) return '';
+  const table = locale === 'en' ? RELATION_KIND_LABELS_EN : RELATION_KIND_LABELS;
+  return table[kind] ?? kind;
+}
+
 /** 属于**语义依赖**的契约 mode：它们必须强于任何结构关联，也强于最弱的语义关系。 */
 export const SEMANTIC_CONTRACT_MODES: string[] = ['definition', 'deduction'];
 
-/** 一条边在语义上叫什么（关系名，或语义契约的 mode 名）。 */
-export function edgeKindLabel(family: EdgeFamily, kind: string | null, mode: string | null): string | null {
+/** 一条边在语义上叫什么（关系名，或语义契约的 mode 名）。`locale` 只影响契约 mode 的显示名。 */
+export function edgeKindLabel(family: EdgeFamily, kind: string | null, mode: string | null, locale: string = 'zh'): string | null {
   if (family === 'relation') return kind;
-  if (family === 'contract' && mode && SEMANTIC_CONTRACT_MODES.includes(mode)) return CONTRACT_MODE_LABELS[mode] ?? mode;
+  if (family === 'contract' && mode && SEMANTIC_CONTRACT_MODES.includes(mode)) return contractModeLabel(mode, locale);
   return null;
 }
 
@@ -85,6 +144,35 @@ export const TIER_NOTES: Record<RelationTier, string> = {
   structural: '产出某节点需要哪些输入（构造 / 方法 / 任务 / 证据 / 表征）。是结构骨架，不是数学断言。',
   ambient: '同属一个话题块、共用前提、同一份证据、支持族依赖。只表示登记上的关联。',
 };
+
+/** 上面两张档位表的英文版（与中文逐键对应，理由见 `CONTRACT_MODE_LABELS_EN`）。 */
+export const TIER_LABELS_EN: Record<RelationTier, string> = {
+  core: 'Core assertions',
+  strong: 'Strong relations',
+  medium: 'Structural relations',
+  structural: 'Action skeleton',
+  ambient: 'Registered associations',
+};
+
+export const TIER_NOTES_EN: Record<RelationTier, string> = {
+  core: 'If it does not hold, the node does not stand (hard prerequisites, hard generalizations), plus definitional prerequisites — without them the node cannot be defined.',
+  strong: 'Relations with definite mathematical content (specialization, application, cross-domain, duality).',
+  medium: 'Bridges and analogies, deduction prerequisites: links of structure or usage, not definitional entailment.',
+  structural: 'Which inputs it takes to produce a node (construction / method / task / evidence / representation). This is the structural skeleton, not a mathematical assertion.',
+  ambient: 'Same topic block, shared prerequisites, same evidence record, support-family dependency. Registration-level association only.',
+};
+
+/** 取档位名；未登记的档位回退原值。 */
+export function tierLabel(tier: RelationTier, locale: string = 'zh'): string {
+  const table = locale === 'en' ? TIER_LABELS_EN : TIER_LABELS;
+  return table[tier] ?? tier;
+}
+
+/** 取档位说明。 */
+export function tierNote(tier: RelationTier, locale: string = 'zh'): string {
+  const table = locale === 'en' ? TIER_NOTES_EN : TIER_NOTES;
+  return table[tier] ?? '';
+}
 
 /** 每种关系的视觉权重基数（0–1）。数值即规格，改动必须同步更新本条注释与测试。 */
 export const RELATION_WEIGHT: Record<string, number> = {

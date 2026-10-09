@@ -1,17 +1,20 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { formatError, useApi } from '../api';
+import { api, formatError, useApi } from '../api';
+import { LOCAL_VIEWS_KEY, migrateLocalViews, readLocalViews, writeLocalViews, type SavedNetworkView } from '../network-views';
 import { StatusBadge } from '../components/StatusBadge';
 import { useDraggablePanel, type PanelPosition } from '../useDraggablePanel';
 import { THEME } from '../theme';
 import {
-  CASE_LABELS, CONSTRUCT_COLOR, CONSTRUCT_LABELS, RELATION_COLOR,
-  constructLabel, contractModeColor, plainMathText, relationLabel,
+  CASE_LABELS, CONSTRUCT_COLOR, CONSTRUCT_LABELS, RELATION_COLOR, contractModeColor, plainMathText,
 } from '../labels';
+import { useI18n, useLabels } from '../i18n';
+import type { Locale } from '../i18n/locales';
 import { buildFacet, relationKindHint } from '../facets';
 import {
-  DEFAULT_FAMILIES, EDGE_FAMILY_LABELS, EDGE_FAMILY_NOTES, NODE_GROUP_LABELS, NODE_GROUP_NOTES, NODE_GROUP_ORDER,
-  applyOverrides, autoAddCandidates, avoidOverlaps, buildEdges, degreeMap, edgeAnchor, groupOfNode, layout,
+  DEFAULT_FAMILIES, EDGE_FAMILY_LABELS, NODE_GROUP_ORDER,
+  applyOverrides, autoAddCandidates, avoidOverlaps, buildEdges, degreeMap, edgeAnchor, edgeFamilyLabel,
+  edgeFamilyNote, groupOfNode, layout, nodeGroupLabel, nodeGroupNote,
   reasonText, recommend, relationKindsPresent, topicAssignment, TOPIC_NONE_COLOR, TOPIC_PALETTE,
   mergeParallelEdges, visualWeightOf, CAMERA_TWEEN_MS, CAMERA_HUD_SPACE,
   NODE_H, NODE_W,
@@ -34,14 +37,15 @@ const PICK_CARD_W = 232;
 const PICK_CARD_H = 64;
 import { parseRouteSearch, planFromSearch, routeFrame } from '../route-replay';
 import { stageArrowGeometry } from '../stage-arrow';
-import { RELATED_BASIS_LABELS, relatedCandidates, type RelatedCandidate } from '../node-related';
+import { relatedCandidates, relatedBasisLabel, type RelatedCandidate } from '../node-related';
 import { placeNewNodes } from '../node-placement';
 import { routeEdges, ROUTE_DEFAULTS } from '../edge-routing';
 import { useMediaQuery } from '../useMediaQuery';
 import { useProfileContext } from '../state';
 import {
   CONTRACT_MODE_LABELS, CONTRACT_MODE_WEIGHT, SEMANTIC_CONTRACT_MODES,
-  TIER_LABELS, TIER_NOTES, TIER_SAMPLE_COLOR, TIER_STYLE, edgeKindLabel, edgeVisual,
+  TIER_SAMPLE_COLOR, TIER_STYLE,
+  contractModeLabel, edgeKindLabel, edgeVisual, tierLabel, tierNote,
   type EdgeVisual, type RelationTier,
 } from '../relation-visual';
 
@@ -55,16 +59,10 @@ import {
  * 默认全开，因为稀疏的连接会让网络读起来没有信息。
  */
 
-const REASON_LABELS: Record<ReasonKind, string> = {
-  ready: '图中前提已加入',
-  relation: '已有登记关系',
-  'shares-input': '共用前提',
-  thread: '线索（不参与前置计算）',
-  background: '背景起点',
-  'same-topic': '同一话题',
-  pattern: '误区锚点',
-};
-
+/**
+ * 推荐理由的徽标文案：按语种在组件里取（见 `PAGE_TEXT` 的 `reason*` 键）。
+ * 这里只留下**状态记号**——它不是文案，是 `StatusBadge` 的配色档，两种语种逐字相同。
+ */
 const REASON_TONE: Record<ReasonKind, string> = {
   ready: 'known',
   relation: 'ILLUSTRATION',
@@ -91,14 +89,299 @@ const PANEL_SIDE: Record<PanelId, 'left' | 'right'> = {
  */
 const DEFAULT_VISIBLE_FAMILIES: EdgeFamily[] = ['contract', 'relation'];
 
-const PANEL_TITLES: Record<PanelId, string> = {
-  list: '全部节点',
-  recommend: '推荐加入',
-  detail: '节点详情',
-  families: '连接类型',
-  spec: '关系可视化条款',
-  // 「保存的视图」：用户要求的保存功能，面板里按名字载入。
-  views: '保存的视图',
+/**
+ * 本页自己的文案：**中英成对**写在同一张表里（手册 §1）。
+ *
+ * 为什么不塞进 `i18n/messages.ts`：那里是**通用壳层**（导航、按钮、无障碍标签），
+ * 这一页有上百条画布提示、面板说明与条款正文，堆进去会把通用表变成垃圾场。
+ *
+ * 三条纪律：
+ * 1. **中文是源语言，逐字不变**——`tests/network-*.mjs`、`tests/browser.mjs` 里有大量断言
+ *    直接比对中文渲染（面板的 `aria-label`、HUD 计数、图例文字都在内）；
+ * 2. 带占位符的写 `{name}`，由 `fill()` 填；占位符之外的字符一个字都不许动；
+ * 3. 漏一个键就编译不过（下面 `PageText` 的类型由中文表推出）。
+ */
+const PAGE_TEXT = {
+  /* —— 悬浮面板的标题（同时是面板的 `aria-label`，验收按它选元素） —— */
+  panelList: { zh: '全部节点', en: 'All nodes' },
+  panelRecommend: { zh: '推荐加入', en: 'Suggested additions' },
+  panelDetail: { zh: '节点详情', en: 'Node details' },
+  panelFamilies: { zh: '连接类型', en: 'Connection types' },
+  panelSpec: { zh: '关系可视化条款', en: 'Visualisation clause' },
+  panelViews: { zh: '保存的视图', en: 'Saved views' },
+  panelRestore: { zh: '恢复默认位置', en: 'Reset position' },
+  panelClose: { zh: '关闭{title}', en: 'Close {title}' },
+  panelToggle: { zh: '显示{title}面板', en: 'Show the {title} panel' },
+
+  /* —— 推荐理由的徽标 —— */
+  reasonReady: { zh: '图中前提已加入', en: 'Prerequisites in the graph' },
+  reasonRelation: { zh: '已有登记关系', en: 'Registered relation' },
+  reasonSharesInput: { zh: '共用前提', en: 'Shared prerequisites' },
+  reasonThread: { zh: '线索（不参与前置计算）', en: 'Thread (not a prerequisite)' },
+  reasonBackground: { zh: '背景起点', en: 'Background entry point' },
+  reasonSameTopic: { zh: '同一话题', en: 'Same topic' },
+  reasonPattern: { zh: '误区锚点', en: 'Misconception anchor' },
+
+  /* —— 通用词 —— */
+  allCases: { zh: '全部案例', en: 'All cases' },
+  allConstructs: { zh: '全部构造类型', en: 'All construct types' },
+  undo: { zh: '撤销', en: 'Undo' },
+  gotIt: { zh: '知道了', en: 'Got it' },
+  clear: { zh: '清空', en: 'Clear' },
+  joinSeparator: { zh: '、', en: ', ' },
+
+  /* —— 画布与边 —— */
+  loading: { zh: '加载本体…', en: 'Loading the ontology…' },
+  canvasAria: { zh: '节点网络，已加入 {nodes} 个节点、{edges} 条边', en: 'Node network with {nodes} nodes and {edges} edges' },
+  emptyHint: { zh: '网络还是空的 · 用右侧「推荐加入」或左侧「全部节点」开始', en: 'The network is empty · start from “Suggested additions” on the right or “All nodes” on the left' },
+  threadBadge: { zh: '线索', en: 'Thread' },
+  nextStepBadge: { zh: '下一步', en: 'Next' },
+  edgeTitleRelation: { zh: '{kind}（见证 {witness}）· 视觉权重 {weight} · {tier}', en: '{kind} (witness {witness}) · visual weight {weight} · {tier}' },
+  edgeTitleFamily: { zh: '{family} · 视觉权重 {weight} · {tier}', en: '{family} · visual weight {weight} · {tier}' },
+  edgeTitleMerged: { zh: '\n同一对节点上还合并了 {count} 条（只画最强的一条）：\n', en: '\n{count} more edge(s) on the same pair are merged here (only the strongest is drawn):\n' },
+  edgeTitleMergedItem: { zh: '　· {desc}（权重 {weight}）', en: '  · {desc} (weight {weight})' },
+  describeRelation: { zh: '{kind}（关系 {id}）', en: '{kind} (relation {id})' },
+  describeContract: { zh: '{label}：{title}（契约 {id}）', en: '{label}: {title} (contract {id})' },
+  describeFamily: { zh: '{family}（{id}）', en: '{family} ({id})' },
+  edgeLabelContract: { zh: '{label}：{title}', en: '{label}: {title}' },
+  nodeTitle: { zh: '{title}（{id}）· {degree} 条连接 · {group}', en: '{title} ({id}) · {degree} connections · {group}' },
+  nodeTitleThread: { zh: ' · 线索层：话题级条目，不参与前置计算', en: ' · Thread layer: a topic-level entry, not counted as a prerequisite' },
+  nodeTitleDragged: { zh: ' · 已手动摆放，双击复位', en: ' · Manually placed; double-click to reset' },
+  nodeTitleAuto: { zh: ' · 由「局部技巧自动加入」规则加入', en: ' · Added by the “local techniques” rule' },
+  nodeTitleHint: { zh: ' · 左键按住看强关联节点 · 右键移出视图', en: ' · Hold the left button for strongly related nodes · right-click to remove from the view' },
+  pickerAria: { zh: '「{title}」的强关联节点', en: 'Nodes strongly related to “{title}”' },
+  pickerHint: { zh: '按住左键 —— 把鼠标移到要加入的节点上，松开即加入视图；松在别处或按 Esc 取消。', en: 'Keep holding the left button — move onto the node you want, then release to add it to the view; release elsewhere or press Esc to cancel.' },
+  pickerNote: { zh: '　候选来自已登记关系与行动契约，只摊开还没进视图的那些。标着「线索」的是话题级条目：它们是学习线索的名字，不参与前置计算。', en: ' Candidates come from registered relations and action contracts, and only those not yet in the view are laid out. Entries marked “Thread” are topic-level: they name a study thread and are not counted as prerequisites.' },
+
+  /* —— 回放控制台 —— */
+  replayAria: { zh: '路线回放', en: 'Route replay' },
+  replayEyebrow: { zh: '路线回放', en: 'Route replay' },
+  replayExit: { zh: '退出手势回放，自由浏览', en: 'Leave the replay and browse freely' },
+  // 步标题拆成「前缀 + <strong>数</strong> + 后缀」三段：中文的「第 <strong>2</strong> / 5 步」里
+  // 数被强调，英文同样保留这个结构，因此不能用一整条模板替换掉 <strong>。
+  replayStepLead: { zh: '第 ', en: 'Step ' },
+  replayStepTail: { zh: ' / {total} 步：{title}', en: ' / {total}: {title}' },
+  replayStartLead: { zh: '起点：', en: 'Start: ' },
+  replayStartTail: { zh: ' 个背景入口已在场，共 {total} 步', en: ' background entries are in place, {total} steps in total' },
+  replayToStart: { zh: '回到起点', en: 'Back to the start' },
+  replayPrev: { zh: '上一步', en: 'Previous step' },
+  replayNext: { zh: '下一步', en: 'Next step' },
+  replayToEnd: { zh: '到终点', en: 'To the end' },
+  replayStartShort: { zh: '⏮ 起点', en: '⏮ Start' },
+  replayPrevShort: { zh: '◀ 上一步', en: '◀ Previous' },
+  replayNextShort: { zh: '下一步 ▶', en: 'Next ▶' },
+  replayEndShort: { zh: '终点 ⏭', en: 'End ⏭' },
+  replayPause: { zh: '暂停', en: 'Pause' },
+  replayPlay: { zh: '播放', en: 'Play' },
+  replayPauseShort: { zh: '⏸ 暂停', en: '⏸ Pause' },
+  replayPlayShort: { zh: '▶ 播放', en: '▶ Play' },
+  replaySpeed: { zh: '倍速', en: 'Speed' },
+  replaySpeedAria: { zh: '播放倍速', en: 'Playback speed' },
+  replayProgressAria: { zh: '回放进度', en: 'Replay progress' },
+  replayProgressText: { zh: '第 {step} 步，共 {total} 步', en: 'Step {step} of {total}' },
+  replayAdded: { zh: '这一步加入：', en: 'Added by this step:' },
+  replayAddedNone: { zh: '（只消费，没有新节点）', en: '(consumes only, no new node)' },
+  replayUses: { zh: '用到的已有节点：{list}{more}', en: 'Existing nodes used: {list}{more}' },
+  replayMore: { zh: ' 等 {count} 个', en: ' and {count} more' },
+  replayEntry: { zh: '起点节点：{list}', en: 'Starting nodes: {list}' },
+  replayEntryNone: { zh: '（无背景入口）', en: '(no background entry)' },
+  replayNote: { zh: '动画只显示这条路线上的节点，但布局按全部 {total} 个节点一次算定—— 因此步骤切换时位置不会跳动。回放不写入学习档案。', en: 'The animation shows only the nodes on this route, but the layout is computed once for all {total} nodes, so positions do not jump between steps. The replay writes nothing to the learner profile.' },
+
+  /* —— HUD —— */
+  // 英文要分单复数（`1 nodes` 读起来是错的）；中文两支写成同一个词，渲染逐字不变。
+  hudNodeOne: { zh: '个节点', en: 'node' },
+  hudNodes: { zh: '个节点', en: 'nodes' },
+  hudEdgeOne: { zh: '条边', en: 'edge' },
+  hudEdges: { zh: '条边', en: 'edges' },
+  hudMergedTitle: { zh: '同一对节点之间只画最强的一条；其余在边的标签与提示里标明', en: 'Only the strongest edge is drawn between a pair; the rest are named in edge labels and tooltips' },
+  hudMerged: { zh: '（另有 {count} 条同对边并进这些线里）', en: '({count} more edges on the same pairs are merged into these lines)' },
+  hudMergedOne: { zh: '（另有 {count} 条同对边并进这些线里）', en: '({count} more edge on the same pair is merged into these lines)' },
+  hudAverage: { zh: '平均 {average} 条/节点', en: '{average} edges per node on average' },
+  hudIsolated: { zh: ' · {count} 个未连接', en: ' · {count} unconnected' },
+  hudResidual: { zh: ' · {count} 条边仍压着卡片（弓高上限 {max}px 内无解）', en: ' · {count} edges still cross a card (no solution within the {max}px bow limit)' },
+  zoomOut: { zh: '缩小', en: 'Zoom out' },
+  zoomIn: { zh: '放大', en: 'Zoom in' },
+  resetView: { zh: '重置', en: 'Reset view' },
+  resetViewTitle: { zh: '重置视角：只把整张网络重新适配进可见区，节点位置一个都不动', en: 'Reset the camera only: re-fit the whole network into the visible area, moving no node' },
+  relayout: { zh: '重新布局', en: 'Re-layout' },
+  relayoutTitle: { zh: '重新布局：清掉自动摆位并重算；你手动拖过的节点保持原位（与「重置」不同，那个只动相机）', en: 'Re-layout: clear the automatic placements and recompute; nodes you dragged stay where they are (unlike “Reset view”, which only moves the camera)' },
+  saveView: { zh: '保存视图', en: 'Save view' },
+  saveViewTitle: { zh: '把当前视图存进学习者档案（E），下次按名字载入', en: 'Store the current view in the learner profile (E) and load it by name next time' },
+  viewsToggleOpen: { zh: '收起视图列表', en: 'Hide the view list' },
+  viewsToggleClosed: { zh: '视图列表', en: 'View list' },
+  viewsToggleCount: { zh: '视图列表（{count}）', en: 'View list ({count})' },
+  fullscreenEnter: { zh: '全屏', en: 'Full screen' },
+  fullscreenExit: { zh: '退出全屏', en: 'Exit full screen' },
+  unresolved: { zh: 'URL 里有 {count} 个节点引用在当前本体版本无法解析，已忽略：', en: '{count} node references in the URL cannot be resolved in the current ontology version and were ignored: ' },
+  removedNotice: { zh: '已把「{title}」移出视图。这只改本页显示，本体节点仍在。', en: '“{title}” was removed from the view. This only changes what this page shows; the ontology node is still there.' },
+  autoAddNotice: { zh: '可以在当前视图旁边补上 {count} 个方法节点（判据：与当前视图及其一跳邻域连接超过 3 条）：', en: 'You can add {count} method nodes next to the current view (criterion: more than 3 links to the view and its one-hop neighbourhood):' },
+  autoAddItem: { zh: '{title}（{inView} 条）', en: '{title} ({inView} rows)' },
+  autoAddMore: { zh: ' 等', en: ', and more' },
+  autoAddApply: { zh: '加入这 {count} 个', en: 'Add these {count}' },
+  autoAddLater: { zh: '暂不', en: 'Not now' },
+  clearedNotice: { zh: '已清空画布里的 {count} 个节点；本体与学习记录都没有变化。', en: 'Cleared {count} nodes from the canvas; neither the ontology nor the learning records changed.' },
+  clearedUndo: { zh: '撤销清空', en: 'Undo the clear' },
+  autoAddedApplied: { zh: '已加入 {count} 个方法节点：{list}{more}。判据是「直接邻域 ∩（视图 ∪ 视图一跳邻域）> 3」。', en: 'Added {count} method nodes: {list}{more}. The criterion is “direct neighbourhood ∩ (view ∪ one-hop neighbourhood of the view) > 3”.' },
+  autoAddedItem: { zh: '{title}（与视图 {inView} 条连接）', en: '{title} ({inView} links to the view)' },
+  autoAddedMore: { zh: ' 等 {count} 个', en: ' and {count} more' },
+
+  /* —— 保存的视图：提示与消息 —— */
+  viewsNoteProfile: { zh: '存在学习者档案（E）里：跟着档案走，可随档案导出。', en: 'Stored in the learner profile (E): it travels with the profile and can be exported with it.' },
+  viewsNoteLocal: { zh: '未选择学习档案：视图存在这台浏览器里（选了档案之后会存进档案 E）。', en: 'No learner profile selected: views are stored in this browser (once you pick a profile they go into profile E).' },
+  viewsNoteNoStorage: { zh: '未选择学习档案，且本机存储不可用（隐私模式）。', en: 'No learner profile selected, and local storage is unavailable (private mode).' },
+  viewsReadFailed: { zh: '读取失败：{message}', en: 'Could not read: {message}' },
+  viewsSaveFailed: { zh: '保存失败：{message}', en: 'Could not save: {message}' },
+  viewsRenameFailed: { zh: '重命名失败：{message}', en: 'Could not rename: {message}' },
+  viewsDeleteFailed: { zh: '删除失败：{message}', en: 'Could not delete: {message}' },
+  viewsReadFailedShort: { zh: '读取失败', en: 'read failed' },
+  viewsSaveFailedShort: { zh: '保存失败', en: 'save failed' },
+  viewsRenameFailedShort: { zh: '重命名失败', en: 'rename failed' },
+  viewsDeleteFailedShort: { zh: '删除失败', en: 'delete failed' },
+  viewsNameRequired: { zh: '给这个视图起个名字再保存。', en: 'Give this view a name before saving.' },
+  viewsSavedProfile: { zh: '已保存视图「{name}」到学习者档案（E）：{nodes} 个节点、{families} 类边、{positions} 个手动位置。本体没有改变。', en: 'Saved the view “{name}” to the learner profile (E): {nodes} nodes, {families} edge kinds, {positions} manual positions. The ontology did not change.' },
+  viewsSavedLocal: { zh: '已保存视图「{name}」到这台浏览器（未选择档案）：{nodes} 个节点、{families} 类边。选了档案之后会存进档案（E）。', en: 'Saved the view “{name}” in this browser (no profile selected): {nodes} nodes, {families} edge kinds. With a profile it will be stored in profile E.' },
+  viewsLoaded: { zh: '已载入视图「{name}」：{nodes} 个节点、{positions} 个手动位置。{missing}载入只改本页显示，不写本体。', en: 'Loaded the view “{name}”: {nodes} nodes, {positions} manual positions. {missing}Loading only changes what this page shows; it writes nothing to the ontology.' },
+  viewsLoadedMissing: { zh: '有 {count} 个节点已不在当前本体里，已跳过。', en: '{count} nodes are no longer in the ontology and were skipped. ' },
+  viewsPromptRename: { zh: '新的视图名', en: 'New view name' },
+  viewsPromptSave: { zh: '给这个视图起个名字（下次按名字载入）', en: 'Name this view (you will load it by name next time)' },
+  viewsDefaultName: { zh: '视图 {stamp}', en: 'View {stamp}' },
+  viewsConfirmDelete: { zh: '删除视图「{name}」？此操作立即生效，不能撤销。', en: 'Delete the view “{name}”? This takes effect immediately and cannot be undone.' },
+  viewsSaveNow: { zh: '保存当前视图', en: 'Save the current view' },
+  viewsCopyLink: { zh: '复制当前链接', en: 'Copy the current link' },
+  viewsCopied: { zh: '已复制当前链接到剪贴板。', en: 'Copied the current link to the clipboard.' },
+  viewsCopyBlocked: { zh: '浏览器不允许访问剪贴板，请手动复制：{url}', en: 'The browser does not allow clipboard access; please copy it manually: {url}' },
+  viewsEmptyCanvas: { zh: '画布上还没有节点：先从「全部节点」或「推荐加入」加几个，再保存。', en: 'The canvas is still empty: add a few nodes from “All nodes” or “Suggested additions” first, then save.' },
+  viewsNone: { zh: '还没有保存过视图。', en: 'No view has been saved yet.' },
+  viewsEntryNodes: { zh: '{count} 节点', en: '{count} nodes' },
+  viewsEntryMeta: { zh: '{families} 类边 · {positions} 个手动位置', en: '{families} edge kinds · {positions} manual positions' },
+  viewsEntryLocal: { zh: ' · 本机', en: ' · this browser' },
+  viewsEntryProfile: { zh: ' · 档案（E）', en: ' · profile (E)' },
+  viewsLoad: { zh: '载入', en: 'Load' },
+  viewsRename: { zh: '重命名', en: 'Rename' },
+  viewsDelete: { zh: '删除', en: 'Delete' },
+  viewsSearch: { zh: '搜索已保存的视图', en: 'Search saved views' },
+  viewsSearchPlaceholder: { zh: '输入视图名称', en: 'Enter a view name' },
+  viewsSort: { zh: '视图排序', en: 'Sort saved views' },
+  viewsSortRecent: { zh: '最近更新', en: 'Recently updated' },
+  viewsSortOldest: { zh: '最早更新', en: 'Oldest updated' },
+  viewsSortNodes: { zh: '节点最多', en: 'Most nodes' },
+  viewsSortName: { zh: '按名称', en: 'By name' },
+  viewsFound: { zh: '显示 {shown} / {total} 个视图', en: 'Showing {shown} of {total} views' },
+  viewsNoMatch: { zh: '没有匹配的视图，试试更短的名称。', en: 'No matching views. Try a shorter name.' },
+  viewsClearSearch: { zh: '清除视图搜索', en: 'Clear view search' },
+  viewsDuplicate: { zh: '同名 {index}/{total}', en: 'Same name {index}/{total}' },
+  viewsDuplicateHint: { zh: '这些视图各自保存，请结合节点数和更新时间选择。', en: 'These are separate saved views. Use their node counts and update times to choose.' },
+  viewsSnapshotNote: { zh: '每条视图是独立快照，载入会替换当前画布，不自动合并。保存时视角已固定，继续拖动或缩放不会改写它；再次保存会增加一份快照。', en: 'Each view is a separate snapshot. Loading replaces the current canvas without merging. Its camera is fixed when saved; later dragging or zooming does not change it. Saving again creates another snapshot.' },
+  viewsSnapshotSaved: { zh: '视角已固定，后续拖动或缩放不会改写这份快照。', en: 'The camera is fixed in this snapshot; later dragging or zooming will not change it.' },
+  viewsMigrateTitle: { zh: '把本机视图带进学习档案', en: 'Bring browser views into your profile' },
+  viewsMigrateNote: { zh: '这台浏览器还有 {count} 个视图。存入「{name}」后可随档案导出；每个视图确认保存后才移除本机副本，同名但不同内容的视图会分别保留。', en: 'Saved views in this browser: {count}. Move them into “{name}” to include them in profile exports. Each browser copy is removed only after saving is verified. Different views with the same name are kept separately.' },
+  viewsMigrateAction: { zh: '存入当前档案（{count}）', en: 'Move to this profile ({count})' },
+  viewsMigrating: { zh: '正在存入…', en: 'Moving views…' },
+  viewsMigrated: { zh: '已确认 {count} 个本机视图存入「{name}」，可以随档案导出。', en: 'Verified {count} browser views in “{name}”. They can now be exported with the profile.' },
+  viewsMigrateFailed: { zh: '已确认 {count} 个；其余本机视图已保留，可重试。原因：{message}', en: '{count} verified; the remaining browser views are kept for retry. Reason: {message}' },
+  viewsLocalReadFailed: { zh: '本机视图暂时无法读取，原记录已保留。', en: 'Browser views could not be read. The original records are kept.' },
+
+  /* —— 全部节点面板 —— */
+  listHint: { zh: '勾选即加入网络。只改变本页视图，不写公共本体，也不写学习档案。', en: 'Tick to add to the network. This changes this page’s view only; it writes neither the public ontology nor the learner profile.' },
+  listSearchPlaceholder: { zh: '搜索标题、ID 或摘要', en: 'Search title, ID or summary' },
+  listSearchAria: { zh: '搜索节点', en: 'Search nodes' },
+  listCaseAria: { zh: '按案例筛选', en: 'Filter by case' },
+  listConstructAria: { zh: '按构造类型筛选', en: 'Filter by construct type' },
+  listOptionCount: { zh: '{label}（{count}）', en: '{label} ({count})' },
+  listResultCount: { zh: '显示 {shown} / {total} 个登记节点', en: 'Showing {shown} / {total} registered nodes' },
+  evidenceLevelTitle: { zh: '证据等级：{status}', en: 'Evidence level: {status}' },
+
+  /* —— 连接类型面板 —— */
+  familiesHint: { zh: '每一类都来自已登记的数据，可单独开关。默认全开：只留契约与关系会让网络过于稀疏。', en: 'Every kind comes from registered data and can be toggled separately. By default all are on: keeping only contracts and relations makes the network too sparse.' },
+  familiesCount: { zh: '{count} 条', en: '{count} rows' },
+
+  /* —— 推荐面板 —— */
+  recommendTitleStart: { zh: '起点推荐', en: 'Suggested starting points' },
+  recommendHintStart: { zh: '网络为空，先给出可以当起点的背景节点。', en: 'The network is empty; here are the background nodes that can serve as starting points.' },
+  recommendHint: { zh: '按节点分类分组；方法节点单独列出，局部技巧与全局方法分开。组内理由按强弱排序。', en: 'Grouped by node category; method nodes are listed separately, local techniques apart from global methods. Reasons inside a group are ordered by strength.' },
+  recommendEmpty: { zh: '没有更多可推荐的节点了。可在左侧列表直接勾选，或清空网络重新开始。', en: 'There is nothing left to suggest. Tick nodes in the list on the left, or clear the network and start again.' },
+  recommendFilterAria: { zh: '按分类筛选推荐', en: 'Filter suggestions by category' },
+  recommendAll: { zh: '全部 {count}', en: 'All {count}' },
+  recommendAdd: { zh: '加入网络', en: 'Add to the network' },
+
+  /* —— 节点详情面板 —— */
+  detailEmpty: { zh: '在网络里点一个节点即可查看它的连接。', en: 'Click a node in the network to see its connections.' },
+  detailMetaTail: { zh: '连接 {degree} 条', en: '{degree} connections' },
+  detailOpenNode: { zh: '打开节点页', en: 'Open the node page' },
+  detailRemove: { zh: '移出网络', en: 'Remove from the network' },
+  detailAdd: { zh: '加入网络', en: 'Add to the network' },
+  detailEdges: { zh: '与当前网络的连接（{count}）', en: 'Connections to the current network ({count})' },
+  witnessTitle: { zh: '见证状态：{status}', en: 'Witness status: {status}' },
+  detailSupports: { zh: '支撑', en: 'Supports' },
+  detailDepends: { zh: '依赖', en: 'Depends on' },
+  detailRelated: { zh: '相关', en: 'Related' },
+  noticeNoRelated: { zh: '「{title}」没有还没进视图的强关联节点：与它相关的节点都已经在画布上了。', en: '“{title}” has no strongly related node left outside the view: everything related to it is already on the canvas.' },
+  noticePicked: { zh: '已把「{title}」加入视图（{basis}）。{note}只改本页显示，本体与学习记录都没变。', en: 'Added “{title}” to the view ({basis}). {note}This only changes what this page shows; neither the ontology nor the learning records changed.' },
+  pickerBasisFallback: { zh: '强关联', en: 'strongly related' },
+  relayoutDoneManual: { zh: '已重新布局：自动摆位清空重算；你手动拖过的 {count} 个节点保持原位。', en: 'Re-laid out: automatic placements were cleared and recomputed; the {count} nodes you dragged stay where they are.' },
+  relayoutDonePlain: { zh: '已重新布局：自动摆位清空重算（当前没有手动摆放的节点）。', en: 'Re-laid out: automatic placements were cleared and recomputed (no manually placed node at the moment).' },
+
+  /* —— 条款面板：带内联标记（<strong>/<code>）的长段落直接写在 JSX 里，
+   *    中文那一支**保持原样**（多行 JSX 文本的换行会被折叠成空格，改写成模板串会引入
+   *    看不见的差异），英文在同一处另起一支。下面只放能整条替换的短句。 —— */
+  specRowCount: { zh: '{count} 条', en: '{count} rows' },
+  specParams: { zh: '线宽 {width} · 不透明度 {opacity} · {dash}', en: 'width {width} · opacity {opacity} · {dash}' },
+  specDashed: { zh: '虚线', en: 'dashed' },
+  specSolid: { zh: '实线', en: 'solid' },
+  specLabelled: { zh: ' · 标注名称', en: ' · labelled' },
+  specKindsTitle: { zh: '这一档里有哪些关系', en: 'Which relations fall in each tier' },
+  specKindsEmpty: { zh: '当前网络里没有登记关系。它们不是每条连接都有——只有本体里明确登记过的才有。', en: 'The current network has no registered relations. Not every connection has one — only those explicitly registered in the ontology do.' },
+  specKindMeta: { zh: '{tier} · 权重 {weight} · {count} 条', en: '{tier} · weight {weight} · {count} rows' },
+  specArrows: { zh: '硬关系的箭头更粗更大。若画布上几乎看不到硬关系，是因为本体里就登记了很少——不是画漏了。', en: 'Harder relations get thicker, larger arrowheads. If you hardly see any hard relation on the canvas, it is because the ontology registers few of them — not because they were left out.' },
+  specModeTitle: { zh: '行动契约按 mode 分档', en: 'Action contracts tiered by mode' },
+  specModeMeta: { zh: '{tier} · 权重 {weight} · 当前视图 {count} 条边', en: '{tier} · weight {weight} · {count} edges in the current view' },
+  specModeLabelled: { zh: ' · 标出名称', en: ' · labelled' },
+  specMergeTitle: { zh: '同一对节点只画一条（合并显示）', en: 'One edge per pair of nodes (merged display)' },
+  specArcTitle: { zh: '弧线：绕不开才弯，绕不开就如实说', en: 'Arcs: bend only when there is no way around, and say so when there is none' },
+  specThreadTitle: { zh: '线索层：话题级条目不参与前置计算', en: 'Thread layer: topic-level entries are not counted as prerequisites' },
+
+  /* —— 图例条 —— */
+  legendHarder: { zh: '越硬越重', en: 'Harder is heavier' },
+  legendThreadTitle: { zh: '话题级条目（一节或一章的范围）：它们是学习线索的名字，不是可独立认知的单元，因此不参与前置计算。', en: 'Topic-level entries (the scope of a section or a chapter): they name study threads, not units one can cognise on its own, so they are not counted as prerequisites.' },
+  legendThread: { zh: '线索层', en: 'Thread layer' },
+  legendTopicTitle: { zh: '{title}（{count} 个节点）', en: '{title} ({count} nodes)' },
+  legendHint: { zh: '拖动空白处平移 · 滚轮缩放 · 按住左键看强关联 · 右键移出节点 · 「重置」只复位视角，「重新布局」才重排卡片（手动摆放保留）', en: 'Drag empty space to pan · scroll to zoom · hold the left button for strongly related nodes · right-click to remove a node · “Reset view” only resets the camera, “Re-layout” re-arranges the cards (manual placements are kept)' },
+} as const;
+
+type PageTextKey = keyof typeof PAGE_TEXT;
+type PageText = Record<PageTextKey, string>;
+
+/** 按语种把成对文案摊平成一张普通表（组件里只取一次，随语种变化）。 */
+function pageText(locale: Locale): PageText {
+  const out = {} as Record<string, string>;
+  for (const [key, pair] of Object.entries(PAGE_TEXT)) out[key] = pair[locale];
+  return out as PageText;
+}
+
+/** 把 `{name}` 占位符换成值；没给值的占位符原样保留（不静默变空白）。 */
+function fill(template: string, values: Record<string, string | number> = {}): string {
+  return template.replace(/\{(\w+)\}/g, (match, key: string) => (key in values ? String(values[key]) : match));
+}
+
+/** 面板标题的取词键：标题同时是面板的 `aria-label`，验收按它选元素。 */
+const PANEL_TEXT_KEYS: Record<PanelId, PageTextKey> = {
+  list: 'panelList',
+  recommend: 'panelRecommend',
+  detail: 'panelDetail',
+  families: 'panelFamilies',
+  spec: 'panelSpec',
+  views: 'panelViews',
+};
+
+/** 推荐理由徽标的取词键。 */
+const REASON_TEXT_KEYS: Record<ReasonKind, PageTextKey> = {
+  ready: 'reasonReady',
+  relation: 'reasonRelation',
+  'shares-input': 'reasonSharesInput',
+  thread: 'reasonThread',
+  background: 'reasonBackground',
+  'same-topic': 'reasonSameTopic',
+  pattern: 'reasonPattern',
 };
 
 /** 首次访问的引导状态：开着「全部节点」与「推荐加入」，让空网络有明确入口。 */
@@ -125,7 +408,7 @@ const PLACEMENTS_KEY = 'mcs-network-placements-v1';
  * 选择档案后走 E 层（服务端），视图跟着档案走、可导出、可跨浏览器；
  * 没选档案就没地方落 E，于是退回本机并在面板上如实说明。
  */
-const SAVED_VIEWS_LOCAL_KEY = 'mcs-network-views-local-v1';
+const SAVED_VIEWS_LOCAL_KEY = LOCAL_VIEWS_KEY;
 
 /**
  * 箭头 marker 的 id：颜色 + 层级决定一个 marker。
@@ -142,6 +425,13 @@ function arrowMarkerId(color: string, tier: RelationTier): string {
 interface Viewport { x: number; y: number; scale: number }
 const ZOOM_MIN = 0.25;
 const ZOOM_MAX = 3;
+/**
+ * 双指缩放的起始跨度下限（用户单位 ≈ CSS 像素）。
+ *
+ * 两指若几乎落在一起，`distance / startDistance` 的分母趋零，一次轻微抖动就能把比例
+ * 推到几十倍——缩放会瞬间冲到上下限。低于这个跨度就不缩放，只按「两指平移」走。
+ */
+const PINCH_MIN_SPAN = 12;
 
 /**
  * 图例里的短标签：截断时必须**保留末尾的组号**。
@@ -168,7 +458,28 @@ function topicLegendLabel(title: string): string {
  */
 const FIT_SLACK_REPLAY = 28;
 
-export function NetworkPage() {  const graph = useApi<NetworkGraph>('/ontology/graph');
+export function NetworkPage() {
+  /*
+   * 语种与词表：本页只有这一个组件，因此在顶层取一次，往下全部走 `txt` / `labels`。
+   *
+   * `txt` 用 `useMemo` 锁住对象身份：下面十几个 `useCallback`（手势结算、保存视图…）
+   * 都要读它，若每次渲染都是新对象，那些回调会跟着每帧重建，
+   * 挂在 window 上的监听器也会反复拆装。
+   */
+  const { t, locale, fmtDate, isPending, hrefFor } = useI18n();
+  const labels = useLabels();
+  const txt = useMemo(() => pageText(locale), [locale]);
+  const panelTitles = useMemo(() => {
+    const out = {} as Record<PanelId, string>;
+    for (const id of PANEL_IDS) out[id] = txt[PANEL_TEXT_KEYS[id]];
+    return out;
+  }, [txt]);
+  const reasonLabels = useMemo(() => {
+    const out = {} as Record<ReasonKind, string>;
+    for (const [kind, key] of Object.entries(REASON_TEXT_KEYS) as Array<[ReasonKind, PageTextKey]>) out[kind] = txt[key];
+    return out;
+  }, [txt]);
+  const graph = useApi<NetworkGraph>('/ontology/graph');
   const [params, setParams] = useSearchParams();
   const [query, setQuery] = useState('');
   const [caseFilter, setCaseFilter] = useState('全部');
@@ -335,6 +646,34 @@ export function NetworkPage() {  const graph = useApi<NetworkGraph>('/ontology/g
   const canvasRef = useRef<HTMLDivElement | null>(null);
   const panRef = useRef<{ pointerId: number; startX: number; startY: number; originX: number; originY: number } | null>(null);
   const [panning, setPanning] = useState(false);
+
+  /*
+   * 双指缩放（2026-10-05，移动端）。
+   *
+   * 画布以前只有单指平移：`panRef` 只记得住**一个** pointerId，第二根手指落下会把起点覆盖掉，
+   * 于是「两指一捏」表现为画面乱跳；而 `.network-canvas-full` 的 `touch-action: none`
+   * 又把浏览器原生缩放关掉了（那是平移必须的，否则单指拖动画布会连带滚页面）。
+   * 两者相加的结果是：**移动端在画布上根本没有任何缩放手段**——
+   * HUD 那两个按钮只能给固定倍率，选不到「把这一小片看清楚」。
+   *
+   * 现在按 pointer 事件自己实现：两指距离之比就是缩放比，
+   * 中点怎么移动就怎么平移（缩放与平移是同一个式子，见 onCanvasPointerMove）。
+   * 锚点走 `pointerInSvg`，与滚轮缩放共用同一套相机数学（viewBox 恒等于 stage 像素尺寸，
+   * 1 用户单位 = 1 CSS 像素）。
+   */
+  const pinchRef = useRef<{
+    ids: [number, number];
+    /** 手势开始时两指的距离（用户单位）。 */
+    startDistance: number;
+    /** 手势开始时「两指中点」下的世界坐标；整个手势期间它必须一直待在当前中点下（不动点条件）。 */
+    anchorWorld: { x: number; y: number };
+    startViewport: Viewport;
+  } | null>(null);
+  /**
+   * 画布上按下的指针（**含落在节点上的那些**，所以记录发生在捕获阶段：
+   * 节点的 `onPointerDown` 会 `stopPropagation`，冒泡阶段根本看不到它）。
+   */
+  const canvasPointersRef = useRef(new Map<number, { x: number; y: number }>());
 
   const panels = {
     // 默认位置避开顶部 HUD（约 3.4rem 高）与左侧边栏，否则 HUD 会挡住面板里的控件。
@@ -581,8 +920,12 @@ export function NetworkPage() {  const graph = useApi<NetworkGraph>('/ontology/g
       autoAddedRef.current.add(item.node);
     }
     setAdded(next);
-    const reasons = autoCandidates.slice(0, 3).map((item) => `${item.title}（与视图 ${item.inView} 条连接）`);
-    setNotice(`已加入 ${names.length} 个方法节点：${reasons.join('、')}${names.length > 3 ? ` 等 ${names.length} 个` : ''}。判据是「直接邻域 ∩（视图 ∪ 视图一跳邻域）> 3」。`);
+    const reasons = autoCandidates.slice(0, 3).map((item) => fill(txt.autoAddedItem, { title: item.title, inView: item.inView }));
+    setNotice(fill(txt.autoAddedApplied, {
+      count: names.length,
+      list: reasons.join(txt.joinSeparator),
+      more: names.length > 3 ? fill(txt.autoAddedMore, { count: names.length }) : '',
+    }));
   }
 
   /**
@@ -720,7 +1063,7 @@ export function NetworkPage() {  const graph = useApi<NetworkGraph>('/ontology/g
   const autoAddedIds = useMemo(() => new Set(autoAddedRef.current), [view, added]);
 
   /** 话题配色：同一话题的节点同色，由本体的 topic 聚合块自动分配。 */
-  const topicColors = useMemo(() => (graph.data ? topicAssignment(graph.data) : null), [graph.data]);
+  const topicColors = useMemo(() => (graph.data ? topicAssignment(graph.data, locale) : null), [graph.data, locale]);
 
   /**
    * 图例里只列**当前画布上真有的**话题与条数，不把整张配色表铺出来——
@@ -768,7 +1111,28 @@ export function NetworkPage() {  const graph = useApi<NetworkGraph>('/ontology/g
   }, []);
 
   /**
-   * 量出 stage 尺寸与左右悬浮框实际占用的宽度。
+   * 相机的「可见区」= **画布元素**（`.network-canvas-full`），不是 stage（2026-10-05）。
+   *
+   * 桌面端两者是同一个盒子（画布 `position: absolute; inset: 0` 铺满 stage），取值完全不变；
+   * 窄屏（≤860px）画布只是 stage 里的一块 `46vh` 的框，而 stage 本身有整页那么高
+   * （画布下面还排着 HUD 与一堆纵向卡片）。
+   *
+   * 为什么必须区分：`viewBox` 是按这里量出来的尺寸写的，`preserveAspectRatio="xMinYMin meet"`
+   * 再把它缩进 SVG 元素。用 stage 的高（手机实测 2597）去写 viewBox、而元素只有 388 高，
+   * 结果整张网络被缩到 **0.1487 倍**、挤在画布左边一条 58px 宽的带子里（见 VALIDATION 第八十四轮）。
+   * 相机几何（适配、夹取、居中）全都要以「用户真正看得到的那块」为准。
+   */
+  const viewportRect = useCallback((): DOMRect | null => {
+    const canvas = canvasRef.current;
+    if (canvas) {
+      const rect = canvas.getBoundingClientRect();
+      if (rect.width > 0 && rect.height > 0) return rect;
+    }
+    return stageRef.current?.getBoundingClientRect() ?? null;
+  }, []);
+
+  /**
+   * 量出画布尺寸与左右悬浮框实际占用的宽度。
    *
    * 面板宽 340px，左右各开一个就吃掉近 700px；布局与适配都必须知道这一点。
    * 用 ResizeObserver 而不是只测一次：窗口缩放、进出全屏都会改变 stage 尺寸，
@@ -777,12 +1141,13 @@ export function NetworkPage() {  const graph = useApi<NetworkGraph>('/ontology/g
   const measureStage = useCallback(() => {
     const stage = stageRef.current;
     if (!stage) return;
-    const rect = stage.getBoundingClientRect();
+    const rect = viewportRect();
+    if (!rect) return;
     let left = 0;
     let right = 0;
     for (const id of PANEL_IDS) {
       if (!openStateRef.current[id]) continue;
-      const element = stage.querySelector(`.floating-panel[aria-label="${PANEL_TITLES[id]}"]`);
+      const element = stage.querySelector(`.floating-panel[aria-label="${panelTitles[id]}"]`);
       if (!element) continue;
       // 窄屏下面板是纵向堆叠、不遮画布，此时不计入占用。
       if (getComputedStyle(element).position !== 'absolute') continue;
@@ -796,14 +1161,17 @@ export function NetworkPage() {  const graph = useApi<NetworkGraph>('/ontology/g
     const w = Math.round(rect.width);
     const h = Math.round(rect.height);
     setStageSize((current) => (current.w === w && current.h === h ? current : { w, h }));
-  }, []);
+  }, [viewportRect, panelTitles]);
 
   useEffect(() => {
     measureStage();
     const stage = stageRef.current;
-    if (!stage || typeof ResizeObserver === 'undefined') return;
+    const canvas = canvasRef.current;
+    if (typeof ResizeObserver === 'undefined' || (!stage && !canvas)) return undefined;
     const observer = new ResizeObserver(() => measureStage());
-    observer.observe(stage);
+    if (stage) observer.observe(stage);
+    // 窄屏画布（46vh）与 stage 不是同一个盒子，两个都要盯：只盯 stage 会漏掉画布自身的高度变化。
+    if (canvas && canvas !== stage) observer.observe(canvas);
     return () => observer.disconnect();
   }, [measureStage, open, view]);
 
@@ -842,10 +1210,9 @@ export function NetworkPage() {  const graph = useApi<NetworkGraph>('/ontology/g
    *    锚点稳定；同时仍保证内容不会被拖到完全看不见。
    */
   const clampCamera = useCallback((camera: Camera): Camera => {
-    const stage = stageRef.current;
     const current = viewRef.current;
-    if (!stage || !current) return camera;
-    const rect = stage.getBoundingClientRect();
+    const rect = viewportRect();
+    if (!rect || !current) return camera;
     const contentW = Math.max(current.layout.width, 1) * camera.scale;
     const contentH = Math.max(current.layout.height, 1) * camera.scale;
     const clampAxis = (value: number, content: number, viewport: number) => {
@@ -859,10 +1226,10 @@ export function NetworkPage() {  const graph = useApi<NetworkGraph>('/ontology/g
       x: clampAxis(camera.x, contentW, rect.width),
       y: clampAxis(camera.y, contentH, rect.height),
     };
-  }, []);
+  }, [viewportRect]);
 
   /* ---------- 保存的视图（用户要求：「加入保存功能，下次可以直接用」） ---------- */
-  const { profileId } = useProfileContext();
+  const { profileId, profile } = useProfileContext();
   /** 视图面板是否展开（与其它面板并列，用它自己的开关）。 */
   const [viewsOpen, setViewsOpen] = useState(false);
   /**
@@ -871,49 +1238,119 @@ export function NetworkPage() {  const graph = useApi<NetworkGraph>('/ontology/g
    * 两条来源：选了学习者档案就读 E 层（服务端），没选就读本机 localStorage。
    * 界面上会明确写出当前用的是哪一条——不说清楚，用户会以为已经存进档案了。
    */
-  const [savedViews, setSavedViews] = useState<Array<{
-    viewId: string;
-    name: string;
-    payload: {
-      added?: string[];
-      families?: string[];
-      positions?: Record<string, { x: number; y: number }>;
-      camera?: { x: number; y: number; scale: number } | null;
-    };
-    updatedAt: string;
-    local?: boolean;
-  }>>([]);
+  const [savedViews, setSavedViews] = useState<SavedNetworkView[]>([]);
   const [viewsNote, setViewsNote] = useState('');
+  const [viewQuery, setViewQuery] = useState('');
+  const [viewSort, setViewSort] = useState<'recent' | 'oldest' | 'nodes' | 'name'>('recent');
+  const visibleSavedViews = useMemo(() => {
+    const query = viewQuery.trim().toLocaleLowerCase(locale);
+    const updated = (entry: SavedNetworkView) => Date.parse(entry.updatedAt) || 0;
+    return savedViews.filter((entry) => entry.name.toLocaleLowerCase(locale).includes(query)).sort((a, b) => {
+      const primary = viewSort === 'oldest' ? updated(a) - updated(b)
+        : viewSort === 'nodes' ? (b.payload.added?.length ?? 0) - (a.payload.added?.length ?? 0)
+        : viewSort === 'name' ? a.name.localeCompare(b.name, locale)
+        : updated(b) - updated(a);
+      return primary || a.viewId.localeCompare(b.viewId);
+    });
+  }, [savedViews, viewQuery, viewSort, locale]);
+  const duplicateViews = useMemo(() => {
+    const byName = new Map<string, SavedNetworkView[]>();
+    for (const entry of savedViews) {
+      const group = byName.get(entry.name) ?? [];
+      group.push(entry);
+      byName.set(entry.name, group);
+    }
+    const result = new Map<string, { index: number; total: number }>();
+    for (const group of byName.values()) {
+      if (group.length < 2) continue;
+      group.sort((a, b) => a.viewId.localeCompare(b.viewId));
+      group.forEach((entry, index) => result.set(entry.viewId, { index: index + 1, total: group.length }));
+    }
+    return result;
+  }, [savedViews]);
+  const [localViewCount, setLocalViewCount] = useState(0);
+  const [localViewsError, setLocalViewsError] = useState(false);
+  const [migratingViews, setMigratingViews] = useState(false);
+  const [migrationNote, setMigrationNote] = useState('');
+  const migrationRequest = useRef<AbortController | null>(null);
+  const viewRequest = useRef<AbortController | null>(null);
+
+  const refreshLocalViews = useCallback(() => {
+    try { setLocalViewCount(readLocalViews().length); setLocalViewsError(false); }
+    catch { setLocalViewCount(0); setLocalViewsError(true); }
+  }, []);
 
   /** 读回已保存的视图：有档案读 E 层，没有就读本机。 */
   const refreshViews = useCallback(async () => {
+    viewRequest.current?.abort();
+    const request = new AbortController();
+    viewRequest.current = request;
+    refreshLocalViews();
     if (profileId) {
       try {
-        const response = await fetch(`/api/v2/profiles/${encodeURIComponent(profileId)}/network-views`);
-        const payload = await response.json();
-        if (!response.ok || payload.ok === false) throw new Error(payload.error?.message ?? '读取失败');
-        setSavedViews(payload.data.views);
-        setViewsNote('存在学习者档案（E）里：跟着档案走，可随档案导出。');
+        const payload = await api<{ views: SavedNetworkView[] }>(`/profiles/${encodeURIComponent(profileId)}/network-views`, { signal: request.signal });
+        if (request.signal.aborted) return;
+        setSavedViews(payload.views);
+        setViewsNote(txt.viewsNoteProfile);
       } catch (error) {
-        setViewsNote(`读取失败：${String(error instanceof Error ? error.message : error)}`);
+        if (request.signal.aborted) return;
+        setSavedViews([]);
+        setViewsNote(fill(txt.viewsReadFailed, { message: String(error instanceof Error ? error.message : error) }));
       }
       return;
     }
     try {
-      const raw = localStorage.getItem(SAVED_VIEWS_LOCAL_KEY);
-      setSavedViews(raw ? JSON.parse(raw) : []);
-      setViewsNote('未选择学习档案：视图存在这台浏览器里（选了档案之后会存进档案 E）。');
+      setSavedViews(readLocalViews());
+      setViewsNote(txt.viewsNoteLocal);
     } catch {
       setSavedViews([]);
-      setViewsNote('未选择学习档案，且本机存储不可用（隐私模式）。');
+      setViewsNote(txt.viewsNoteNoStorage);
     }
+  }, [profileId, refreshLocalViews, txt]);
+
+  useEffect(() => {
+    setSavedViews([]);
+    void refreshViews();
+    const storageChanged = (event: StorageEvent) => {
+      if (event.key === SAVED_VIEWS_LOCAL_KEY || event.key === null) void refreshViews();
+    };
+    window.addEventListener('storage', storageChanged);
+    return () => { viewRequest.current?.abort(); window.removeEventListener('storage', storageChanged); };
+  }, [refreshViews]);
+
+  useEffect(() => {
+    setMigrationNote('');
+    setMigratingViews(false);
+    setViewQuery('');
+    setViewSort('recent');
+    return () => { migrationRequest.current?.abort(); migrationRequest.current = null; };
   }, [profileId]);
 
-  useEffect(() => { void refreshViews(); }, [refreshViews]);
+  const moveLocalViews = useCallback(async () => {
+    if (!profileId || !profile || migrationRequest.current) return;
+    const request = new AbortController();
+    migrationRequest.current = request;
+    setMigratingViews(true);
+    setMigrationNote('');
+    let completed = 0;
+    try {
+      await migrateLocalViews(profileId, request.signal, (count) => { completed = count; refreshLocalViews(); });
+      if (!request.signal.aborted) setMigrationNote(fill(txt.viewsMigrated, { count: completed, name: profile.name }));
+    } catch (error) {
+      if (!request.signal.aborted) setMigrationNote(fill(txt.viewsMigrateFailed, { count: completed, message: formatError(error) }));
+    } finally {
+      if (migrationRequest.current === request) {
+        migrationRequest.current = null;
+        setMigratingViews(false);
+        void refreshViews();
+      }
+    }
+  }, [profileId, profile, refreshLocalViews, refreshViews, txt]);
 
   const localViews = useCallback((next: typeof savedViews) => {
-    try { localStorage.setItem(SAVED_VIEWS_LOCAL_KEY, JSON.stringify(next)); } catch { /* 隐私模式：忽略 */ }
-  }, []);
+    writeLocalViews(next);
+    refreshLocalViews();
+  }, [refreshLocalViews]);
 
   /** 当前网络状态打包成一个视图：已加入的节点、可见边源、手动位置、相机。 */
   const currentViewPayload = useCallback(() => ({
@@ -925,30 +1362,40 @@ export function NetworkPage() {  const graph = useApi<NetworkGraph>('/ontology/g
 
   const saveView = useCallback(async (name: string) => {
     const trimmed = name.trim();
-    if (!trimmed) { setNotice('给这个视图起个名字再保存。'); return; }
+    if (!trimmed) { setNotice(txt.viewsNameRequired); return; }
     const payload = currentViewPayload();
     if (profileId) {
       try {
-        const response = await fetch(`/api/v2/profiles/${encodeURIComponent(profileId)}/network-views`, {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ name: trimmed, payload }),
+        await api(`/profiles/${encodeURIComponent(profileId)}/network-views`, {
+          method: 'POST', body: { name: trimmed, payload },
         });
-        const body = await response.json();
-        if (!response.ok || body.ok === false) throw new Error(body.error?.message ?? '保存失败');
-        setNotice(`已保存视图「${trimmed}」到学习者档案（E）：${payload.added.length} 个节点、${payload.families.length} 类边、${Object.keys(payload.positions).length} 个手动位置。本体没有改变。`);
+        setNotice(fill(txt.viewsSavedProfile, {
+          name: trimmed,
+          nodes: payload.added.length,
+          families: payload.families.length,
+          positions: Object.keys(payload.positions).length,
+        }) + ' ' + txt.viewsSnapshotSaved);
         void refreshViews();
       } catch (error) {
-        setNotice(`保存失败：${String(error instanceof Error ? error.message : error)}`);
+        setNotice(fill(txt.viewsSaveFailed, { message: String(error instanceof Error ? error.message : error) }));
       }
       return;
     }
-    const entry = { viewId: `local-${Date.now()}`, name: trimmed, payload, updatedAt: new Date().toISOString(), local: true };
-    const next = [entry, ...savedViews];
-    setSavedViews(next);
-    localViews(next);
-    setNotice(`已保存视图「${trimmed}」到这台浏览器（未选择档案）：${payload.added.length} 个节点、${payload.families.length} 类边。选了档案之后会存进档案（E）。`);
-  }, [currentViewPayload, localViews, profileId, refreshViews, savedViews, setNotice]);
+    const entry = { viewId: `local-${crypto.randomUUID()}`, name: trimmed, payload, updatedAt: new Date().toISOString(), local: true };
+    try {
+      const next = [entry, ...readLocalViews()];
+      localViews(next);
+      setSavedViews(next);
+    } catch (error) {
+      setNotice(fill(txt.viewsSaveFailed, { message: formatError(error) }));
+      return;
+    }
+    setNotice(fill(txt.viewsSavedLocal, {
+      name: trimmed,
+      nodes: payload.added.length,
+      families: payload.families.length,
+    }) + ' ' + txt.viewsSnapshotSaved);
+  }, [currentViewPayload, localViews, profileId, refreshViews, savedViews, setNotice, txt]);
 
   /**
    * 载入：把视图里的四样东西原样放回去。
@@ -972,57 +1419,59 @@ export function NetworkPage() {  const graph = useApi<NetworkGraph>('/ontology/g
       setViewport({ x: camera.x, y: camera.y, scale: Math.min(Math.max(camera.scale, ZOOM_MIN), ZOOM_MAX) });
     }
     const missing = (entry.payload.added ?? []).length - restored.length;
-    setNotice(`已载入视图「${entry.name}」：${restored.length} 个节点、${Object.keys(entry.payload.positions ?? {}).length} 个手动位置。${missing > 0 ? `有 ${missing} 个节点已不在当前本体里，已跳过。` : ''}载入只改本页显示，不写本体。`);
-  }, [nodes, persistOverrides, setAdded, setFamilies, setNotice, setOverrides, setViewport]);
+    setNotice(fill(txt.viewsLoaded, {
+      name: entry.name,
+      nodes: restored.length,
+      positions: Object.keys(entry.payload.positions ?? {}).length,
+      missing: missing > 0 ? fill(txt.viewsLoadedMissing, { count: missing }) : '',
+    }));
+  }, [nodes, persistOverrides, setAdded, setFamilies, setNotice, setOverrides, setViewport, txt]);
 
   const renameView = useCallback(async (entry: (typeof savedViews)[number]) => {
-    const name = window.prompt('新的视图名', entry.name)?.trim();
+    const name = window.prompt(txt.viewsPromptRename, entry.name)?.trim();
     if (!name || name === entry.name) return;
     if (profileId && !entry.local) {
       try {
-        const response = await fetch(`/api/v2/profiles/${encodeURIComponent(profileId)}/network-views/${encodeURIComponent(entry.viewId)}`, {
-          method: 'PATCH',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ name }),
+        await api(`/profiles/${encodeURIComponent(profileId)}/network-views/${encodeURIComponent(entry.viewId)}`, {
+          method: 'PATCH', body: { name },
         });
-        const body = await response.json();
-        if (!response.ok || body.ok === false) throw new Error(body.error?.message ?? '重命名失败');
         void refreshViews();
       } catch (error) {
-        setNotice(`重命名失败：${String(error instanceof Error ? error.message : error)}`);
+        setNotice(fill(txt.viewsRenameFailed, { message: String(error instanceof Error ? error.message : error) }));
       }
       return;
     }
-    const next = savedViews.map((item) => (item.viewId === entry.viewId ? { ...item, name } : item));
-    setSavedViews(next);
-    localViews(next);
-  }, [localViews, profileId, refreshViews, savedViews, setNotice]);
+    try {
+      const next = readLocalViews().map((item) => (item.viewId === entry.viewId ? { ...item, name, updatedAt: new Date().toISOString() } : item));
+      localViews(next);
+      setSavedViews(next);
+    } catch (error) { setNotice(fill(txt.viewsRenameFailed, { message: formatError(error) })); }
+  }, [localViews, profileId, refreshViews, savedViews, setNotice, txt]);
 
   const deleteView = useCallback(async (entry: (typeof savedViews)[number]) => {
     if (profileId && !entry.local) {
       try {
-        const response = await fetch(`/api/v2/profiles/${encodeURIComponent(profileId)}/network-views/${encodeURIComponent(entry.viewId)}`, { method: 'DELETE' });
-        if (!response.ok) {
-          const body = await response.json().catch(() => null);
-          throw new Error(body?.error?.message ?? '删除失败');
-        }
+        await api(`/profiles/${encodeURIComponent(profileId)}/network-views/${encodeURIComponent(entry.viewId)}`, { method: 'DELETE' });
         void refreshViews();
       } catch (error) {
-        setNotice(`删除失败：${String(error instanceof Error ? error.message : error)}`);
+        setNotice(fill(txt.viewsDeleteFailed, { message: String(error instanceof Error ? error.message : error) }));
       }
       return;
     }
-    const next = savedViews.filter((item) => item.viewId !== entry.viewId);
-    setSavedViews(next);
-    localViews(next);
-  }, [localViews, profileId, refreshViews, savedViews, setNotice]);
+    try {
+      const next = readLocalViews().filter((item) => item.viewId !== entry.viewId);
+      localViews(next);
+      setSavedViews(next);
+    } catch (error) { setNotice(fill(txt.viewsDeleteFailed, { message: formatError(error) })); }
+  }, [localViews, profileId, refreshViews, savedViews, setNotice, txt]);
 
   /** 「保存」按钮：用一行 prompt 收名字。名字是必须的——下次要靠它认出来。 */
   const saveCurrentView = useCallback(() => {
-    const name = window.prompt('给这个视图起个名字（下次按名字载入）', `视图 ${new Date().toLocaleString('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}`);
+    const stamp = fmtDate(new Date(), { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    const name = window.prompt(txt.viewsPromptSave, fill(txt.viewsDefaultName, { stamp }));
     if (name === null) return;
     void saveView(name);
-  }, [saveView]);
+  }, [saveView, fmtDate, txt]);
 
   /**
    * 相机动画：把视角**平滑地**挪到目标位置。
@@ -1047,6 +1496,40 @@ export function NetworkPage() {  const graph = useApi<NetworkGraph>('/ontology/g
     const target = window as unknown as Record<string, unknown>;
     target.__mcsCameraLast = { ...(target.__mcsCameraLast as Record<string, unknown> ?? {}), ...patch };
   }, []);
+
+  /**
+   * 相机图层（`<g>`）与「把相机画到 DOM 上」的唯一入口（2026-10-05）。
+   *
+   * 为什么要有这条绕过 React 的路：相机补间原来是**每帧 `setViewport`**，
+   * 而一次 `setViewport` 会重渲染整张网络（节点、边、标签、面板）——实测**一次 400ms 的
+   * 居中动画 = 309ms 脚本 / 524ms 任务**，安卓上每一帧都超出预算，表现就是「相机动画一顿一顿」。
+   * 补间期间只有 x / y 在变（`centerOnNode` 不动 scale），所以把新位置直接写进 `<g>` 的
+   * `transform` 就够了：画面照常逐帧移动，React 一次都不重渲染；状态只在补间结束或取消时各提交一次。
+   *
+   * 属性写法与原来 JSX 里的那串**逐字一致**（`translate(x y) scale(s)`）：
+   * `tests/browser.mjs` 用正则读这个属性来核对相机。
+   */
+  const cameraGroupRef = useRef<SVGGElement | null>(null);
+  const paintCamera = useCallback((camera: Camera) => {
+    const group = cameraGroupRef.current;
+    if (group) group.setAttribute('transform', `translate(${camera.x} ${camera.y}) scale(${camera.scale})`);
+    const canvas = canvasRef.current;
+    if (canvas) {
+      canvas.dataset.cameraX = camera.x.toFixed(2);
+      canvas.dataset.cameraY = camera.y.toFixed(2);
+      canvas.dataset.zoom = camera.scale.toFixed(4);
+    }
+  }, []);
+
+  /**
+   * 每次渲染之后都把相机重新画一遍，取值一律来自 `viewportRef`（「最新一刻」的那个值）。
+   *
+   * 补间期间 DOM 上的相机比 `viewport` 状态更新（状态只在结束时提交），
+   * 这时任何一次无关的重渲染都可能把画面弹回旧位置——这条 effect 就是那道保险。
+   * 用 `useLayoutEffect`：它在浏览器绘制之前跑，不会闪。
+   */
+  useLayoutEffect(() => { paintCamera(viewportRef.current); });
+
   const cameraAnimationRef = useRef<{ frame: number; cancelled: boolean } | null>(null);
   const cameraAnimationCountRef = useRef(0);
   const cancelCameraAnimation = useCallback((reason: string) => {
@@ -1055,8 +1538,15 @@ export function NetworkPage() {  const graph = useApi<NetworkGraph>('/ontology/g
     current.cancelled = true;
     window.cancelAnimationFrame(current.frame);
     cameraAnimationRef.current = null;
+    /*
+     * 补间期间相机是直接画在 DOM 上的：取消时要把这笔账落回状态，
+     * 否则紧接着的一次渲染会把画面弹回补间开始前的位置——用户看到的就是「一拖，视角跳回去」。
+     * 传的是同一个对象时 React 会跳过更新，因此这里不会给「本来就没在补间」的情况添一次渲染。
+     */
+    const painted = viewportRef.current;
+    setViewport((view) => (view === painted ? view : painted));
     recordCamera({ cancelled: reason, animations: cameraAnimationCountRef.current });
-  }, []);
+  }, [recordCamera]);
 
   const animateCamera = useCallback((target: Camera, durationMs = CAMERA_TWEEN_MS) => {
     if (reduceMotion || durationMs <= 0) { setViewport(clampCamera(target)); return; }
@@ -1072,19 +1562,28 @@ export function NetworkPage() {  const graph = useApi<NetworkGraph>('/ontology/g
       if (record.cancelled) return;
       const t = Math.min(1, (performance.now() - startedAt) / durationMs);
       const k = easeOutCubic(t);
-      setViewport(clampCamera({
+      const next = clampCamera({
         scale: start.scale + (target.scale - start.scale) * k,
         x: start.x + (target.x - start.x) * k,
         y: start.y + (target.y - start.y) * k,
-      }));
+      });
+      /*
+       * 逐帧**只画 DOM，不 setViewport**（2026-10-05，安卓流畅度）：
+       * 补间期间只有 x / y 在变，所以直接写 `<g>` 的 transform 就够，React 一次都不重渲染。
+       * `viewportRef` 同步跟上，取消时才能把当前这一刻落回状态（见 cancelCameraAnimation）。
+       */
+      viewportRef.current = next;
+      paintCamera(next);
       if (t < 1) record.frame = window.requestAnimationFrame(tick);
       else {
         cameraAnimationRef.current = null;
+        // 收尾提交一次状态：与 DOM 上已经画好的那一帧是同一个值，所以看不到跳变。
+        setViewport(next);
         recordCamera({ finished: true, animations: cameraAnimationCountRef.current });
       }
     };
     record.frame = window.requestAnimationFrame(tick);
-  }, [cancelCameraAnimation, clampCamera, recordCamera, reduceMotion]);
+  }, [cancelCameraAnimation, clampCamera, paintCamera, recordCamera, reduceMotion]);
 
   /**
    * 把某个节点挪到「可用区」的中心（保持当前缩放）。
@@ -1093,12 +1592,12 @@ export function NetworkPage() {  const graph = useApi<NetworkGraph>('/ontology/g
    * 因此「居中」和「适配」不会在同一个页面上给出两个不一致的中心。
    */
   const centerOnNode = useCallback((nodeId: string, { animate = true }: { animate?: boolean } = {}) => {
-    const stage = stageRef.current;
     const current = viewRef.current;
     const node = current?.layout.placed.find((item) => item.id === nodeId);
-    if (!stage || !current || !node) return false;
-    const rect = stage.getBoundingClientRect();
-    const hudSpace = CAMERA_HUD_SPACE;
+    const rect = viewportRect();
+    if (!rect || !current || !node) return false;
+    // 窄屏的 HUD 与面板都在画布**下面**排着，不压在画布上，因此不留顶部空间。
+    const hudSpace = narrowPanelMode ? 0 : CAMERA_HUD_SPACE;
     const replaySpace = replayPlan ? replayHeight : 0;
     const left = panels.list.position || panels.detail.position ? 0 : 0;
     const right = panels.recommend.position || panels.families.position ? 0 : 0;
@@ -1113,13 +1612,34 @@ export function NetworkPage() {  const graph = useApi<NetworkGraph>('/ontology/g
     };
     animateCamera(target, animate ? CAMERA_TWEEN_MS : 0);
     return true;
-  }, [animateCamera, replayHeight, replayPlan]);
+  }, [animateCamera, narrowPanelMode, replayHeight, replayPlan, viewportRect]);
+
+  /**
+   * 把鼠标事件的屏幕坐标换成 SVG 自己的用户坐标。
+   *
+   * 不自己算 `clientX - rect.left`：那个减法的隐含前提是「SVG 用户单位 == CSS 像素、
+   * 且 SVG 左上角就是 rect 左上角」，而 viewBox / preserveAspectRatio / 边框 / 全屏
+   * 任何一处不满足，锚点就会偏——偏移量还会随缩放放大（实测每格漂 ~20px）。
+   * `getScreenCTM().inverse()` 是浏览器给出的权威变换，一次乘完，不留假设。
+   *
+   * 滚轮缩放、按钮缩放与**双指缩放**都从这里取锚点——三条路的相机数学因此只有一套。
+   */
+  const pointerInSvg = useCallback((clientX: number, clientY: number): { x: number; y: number } | null => {
+    const svg = canvasRef.current?.querySelector('svg');
+    if (!svg) return null;
+    const ctm = svg.getScreenCTM();
+    if (!ctm) return null;
+    const point = new DOMPoint(clientX, clientY).matrixTransform(ctm.inverse());
+    return { x: point.x, y: point.y };
+  }, []);
 
   /** 平移：在画布空白处按下并拖动。用 pointer 事件，触摸与触控笔同样可用。 */
   const onCanvasPointerDown = useCallback((event: React.PointerEvent) => {
     const target = event.target as Element;
     // 点在节点、按钮、链接上不触发平移。
     if (target.closest('.network-node, button, a, input, select, textarea, label')) return;
+    // 这个手势已经被第二根手指接管成双指缩放了（见 onCanvasPointerDownCapture）：不要再改成平移。
+    if (pinchRef.current) return;
     // 用户一动手就停掉相机动画：相机自己在动、手却拖不动是最难受的手感。
     cancelCameraAnimation('user-pan');
     panRef.current = {
@@ -1136,6 +1656,38 @@ export function NetworkPage() {  const graph = useApi<NetworkGraph>('/ontology/g
   }, [cancelCameraAnimation, viewport.x, viewport.y]);
 
   const onCanvasPointerMove = useCallback((event: React.PointerEvent) => {
+    const tracked = canvasPointersRef.current;
+    if (tracked.has(event.pointerId)) tracked.set(event.pointerId, { x: event.clientX, y: event.clientY });
+
+    /*
+     * 双指：缩放与平移**同一个式子**。
+     *
+     * 令手势开始时两指中点为 m₀、它下面的世界点为 w（anchorWorld），当前中点为 m，
+     * 缩放比为 k：只要保证 w 一直待在 m 下，就有 offset = m − w·scale。
+     * 于是「两指张开」改变 scale、「两指整体移动」改变 m —— 不需要分成两条路径，
+     * 也不会出现「缩放和平移互相打架、画面跟着手指漂」的经典毛病。
+     */
+    const pinch = pinchRef.current;
+    if (pinch) {
+      const first = tracked.get(pinch.ids[0]);
+      const second = tracked.get(pinch.ids[1]);
+      if (!first || !second) return;
+      const a = pointerInSvg(first.x, first.y);
+      const b = pointerInSvg(second.x, second.y);
+      if (!a || !b) return;
+      const distance = Math.hypot(b.x - a.x, b.y - a.y);
+      // 两指几乎重合时比值会爆掉（分母趋零）：这一档不缩放，只按平移走。
+      const factor = pinch.startDistance >= PINCH_MIN_SPAN ? distance / pinch.startDistance : 1;
+      const scale = Math.min(Math.max(pinch.startViewport.scale * factor, ZOOM_MIN), ZOOM_MAX);
+      const mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+      setViewport(clampCamera({
+        scale,
+        x: mid.x - pinch.anchorWorld.x * scale,
+        y: mid.y - pinch.anchorWorld.y * scale,
+      }));
+      return;
+    }
+
     const pan = panRef.current;
     if (!pan || pan.pointerId !== event.pointerId) return;
     setViewport((current) => clampCamera({
@@ -1144,7 +1696,7 @@ export function NetworkPage() {  const graph = useApi<NetworkGraph>('/ontology/g
       x: pan.originX + (event.clientX - pan.startX),
       y: pan.originY + (event.clientY - pan.startY),
     }));
-  }, [clampCamera]);
+  }, [clampCamera, pointerInSvg]);
 
   const endPan = useCallback((event: React.PointerEvent) => {
     const pan = panRef.current;
@@ -1166,15 +1718,6 @@ export function NetworkPage() {  const graph = useApi<NetworkGraph>('/ontology/g
    * 2. **位移要除以缩放**。指针位移是屏幕像素，节点坐标是世界单位；
    *    不折算的话放大后拖一点点节点就飞出去。
    */
-  const pointerInSvg = useCallback((clientX: number, clientY: number): { x: number; y: number } | null => {
-    const svg = canvasRef.current?.querySelector('svg');
-    if (!svg) return null;
-    const ctm = svg.getScreenCTM();
-    if (!ctm) return null;
-    const point = new DOMPoint(clientX, clientY).matrixTransform(ctm.inverse());
-    return { x: point.x, y: point.y };
-  }, []);
-
   /** 以屏幕上某点（SVG 用户坐标）为不动点缩放。 */
   const zoomAt = useCallback((factor: number, anchorX: number, anchorY: number) => {
     cancelCameraAnimation('user-zoom');
@@ -1241,9 +1784,9 @@ export function NetworkPage() {  const graph = useApi<NetworkGraph>('/ontology/g
   const openPicker = useCallback((node: PlacedNode) => {
     const data = graph.data;
     if (!data) return;
-    const candidates = relatedCandidates(data, node.id, { exclude: added, limit: PICK_MAX });
+    const candidates = relatedCandidates(data, node.id, { exclude: added, limit: PICK_MAX, locale });
     if (candidates.length === 0) {
-      setNotice(`「${node.title}」没有还没进视图的强关联节点：与它相关的节点都已经在画布上了。`);
+      setNotice(fill(txt.noticeNoRelated, { title: node.title }));
       return;
     }
     const slots = ringSlots(node, candidates.length);
@@ -1253,7 +1796,7 @@ export function NetworkPage() {  const graph = useApi<NetworkGraph>('/ontology/g
       candidates: candidates.map((candidate, index) => ({ ...candidate, ...slots[index] })),
       hovered: null,
     });
-  }, [graph.data, added, ringSlots]);
+  }, [graph.data, added, ringSlots, locale, txt]);
 
   /** 屏幕坐标 → 世界坐标（相机：screen = world × scale + offset）。 */
   const worldFromClient = useCallback((clientX: number, clientY: number) => {
@@ -1293,9 +1836,13 @@ export function NetworkPage() {  const graph = useApi<NetworkGraph>('/ontology/g
         return next;
       });
     }
-    setNotice(`已把「${candidate?.title ?? target}」加入视图（${candidate ? RELATED_BASIS_LABELS[candidate.basis] : '强关联'}）。${candidate?.note ?? ''}只改本页显示，本体与学习记录都没变。`);
+    setNotice(fill(txt.noticePicked, {
+      title: candidate?.title ?? target,
+      basis: candidate ? relatedBasisLabel(candidate.basis, locale) : txt.pickerBasisFallback,
+      note: candidate?.note ?? '',
+    }));
     return true;
-  }, [added, candidateAt, persistOverrides, setAdded]);
+  }, [added, candidateAt, persistOverrides, setAdded, locale, txt]);
 
   // 长按与抬手都挂在 window 上：手势一旦开始，鼠标移到画布外也要能结算。
   useEffect(() => {
@@ -1352,6 +1899,8 @@ export function NetworkPage() {  const graph = useApi<NetworkGraph>('/ontology/g
   const onNodePointerDown = useCallback((event: React.PointerEvent, node: PlacedNode) => {
     // 只响应主键；右键走 <g> 上的 onPointerDown 分支（点一下 = 移出视图）。
     if (event.button !== 0) return;
+    // 双指手势进行中：这一下属于缩放，不属于这个节点（见 onCanvasPointerDownCapture）。
+    if (pinchRef.current) return;
     event.stopPropagation();
     nodeDragRef.current = {
       id: node.id,
@@ -1467,6 +2016,87 @@ export function NetworkPage() {  const graph = useApi<NetworkGraph>('/ontology/g
   }, [persistOverrides, viewport.scale]);
 
   /**
+   * 双指手势的起点：**第二根手指落下**就把它接管过来（2026-10-05）。
+   *
+   * 为什么挂在**捕获阶段**：节点的 `onPointerDown` 会 `stopPropagation`，
+   * 冒泡阶段看不到「第一根手指落在节点上」这件事。而手指落在哪儿都会捏，
+   * 落在节点上就捏不动是最说不通的一种半成品。
+   *
+   * 接管时要做三件事，少一件都会出怪现象：
+   * 1. **把两根指针都改挂到画布上**（`setPointerCapture`）。第一根可能已被节点捕获，
+   *    不改挂的话它的 `pointermove` 一直送去节点，两指运动的另一半永远读不到；
+   * 2. **作废节点拖动与长按计时**：这一下是缩放手势，不是拖节点，也不该在捏的过程中
+   *    弹出强关联选择器；
+   * 3. **停掉相机动画**：与平移同一个理由——相机自己在动、手却拖不动最难受。
+   *
+   * 选择器已经打开时不接管：那是一个有自己结算规则的状态（抬手结算在 window 上），
+   * 中途换手势语义只会让它结算到一半。
+   */
+  const onCanvasPointerDownCapture = useCallback((event: React.PointerEvent) => {
+    canvasPointersRef.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
+    if (canvasPointersRef.current.size !== 2 || pinchRef.current || pickerRef.current) return;
+    const [first, second] = [...canvasPointersRef.current.entries()];
+    const a = pointerInSvg(first[1].x, first[1].y);
+    const b = pointerInSvg(second[1].x, second[1].y);
+    if (!a || !b) return;
+
+    cancelCameraAnimation('user-pinch');
+    const press = leftPressRef.current;
+    if (press?.timer) { window.clearTimeout(press.timer); leftPressRef.current = null; }
+    nodeDragRef.current = null;
+    setDraggingNode(null);
+    panRef.current = null;
+    setPanning(false);
+
+    const current = viewportRef.current;
+    const mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+    pinchRef.current = {
+      ids: [first[0], second[0]],
+      startDistance: Math.hypot(b.x - a.x, b.y - a.y),
+      anchorWorld: { x: (mid.x - current.x) / current.scale, y: (mid.y - current.y) / current.scale },
+      startViewport: current,
+    };
+    // 两根都改挂到画布：见上面第 1 条。
+    const canvas = event.currentTarget as Element;
+    canvasPointersRef.current.forEach((_point, id) => {
+      try { canvas.setPointerCapture?.(id); } catch { /* 指针已失效：忽略 */ }
+    });
+  }, [cancelCameraAnimation, pointerInSvg]);
+
+  /**
+   * 双指抬手：在 window 上收尾，因为捕获可能已经转移到别处（或压根没设上）。
+   *
+   * 手势结束后**若还剩一根手指，就把它接着当平移用**：捏完想继续拖是自然动作，
+   * 若要求「全部抬起再重新按」，手上的感觉是画面卡住了。接手的起点按**当前**相机重设，
+   * 所以交接那一瞬间不会跳。
+   */
+  useEffect(() => {
+    const drop = (event: PointerEvent) => {
+      if (!canvasPointersRef.current.delete(event.pointerId)) return;
+      const pinch = pinchRef.current;
+      if (!pinch || (pinch.ids[0] !== event.pointerId && pinch.ids[1] !== event.pointerId)) return;
+      pinchRef.current = null;
+      const rest = [...canvasPointersRef.current.entries()];
+      if (rest.length !== 1) { setPanning(false); return; }
+      const [id, point] = rest[0];
+      panRef.current = {
+        pointerId: id,
+        startX: point.x,
+        startY: point.y,
+        originX: viewportRef.current.x,
+        originY: viewportRef.current.y,
+      };
+      setPanning(true);
+    };
+    window.addEventListener('pointerup', drop);
+    window.addEventListener('pointercancel', drop);
+    return () => {
+      window.removeEventListener('pointerup', drop);
+      window.removeEventListener('pointercancel', drop);
+    };
+  }, []);
+
+  /**
    * 左键按住节点 = 「强关联节点」选择器（2026-10 从右键改到左键）。
    *
    * 左键现在有三个含义，靠**位移**分开，而不是只看时间：
@@ -1496,14 +2126,6 @@ export function NetworkPage() {  const graph = useApi<NetworkGraph>('/ontology/g
     });
   }, [persistOverrides, viewport.scale]);
 
-  /**
-   * 把鼠标事件的屏幕坐标换成 SVG 自己的用户坐标。
-   *
-   * 不自己算 `clientX - rect.left`：那个减法的隐含前提是「SVG 用户单位 == CSS 像素、
-   * 且 SVG 左上角就是 rect 左上角」，而 viewBox / preserveAspectRatio / 边框 / 全屏
-   * 任何一处不满足，锚点就会偏——偏移量还会随缩放放大（实测每格漂 ~20px）。
-   * `getScreenCTM().inverse()` 是浏览器给出的权威变换，一次乘完，不留假设。
-   */
   if (!wheelHandlerRef.current) {
     wheelHandlerRef.current = (event: WheelEvent) => {
       event.preventDefault();
@@ -1535,11 +2157,11 @@ export function NetworkPage() {  const graph = useApi<NetworkGraph>('/ontology/g
 
   /** 让整张网络落在「未被悬浮框占用」的区域里，并居中。 */
   const fitView = useCallback(() => {
-    const stage = stageRef.current;
     const current = viewRef.current;
-    if (!stage || !current) return;
-    const rect = stage.getBoundingClientRect();
-    const hudSpace = CAMERA_HUD_SPACE;
+    const rect = viewportRect();
+    if (!rect || !current) return;
+    // 窄屏的 HUD 与面板都在画布下面排着，不压在画布上，因此不留顶部空间。
+    const hudSpace = narrowPanelMode ? 0 : CAMERA_HUD_SPACE;
     /*
      * 回放控制台也压在画布上，占的高度要一并让出来。
      *
@@ -1586,7 +2208,7 @@ export function NetworkPage() {  const graph = useApi<NetworkGraph>('/ontology/g
         centerY: Math.round(centerY), centerOfContentY: Math.round(centerOfContentY),
       });
     }
-  }, [clampCamera, replayHeight, replayPlan]);
+  }, [clampCamera, narrowPanelMode, replayHeight, replayPlan, viewportRect]);
 
   const resetViewport = useCallback(() => fitView(), [fitView]);
 
@@ -1607,9 +2229,9 @@ export function NetworkPage() {  const graph = useApi<NetworkGraph>('/ontology/g
     persistPlacements({});
     lastPlacementRef.current = null;
     setNotice(manualCount > 0
-      ? `已重新布局：自动摆位清空重算；你手动拖过的 ${manualCount} 个节点保持原位。`
-      : '已重新布局：自动摆位清空重算（当前没有手动摆放的节点）。');
-  }, [overrides, persistPlacements]);
+      ? fill(txt.relayoutDoneManual, { count: manualCount })
+      : txt.relayoutDonePlain);
+  }, [overrides, persistPlacements, txt]);
 
   /**
    * 已加入集合或面板占用变化时自动适配一次。
@@ -1686,13 +2308,17 @@ export function NetworkPage() {  const graph = useApi<NetworkGraph>('/ontology/g
    * `absent` 不当作选项，只在面板里如实说明。
    */
   const constructFacet = useMemo(
-    () => buildFacet(nodes, (node) => [node.construct], constructLabel, Object.keys(CONSTRUCT_LABELS)),
-    [nodes],
+    () => buildFacet(nodes, (node) => [node.construct], (value) => labels.constructLabel(value), Object.keys(CONSTRUCT_LABELS)),
+    // `labels` 每次渲染都是新对象，但取值只取决于 `locale`；用 locale 当依赖，避免分面每帧重算。
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [nodes, locale],
   );
+
   /** 案例选项同样只列真有的（带计数）；`<option>` 不能排版，C^k 走 Unicode 上标。 */
   const caseFacet = useMemo(
-    () => buildFacet(nodes, (node) => [node.case], (value) => plainMathText(CASE_LABELS[value] ?? value), Object.keys(CASE_LABELS)),
-    [nodes],
+    () => buildFacet(nodes, (node) => [node.case], (value) => plainMathText(labels.tables.cases[value] ?? value), Object.keys(CASE_LABELS)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [nodes, locale],
   );
   /** 「类比」这类词是关系种类：命中时说明它是关系，并给出本体里的条数与去处。 */
   const relationCounts = useMemo(() => {
@@ -1711,7 +2337,7 @@ export function NetworkPage() {  const graph = useApi<NetworkGraph>('/ontology/g
     () => (view?.layout.placed ?? []).filter((node) => threadIds.has(node.id)).length,
     [view, threadIds],
   );
-  const relationHint = useMemo(() => relationKindHint(query, relationCounts), [query, relationCounts]);
+  const relationHint = useMemo(() => relationKindHint(query, relationCounts, locale), [query, relationCounts, locale]);
   /** 当前视图里每种契约 mode 的边数（条款面板用；不写死数字）。 */
   const contractModeCounts = useMemo(() => {
     const counts = new Map<string, number>();
@@ -1790,13 +2416,14 @@ export function NetworkPage() {  const graph = useApi<NetworkGraph>('/ontology/g
    * 被合并的边不能只报一个数字——读者要能看出被藏起来的是哪一种关系。
    */
   const describeEdge = useCallback((edge: NetworkEdge): string => {
-    if (edge.source === 'relation') return `${relationLabel(edge.kind)}（关系 ${edge.id}）`;
+    if (edge.source === 'relation') return fill(txt.describeRelation, { kind: labels.relationLabel(edge.kind), id: edge.id });
     if (edge.source === 'contract') {
-      const label = edgeKindLabel('contract', null, edge.mode) ?? EDGE_FAMILY_LABELS.contract;
-      return `${label}：${edge.actionTitle}（契约 ${edge.id}）`;
+      const label = edgeKindLabel('contract', null, edge.mode, locale) ?? edgeFamilyLabel('contract', locale);
+      return fill(txt.describeContract, { label, title: edge.actionTitle, id: edge.id });
     }
-    return `${EDGE_FAMILY_LABELS[edge.source]}（${edge.id}）`;
-  }, []);
+    return fill(txt.describeFamily, { family: edgeFamilyLabel(edge.source, locale), id: edge.id });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [locale, txt]);
 
   /**
    * 画序：**逻辑越强越后画**，于是硬关系压住软关系。
@@ -1834,7 +2461,7 @@ export function NetworkPage() {  const graph = useApi<NetworkGraph>('/ontology/g
     return [...seen.values()].sort((left, right) => left.id.localeCompare(right.id, 'en'));
   }, [view, visualOf]);
 
-  if (graph.loading) return <div className="page"><p>加载本体…</p></div>;
+  if (graph.loading) return <div className="page"><p>{txt.loading}</p></div>;
   if (graph.error) return <div className="page"><p className="error">{formatError(graph.error)}</p></div>;
   if (!graph.data || !view) return null;
 
@@ -1927,8 +2554,8 @@ export function NetworkPage() {  const graph = useApi<NetworkGraph>('/ontology/g
     <header className="floating-panel-head" onPointerDown={panels[id].onPointerDown}>
       <h2>{title}</h2>
       <div className="floating-panel-tools">
-        <button className="link-button" onClick={panels[id].reset} title="恢复默认位置">复位</button>
-        <button className="link-button" onClick={() => setOpen((current) => ({ ...current, [id]: false }))} aria-label={`关闭${title}`}>✕</button>
+        <button className="link-button" onClick={panels[id].reset} title={txt.panelRestore}>{txt.panelRestore}</button>
+        <button className="link-button" onClick={() => setOpen((current) => ({ ...current, [id]: false }))} aria-label={fill(txt.panelClose, { title })}>✕</button>
       </div>
     </header>
   );
@@ -1964,6 +2591,15 @@ export function NetworkPage() {  const graph = useApi<NetworkGraph>('/ontology/g
       <div
         ref={attachCanvas}
         className="network-canvas-full"
+        /*
+         * 相机摊在 `data-*` 上，给验收当读数口（与 `.home-story` 的 `data-active-act`
+         * 同一套做法）：双指缩放要守的是「中点下的那个世界点没动」，
+         * 那需要拿到 x / y / scale 三个真实值，而不是从百分比反推。
+         */
+        data-zoom={viewport.scale.toFixed(4)}
+        data-camera-x={viewport.x.toFixed(2)}
+        data-camera-y={viewport.y.toFixed(2)}
+        onPointerDownCapture={onCanvasPointerDownCapture}
         onPointerDown={onCanvasPointerDown}
         onPointerMove={onCanvasPointerMove}
         onPointerUp={endPan}
@@ -1978,7 +2614,7 @@ export function NetworkPage() {  const graph = useApi<NetworkGraph>('/ontology/g
           height="100%"
           preserveAspectRatio="xMinYMin meet"
           role="img"
-          aria-label={`节点网络，已加入 ${view.layout.placed.length} 个节点、${view.edges.length} 条边`}
+          aria-label={fill(txt.canvasAria, { nodes: view.layout.placed.length, edges: view.edges.length })}
         >
           <defs>
             {/*
@@ -2030,10 +2666,17 @@ export function NetworkPage() {  const graph = useApi<NetworkGraph>('/ontology/g
             )}
           </defs>
 
-          <g transform={`translate(${viewport.x} ${viewport.y}) scale(${viewport.scale})`}>
+          <g
+            ref={cameraGroupRef}
+            /*
+             * JSX 里这一份是「已提交状态」的相机，保证首帧与无 JS 场景下也正确；
+             * 补间期间 DOM 上的真实位置由 `paintCamera` 逐帧改写（见那里的说明）。
+             */
+            transform={`translate(${viewport.x} ${viewport.y}) scale(${viewport.scale})`}
+          >
             {view.layout.placed.length === 0 && (
               <text className="network-stage-hint" x={Math.max(stageSize.w, 1) / 2} y={Math.max(stageSize.h, 1) * 0.46} textAnchor="middle">
-                网络还是空的 · 用右侧「推荐加入」或左侧「全部节点」开始
+                {txt.emptyHint}
               </text>
             )}
 
@@ -2126,9 +2769,9 @@ export function NetworkPage() {  const graph = useApi<NetworkGraph>('/ontology/g
                       fontSize={12}
                     >
                       {edge.source === 'relation'
-                        ? relationLabel(edge.kind)
-                        : edge.source === 'contract' && edgeKindLabel('contract', null, edge.mode)
-                          ? `${edgeKindLabel('contract', null, edge.mode)}：${edge.actionTitle}`
+                        ? labels.relationLabel(edge.kind)
+                        : edge.source === 'contract' && edgeKindLabel('contract', null, edge.mode, locale)
+                          ? fill(txt.edgeLabelContract, { label: edgeKindLabel('contract', null, edge.mode, locale) ?? '', title: edge.actionTitle })
                           : ''}
                       {/* 被合并的同对边：在标签后面如实标注条数，不悄悄吞掉。 */}
                       {merged.length > 0 && (
@@ -2139,10 +2782,19 @@ export function NetworkPage() {  const graph = useApi<NetworkGraph>('/ontology/g
                   {/* 供测试与可访问性核对：把「这条边多重、为什么」写进 DOM */}
                   <title>
                     {edge.source === 'relation'
-                      ? `${relationLabel(edge.kind)}（见证 ${edge.witnessStatus}）· 视觉权重 ${visual.weight.toFixed(2)} · ${TIER_LABELS[visual.tier]}`
-                      : `${EDGE_FAMILY_LABELS[edge.source]} · 视觉权重 ${visual.weight.toFixed(2)} · ${TIER_LABELS[visual.tier]}`}
-                    {merged.length > 0 && `\n同一对节点上还合并了 ${merged.length} 条（只画最强的一条）：\n`
-                      + merged.map((item) => `　· ${describeEdge(item)}（权重 ${visualOf(item).weight.toFixed(2)}）`).join('\n')}
+                      ? fill(txt.edgeTitleRelation, {
+                        kind: labels.relationLabel(edge.kind),
+                        witness: edge.witnessStatus ?? '',
+                        weight: visual.weight.toFixed(2),
+                        tier: tierLabel(visual.tier, locale),
+                      })
+                      : fill(txt.edgeTitleFamily, {
+                        family: edgeFamilyLabel(edge.source, locale),
+                        weight: visual.weight.toFixed(2),
+                        tier: tierLabel(visual.tier, locale),
+                      })}
+                    {merged.length > 0 && fill(txt.edgeTitleMerged, { count: merged.length })
+                      + merged.map((item) => fill(txt.edgeTitleMergedItem, { desc: describeEdge(item), weight: visualOf(item).weight.toFixed(2) })).join('\n')}
                   </title>
                 </g>
               );
@@ -2180,7 +2832,7 @@ export function NetworkPage() {  const graph = useApi<NetworkGraph>('/ontology/g
                   {/* 徽标放在卡片上沿之外：卡内空间只够放节点名，塞进去两行都读不清。 */}
                   <g className="network-stage-target-badge" transform="translate(0,-11)">
                     <rect width="64" height="20" rx="10" />
-                    <text x="32" y="14" fontSize="11.5" textAnchor="middle">下一步</text>
+                    <text x="32" y="14" fontSize="11.5" textAnchor="middle">{txt.nextStepBadge}</text>
                   </g>
                   <text className="network-stage-target-title" x="10" y="38" fontSize="13">
                     {target.title.length > 14 ? `${target.title.slice(0, 14)}…` : target.title}
@@ -2275,7 +2927,7 @@ export function NetworkPage() {  const graph = useApi<NetworkGraph>('/ontology/g
                       className="network-node-thread"
                       x={NODE_W - 48} y={NODE_H - 17} width="38" height="13" rx="6.5"
                     />
-                    <text className="network-node-thread-label" x={NODE_W - 29} y={NODE_H - 7} fontSize="9.5" textAnchor="middle">线索</text>
+                    <text className="network-node-thread-label" x={NODE_W - 29} y={NODE_H - 7} fontSize="9.5" textAnchor="middle">{txt.threadBadge}</text>
                   </>
                 )}
                 {/* 被自动加入的节点标一个小圆点，并在 title 里写明原因，便于核对规则。 */}
@@ -2283,11 +2935,11 @@ export function NetworkPage() {  const graph = useApi<NetworkGraph>('/ontology/g
                   <circle cx={NODE_W - 10} cy={NODE_H - 9} r="4" fill={THEME.autoAdded} />
                 )}
                 <title>
-                  {`${node.title}（${node.id}）· ${degree} 条连接 · ${NODE_GROUP_LABELS[group]}`
-                    + `${threadIds.has(node.id) ? ' · 线索层：话题级条目，不参与前置计算' : ''}`
-                    + `${isDragged ? ' · 已手动摆放，双击复位' : ''}`
-                    + `${autoAddedIds.has(node.id) ? ' · 由「局部技巧自动加入」规则加入' : ''}`
-                    + ' · 左键按住看强关联节点 · 右键移出视图'}
+                  {fill(txt.nodeTitle, { title: node.title, id: node.id, degree, group: nodeGroupLabel(group, locale) })
+                    + (threadIds.has(node.id) ? txt.nodeTitleThread : '')
+                    + (isDragged ? txt.nodeTitleDragged : '')
+                    + (autoAddedIds.has(node.id) ? txt.nodeTitleAuto : '')
+                    + txt.nodeTitleHint}
                 </title>
                 </g>
               </g>
@@ -2321,7 +2973,7 @@ export function NetworkPage() {  const graph = useApi<NetworkGraph>('/ontology/g
               画在相机变换里（跟着平移缩放走），命中判定用世界坐标自己算——见 candidateAt。
             */}
             {picker && (
-              <g className="pick-ring" data-source={picker.sourceId} aria-label={`「${picker.sourceTitle}」的强关联节点`}>
+              <g className="pick-ring" data-source={picker.sourceId} aria-label={fill(txt.pickerAria, { title: picker.sourceTitle })}>
                 {picker.candidates.map((candidate) => {
                   const hovered = picker.hovered === candidate.node;
                   return (
@@ -2339,7 +2991,7 @@ export function NetworkPage() {  const graph = useApi<NetworkGraph>('/ontology/g
                       <rect className="pick-strength" x="0" y="0" width="5" height={PICK_CARD_H} rx="2.5" />
                       <text className="pick-title" x="16" y="26" fontSize="13.5">{candidate.title}</text>
                       <text className="pick-basis" x="16" y="47" fontSize="11">
-                        {RELATED_BASIS_LABELS[candidate.basis]} · {candidate.strength.toFixed(2)}
+                        {relatedBasisLabel(candidate.basis, locale)} · {candidate.strength.toFixed(2)}
                       </text>
                       {hovered && <rect className="pick-hover-ring" width={PICK_CARD_W} height={PICK_CARD_H} rx="12" />}
                     </g>
@@ -2353,8 +3005,8 @@ export function NetworkPage() {  const graph = useApi<NetworkGraph>('/ontology/g
 
       {picker && (
         <p className="network-notice pick-hint" role="status">
-          按住左键 —— 把鼠标移到要加入的节点上，松开即加入视图；松在别处或按 Esc 取消。
-          <span className="muted">　候选来自已登记关系与行动契约，只摊开还没进视图的那些。标着「线索」的是话题级条目：它们是学习线索的名字，不参与前置计算。</span>
+          {txt.pickerHint}
+          <span className="muted">{txt.pickerNote}</span>
         </p>
       )}
 
@@ -2363,14 +3015,14 @@ export function NetworkPage() {  const graph = useApi<NetworkGraph>('/ontology/g
         学习者可以用进度条任意跳步、单步前进后退、改倍速，随时停在某一步仔细看结构。
       */}
       {replayPlan && routeFrameView && (
-        <section className="replay-panel" aria-label="路线回放" ref={replayRef}>
+        <section className="replay-panel" aria-label={txt.replayAria} ref={replayRef}>
           <div className="replay-head">
             <div>
-              <p className="replay-eyebrow">路线回放{replayPlan.routeId ? ` · ${replayPlan.routeId}` : ''}</p>
+              <p className="replay-eyebrow">{txt.replayEyebrow}{replayPlan.routeId ? ` · ${replayPlan.routeId}` : ''}</p>
               <p className="replay-step-title">
                 {routeFrameView.current
-                  ? <>第 <strong>{routeFrameView.step}</strong> / {routeFrameView.total} 步：{routeFrameView.current.actionTitle || routeFrameView.current.focus}</>
-                  : <>起点：<strong>{replayPlan.entry.length}</strong> 个背景入口已在场，共 {routeFrameView.total} 步</>}
+                  ? <>{txt.replayStepLead}<strong>{routeFrameView.step}</strong>{fill(txt.replayStepTail, { total: routeFrameView.total, title: routeFrameView.current.actionTitle || routeFrameView.current.focus })}</>
+                  : <>{txt.replayStartLead}<strong>{replayPlan.entry.length}</strong>{fill(txt.replayStartTail, { total: routeFrameView.total })}</>}
               </p>
             </div>
             {/* 回放不写 URL、不写档案：退出只是回到普通的自由浏览。 */}
@@ -2383,13 +3035,13 @@ export function NetworkPage() {  const graph = useApi<NetworkGraph>('/ontology/g
                 setReplayPlaying(false);
               }}
             >
-              退出手势回放，自由浏览
+              {txt.replayExit}
             </button>
           </div>
 
           <div className="replay-controls">
-            <button className="button small" onClick={() => { setReplayPlaying(false); setReplayStep(0); }} aria-label="回到起点">⏮ 起点</button>
-            <button className="button small" onClick={() => { setReplayPlaying(false); setReplayStep((s) => Math.max(0, s - 1)); }} aria-label="上一步">◀ 上一步</button>
+            <button className="button small" onClick={() => { setReplayPlaying(false); setReplayStep(0); }} aria-label={txt.replayToStart}>{txt.replayStartShort}</button>
+            <button className="button small" onClick={() => { setReplayPlaying(false); setReplayStep((s) => Math.max(0, s - 1)); }} aria-label={txt.replayPrev}>{txt.replayPrevShort}</button>
             <button
               className="button small primary"
               onClick={() => {
@@ -2397,15 +3049,15 @@ export function NetworkPage() {  const graph = useApi<NetworkGraph>('/ontology/g
                 if (replayStep >= replayPlan.steps.length) setReplayStep(0);
                 setReplayPlaying((playing) => !playing);
               }}
-              aria-label={replayPlaying ? '暂停' : '播放'}
+              aria-label={replayPlaying ? txt.replayPause : txt.replayPlay}
             >
-              {replayPlaying ? '⏸ 暂停' : '▶ 播放'}
+              {replayPlaying ? txt.replayPauseShort : txt.replayPlayShort}
             </button>
-            <button className="button small" onClick={() => { setReplayPlaying(false); setReplayStep((s) => Math.min(replayPlan.steps.length, s + 1)); }} aria-label="下一步">下一步 ▶</button>
-            <button className="button small" onClick={() => { setReplayPlaying(false); setReplayStep(replayPlan.steps.length); }} aria-label="到终点">终点 ⏭</button>
+            <button className="button small" onClick={() => { setReplayPlaying(false); setReplayStep((s) => Math.min(replayPlan.steps.length, s + 1)); }} aria-label={txt.replayNext}>{txt.replayNextShort}</button>
+            <button className="button small" onClick={() => { setReplayPlaying(false); setReplayStep(replayPlan.steps.length); }} aria-label={txt.replayToEnd}>{txt.replayEndShort}</button>
             <label className="replay-speed">
-              倍速
-              <select value={replaySpeed} onChange={(event) => setReplaySpeed(Number(event.target.value))} aria-label="播放倍速">
+              {txt.replaySpeed}
+              <select value={replaySpeed} onChange={(event) => setReplaySpeed(Number(event.target.value))} aria-label={txt.replaySpeedAria}>
                 {[0.5, 1, 2, 4].map((value) => <option key={value} value={value}>{value}×</option>)}
               </select>
             </label>
@@ -2419,37 +3071,38 @@ export function NetworkPage() {  const graph = useApi<NetworkGraph>('/ontology/g
             max={replayPlan.steps.length}
             value={replayStep}
             onChange={(event) => { setReplayPlaying(false); setReplayStep(Number(event.target.value)); }}
-            aria-label="回放进度"
-            aria-valuetext={`第 ${replayStep} 步，共 ${replayPlan.steps.length} 步`}
+            aria-label={txt.replayProgressAria}
+            aria-valuetext={fill(txt.replayProgressText, { step: replayStep, total: replayPlan.steps.length })}
           />
 
           <div className="replay-detail">
             {routeFrameView.current ? (
               <>
                 <p className="replay-added">
-                  这一步加入：
+                  {txt.replayAdded}
                   {routeFrameView.added.length === 0
-                    ? <span className="muted">（只消费，没有新节点）</span>
+                    ? <span className="muted">{txt.replayAddedNone}</span>
                     : routeFrameView.added.map((id) => (
-                      <Link key={id} className="replay-chip" to={`/nodes/${encodeURIComponent(id)}`}>{titleOf(id)}</Link>
+                      <Link key={id} className="replay-chip" to={hrefFor(`/nodes/${encodeURIComponent(id)}`)}>{titleOf(id)}</Link>
                     ))}
                 </p>
                 {routeFrameView.current.uses.length > 0 && (
                   <p className="muted replay-uses">
-                    用到的已有节点：{routeFrameView.current.uses.slice(0, 8).map((id) => titleOf(id)).join('、')}
-                    {routeFrameView.current.uses.length > 8 ? ` 等 ${routeFrameView.current.uses.length} 个` : ''}
+                    {fill(txt.replayUses, {
+                      list: routeFrameView.current.uses.slice(0, 8).map((id) => titleOf(id)).join(txt.joinSeparator),
+                      more: routeFrameView.current.uses.length > 8 ? fill(txt.replayMore, { count: routeFrameView.current.uses.length }) : '',
+                    })}
                   </p>
                 )}
               </>
             ) : (
               <p className="muted replay-uses">
-                起点节点：{replayPlan.entry.map((id) => titleOf(id)).join('、') || '（无背景入口）'}
+                {fill(txt.replayEntry, { list: replayPlan.entry.map((id) => titleOf(id)).join(txt.joinSeparator) || txt.replayEntryNone })}
               </p>
             )}
             {/* 动画只覆盖这条路线上的节点；其他节点是布局的一部分但不显示。 */}
             <p className="replay-note">
-              动画只显示这条路线上的节点，但布局按全部 {replayPlan.all.length} 个节点一次算定——
-              因此步骤切换时位置不会跳动。回放不写入学习档案。
+              {fill(txt.replayNote, { total: replayPlan.all.length })}
             </p>
           </div>
         </section>
@@ -2457,30 +3110,30 @@ export function NetworkPage() {  const graph = useApi<NetworkGraph>('/ontology/g
 
       <div className="network-hud">
         <div className="network-hud-count">
-          <strong>{view.layout.placed.length}</strong> 个节点 · <strong>{drawnEdges.length}</strong> 条边
+          <strong>{view.layout.placed.length}</strong> {view.layout.placed.length === 1 ? txt.hudNodeOne : txt.hudNodes} · <strong>{drawnEdges.length}</strong> {drawnEdges.length === 1 ? txt.hudEdgeOne : txt.hudEdges}
           {/* 登记边数与被合并的条数如实写出来：画布上少画的线必须有交代（见 mergeParallelEdges）。 */}
           {mergedAwayCount > 0 && (
-            <span className="network-hud-merged" title="同一对节点之间只画最强的一条；其余在边的标签与提示里标明">
-              （另有 {mergedAwayCount} 条同对边并进这些线里）
+            <span className="network-hud-merged" title={txt.hudMergedTitle}>
+              {fill(mergedAwayCount === 1 ? txt.hudMergedOne : txt.hudMerged, { count: mergedAwayCount })}
             </span>
           )}
           {view.layout.placed.length > 0 && (
             <span className="network-hud-sub">
-              平均 {(view.edges.length * 2 / Math.max(view.layout.placed.length, 1)).toFixed(1)} 条/节点
-              {isolatedCount > 0 ? ` · ${isolatedCount} 个未连接` : ''}
+              {fill(txt.hudAverage, { average: (view.edges.length * 2 / Math.max(view.layout.placed.length, 1)).toFixed(1) })}
+              {isolatedCount > 0 ? fill(txt.hudIsolated, { count: isolatedCount }) : ''}
               {/* 绕不开的遮挡如实写出来：弧线是补救手段，密排时可能真的没有解（见 edge-routing.ts）。 */}
               {(routes.stats?.throughCardResidual ?? 0) > 0
-                ? ` · ${routes.stats?.throughCardResidual} 条边仍压着卡片（弓高上限 ${ROUTE_DEFAULTS.maxBow}px 内无解）`
+                ? fill(txt.hudResidual, { count: routes.stats?.throughCardResidual ?? 0, max: ROUTE_DEFAULTS.maxBow })
                 : ''}
             </span>
           )}
         </div>
         <div className="network-hud-actions">
           <div className="network-zoom">
-            <button className="button small" onClick={() => zoomBy(1 / 1.25)} aria-label="缩小">−</button>
+            <button className="button small" onClick={() => zoomBy(1 / 1.25)} aria-label={txt.zoomOut}>−</button>
             <span className="network-zoom-value">{Math.round(viewport.scale * 100)}%</span>
-            <button className="button small" onClick={() => zoomBy(1.25)} aria-label="放大">＋</button>
-            <button className="button small" onClick={resetViewport} title="重置视角：只把整张网络重新适配进可见区，节点位置一个都不动">重置</button>
+            <button className="button small" onClick={() => zoomBy(1.25)} aria-label={txt.zoomIn}>＋</button>
+            <button className="button small" onClick={resetViewport} title={txt.resetViewTitle}>{txt.resetView}</button>
             {/*
               「重新布局」与「重置」是两件事，因此并排放在一起、各自写明作用：
               前者重算自动摆位（手动拖着的位置保留），后者只动相机。
@@ -2490,25 +3143,25 @@ export function NetworkPage() {  const graph = useApi<NetworkGraph>('/ontology/g
               className="button small"
               onClick={relayoutNetwork}
               disabled={added.size === 0}
-              title="重新布局：清掉自动摆位并重算；你手动拖过的节点保持原位（与「重置」不同，那个只动相机）"
-            >重新布局</button>
+              title={txt.relayoutTitle}
+            >{txt.relayout}</button>
           </div>
           {/*
             「保存」放在最显眼的一排：用户要的是「下次可以直接用」，
             所以除按钮本身，也把入口写进 HUD 提示（见上面的 network-hud-sub）。
           */}
-          <button className="button small" onClick={saveCurrentView} disabled={added.size === 0} title="把当前视图存进学习者档案（E），下次按名字载入">保存视图</button>
+          <button className="button small" onClick={saveCurrentView} disabled={added.size === 0} title={txt.saveViewTitle}>{txt.saveView}</button>
           {/* 文案不能叫「视图」：它会和「保存视图」互相包含，人和测试都会点错（踩过）。 */}
           <button className="button small" onClick={() => setOpen((current) => ({ ...current, views: !current.views }))}>
-            {open.views ? '收起视图列表' : `视图列表${savedViews.length > 0 ? `（${savedViews.length}）` : ''}`}
+            {open.views ? txt.viewsToggleOpen : (savedViews.length > 0 ? fill(txt.viewsToggleCount, { count: savedViews.length }) : txt.viewsToggleClosed)}
           </button>
-          <button className="button small" onClick={toggleFullscreen}>{isFullscreen ? '退出全屏' : '全屏'}</button>
+          <button className="button small" onClick={toggleFullscreen}>{isFullscreen ? txt.fullscreenExit : txt.fullscreenEnter}</button>
           {PANEL_IDS.map((id) => (
             <label key={id} className="network-hud-toggle">
               <input
                 type="checkbox"
                 checked={open[id]}
-                aria-label={`显示${PANEL_TITLES[id]}面板`}
+                aria-label={fill(txt.panelToggle, { title: panelTitles[id] })}
                 onChange={(event) => setOpen((current) => {
                   const next = { ...current, [id]: event.target.checked };
                   /*
@@ -2525,20 +3178,20 @@ export function NetworkPage() {  const graph = useApi<NetworkGraph>('/ontology/g
                   return next;
                 })}
               />
-              {PANEL_TITLES[id]}
+              {panelTitles[id]}
             </label>
           ))}
           <button
             className="button small"
             disabled={added.size === 0}
             onClick={() => { setClearedNodes(new Set(added)); setAdded(new Set()); }}
-          >清空</button>
+          >{txt.clear}</button>
         </div>
       </div>
 
       {unresolved.length > 0 && (
         <div className="network-unresolved">
-          URL 里有 {unresolved.length} 个节点引用在当前本体版本无法解析，已忽略：<code>{unresolved.join('、')}</code>
+          {fill(txt.unresolved, { count: unresolved.length })}<code>{unresolved.join(txt.joinSeparator)}</code>
         </div>
       )}
 
@@ -2546,14 +3199,14 @@ export function NetworkPage() {  const graph = useApi<NetworkGraph>('/ontology/g
       {(removedNotice || (autoCandidates.length > 0 && !autoDismissed && !replayPlan)) && (
         <div className="network-notice" role="status">
           {removedNotice
-            ? <>已把「{titleOf(removedNotice)}」移出视图。这只改本页显示，本体节点仍在。
-                <button className="link-button" onClick={() => toggle(removedNotice)}>撤销</button>
+            ? <>{fill(txt.removedNotice, { title: titleOf(removedNotice) })}
+                <button className="link-button" onClick={() => toggle(removedNotice)}>{txt.undo}</button>
               </>
             : (
-              <>可以在当前视图旁边补上 {autoCandidates.length} 个方法节点（判据：与当前视图及其一跳邻域连接超过 3 条）：
-                {autoCandidates.slice(0, 3).map((item) => `${item.title}（${item.inView} 条）`).join('、')}{autoCandidates.length > 3 ? ' 等' : ''}。
-                <button className="button small primary" onClick={applyAutoAdd}>加入这 {autoCandidates.length} 个</button>
-                <button className="link-button" onClick={() => setAutoDismissed(true)}>暂不</button>
+              <>{fill(txt.autoAddNotice, { count: autoCandidates.length })}
+                {autoCandidates.slice(0, 3).map((item) => fill(txt.autoAddItem, { title: item.title, inView: item.inView })).join(txt.joinSeparator)}{autoCandidates.length > 3 ? txt.autoAddMore : ''}。
+                <button className="button small primary" onClick={applyAutoAdd}>{fill(txt.autoAddApply, { count: autoCandidates.length })}</button>
+                <button className="link-button" onClick={() => setAutoDismissed(true)}>{txt.autoAddLater}</button>
               </>
             )}
         </div>
@@ -2561,40 +3214,59 @@ export function NetworkPage() {  const graph = useApi<NetworkGraph>('/ontology/g
 
       {clearedNodes && clearedNodes.size > 0 && (
         <div className="network-notice" role="status">
-          已清空画布里的 {clearedNodes.size} 个节点；本体与学习记录都没有变化。
-          <button className="link-button" onClick={() => { setAdded(clearedNodes); setClearedNodes(null); }}>撤销清空</button>
+          {fill(txt.clearedNotice, { count: clearedNodes.size })}
+          <button className="link-button" onClick={() => { setAdded(clearedNodes); setClearedNodes(null); }}>{txt.clearedUndo}</button>
         </div>
       )}
 
       {notice && (
         <div className="network-notice" role="status">
           {notice}
-          <button className="link-button" onClick={() => setNotice(null)}>知道了</button>
+          <button className="link-button" onClick={() => setNotice(null)}>{txt.gotIt}</button>
         </div>
       )}
 
       {open.list && (
-        <section ref={panels.list.handleRef} className={`floating-panel${panels.list.dragging ? ' dragging' : ''}`} style={styleOf('list')} aria-label="全部节点">
-          {headOf('list', '全部节点')}
+        <section ref={panels.list.handleRef} className={`floating-panel${panels.list.dragging ? ' dragging' : ''}`} style={styleOf('list')} aria-label={txt.panelList}>
+          {headOf('list', txt.panelList)}
           <div className="floating-panel-body">
-            <p className="hint">勾选即加入网络。只改变本页视图，不写公共本体，也不写学习档案。</p>
+            <p className="hint">{txt.listHint}</p>
             <div className="network-filters">
-              <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="搜索标题、ID 或摘要" aria-label="搜索节点" />
-              <select value={caseFilter} onChange={(event) => setCaseFilter(event.target.value)} aria-label="按案例筛选">
-                <option value="全部">全部案例</option>
+              <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={txt.listSearchPlaceholder} aria-label={txt.listSearchAria} />
+              <select value={caseFilter} onChange={(event) => setCaseFilter(event.target.value)} aria-label={txt.listCaseAria}>
+                <option value="全部">{txt.allCases}</option>
                 {caseFacet.present.map((item) => (
-                  <option key={item.value} value={item.value}>{item.label}（{item.count}）</option>
+                  <option key={item.value} value={item.value}>{fill(txt.listOptionCount, { label: item.label, count: item.count })}</option>
                 ))}
               </select>
-              <select value={constructFilter} onChange={(event) => setConstructFilter(event.target.value)} aria-label="按构造类型筛选">
-                <option value="全部">全部构造类型</option>
+              <select value={constructFilter} onChange={(event) => setConstructFilter(event.target.value)} aria-label={txt.listConstructAria}>
+                <option value="全部">{txt.allConstructs}</option>
                 {constructFacet.present.map((item) => (
-                  <option key={item.value} value={item.value}>{item.label}（{item.count}）</option>
+                  <option key={item.value} value={item.value}>{fill(txt.listOptionCount, { label: item.label, count: item.count })}</option>
                 ))}
               </select>
             </div>
+            {/*
+              「缺失的构造类型」这段带 `<strong>` / `<code>`，中文这一支**保持原样不动**：
+              JSX 会把多行文本里的换行折叠成单个空格，改写成模板串就会引入看不见的差异
+              （渲染出来的中文必须逐字不变）。英文另起一支，结构相同、用词对应。
+            */}
             {constructFacet.absent.length > 0 && (
               <details className="facet-absent">
+                {locale === 'en' ? (
+                  <>
+                    <summary>
+                      The ontology does not register “{constructFacet.absent.join(', ')}” as separate nodes, so they are <strong>left out of the filters</strong>
+                      {' '}(selecting them would return 0). Open this to see where they are registered.
+                    </summary>
+                    <p>
+                      This is this site’s registration convention, not missing data: definitions live in the payload and body of concept nodes,
+                      representations are written as <code>representations</code> sub-records inside a node,
+                      and terms live in the constants and type environment of a signature. The full convention is in the README section “construct registration conventions”.
+                    </p>
+                  </>
+                ) : (
+                  <>
                 <summary>
                   本体不把「{constructFacet.absent.join('、')}」登记成独立节点，因此<strong>不放进筛选</strong>
                   （选中只会得到 0 个）。点开看它们登记在哪里。
@@ -2604,9 +3276,11 @@ export function NetworkPage() {  const graph = useApi<NetworkGraph>('/ontology/g
                   表征写成节点内的 <code>representations</code> 子记录，
                   项写在签名的常元与类型环境里。约定全文见 README 的「构造类型的登记约定」。
                 </p>
+                  </>
+                )}
               </details>
             )}
-            <p className="result-count">显示 {listed.length} / {nodes.length} 个登记节点</p>
+            <p className="result-count">{fill(txt.listResultCount, { shown: listed.length, total: nodes.length })}</p>
             {relationHint && <p className="notice">{relationHint}</p>}
             <ul className="network-node-list">
               {listed.map((node) => (
@@ -2624,11 +3298,11 @@ export function NetworkPage() {  const graph = useApi<NetworkGraph>('/ontology/g
                 >
                   <label className="network-toggle">
                     <input type="checkbox" checked={added.has(node.id)} onChange={() => toggle(node.id)} />
-                    <span className="network-node-title">{node.title}</span>
+                    <span className={`network-node-title${isPending(node.title) ? ' i18n-pending' : ''}`} title={isPending(node.title) ? t('i18n.pendingTitle') : undefined}>{node.title}</span>
                   </label>
                   <div className="network-node-meta">
-                    <span className="construct" title={node.construct} style={{ background: CONSTRUCT_COLOR[node.construct] ?? undefined }}>{constructLabel(node.construct)}</span>
-                    {node.evidenceStatus && <StatusBadge status={node.evidenceStatus} title={`证据等级：${node.evidenceStatus}`} />}
+                    <span className="construct" title={node.construct} style={{ background: CONSTRUCT_COLOR[node.construct] ?? undefined }}>{labels.constructLabel(node.construct)}</span>
+                    {node.evidenceStatus && <StatusBadge status={node.evidenceStatus} title={fill(txt.evidenceLevelTitle, { status: node.evidenceStatus })} />}
                     <code>{node.id}</code>
                   </div>
                 </li>
@@ -2639,11 +3313,11 @@ export function NetworkPage() {  const graph = useApi<NetworkGraph>('/ontology/g
       )}
 
       {open.families && (
-        <section ref={panels.families.handleRef} className={`floating-panel${panels.families.dragging ? ' dragging' : ''}`} style={styleOf('families')} aria-label="连接类型">
-          {headOf('families', '连接类型')}
+        <section ref={panels.families.handleRef} className={`floating-panel${panels.families.dragging ? ' dragging' : ''}`} style={styleOf('families')} aria-label={txt.panelFamilies}>
+          {headOf('families', txt.panelFamilies)}
           <div className="floating-panel-body">
             <p className="hint">
-              每一类都来自已登记的数据，可单独开关。默认全开：只留契约与关系会让网络过于稀疏。
+              {txt.familiesHint}
             </p>
             <ul className="family-list">
               {(Object.keys(EDGE_FAMILY_LABELS) as EdgeFamily[]).map((family) => {
@@ -2657,10 +3331,10 @@ export function NetworkPage() {  const graph = useApi<NetworkGraph>('/ontology/g
                         checked={on}
                         onChange={() => setFamilies((current) => on ? current.filter((item) => item !== family) : [...current, family])}
                       />
-                      <span className="network-node-title">{EDGE_FAMILY_LABELS[family]}</span>
-                      <span className="family-count-badge">{count} 条</span>
+                      <span className="network-node-title">{edgeFamilyLabel(family, locale)}</span>
+                      <span className="family-count-badge">{fill(txt.familiesCount, { count })}</span>
                     </label>
-                    <p className="muted">{EDGE_FAMILY_NOTES[family]}</p>
+                    <p className="muted">{edgeFamilyNote(family, locale)}</p>
                   </li>
                 );
               })}
@@ -2670,21 +3344,30 @@ export function NetworkPage() {  const graph = useApi<NetworkGraph>('/ontology/g
       )}
 
       {open.views && (
-        <section ref={panels.views.handleRef} className={`floating-panel${panels.views.dragging ? ' dragging' : ''}`} style={styleOf('views')} aria-label="保存的视图">
-          {headOf('views', '保存的视图')}
+        <section ref={panels.views.handleRef} className={`floating-panel${panels.views.dragging ? ' dragging' : ''}`} style={styleOf('views')} aria-label={txt.panelViews}>
+          {headOf('views', txt.panelViews)}
           <div className="floating-panel-body">
             {/*
               用户的要求是「加入保存功能，下次可以直接用」。
               保存的是**视图状态**：已加入的节点、可见边源、手动位置、相机——四样一起存、一起还。
             */}
+            {/* 这段夹着 `<strong>`：中文一支原样保留（多行 JSX 文本的换行会折叠成空格），英文另起一支。 */}
+            {locale === 'en' ? (
+              <p className="hint">
+                Store the current network state (<strong>{added.size}</strong> nodes, <strong>{families.length}</strong> edge kinds,
+                {' '}<strong>{Object.keys(overrides).length}</strong> manual positions, the current camera) as a named view and load it back
+                {' '}by name next time. Saving writes learner state only and <strong>does not change the ontology</strong>.
+              </p>
+            ) : (
             <p className="hint">
               把当前的网络状态（<strong>{added.size}</strong> 个节点、<strong>{families.length}</strong> 类边、
               <strong>{Object.keys(overrides).length}</strong> 个手动位置、当前相机）存成一条带名字的视图，
               下次直接按名字载回来。保存只写学习者状态，<strong>不改本体</strong>。
             </p>
+            )}
             <div className="card-actions">
               <button className="button small primary" onClick={saveCurrentView} disabled={added.size === 0}>
-                保存当前视图
+                {txt.viewsSaveNow}
               </button>
               {/*
                 真的复制，不是导航（2026-10 修）。
@@ -2697,40 +3380,81 @@ export function NetworkPage() {  const graph = useApi<NetworkGraph>('/ontology/g
                   const url = window.location.href;
                   try {
                     await navigator.clipboard.writeText(url);
-                    setNotice('已复制当前链接到剪贴板。');
+                    setNotice(txt.viewsCopied);
                   } catch {
-                    setNotice(`浏览器不允许访问剪贴板，请手动复制：${url}`);
+                    setNotice(fill(txt.viewsCopyBlocked, { url }));
                   }
                 }}
               >
-                复制当前链接
+                {txt.viewsCopyLink}
               </button>
             </div>
-            {added.size === 0 && <p className="muted">画布上还没有节点：先从「全部节点」或「推荐加入」加几个，再保存。</p>}
+            {added.size === 0 && <p className="muted">{txt.viewsEmptyCanvas}</p>}
             {/*
               来源要写清楚：选了档案存 E 层（跟着档案走、可导出），没选就只在这台浏览器里。
               不写这句，用户会以为已经存进档案了。
             */}
             {viewsNote && <p className="muted">{viewsNote}</p>}
+            <p className="muted saved-view-snapshot-note">{txt.viewsSnapshotNote}</p>
+            {profile && localViewCount > 0 && (
+              <div className="saved-view-migration" aria-busy={migratingViews}>
+                <strong>{txt.viewsMigrateTitle}</strong>
+                <p>{fill(txt.viewsMigrateNote, { count: localViewCount, name: profile.name })}</p>
+                <button className="button small primary" disabled={migratingViews} onClick={() => void moveLocalViews()}>
+                  {migratingViews ? txt.viewsMigrating : fill(txt.viewsMigrateAction, { count: localViewCount })}
+                </button>
+              </div>
+            )}
+            {localViewsError && <p role="status" className="muted">{txt.viewsLocalReadFailed}</p>}
+            <p role="status" aria-live="polite" className="saved-view-migration-status">{migrationNote}</p>
+            {savedViews.length > 0 && (
+              <div className="saved-view-tools">
+                <label htmlFor="saved-view-search">{txt.viewsSearch}
+                  <input id="saved-view-search" type="search" value={viewQuery} placeholder={txt.viewsSearchPlaceholder}
+                    onChange={(event) => setViewQuery(event.target.value)} />
+                </label>
+                <label htmlFor="saved-view-sort">{txt.viewsSort}
+                  <select id="saved-view-sort" aria-label={txt.viewsSort} value={viewSort} onChange={(event) => setViewSort(event.target.value as typeof viewSort)}>
+                    <option value="recent">{txt.viewsSortRecent}</option>
+                    <option value="oldest">{txt.viewsSortOldest}</option>
+                    <option value="nodes">{txt.viewsSortNodes}</option>
+                    <option value="name">{txt.viewsSortName}</option>
+                  </select>
+                </label>
+                <div className="saved-view-search-result">
+                  <span role="status">{fill(txt.viewsFound, { shown: visibleSavedViews.length, total: savedViews.length })}</span>
+                  {viewQuery && <button className="button small" onClick={() => setViewQuery('')}>{txt.viewsClearSearch}</button>}
+                </div>
+              </div>
+            )}
             {savedViews.length === 0
-              ? <p className="muted">还没有保存过视图。</p>
+              ? <p className="muted">{txt.viewsNone}</p>
+              : visibleSavedViews.length === 0 ? <p className="muted">{txt.viewsNoMatch}</p>
               : (
                 <ul className="saved-view-list">
-                  {savedViews.map((entry) => (
+                  {visibleSavedViews.map((entry) => (
                     <li key={entry.viewId}>
                       <div className="saved-view-head">
-                        <span className="saved-view-name">{entry.name}</span>
-                        <span className="family-count-badge">{(entry.payload.added ?? []).length} 节点</span>
+                        <span className={`saved-view-name${isPending(entry.name) ? ' i18n-pending' : ''}`}>{entry.name}</span>
+                        {duplicateViews.has(entry.viewId) && (
+                          <span className="saved-view-duplicate" title={txt.viewsDuplicateHint}>
+                            {fill(txt.viewsDuplicate, duplicateViews.get(entry.viewId)!)}
+                          </span>
+                        )}
+                        <span className="family-count-badge">{fill(txt.viewsEntryNodes, { count: (entry.payload.added ?? []).length })}</span>
                       </div>
                       <p className="muted">
-                        {(entry.payload.families ?? []).length} 类边 · {(Object.keys(entry.payload.positions ?? {})).length} 个手动位置
+                        {fill(txt.viewsEntryMeta, {
+                          families: (entry.payload.families ?? []).length,
+                          positions: (Object.keys(entry.payload.positions ?? {})).length,
+                        })}
                         {' · '}
-                        {new Date(entry.updatedAt).toLocaleString('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                        {entry.local ? ' · 本机' : ' · 档案（E）'}
+                        {fmtDate(entry.updatedAt, { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                        {entry.local ? txt.viewsEntryLocal : txt.viewsEntryProfile}
                       </p>
                       <div className="card-actions">
-                        <button className="button small" onClick={() => loadView(entry)}>载入</button>
-                        <button className="button small" onClick={() => void renameView(entry)}>重命名</button>
+                        <button className="button small" onClick={() => loadView(entry)}>{txt.viewsLoad}</button>
+                        <button className="button small" onClick={() => void renameView(entry)}>{txt.viewsRename}</button>
                         <button
                           className="button small"
                           /*
@@ -2739,11 +3463,11 @@ export function NetworkPage() {  const graph = useApi<NetworkGraph>('/ontology/g
                            * 唯独删除原来点一下就没。确认文案里带上名字，避免删错另一个。
                            */
                           onClick={() => {
-                            if (!window.confirm(`删除视图「${entry.name}」？此操作立即生效，不能撤销。`)) return;
+                            if (!window.confirm(fill(txt.viewsConfirmDelete, { name: entry.name }))) return;
                             void deleteView(entry);
                           }}
                         >
-                          删除
+                          {txt.viewsDelete}
                         </button>
                       </div>
                     </li>
@@ -2755,34 +3479,34 @@ export function NetworkPage() {  const graph = useApi<NetworkGraph>('/ontology/g
       )}
 
       {open.recommend && (
-        <section ref={panels.recommend.handleRef} className={`floating-panel${panels.recommend.dragging ? ' dragging' : ''}`} style={styleOf('recommend')} aria-label="推荐加入">
-          {headOf('recommend', added.size === 0 ? '起点推荐' : '推荐加入')}
+        <section ref={panels.recommend.handleRef} className={`floating-panel${panels.recommend.dragging ? ' dragging' : ''}`} style={styleOf('recommend')} aria-label={txt.panelRecommend}>
+          {headOf('recommend', added.size === 0 ? txt.recommendTitleStart : txt.panelRecommend)}
           <div className="floating-panel-body">
             <p className="hint">
               {added.size === 0
-                ? '网络为空，先给出可以当起点的背景节点。'
-                : '按节点分类分组；方法节点单独列出，局部技巧与全局方法分开。组内理由按强弱排序。'}
+                ? txt.recommendHintStart
+                : txt.recommendHint}
             </p>
             {view.recommendations.length === 0 ? (
-              <p className="muted">没有更多可推荐的节点了。可在左侧列表直接勾选，或清空网络重新开始。</p>
+              <p className="muted">{txt.recommendEmpty}</p>
             ) : (
               <>
                 {/* 分类筛选：只影响本面板的显示，不改视图内容。 */}
-                <div className="recommend-filter" role="group" aria-label="按分类筛选推荐">
+                <div className="recommend-filter" role="group" aria-label={txt.recommendFilterAria}>
                   <button
                     className={`chip${recommendFilter === 'all' ? ' on' : ''}`}
                     onClick={() => setRecommendFilter('all')}
                   >
-                    全部 {view.recommendations.length}
+                    {fill(txt.recommendAll, { count: view.recommendations.length })}
                   </button>
                   {groupedRecommendations.map((bucket) => (
                     <button
                       key={bucket.group}
                       className={`chip${recommendFilter === bucket.group ? ' on' : ''}${bucket.group.startsWith('method') ? ' method' : ''}`}
                       onClick={() => setRecommendFilter(bucket.group)}
-                      title={NODE_GROUP_NOTES[bucket.group]}
+                      title={nodeGroupNote(bucket.group, locale)}
                     >
-                      {NODE_GROUP_LABELS[bucket.group]} {bucket.items.length}
+                      {nodeGroupLabel(bucket.group, locale)} {bucket.items.length}
                     </button>
                   ))}
                 </div>
@@ -2792,20 +3516,20 @@ export function NetworkPage() {  const graph = useApi<NetworkGraph>('/ontology/g
                   .map((bucket) => (
                     <div className="recommend-group" key={bucket.group} data-group={bucket.group}>
                       <div className="recommend-group-head">
-                        <h3>{NODE_GROUP_LABELS[bucket.group]}</h3>
+                        <h3>{nodeGroupLabel(bucket.group, locale)}</h3>
                         <span className="recommend-group-count">{bucket.items.length}</span>
                       </div>
-                      <p className="recommend-group-note">{NODE_GROUP_NOTES[bucket.group]}</p>
+                      <p className="recommend-group-note">{nodeGroupNote(bucket.group, locale)}</p>
                       <ul className="recommend-list">
                         {bucket.items.map((rec) => (
                           <li key={rec.node} data-group={bucket.group}>
                             <div className="recommend-head">
-                              <StatusBadge status={REASON_TONE[rec.kind]} label={REASON_LABELS[rec.kind]} title={rec.kind} />
-                              <Link className="recommend-title" to={`/nodes/${encodeURIComponent(rec.node)}`}>{rec.title}</Link>
+                              <StatusBadge status={REASON_TONE[rec.kind]} label={reasonLabels[rec.kind]} title={rec.kind} />
+                              <Link className={`recommend-title${isPending(rec.title) ? ' i18n-pending' : ''}`} title={isPending(rec.title) ? t('i18n.pendingTitle') : undefined} to={hrefFor(`/nodes/${encodeURIComponent(rec.node)}`)}>{rec.title}</Link>
                             </div>
-                            <p className="rec-reason">{reasonText(rec, titleOf)}</p>
+                            <p className="rec-reason">{reasonText(rec, titleOf, locale)}</p>
                             <div className="card-actions">
-                              <button className="button small primary" onClick={() => toggle(rec.node)}>加入网络</button>
+                              <button className="button small primary" onClick={() => toggle(rec.node)}>{txt.recommendAdd}</button>
                             </div>
                           </li>
                         ))}
@@ -2819,31 +3543,39 @@ export function NetworkPage() {  const graph = useApi<NetworkGraph>('/ontology/g
       )}
 
       {open.detail && (
-        <section ref={panels.detail.handleRef} className={`floating-panel${panels.detail.dragging ? ' dragging' : ''}`} style={styleOf('detail')} aria-label="节点详情">
-          {headOf('detail', '节点详情')}
+        <section ref={panels.detail.handleRef} className={`floating-panel${panels.detail.dragging ? ' dragging' : ''}`} style={styleOf('detail')} aria-label={txt.panelDetail}>
+          {headOf('detail', txt.panelDetail)}
           <div className="floating-panel-body">
             {!selectedNode ? (
-              <p className="muted">在网络里点一个节点即可查看它的连接。</p>
+              <p className="muted">{txt.detailEmpty}</p>
             ) : (
               <>
-                <p className="detail-title">{selectedNode.title}</p>
+                <p className={`detail-title${isPending(selectedNode.title) ? ' i18n-pending' : ''}`} title={isPending(selectedNode.title) ? t('i18n.pendingTitle') : undefined}>{selectedNode.title}</p>
                 <p className="muted">
-                  <code>{selectedNode.id}</code> · {constructLabel(selectedNode.construct)} · {CASE_LABELS[selectedNode.case] ?? selectedNode.case}
-                  {' · '}连接 {view.degree.get(selectedNode.id) ?? 0} 条
+                  <code>{selectedNode.id}</code> · {labels.constructLabel(selectedNode.construct)} · {labels.tables.cases[selectedNode.case] ?? selectedNode.case}
+                  {' · '}{fill(txt.detailMetaTail, { degree: view.degree.get(selectedNode.id) ?? 0 })}
                 </p>
                 <p>{selectedNode.summary}</p>
                 <div className="card-actions">
-                  <Link className="button small" to={`/nodes/${encodeURIComponent(selectedNode.id)}`}>打开节点页</Link>
+                  <Link className="button small" to={hrefFor(`/nodes/${encodeURIComponent(selectedNode.id)}`)}>{txt.detailOpenNode}</Link>
                   <button className="button small" onClick={() => toggle(selectedNode.id)}>
-                    {added.has(selectedNode.id) ? '移出网络' : '加入网络'}
+                    {added.has(selectedNode.id) ? txt.detailRemove : txt.detailAdd}
                   </button>
                 </div>
-                <h3>与当前网络的连接（{selectedEdges.length}）</h3>
+                <h3>{fill(txt.detailEdges, { count: selectedEdges.length })}</h3>
+                {/* 空态这段是多行 JSX 文本（换行会被折叠成空格）：中文原样保留，英文另起一支。 */}
                 {selectedEdges.length === 0 && (
+                  locale === 'en' ? (
+                    <p className="muted">
+                      Under the connection types currently enabled it has no link to the other added nodes.
+                      {' '}Open more types in “Connection types”, or add its prerequisites / related nodes.
+                    </p>
+                  ) : (
                   <p className="muted">
                     在当前启用的连接类型下，它与其他已加入节点没有连接。
                     可以到「连接类型」里打开更多类型，或把它的前提 / 相关节点加进来。
                   </p>
+                  )
                 )}
                 <ul className="detail-edges">
                   {selectedEdges.map((edge) => {
@@ -2853,23 +3585,23 @@ export function NetworkPage() {  const graph = useApi<NetworkGraph>('/ontology/g
                       <li key={edge.id}>
                         {familySource === 'relation' ? (
                           <>
-                            <StatusBadge status={edge.witnessStatus} title={`见证状态：${edge.witnessStatus}`} />
-                            <span>{relationLabel(edge.kind)}</span>
-                            <Link to={`/nodes/${encodeURIComponent(other)}`}>{titleOf(other)}</Link>
+                            <StatusBadge status={edge.witnessStatus} title={fill(txt.witnessTitle, { status: edge.witnessStatus })} />
+                            <span>{labels.relationLabel(edge.kind)}</span>
+                            <Link to={hrefFor(`/nodes/${encodeURIComponent(other)}`)}>{titleOf(other)}</Link>
                             {edge.scope && <span className="muted">{edge.scope}</span>}
                           </>
                         ) : familySource === 'contract' ? (
                           <>
-                            <StatusBadge status="not_run" label={EDGE_FAMILY_LABELS.contract} title={EDGE_FAMILY_NOTES.contract} />
-                            <span>{edge.from === selectedNode.id ? '支撑' : '依赖'}</span>
-                            <Link to={`/nodes/${encodeURIComponent(other)}`}>{titleOf(other)}</Link>
+                            <StatusBadge status="not_run" label={edgeFamilyLabel('contract', locale)} title={edgeFamilyNote('contract', locale)} />
+                            <span>{edge.from === selectedNode.id ? txt.detailSupports : txt.detailDepends}</span>
+                            <Link to={hrefFor(`/nodes/${encodeURIComponent(other)}`)}>{titleOf(other)}</Link>
                             <span className="muted">{edge.actionTitle}</span>
                           </>
                         ) : (
                           <>
-                            <StatusBadge status="not_run" label={EDGE_FAMILY_LABELS[familySource]} title={EDGE_FAMILY_NOTES[familySource]} />
-                            <span>相关</span>
-                            <Link to={`/nodes/${encodeURIComponent(other)}`}>{titleOf(other)}</Link>
+                            <StatusBadge status="not_run" label={edgeFamilyLabel(familySource, locale)} title={edgeFamilyNote(familySource, locale)} />
+                            <span>{txt.detailRelated}</span>
+                            <Link to={hrefFor(`/nodes/${encodeURIComponent(other)}`)}>{titleOf(other)}</Link>
                             <span className="muted">{edge.note}</span>
                           </>
                         )}
@@ -2884,14 +3616,23 @@ export function NetworkPage() {  const graph = useApi<NetworkGraph>('/ontology/g
       )}
 
       {open.spec && (
-        <section ref={panels.spec.handleRef} className={`floating-panel${panels.spec.dragging ? ' dragging' : ''}`} style={styleOf('spec')} aria-label="关系可视化条款">
-          {headOf('spec', '关系可视化条款')}
+        <section ref={panels.spec.handleRef} className={`floating-panel${panels.spec.dragging ? ' dragging' : ''}`} style={styleOf('spec')} aria-label={txt.panelSpec}>
+          {headOf('spec', txt.panelSpec)}
           <div className="floating-panel-body">
+            {/* 带 `<strong>` 的段落：中文一支原样保留（多行 JSX 文本的换行折叠成空格），英文另起一支。 */}
+            {locale === 'en' ? (
+              <p className="hint">
+                The rule in one sentence: <strong>the harder the relation, the heavier it is drawn</strong>.
+                {' '}The width, opacity, colour saturation and whether a label is drawn all follow from the weight,
+                {' '}and the weight can be traced back to the relation kind and witness status — it is not tuned by feel.
+              </p>
+            ) : (
             <p className="hint">
               规则一句话：<strong>关系越硬，画得越重</strong>。
               每一档的线宽、不透明度、颜色饱和度和是否标注文字都由权重推出，
               权重可反查到关系种类与见证状态，不是凭手感调的。
             </p>
+            )}
             <ul className="tier-list">
               {(Object.keys(TIER_STYLE) as RelationTier[]).map((tier) => {
                 const style = TIER_STYLE[tier];
@@ -2910,35 +3651,39 @@ export function NetworkPage() {  const graph = useApi<NetworkGraph>('/ontology/g
                           opacity={style.opacity}
                         />
                       </svg>
-                      <strong>{TIER_LABELS[tier]}</strong>
-                      <span className="tier-count">{sample.length} 条</span>
+                      <strong>{tierLabel(tier, locale)}</strong>
+                      <span className="tier-count">{fill(txt.specRowCount, { count: sample.length })}</span>
                     </div>
-                    <p className="muted">{TIER_NOTES[tier]}</p>
+                    <p className="muted">{tierNote(tier, locale)}</p>
                     <p className="tier-params">
-                      线宽 {style.width} · 不透明度 {style.opacity} · {style.dash ? '虚线' : '实线'}
-                      {style.label ? ' · 标注名称' : ''}
+                      {fill(txt.specParams, {
+                        width: style.width,
+                        opacity: style.opacity,
+                        dash: style.dash ? txt.specDashed : txt.specSolid,
+                      })}
+                      {style.label ? txt.specLabelled : ''}
                     </p>
                   </li>
                 );
               })}
             </ul>
-            <h3>这一档里有哪些关系</h3>
+            <h3>{txt.specKindsTitle}</h3>
             <ul className="tier-kinds">
-              {view.relations.length === 0 && <li className="muted">当前网络里没有登记关系。它们不是每条连接都有——只有本体里明确登记过的才有。</li>}
+              {view.relations.length === 0 && <li className="muted">{txt.specKindsEmpty}</li>}
               {view.relations.map((kind) => {
                 const visual = edgeVisual('relation', kind, 'PROOF', RELATION_COLOR[kind] ?? THEME.neutral);
                 const count = view.edges.filter((edge) => edge.source === 'relation' && edge.kind === kind).length;
                 return (
                   <li key={kind}>
                     <i style={{ background: visual.color }} />
-                    <span>{relationLabel(kind)}</span>
-                    <span className="muted">{TIER_LABELS[visual.tier]} · 权重 {visual.weight.toFixed(2)} · {count} 条</span>
+                    <span>{labels.relationLabel(kind)}</span>
+                    <span className="muted">{fill(txt.specKindMeta, { tier: tierLabel(visual.tier, locale), weight: visual.weight.toFixed(2), count })}</span>
                   </li>
                 );
               })}
             </ul>
             <p className="muted">
-              硬关系的箭头更粗更大。若画布上几乎看不到硬关系，是因为本体里就登记了很少——不是画漏了。
+              {txt.specArrows}
             </p>
 
             {/*
@@ -2948,14 +3693,23 @@ export function NetworkPage() {  const graph = useApi<NetworkGraph>('/ontology/g
              * 却被画成一条几乎看不见的灰虚线。条款把 mode 与档位的关系摊开写；
              * 硬前置（hardPrereq）已按定义登记，条数从本体现算（2026-10 前这里写死成「0 条」）。
              */}
-            <h3>行动契约按 mode 分档</h3>
+            <h3>{txt.specModeTitle}</h3>
+            {/* 多行长文本：中文原样保留（换行折成空格），英文另起一支。下同。 */}
+            {locale === 'en' ? (
+              <p className="muted">
+                The mode says what the input is for, and therefore how heavily it is drawn. Of the 215 contracts
+                {' '}in the library, 85 are definition and 61 deduction — the dependencies of the “you cannot define it without this” kind all live here,
+                {' '}and they used to be flattened into the weakest grey dashed line.
+              </p>
+            ) : (
             <p className="muted">
               mode 说明这条输入是干什么用的，因此决定它画多重。全库 215 条契约里
               definition 85 条、deduction 61 条——「不用它就定义不出来」这类依赖全在这里，
               以前被一律压成最弱的灰虚线。
             </p>
+            )}
             <ul className="mode-kinds">
-              {Object.entries(CONTRACT_MODE_LABELS).map(([mode, label]) => {
+              {Object.entries(CONTRACT_MODE_LABELS).map(([mode]) => {
                 const weight = CONTRACT_MODE_WEIGHT[mode] ?? 0.18;
                 // 色块与画布同源：契约颜色按 mode 走，条款面板因此和画布一一对应。
                 const visual = edgeVisual('contract', null, null, contractModeColor(mode, THEME.contractEdge), mode);
@@ -2963,22 +3717,42 @@ export function NetworkPage() {  const graph = useApi<NetworkGraph>('/ontology/g
                 return (
                   <li key={mode}>
                     <i style={{ background: visual.color }} />
-                    <span>{label}</span>
+                    <span>{contractModeLabel(mode, locale)}</span>
                     <span className="muted">
-                      {TIER_LABELS[visual.tier]} · 权重 {weight.toFixed(2)} · 当前视图 {count} 条边
-                      {SEMANTIC_CONTRACT_MODES.includes(mode) ? ' · 标出名称' : ''}
+                      {fill(txt.specModeMeta, { tier: tierLabel(visual.tier, locale), weight: weight.toFixed(2), count })}
+                      {SEMANTIC_CONTRACT_MODES.includes(mode) ? txt.specModeLabelled : ''}
                     </span>
                   </li>
                 );
               })}
             </ul>
+            {locale === 'en' ? (
+              <p className="muted">
+                The ontology registers {hardPrereqCount} hardPrereq relations (no longer empty since 2026-10: the definition
+                {' '}chains of five cases — introductory mathematical analysis, differential geometry, manifolds, tensors and groups — plus deduction
+                {' '}dependencies such as inverse function → implicit function). They say “you cannot deduce it without this”,
+                {' '}so they are drawn in the top tier; definition contracts say the other half of the same thing — “this node is defined through it”.
+                {' '}Both land in the same tier, their width follows from the weight, and both are therefore visible on the canvas.
+              </p>
+            ) : (
             <p className="muted">
               本体里登记了 {hardPrereqCount} 条 hardPrereq 关系（2026-10 起不再是空的：数学分析初步、微分几何、
               流形、张量与群五个案例的定义链，以及反函数 → 隐函数这类推导依赖）。它们说的是「不用它就推不下去」，
               所以按最高一档画；契约里的 definition 说的是同一件事的另一半——「这个节点靠它定义出来」。
               两者落在同一档，宽度由权重决定，画布上因此都能看到。
             </p>
-            <h3>同一对节点只画一条（合并显示）</h3>
+            )}
+            <h3>{txt.specMergeTitle}</h3>
+            {locale === 'en' ? (
+              <p className="muted">
+                In the ontology a pair of nodes often has both an action contract and a registered relation (for example <code>topological space → manifold</code>
+                {' '}has both a definition contract and a hardPrereq), which used to be drawn as two overlapping lines. Now <strong>only the edge with the
+                {' '}greatest visual weight is drawn for each pair</strong>, and at equal weight a semantic relation wins over the structural skeleton; the number
+                {' '}merged away is written after the label as <code>+N</code>, and hovering an edge shows what each of them is. Current view:
+                {' '}{drawnEdges.length} drawn, {mergedAwayCount} merged away ({view.edges.length} registered edges).
+                {' '}Layout attraction and degree counts still use the full edge set — merging only affects drawing and never silently reshapes the graph.
+              </p>
+            ) : (
             <p className="muted">
               本体里同一对节点常同时有「行动契约」与「登记关系」（例如 <code>拓扑空间 → 流形</code> 既有 definition
               契约、又有 hardPrereq），以前会叠两条线。现在<strong>每组只画视觉权重最大的那条</strong>，
@@ -2987,7 +3761,18 @@ export function NetworkPage() {  const graph = useApi<NetworkGraph>('/ontology/g
               画出 {drawnEdges.length} 条，并掉 {mergedAwayCount} 条（登记边共 {view.edges.length} 条）。
               布局的吸力与度数统计仍按完整边集算——合并只影响画，不偷偷改图的形状。
             </p>
-            <h3>弧线：绕不开才弯，绕不开就如实说</h3>
+            )}
+            <h3>{txt.specArcTitle}</h3>
+            {locale === 'en' ? (
+              <p className="muted">
+                An edge bends only when the straight line runs over a third card (<code>web/src/edge-routing.ts</code>). How much it bends is not
+                {' '}guesswork: candidate bow heights are solved back from the blocking cards, each is checked for “how many cards does this curve still
+                {' '}cross”, and the one that crosses <strong>the fewest</strong> is taken, with a bent edge guaranteed to cross fewer cards than the straight one;
+                {' '}the bow limit is {ROUTE_DEFAULTS.maxBow}px (bending further would scramble the graph). In a dense view no bow height may get around the cards —
+                {' '}that case is not pretended away but written out: {routes.stats?.throughCard ?? 0} edges in the current view bend because of a card, and
+                {' '}{routes.stats?.throughCardResidual ?? 0} of them still cross a card within {ROUTE_DEFAULTS.maxBow}px.
+              </p>
+            ) : (
             <p className="muted">
               直线从第三张卡片身上压过去时才弯（<code>web/src/edge-routing.ts</code>）。弯多少不是拍脑袋：
               由挡路的卡片反解出候选弓高，逐个验「这条曲线还压着几张卡」，取<strong>压得最少</strong>的那个，
@@ -2996,7 +3781,18 @@ export function NetworkPage() {  const graph = useApi<NetworkGraph>('/ontology/g
               当前视图有 {routes.stats?.throughCard ?? 0} 条边因压卡而弯，
               其中 {routes.stats?.throughCardResidual ?? 0} 条在 {ROUTE_DEFAULTS.maxBow}px 内仍压着卡片。
             </p>
-            <h3>线索层：话题级条目不参与前置计算</h3>
+            )}
+            <h3>{txt.specThreadTitle}</h3>
+            {locale === 'en' ? (
+              <p className="muted">
+                Entries marked “Thread” are topic-level (the scope of a section or a chapter; the criterion is in <code>data/granularity.mjs</code>):
+                {' '}they name a study thread, not a unit one can cognise on its own. Therefore
+                {' '}(1) “Suggested additions” never calls them “prerequisites already in the graph”;
+                {' '}(2) when you hold the left button for strongly related nodes they are listed as “Threads” rather than as “prerequisites for introducing it”.
+                {' '}They are still drawn on the canvas and still have connections — what changed is how they are read, not whether topics are hidden.
+                {' '}The current view has {placedThreadCount} of them.
+              </p>
+            ) : (
             <p className="muted">
               标着「线索」的条目是话题级条目（一节或一章的范围，判据见 <code>data/granularity.mjs</code>）：
               它们是一条学习线索的名字，不是可独立认知的单元。因此
@@ -3005,14 +3801,15 @@ export function NetworkPage() {  const graph = useApi<NetworkGraph>('/ontology/g
               它们照常画在画布上、照常有连接——改的是读法，不是把话题藏起来。
               当前视图里有 {placedThreadCount} 条。
             </p>
+            )}
           </div>
         </section>
       )}
 
       <div className="network-legend-bar">
-        <span className="legend-group">越硬越重</span>
+        <span className="legend-group">{txt.legendHarder}</span>
         {(Object.keys(TIER_STYLE) as RelationTier[]).map((tier) => (
-          <span key={tier} title={TIER_NOTES[tier]}>
+          <span key={tier} title={tierNote(tier, locale)}>
             <svg className="tier-sample-legend" width="26" height="10" aria-hidden="true">
               <line
                 x1="1" y1="5" x2="25" y2="5"
@@ -3023,15 +3820,18 @@ export function NetworkPage() {  const graph = useApi<NetworkGraph>('/ontology/g
                 opacity={TIER_STYLE[tier].opacity}
               />
             </svg>
-            {TIER_LABELS[tier]}
+            {tierLabel(tier, locale)}
           </span>
         ))}
         {/* 话题配色：只列**当前画布上真有的**话题，不把整张表铺出来。 */}
         {visibleTopics.length > 0 && <span className="legend-divider" aria-hidden="true" />}
         {visibleTopics.map((item) => (
-          <span key={item.title} title={`${item.title}（${item.count} 个节点）`}>
+          <span key={item.title} title={fill(txt.legendTopicTitle, { title: item.title, count: item.count })}>
             <i className="topic-swatch" style={{ background: item.color }} />
-            {topicLegendLabel(item.title)}
+            {/* 话题名来自本体（聚合块标题）：英文站上还没有译文时如实标出来，不留一截中文不吭声。 */}
+            <span className={isPending(item.title) ? 'i18n-pending' : undefined} title={isPending(item.title) ? t('i18n.pendingTitle') : undefined}>
+              {topicLegendLabel(item.title)}
+            </span>
             <span className="legend-count">{item.count}</span>
           </span>
         ))}
@@ -3042,15 +3842,15 @@ export function NetworkPage() {  const graph = useApi<NetworkGraph>('/ontology/g
         {placedThreadCount > 0 && (
           <span
             className="legend-thread"
-            title="话题级条目（一节或一章的范围）：它们是学习线索的名字，不是可独立认知的单元，因此不参与前置计算。"
+            title={txt.legendThreadTitle}
           >
             <i className="thread-swatch" />
-            线索层
+            {txt.legendThread}
             <span className="legend-count">{placedThreadCount}</span>
           </span>
         )}
         <span className="legend-hint">
-          拖动空白处平移 · 滚轮缩放 · 按住左键看强关联 · 右键移出节点 · 「重置」只复位视角，「重新布局」才重排卡片（手动摆放保留）
+          {txt.legendHint}
         </span>
       </div>
     </div>

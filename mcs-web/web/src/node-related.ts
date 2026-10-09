@@ -1,6 +1,6 @@
-import { CONTRACT_MODE_LABELS, CONTRACT_MODE_WEIGHT, RELATION_WEIGHT, WITNESS_FACTOR } from './relation-visual.ts';
-import { relationLabel } from './labels.ts';
+import { CONTRACT_MODE_LABELS, CONTRACT_MODE_WEIGHT, RELATION_WEIGHT, WITNESS_FACTOR, contractModeLabel, relationKindLabel } from './relation-visual.ts';
 import type { NetworkGraph } from './network.ts';
+import type { Locale } from './i18n/locales.ts';
 
 /**
  * 「与某个节点强关联的节点」——右键按住节点时临时摊开的那一圈。
@@ -36,6 +36,21 @@ export const RELATED_BASIS_LABELS: Record<RelatedCandidate['basis'], string> = {
   thread: '线索（不参与前置计算）',
 };
 
+/** 上面那张表的英文版（键与中文逐字对应；中文表形状不变，见 `tests/thread-layer.test.mjs`）。 */
+export const RELATED_BASIS_LABELS_EN: Record<RelatedCandidate['basis'], string> = {
+  relation: 'Registered relation',
+  produces: 'Introduced by it',
+  consumes: 'Prerequisite for introducing it',
+  'shared-input': 'Shared prerequisite',
+  thread: 'Thread (not counted as a prerequisite)',
+};
+
+/** 取依据名；未登记的依据回退原值。 */
+export function relatedBasisLabel(basis: RelatedCandidate['basis'], locale: Locale = 'zh'): string {
+  const table = locale === 'en' ? RELATED_BASIS_LABELS_EN : RELATED_BASIS_LABELS;
+  return table[basis] ?? basis;
+}
+
 /** 共用前提的强度：结构关联档，永远排在语义关联之后。 */
 const SHARED_INPUT_STRENGTH = 0.14;
 
@@ -48,11 +63,14 @@ const SHARED_INPUT_STRENGTH = 0.14;
  * 这样读者看到的仍然是同一条登记数据，只是读法不同（不藏信息，也不冒充前置）。
  */
 const THREAD_BASIS_NOTE = '话题级条目（学习线索）：不参与前置计算';
+const THREAD_BASIS_NOTE_EN = 'Topic-level entry (a study thread): not counted as a prerequisite';
 
 export interface RelatedOptions {
   /** 已经在视图里的节点不再作为候选（这一圈是用来「拖进来」的）。 */
   exclude?: Set<string>;
   limit?: number;
+  /** 文案语种；默认中文（中文串被 `tests/thread-layer.test.mjs` 逐字核对）。 */
+  locale?: Locale;
 }
 
 export function relatedCandidates(
@@ -61,6 +79,9 @@ export function relatedCandidates(
   options: RelatedOptions = {},
 ): RelatedCandidate[] {
   const limit = options.limit ?? 6;
+  const locale: Locale = options.locale ?? 'zh';
+  const english = locale === 'en';
+  const threadNote = english ? THREAD_BASIS_NOTE_EN : THREAD_BASIS_NOTE;
   const exclude = options.exclude ?? new Set<string>();
   const isThread = (id: string) => graph.nodes.find((node) => node.id === id)?.granularity === 'topic';
   const titleOf = (id: string) => graph.nodes.find((node) => node.id === id)?.title ?? id;
@@ -71,7 +92,12 @@ export function relatedCandidates(
     // 候选是话题级条目：一律改标线索层，原依据附在后面（读法变了，数据没变）。
     const final: RelatedCandidate = candidate.thread || !isThread(candidate.node)
       ? candidate
-      : { ...candidate, basis: 'thread', thread: true, note: `${THREAD_BASIS_NOTE}。原依据：${candidate.note}` };
+      : {
+        ...candidate,
+        basis: 'thread',
+        thread: true,
+        note: english ? `${threadNote}. Original basis: ${candidate.note}` : `${threadNote}。原依据：${candidate.note}`,
+      };
     const current = best.get(final.node);
     if (!current || final.strength > current.strength) best.set(final.node, final);
   };
@@ -86,13 +112,17 @@ export function relatedCandidates(
       title: titleOf(other),
       strength: +(base * factor).toFixed(3),
       basis: 'relation',
-      note: `${relationLabel(relation.kind)}（见证 ${relation.witness?.status ?? '未登记'}）${relation.scope ? `：${relation.scope}` : ''}`,
+      note: english
+        ? `${relationKindLabel(relation.kind, 'en')} (witness ${relation.witness?.status ?? 'unregistered'})${relation.scope ? `: ${relation.scope}` : ''}`
+        : `${relationKindLabel(relation.kind)}（见证 ${relation.witness?.status ?? '未登记'}）${relation.scope ? `：${relation.scope}` : ''}`,
     });
   }
 
   for (const action of graph.actions) {
     const modeWeight = CONTRACT_MODE_WEIGHT[action.mode] ?? 0.18;
-    const modeLabel = CONTRACT_MODE_LABELS[action.mode] ?? action.mode;
+    const modeLabel = english
+      ? contractModeLabel(action.mode, 'en')
+      : CONTRACT_MODE_LABELS[action.mode] ?? action.mode;
     const isInput = action.inputs.some((input) => input.node === nodeId);
     const isOutput = action.outputs.some((output) => output.node === nodeId);
     if (isInput) {
@@ -102,7 +132,9 @@ export function relatedCandidates(
           title: titleOf(output.node),
           strength: +modeWeight.toFixed(3),
           basis: 'produces',
-          note: `${modeLabel}：「${action.title}」用它引入`,
+          note: english
+            ? `${modeLabel}: the action “${action.title}” introduces it`
+            : `${modeLabel}：「${action.title}」用它引入`,
         });
       }
     }
@@ -113,7 +145,9 @@ export function relatedCandidates(
           title: titleOf(input.node),
           strength: +modeWeight.toFixed(3),
           basis: 'consumes',
-          note: `${modeLabel}：「${action.title}」需要它`,
+          note: english
+            ? `${modeLabel}: the action “${action.title}” requires it`
+            : `${modeLabel}：「${action.title}」需要它`,
         });
       }
     }
@@ -126,7 +160,9 @@ export function relatedCandidates(
           title: titleOf(input.node),
           strength: SHARED_INPUT_STRENGTH,
           basis: 'shared-input',
-          note: `与它共用同一行动的前提：「${action.title}」`,
+          note: english
+            ? `A prerequisite of the same action: “${action.title}”`
+            : `与它共用同一行动的前提：「${action.title}」`,
         });
       }
     }

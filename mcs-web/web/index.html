@@ -17,6 +17,19 @@
     <meta name="theme-color" content="#6d28d9" />
     <meta name="apple-mobile-web-app-title" content="MCS" />
     <meta name="application-name" content="数学认知空间 MCS" />
+    <!--
+      中英双语（2026-10）：静态 HTML 只有一份，语种靠 URL 前缀（`/en/…`）表达，
+      因此这里给搜索引擎一条显式的对应关系。`<title>` 与 `description` 的英文版
+      由 `web/src/i18n/index.tsx` 在客户端按语种改写——静态文件不知道当前路径的语种。
+
+      **`href` 不能写 `/index.html` 之外那几种「根路径」写法**：Vite 的 build-html 插件
+      会把 `href="/"` 当资源去读，而 `/` 是目录，于是整次构建报
+      `EISDIR: illegal operation on a directory, read`。实测 `/index.html` 通过，
+      `/`、`/en/` 这类都不行——这不是风格问题，是构建会不会红的问题。
+    -->
+    <link rel="alternate" hreflang="zh-CN" href="/index.html" />
+    <link rel="alternate" hreflang="en" href="/en/index.html" />
+    <link rel="alternate" hreflang="x-default" href="/index.html" />
   </head>
   <body>
     <div id="root"></div>

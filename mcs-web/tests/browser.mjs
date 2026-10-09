@@ -351,13 +351,34 @@ try {
   await page.waitForTimeout(420);
   const portraitLater = await readPortrait();
   check('人像出现后自己往下播', portraitLater.frame > portraitAfter.frame, JSON.stringify(portraitLater));
+  /*
+   * 丝绸窗口的采样必须**在同一次 `waitForFunction` 的轮询里完成**。
+   *
+   * 原来的写法是「先等窗口出现，命中之后再 `readPortrait()` 读一遍」，而 wink 的那段窗口
+   * 只有约 100–300ms；机器繁忙时第二次读取到达时窗口已经关了，于是断言看到
+   * `ribbonCount: 0 / ribbonProgress: "no"` 而报红——**是采样竞态，不是功能回归**
+   * （复现证据：详情里 `frame: 127` 已是序列末尾，说明第一次轮询确实命中过；
+   * 把采样放进页面内的 rAF 循环后，同一份构建稳定抓到 `ribbons=6, progress=0.09, frame=75`）。
+   *
+   * 现在把「命中」与「读出当时的状态」合成一件事：轮询函数在命中那一刻把当时的状态
+   * 写进 `window.__ribbonMoment`，断言读那一份。这与「验收依赖一个会自己关掉的窗口」
+   * 是同一类问题，修法就是**不要在窗外再读一次**。
+   */
   const ribbonMoment = await page.waitForFunction(() => {
     const el = document.querySelector('.story-portrait');
     const progress = el?.getAttribute('data-ribbon-progress');
-    return progress !== null && progress !== 'no'
+    const hit = progress !== null && progress !== 'no'
       && Number(progress) > 0.08
       && el?.querySelectorAll('.story-portrait-ribbon').length === 6;
-  }, { timeout: 2500 }).then(() => readPortrait()).catch(() => null);
+    if (!hit) return false;
+    window.__ribbonMoment = {
+      ribbonCount: el.querySelectorAll('.story-portrait-ribbon').length,
+      ribbonProgress: progress,
+      frame: Number(el.getAttribute('data-frame') ?? -1),
+      visible: el.getAttribute('data-visible') ?? null,
+    };
+    return true;
+  }, { timeout: 2500 }).then(() => page.evaluate(() => window.__ribbonMoment ?? null)).catch(() => null);
   check('wink 时六缕主题色丝绸与人像共用帧时钟',
     ribbonMoment?.ribbonCount === 6 && ribbonMoment.ribbonProgress !== 'no',
     JSON.stringify(ribbonMoment));
@@ -391,6 +412,144 @@ try {
   check('人像画的是雪碧图，且越界光效不会露出相邻帧',
     portraitAfter.usesAtlas && portraitAfter.atlasClipped,
     JSON.stringify(portraitAfter));
+
+  /*
+   * 窄屏（手机）也要能看到末幕人像（2026-10-05）。
+   *
+   * 窄屏曾缺少末幕人像。原因是 portraitArmed 的开启条件排除了 flowMode。
+   * 窄屏整块视觉舞台不渲染，于是**署名里的作者名是个点了没反应的按钮**——
+   * 入口在、序列永远不挂载（390×844 / 844×390 / 834×1112 三种视口实测都是 count: 0）。
+   *
+   * 现在窄屏把人像挂在署名正下方（`.home-story-portrait-slot`，高 0、不推版面）。
+   * 这一组守四条：首屏不取那 1 MB 的雪碧图、走到末幕才挂且挂着时不可见、
+   * 点署名出得来并自己往下播、**与正文零相交**（与桌面那条同一个不变量）。
+   */
+  const phoneContext = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+  const phonePage = await phoneContext.newPage();
+  phonePage.on('console', (message) => { if (message.type() === 'error') consoleErrors.push(message.text()); });
+  phonePage.on('pageerror', (error) => consoleErrors.push(error.message));
+  await phonePage.goto(server.origin, { waitUntil: 'networkidle' });
+
+  const phoneIntro = await phonePage.evaluate(() => ({
+    flow: document.querySelector('.home-story')?.classList.contains('is-flow') ?? false,
+    atlasFetched: performance.getEntriesByType('resource').some((entry) => entry.name.includes('/portrait/atlas.webp')),
+    portraits: document.querySelectorAll('.story-portrait').length,
+    authorTag: document.querySelector('.byline-author')?.tagName ?? null,
+  }));
+  check('手机端首屏不取人像雪碧图，也没有挂着的人像',
+    phoneIntro.flow && !phoneIntro.atlasFetched && phoneIntro.portraits === 0,
+    JSON.stringify(phoneIntro));
+
+  await phonePage.evaluate(() => document.querySelector('.home-story-act.is-final')?.scrollIntoView({ block: 'center' }));
+  const phoneArmed = await phonePage.waitForFunction(() => {
+    const element = document.querySelector('.story-portrait');
+    return Boolean(element) && element.getAttribute('data-visible') === 'false';
+  }, { timeout: 8000 }).then(() => true).catch(() => false);
+  const phoneIdle = await phonePage.evaluate(() => ({
+    frames: document.querySelectorAll('.story-portrait').length,
+    visible: document.querySelector('.story-portrait')?.getAttribute('data-visible') ?? null,
+    opacity: document.querySelector('.story-portrait') ? Number(getComputedStyle(document.querySelector('.story-portrait')).opacity) : null,
+  }));
+  check('手机端走到末幕才挂上人像，挂着的时候不可见（界面不留提示）',
+    phoneArmed && phoneIdle.frames === 1 && phoneIdle.visible === 'false' && phoneIdle.opacity === 0,
+    JSON.stringify({ phoneArmed, ...phoneIdle }));
+
+  await phonePage.locator('.byline-author').first().click();
+  const phoneRevealed = await phonePage.waitForFunction(() => {
+    const element = document.querySelector('.story-portrait');
+    return element?.getAttribute('data-visible') === 'true' && Number(getComputedStyle(element).opacity) > 0.9;
+  }, { timeout: 8000 }).then(() => true).catch(() => false);
+  const phoneFirst = await phonePage.evaluate(() => Number(document.querySelector('.story-portrait')?.getAttribute('data-frame') ?? -1));
+  await phonePage.waitForTimeout(420);
+  const phoneLater = await phonePage.evaluate(() => Number(document.querySelector('.story-portrait')?.getAttribute('data-frame') ?? -1));
+  check('手机端点署名里的作者名触发人像，且出现后自己往下播',
+    phoneRevealed && phoneLater > phoneFirst, JSON.stringify({ phoneRevealed, phoneFirst, phoneLater }));
+
+  /*
+   * 「不挡文本」在手机上用更硬的方式量：不是量整块正文的盒子，而是把末幕**每一个**
+   * 文字节点（正文段落、条目、入口按钮、署名那一行）逐个与它求相交面积——
+   * 人像压在插图上是设计（插图是 aria-hidden 的装饰），压在字上就是缺陷。
+   */
+  const phoneOverlap = await phonePage.evaluate(() => {
+    const portrait = document.querySelector('.story-portrait');
+    if (!portrait) return { found: false };
+    const box = portrait.getBoundingClientRect();
+    const overlapArea = (a, b) => Math.max(0, Math.min(a.right, b.right) - Math.max(a.left, b.left))
+      * Math.max(0, Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top));
+    const texts = [...document.querySelectorAll(
+      '.home-story-act.is-final .home-story-body p, .home-story-act.is-final .byline, .home-story-act.is-final .home-story-kicker, .home-story-act.is-final h2, .home-story-act.is-final .button',
+    )];
+    let overlap = 0;
+    texts.forEach((node) => { overlap += overlapArea(box, node.getBoundingClientRect()); });
+    return {
+      found: true,
+      texts: texts.length,
+      overlap: Math.round(overlap),
+      width: Math.round(box.width),
+      height: Math.round(box.height),
+      // 挂点跟着署名走：人像顶端应当在视口内（否则「点了没反应」会伪装成「位置错了」）。
+      topInViewport: box.top >= 0 && box.top < window.innerHeight,
+    };
+  });
+  check('手机端人像与末幕的每一处文字零相交，且落在视口内',
+    phoneOverlap.found && phoneOverlap.texts >= 6 && phoneOverlap.overlap === 0
+    && phoneOverlap.width > 60 && phoneOverlap.topInViewport,
+    JSON.stringify(phoneOverlap));
+
+  /*
+   * 触屏上的三处滚动降级（2026-10-05）。
+   *
+   * 用户报的是「小米平板 + Edge，滚动时整页发白」。那是 Android Chromium 滚动时
+   * 来不及重新栅格化、露出还没画好的底（checkerboard），三处代价叠在一起：
+   * 底图 `background-attachment: fixed`（每滚一帧重栅格化整张底图）、吸顶栏
+   * `backdrop-filter`（逐帧读回并模糊身后内容）、以及自然滚动下白占的六个大合成层。
+   * **三条都只在触屏上生效**，所以桌面端要一起量，防止把桌面也一起降级了。
+   */
+  const scrollCost = {
+    phone: await phonePage.evaluate(() => ({
+      bodyAttachment: getComputedStyle(document.body).backgroundAttachment,
+      topbarBlur: getComputedStyle(document.querySelector('.topbar')).backdropFilter,
+      actWillChange: getComputedStyle(document.querySelector('.home-story-act')).willChange,
+    })),
+    desktop: await page.evaluate(() => ({
+      bodyAttachment: getComputedStyle(document.body).backgroundAttachment,
+      topbarBlur: getComputedStyle(document.querySelector('.topbar')).backdropFilter,
+      actWillChange: getComputedStyle(document.querySelector('.home-story-act')).willChange,
+    })),
+  };
+  /*
+   * 计算值里的 `background-attachment` 是**按图层逐个**给的（这里两层底图，
+   * 于是是 `"scroll, scroll"`），所以按前缀判而不是等值判。
+   */
+  check('触屏撤掉三处滚动重绘开销（固定底图 / 吸顶模糊 / 白占的合成层），桌面端保持原样',
+    scrollCost.phone.bodyAttachment.startsWith('scroll') && scrollCost.phone.topbarBlur === 'none'
+    && scrollCost.phone.actWillChange === 'auto'
+    && scrollCost.desktop.bodyAttachment.startsWith('fixed') && scrollCost.desktop.topbarBlur !== 'none'
+    && scrollCost.desktop.actWillChange.includes('opacity'),
+    JSON.stringify(scrollCost));
+
+  await phoneContext.close();
+
+  // 「减少动态效果」下这条路本来就不通，那就**不留一个按下去没有反应的按钮**。
+  const phoneReduceContext = await browser.newContext({
+    viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, reducedMotion: 'reduce',
+  });
+  const phoneReducePage = await phoneReduceContext.newPage();
+  await phoneReducePage.goto(server.origin, { waitUntil: 'networkidle' });
+  await phoneReducePage.evaluate(() => document.querySelector('.home-story-act.is-final')?.scrollIntoView({ block: 'center' }));
+  await phoneReducePage.waitForTimeout(400);
+  const phoneReduce = await phoneReducePage.evaluate(() => ({
+    flow: document.querySelector('.home-story')?.classList.contains('is-flow') ?? false,
+    authorButtons: document.querySelectorAll('.byline-author').length,
+    portraits: document.querySelectorAll('.story-portrait').length,
+    byline: document.querySelector('.home-story-act.is-final .byline')?.innerText ?? '',
+  }));
+  check('减少动态效果时不留死按钮：署名里的作者名退回普通文字，人像也不挂',
+    phoneReduce.flow && phoneReduce.authorButtons === 0 && phoneReduce.portraits === 0
+    && phoneReduce.byline.includes('沛恒'),
+    JSON.stringify(phoneReduce));
+  await phoneReduceContext.close();
+
 
   // ---- 署名 ----
   // 作者与邮箱在首屏、侧栏与（非首页的）页脚出现，数据同源于 web/src/site.ts。
@@ -939,7 +1098,7 @@ try {
       fills: ids.map((id) => read(id)?.fill),
     };
   });
-  check('力导向布局给出非网格坐标', physics.nodes.every((n) => Number.isFinite(n.x) && Number.isFinite(n.y)), JSON.stringify(physics.nodes.slice(0, 3)));
+  check('力导向布局坐标均为有限数', physics.nodes.every((n) => Number.isFinite(n.x) && Number.isFinite(n.y)), JSON.stringify(physics.nodes.slice(0, 3)));
   // 斥力：任意两张卡片都不重叠（间距由 relaxToSpacing 保证）。
   const minGap = await page.evaluate(() => {
     const g = [...document.querySelectorAll('.network-node')].map((n) => {
@@ -1010,9 +1169,9 @@ try {
   });
   /*
    * 样本量守卫只保证「每档都有边」：这个视图是精选的小网络，弱档常常只有一两条。
-   * 因此断言本身比中位数，样本量写进失败详情里，不至于让人以为在比一堆边。
+   * 因此只检查权重与长度合法；中位数保留为观测，不断言最终距离随权重单调变化。
    */
-  check('每条边都有合法权重与有限长度（布局是网格，不声称按权重吸引）',
+  check('可见边的权重与距离统计合法（不声称最终距离按权重排序）',
     attraction.total >= 4
       && attraction.weightRange[1] > attraction.weightRange[0]
       && Number.isFinite(attraction.heavy.median) && Number.isFinite(attraction.light.median),

@@ -10,6 +10,8 @@ import { runAllLocalizations } from '../tests/localization-cases.mjs';
 import { createLearnerStore } from '../server/db.mjs';
 import { relationCoverage, relationCoverageProblems, RELATIONLESS_CLASSES } from '../data/relation-coverage.mjs';
 import { PAPER_ANCHORS, paperAnchorStats } from '../data/paper-anchors.mjs';
+import { coverage, formatCoverage, overlayFor } from '../data/i18n/index.mjs';
+import { localizeOntologyRaw } from '../data/i18n/overlay.mjs';
 
 const failures = [];
 const notes = [];
@@ -120,6 +122,39 @@ check('对不上节点的条目都写了它讲的是什么', PAPER_ANCHORS
   .every((entry) => typeof entry.kind === 'string' && entry.kind.length > 0 && entry.note.length > 0));
 notes.push(`论文锚点：${anchorStats.total} 条登记（${anchorStats.anchors} 个 label），`
   + `挂上本体节点 ${anchorStats.mapped} 条，其余 ${anchorStats.unmapped} 条为接口/规划器/理论结论`);
+
+console.log('\n[8] 中英双语（语言覆盖的装配与覆盖度）');
+/*
+ * 这一节检查的是**机制**，不是译文质量：
+ *
+ * - 中英两份视图必须给出**同一个本体版本**（否则换语言等于换本体，档案里的
+ *   `ontologyVersion` 对不上，两套证据互不可见）；
+ * - 覆盖文件的结构必须与中文源同形（缺项、错位、公式记号被改动都是错误）；
+ * - 覆盖率如实打印，未译条目按 `scripts/i18n-parity.mjs --todo` 逐条可查。
+ *
+ * 「英文译文与中文源的数学对应关系」这条**没有**自动检查——它需要人工抽样复核，
+ * 见 `data/i18n/en/` 各文件头部的说明。不在这里给一个假的通过标记。
+ */
+const enOntology = await loadOntology({ dataDir: config.dataDir, locale: 'en' });
+check('中英本体版本一致', enOntology.version === ontology.version, `${ontology.version} vs ${enOntology.version}`);
+check('中英节点数一致', enOntology.raw.nodes.length === ontology.raw.nodes.length,
+  `${ontology.raw.nodes.length} vs ${enOntology.raw.nodes.length}`);
+const enOverlay = await overlayFor('en');
+if (!enOverlay) {
+  check('英文覆盖目录存在', false, 'data/i18n/en/ 未装载');
+} else {
+  const { problems } = localizeOntologyRaw(ontology.raw, enOverlay);
+  check('英文覆盖装配无结构问题', problems.length === 0, problems.slice(0, 3).join('；'));
+  const report = await coverage('en');
+  check('英文覆盖已开始（不是空目录）', report.totals.translated > 0, formatCoverage(report));
+  notes.push('语言覆盖：' + formatCoverage(report));
+  /*
+   * 英文界面里**未翻译**的节点占比：它同时是「还有什么没做完」的账本。
+   * 这里只打印，不设阈值——阈值是发布决定，不该藏在一个健康检查里。
+   */
+  const untranslated = report.missing.nodes?.length ?? 0;
+  notes.push(`未译节点：${untranslated} 个（末尾 ${report.sections.nodes.translated}/${report.sections.nodes.total} 已译）`);
+}
 
 console.log('\n摘要');
 for (const note of notes) console.log('  · ' + note);

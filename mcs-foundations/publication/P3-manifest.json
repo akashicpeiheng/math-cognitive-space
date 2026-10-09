@@ -1,0 +1,40 @@
+{
+  "schema": "mcs-publication-p3/1",
+  "date": "2026-10-05",
+  "scope": "P3 first-pass audit drafts for preservation and bounded search",
+  "paper_source": {
+    "path": "mcs-foundations/arxiv/main.tex",
+    "sha256": "2f19a4ec6bbfe40970d705529767d3cdf54508683f6ef1222af81362d50490ae"
+  },
+  "implementation_sources": [
+    {
+      "path": "mcs-foundations/arxiv/anc/route_demo.py",
+      "sha256": "0020c4a3416e415d5d276da71f2267769c19553292a232dbda297005ae4eb400"
+    },
+    {
+      "path": "mcs-foundations/arxiv/evidence/replay-final/route-report.json",
+      "sha256": "60be70110698dcfef312104eafde8883e67f385d7f81cfa3087eb532882edbb8"
+    },
+    {
+      "path": "mcs-foundations/arxiv/evidence/replay-final/research-report.json",
+      "sha256": "f2c38b5b2884ae3a76b695df2f4beb1185a96484244c4fa300bfe54443c3a0f3"
+    }
+  ],
+  "audit_files": [
+    {
+      "path": "mcs-foundations/publication/P3-01-保持定理逐条件审阅.md",
+      "sha256": "e60bc77fb4163c2dfa1cd9f84331caa8afea972b545265536da3375f3a824c2d"
+    },
+    {
+      "path": "mcs-foundations/publication/P3-02-有界搜索与实现覆盖.md",
+      "sha256": "7346d5e137d38513b24d9e50ae2e4542a8b024ae027ded6d7862bd8079956215"
+    }
+  ],
+  "not_claimed": [
+    "independent mathematical peer review",
+    "independent clean-room reproduction",
+    "general Python kernel correctness",
+    "complete implementation of the paper interface",
+    "author acceptance of the proposed clarifications"
+  ]
+}

@@ -1,4 +1,5 @@
 import {
+  memo,
   useCallback,
   useEffect,
   useId,
@@ -11,19 +12,22 @@ import {
 import { Link } from 'react-router-dom';
 import {
   HOME_NARRATIVE_ACTS,
-  HOME_NARRATIVE_FINAL_ACTIONS,
+  HOME_NARRATIVE_BY_LOCALE,
+  HOME_NARRATIVE_CHROME,
+  HOME_NARRATIVE_FINAL_ACTIONS_BY_LOCALE,
+  HOME_NARRATIVE_SCENE_TEXT,
+  homeNarrativeActAriaLabel,
+  homeNarrativeFootText,
   type HomeNarrativeAct,
   type HomeNarrativeScene,
+  type HomeNarrativeSceneText,
 } from '../home-narrative';
+import { useI18n } from '../i18n';
 import { SITE } from '../site';
 import { useMediaQuery } from '../useMediaQuery';
 import { StoryPortrait } from './StoryPortrait';
 
 const ACT_COUNT = HOME_NARRATIVE_ACTS.length;
-
-/** 幕数的中文写法，只给页脚文案用；幕数变了不用手改文案。 */
-const ACT_NUMERALS = ['一', '二', '三', '四', '五', '六', '七'];
-const ACT_SPAN_LABEL = `${ACT_NUMERALS[ACT_COUNT - 1] ?? ACT_COUNT}幕`;
 
 /**
  * 背景化之后的图形层不透明度。
@@ -135,14 +139,43 @@ interface HomeNarrativeProps {
 export function HomeNarrative({ startHref = '/start' }: HomeNarrativeProps) {
   const rootRef = useRef<HTMLElement | null>(null);
   const sectionsRef = useRef<HTMLDivElement | null>(null);
+  /*
+   * 六幕的文案按语种取（2026-10 中英双语）。
+   *
+   * 两份数组都是模块级常量，引用稳定：切语种时取到的是另一个常量，
+   * 因此不会每次渲染都换引用、也不会把上面那些量尺寸的 effect 重新跑一遍。
+   * 中文那份是源语言，逐字未动——`tests/home-narrative.mjs` 与 `tests/browser.mjs`
+   * 直接比对它的文字。
+   */
+  const { locale, pick } = useI18n();
+  const acts = pick(HOME_NARRATIVE_BY_LOCALE);
+  const chrome = pick(HOME_NARRATIVE_CHROME);
   const reduceMotion = useMediaQuery('(prefers-reduced-motion: reduce)');
   /**
-   * 不做「滚轮交替」的两种情形，判据与旧版一致：
+   * 不做「滚轮交替」的三种情形：
    * - **不够宽（≤1200px）**：单栏自然滚动反而能把 16px 正文铺满；
-   * - **不够高（≤700px）**：矮窗口里任何一幕都会挤到裁切，宁可不做固定舞台。
+   * - **不够高（≤700px）**：矮窗口里任何一幕都会挤到裁切，宁可不做固定舞台；
+   * - **触屏（`hover: none`，2026-10-05 加）**：这是被真机逼出来的第三条。
+   *
+   *   小米平板（宽屏，横屏时 CSS 宽度 ≥1200px）走的一直是固定舞台那条路，而它比自然滚动重
+   *   **3–4 倍**（同机实测 p50 帧间隔 18–24ms vs 6.1ms；滚一趟首页 DOM 变更 402 vs 11 次）。
+   *   安卓上表现就是「整页发白、顶部那条框反复消失出现」——合成器来不及画、掉图块，
+   *   浅色的吸顶栏跟着一起没了。而固定舞台的核心交互（滚轮先播动画、再滚到下一幕）
+   *   在触屏上本来就不成立：没有滚轮，用户只是往下滑。
+   *
+   *   触屏一律走自然滚动，等价于把手机那一套（已验证 p50 6.1ms、0 掉帧）给到平板。
+   *   接鼠标/触控板的设备 `hover: hover`，仍然保留固定舞台。
    */
-  const narrow = useMediaQuery('(max-width: 1200px), (max-height: 700px)');
+  const narrow = useMediaQuery('(max-width: 1200px), (max-height: 700px), (hover: none)');
   const flowMode = reduceMotion || narrow;
+  /**
+   * 触屏（`hover: none`）。宽屏安卓平板走的仍是固定舞台那条路（≥1200px 宽），
+   * 所以这个判据用得上两处：
+   * - **指针视差在触屏上没有意义**（没有悬停），可它每次 `pointermove` 要写 9 个 CSS 变量，
+   *   而这些变量被六幕的环境层消费——一次改动就是几百个元素重算样式；
+   * - `will-change` 那六个大合成层在平板上是栅格内存的大头（见 styles.css 同名注释）。
+   */
+  const coarsePointer = useMediaQuery('(hover: none)');
 
   /**
    * 四周带的宽度（2026-10 加，TODO A3-16 / A3-17 / A3-19）。
@@ -194,7 +227,7 @@ export function HomeNarrative({ startHref = '/start' }: HomeNarrativeProps) {
   const bandIsNarrow = band.px < 200;
 
   /** 每一幕自己的播放进度：滚轮推进，滚过去自动记成已完成。 */
-  const [played, setPlayed] = useState<number[]>(() => HOME_NARRATIVE_ACTS.map(() => 0));
+  const [played, setPlayed] = useState<number[]>(() => acts.map(() => 0));
   const [active, setActive] = useState(0);
   const playedRef = useRef(played);
   playedRef.current = played;
@@ -211,9 +244,40 @@ export function HomeNarrative({ startHref = '/start' }: HomeNarrativeProps) {
    *
    * 近 1 MB，不该占首页首屏的请求——**等真的走到末幕**（它成了当前幕，或它已经有进度）再挂上去。
    * 组件在 !armed 时直接不渲染，因此图也不会被请求。
+   * 窄屏（自然滚动）没有「当前幕」这个概念，改用「末幕接近视口」这一条等价判据，
+   * 见下面的 observer：末幕还在五幕之外时同样一个字节都不取。
    */
   const portraitAct = ACT_COUNT - 1;
-  const portraitArmed = !flowMode && (active === portraitAct || (played[portraitAct] ?? 0) > 0);
+
+  /*
+   * 人像在窄屏也看得到（2026-10-05）。
+   *
+   * 原来这里写的是 `!flowMode && …`：窄屏与「减少动态效果」被同一个开关一起挡掉，
+   * 于是**手机端署名里的作者名是个点了没反应的按钮**——入口在、序列永远不挂载。
+   * 现在两条路分开：
+   * - `reduceMotion`：仍然不挂、不动（不想看动效的人不该被塞一段 2.56 秒的序列）；
+   *   入口同时退回普通文字，不再留一个按下去没有反应的按钮（见 HomeNarrativeActCard）。
+   * - `narrow`：只是版面换成自然滚动，与「该不该有这个动作」无关，因此照常可以触发。
+   */
+  const portraitEnabled = !reduceMotion;
+  /** 窄屏专用：末幕进入「视口 + 400px」之后才置真；置真后不再回退（避免重复取图）。 */
+  const [portraitNear, setPortraitNear] = useState(false);
+  useEffect(() => {
+    if (!portraitEnabled || !flowMode) return undefined;
+    const target = sectionsRef.current?.children[portraitAct];
+    // 观察不了（老浏览器 / 结构没就位）时按「已接近」处理：宁可早取一次图，也不要入口失灵。
+    if (!target || typeof IntersectionObserver === 'undefined') { setPortraitNear(true); return undefined; }
+    const observer = new IntersectionObserver((entries) => {
+      if (!entries.some((entry) => entry.isIntersecting)) return;
+      setPortraitNear(true);
+      observer.disconnect();
+    }, { rootMargin: '400px 0px' });
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, [flowMode, portraitEnabled, portraitAct]);
+
+  const portraitArmed = portraitEnabled
+    && (flowMode ? portraitNear : (active === portraitAct || (played[portraitAct] ?? 0) > 0));
   /** 末幕人像序列的触发计数：署名里的作者名每被点一次加一（见 StoryPortrait.tsx）。 */
   const [portraitPulse, setPortraitPulse] = useState(0);
   /** 上一次触发的时刻，用来做冷却：演着的时候再触发不重启（见 PORTRAIT_COOLDOWN_MS 的说明）。 */
@@ -328,11 +392,12 @@ export function HomeNarrative({ startHref = '/start' }: HomeNarrativeProps) {
 
   /**
    * 桌面端的环境光跟随指针做很轻的视差；只写 CSS 变量，不触发 React 重渲染。
-   * 窄屏与减少动态效果模式完全不注册监听，避免给阅读模式增加无意义的运动。
+   * 窄屏、减少动态效果与**触屏**都不注册监听：触屏没有悬停，视差无从谈起，
+   * 而它每次 pointermove 要写 9 个 CSS 变量、牵动六幕环境层的样式重算（见 coarsePointer）。
    */
   useEffect(() => {
     const root = rootRef.current;
-    if (!root || flowMode) return undefined;
+    if (!root || flowMode || coarsePointer) return undefined;
     let frame = 0;
     let pointerX = 50;
     let pointerY = 50;
@@ -366,7 +431,7 @@ export function HomeNarrative({ startHref = '/start' }: HomeNarrativeProps) {
       root.removeEventListener('pointermove', queuePaint);
       root.removeEventListener('pointerleave', reset);
     };
-  }, [flowMode]);
+  }, [coarsePointer, flowMode]);
 
   /**
    * 滚轮：先播放本幕动画，播放完了才滚到下一幕（反向先倒放）。
@@ -376,7 +441,7 @@ export function HomeNarrative({ startHref = '/start' }: HomeNarrativeProps) {
    */
   useEffect(() => {
     if (flowMode) {
-      setPlayed(HOME_NARRATIVE_ACTS.map(() => 1));
+      setPlayed(acts.map(() => 1));
       return undefined;
     }
     measureSections();
@@ -427,7 +492,19 @@ export function HomeNarrative({ startHref = '/start' }: HomeNarrativeProps) {
       let index = 0;
       for (let i = 0; i < tops.length; i += 1) if (anchor >= tops[i] - 6) index = i;
       setActive((current) => (current === index ? current : index));
-      setPlayed((current) => current.map((item, i) => (i < index ? 1 : i === index ? item : 0)));
+      /*
+       * 值没变就返回**同一个数组**（2026-10-05，安卓流畅度）。
+       *
+       * `current.map(...)` 每次都会造一个新数组，于是**每一次 scroll 事件都换掉引用**、
+       * 把六幕整棵树重渲染一遍（12 个 SVG 场景、600+ 个节点）。实测宽屏安卓平板上
+       * 滚一趟首页：**402 次 DOM 变更、script 133ms、style 363ms、task 995ms**；
+       * 同一条路径在 flow 形态（手机）只有 11 次变更 / task 273ms——同一个页面差 4 倍。
+       * 逐项比较的代价是 6 次数字比较，远小于一次重渲染。
+       */
+      setPlayed((current) => {
+        const next = current.map((item, i) => (i < index ? 1 : i === index ? item : 0));
+        return next.some((value, i) => value !== current[i]) ? next : current;
+      });
     };
     const requestMeasure = () => {
       if (frame) return;
@@ -473,21 +550,30 @@ export function HomeNarrative({ startHref = '/start' }: HomeNarrativeProps) {
       data-active-act={flowMode ? ACT_COUNT - 1 : activeIndex}
       data-story-progress={overall.toFixed(4)}
       data-band={bandIsNarrow ? 'narrow' : 'wide'}
-      style={{ '--home-story-progress': overall, '--home-story-acts': ACT_COUNT, ...bandVars } as CSSProperties}
+      /*
+       * 根元素上只留**很少变**的那些变量（`--home-story-acts` 与带宽三兄弟：它们只在换窗口尺寸时变）。
+       *
+       * `--home-story-progress` 搬到了报头（见下）：它随每一格滚轮/每一次幕切换都在变，
+       * 而写在根上改一次就要重算**整棵子树**——实测一次 53ms（连写一个没人用的变量都要 30ms），
+       * 滚轮播一幕是 6 次这样的写入。它只有两个消费者，都在报头里，所以下沉到报头即可。
+       */
+      style={{ '--home-story-acts': ACT_COUNT, ...bandVars } as CSSProperties}
       aria-labelledby="home-story-title"
     >
-      <div className="home-story-masthead">
+      {/* `--home-story-progress` 挂在报头上：它的两个消费者（报头那道渐变的落点、
+          报头里进度条的 scaleX）都在这一块里，写在这里只作废这一小块子树。 */}
+      <div className="home-story-masthead" style={{ '--home-story-progress': overall } as CSSProperties}>
         <div className="home-story-brand">
-          <h1 id="home-story-title">数学认知空间 <span>MCS</span></h1>
-          <p>让数学沿着思路展开</p>
+          <h1 id="home-story-title">{chrome.brandName} <span>MCS</span></h1>
+          <p>{chrome.tagline}</p>
         </div>
         <div className="home-story-masthead-actions">
           {/* 跳过动画：直接落到「开始学习」页，不在本页内滚动。 */}
           <Link className="home-story-skip" to={startHref}>
-            直接进入学习
+            {chrome.skip}
           </Link>
-          <ol className="home-story-progress" aria-label="首页叙事进度">
-            {HOME_NARRATIVE_ACTS.map((act, index) => (
+          <ol className="home-story-progress" aria-label={chrome.progressAria}>
+            {acts.map((act, index) => (
               <li
                 key={act.id}
                 className={flowMode || index === activeIndex ? 'is-active' : ''}
@@ -496,7 +582,7 @@ export function HomeNarrative({ startHref = '/start' }: HomeNarrativeProps) {
                 <button
                   type="button"
                   onClick={() => jumpToAct(index)}
-                  aria-label={`前往第 ${index + 1} 幕：${act.kicker}`}
+                  aria-label={homeNarrativeActAriaLabel(locale, index, act.kicker)}
                 >
                   <span>{act.number}</span>
                   <small>{act.kicker}</small>
@@ -518,7 +604,7 @@ export function HomeNarrative({ startHref = '/start' }: HomeNarrativeProps) {
         段内层序与上一轮一致——图形层（铺满、退到背后）→ 柔光罩 → 文字（居中）。
       */}
       <div className="home-story-sections" ref={sectionsRef}>
-        {HOME_NARRATIVE_ACTS.map((act, index) => (
+        {acts.map((act, index) => (
           <section
             key={act.id}
             className="home-story-section"
@@ -536,19 +622,30 @@ export function HomeNarrative({ startHref = '/start' }: HomeNarrativeProps) {
              */
             aria-labelledby={`home-story-act-${act.id}-title`}
             aria-describedby={`home-story-act-${act.id}-scene`}
-            style={{
-              '--act-progress': played[index] ?? 0,
-              '--act-progress-position': `${Math.round((1 - (played[index] ?? 0)) * 100)}%`,
-              '--act-glow-scale': 0.98 + (played[index] ?? 0) * 0.04,
-              '--act-core-scale': 0.82 + (played[index] ?? 0) * 0.24,
-              '--act-index-rotation': `${index * 8}deg`,
-            } as CSSProperties}
+            /*
+             * 这一段只留**静态**的自定义属性（2026-10-05，安卓流畅度）。
+             *
+             * 原来这里每帧还在写 `--act-progress` / `--act-progress-position` /
+             * `--act-glow-scale` / `--act-core-scale`。写在 section 上，改一次就要把
+             * **整段子树（600+ 元素）**的样式重新匹配一遍——逐项实测（1280×800 触屏）：
+             * 写 `--act-progress` 35ms/次（它**根本没有消费者**，纯浪费）、
+             * 写 `--act-glow-scale` 24ms/次、写内联 opacity/transform 8.5ms/次、切类 6.3ms/次。
+             * 现在：死变量删掉，另外两个下沉到真正消费它们的那两个元素上（下面 glow / core，
+             * 以及 ActCard 的 h2）——失效范围从「整段」变成「两个元素」。
+             */
+            style={{ '--act-index-rotation': `${index * 8}deg` } as CSSProperties}
           >
             <div className="home-story-atmosphere" aria-hidden="true">
-              <span className="home-story-atmosphere-glow" />
+              <span
+                className="home-story-atmosphere-glow"
+                style={{ '--act-glow-scale': 0.98 + (played[index] ?? 0) * 0.04 } as CSSProperties}
+              />
               <span className="home-story-orbit home-story-orbit-a" />
               <span className="home-story-orbit home-story-orbit-b" />
-              <span className="home-story-orbit-core" />
+              <span
+                className="home-story-orbit-core"
+                style={{ '--act-core-scale': 0.82 + (played[index] ?? 0) * 0.24 } as CSSProperties}
+              />
               <span className="home-story-coordinate">MCS · {act.number} / {String(ACT_COUNT).padStart(2, '0')}</span>
               <span className="home-story-signal-field">
                 {AMBIENT_SIGNALS.map((signal) => <i key={signal} />)}
@@ -660,7 +757,7 @@ export function HomeNarrative({ startHref = '/start' }: HomeNarrativeProps) {
                       </li>
                     ))}
                   </ul>
-                  <p className="home-story-visual-note">教学组织示意 · 非真实学习记录</p>
+                  <p className="home-story-visual-note">{chrome.visualNote}</p>
                 </div>
                 <div className="home-story-scrim" aria-hidden="true" />
                 {/*
@@ -681,7 +778,12 @@ export function HomeNarrative({ startHref = '/start' }: HomeNarrativeProps) {
               state={actState(index)}
               sceneLocal={played[index] ?? 0}
               flowMode={flowMode}
+              portraitEnabled={portraitEnabled}
               onAuthorClick={firePortrait}
+              /* 标题下柔光的缩放：只喂给 ActCard 的 h2，不再写在 section 上。 */
+              glowScale={0.98 + (played[index] ?? 0) * 0.04}
+              /* 窄屏时人像改挂在署名下方（ActCard 里的 .home-story-portrait-slot）。 */
+              portrait={index === portraitAct ? <StoryPortrait armed={portraitArmed} pulse={portraitPulse} /> : null}
             />
 
             {/*
@@ -689,7 +791,7 @@ export function HomeNarrative({ startHref = '/start' }: HomeNarrativeProps) {
               内容就是数据里的 `sceneLabel`——「这一幕画的是什么」，不额外编解释。
             */}
             <p className="visually-hidden" id={`home-story-act-${act.id}-scene`}>
-              {`画面：${act.sceneLabel}`}
+              {`${chrome.scenePrefix}${act.sceneLabel}`}
             </p>
 
             {!flowMode && (
@@ -697,8 +799,8 @@ export function HomeNarrative({ startHref = '/start' }: HomeNarrativeProps) {
                 <span className="home-story-cue-wheel"><i /></span>
                 <span>
                   {(played[index] ?? 0) < 0.98
-                    ? '滚动展开本幕'
-                    : index < ACT_COUNT - 1 ? '继续滚动进入下一幕' : '从这里开始探索'}
+                    ? chrome.cuePlay
+                    : index < ACT_COUNT - 1 ? chrome.cueNext : chrome.cueEnd}
                 </span>
               </div>
             )}
@@ -708,7 +810,7 @@ export function HomeNarrative({ startHref = '/start' }: HomeNarrativeProps) {
 
       <div className="home-story-foot" aria-hidden="true">
         <span className="home-story-foot-line" />
-        <span>{flowMode ? `向下阅读${ACT_SPAN_LABEL}` : `滚轮先播放本幕动画，再滚到下一幕 · 共${ACT_SPAN_LABEL}`}</span>
+        <span>{homeNarrativeFootText(locale, flowMode, ACT_COUNT)}</span>
         {/*
           「浮现只发生一次」写成明说的设计（2026-10，TODO A3-18）。
           以前它是实现细节：文案浮现用的是 CSS 动画（`home-copy-emerge`，`both`），
@@ -716,8 +818,8 @@ export function HomeNarrative({ startHref = '/start' }: HomeNarrativeProps) {
           现在的选择是**保留「只浮现一次」并写明**，而不是让它跟随进度可重播：
           重播会把「已读过的内容」反复推回起点，六幕连读时是干扰；理由与取舍见 README。
         */}
-        <span className="home-story-foot-note">浮现动画每幕只播一次（往回滚不会重播）</span>
-        <span>知识 · 方法 · 路径</span>
+        <span className="home-story-foot-note">{chrome.footNote}</span>
+        <span>{chrome.footMotto}</span>
       </div>
     </section>
   );
@@ -839,25 +941,53 @@ interface ActCardProps {
   state: ActVisualState;
   sceneLocal: number;
   flowMode: boolean;
+  /** 人像这条路通不通（`!reduceMotion`）。不通时署名里的作者名退回普通文字，不留死按钮。 */
+  portraitEnabled: boolean;
   /** 署名里的作者名被点击时调用——末幕人像序列的唯一入口。 */
   onAuthorClick: () => void;
+  /** 窄屏用的人像节点（桌面端由视觉舞台挂着，这里为 null）。 */
+  portrait: ReactNode;
+  /**
+   * 标题下那圈柔光的缩放（0.98 → 1.02，随本幕进度）。
+   * 它只被 `h2::before` 消费，所以**写在 h2 上而不是 section 上**：
+   * 写在 section 上，每帧一次就会让整段子树重新匹配样式（实测 24ms/次）。
+   */
+  glowScale: number;
 }
 
-function HomeNarrativeActCard({ act, index, last, state, sceneLocal, flowMode, onAuthorClick }: ActCardProps) {
+function HomeNarrativeActCard({
+  act, index, last, state, sceneLocal, flowMode, portraitEnabled, onAuthorClick, portrait, glowScale,
+}: ActCardProps) {
   const { ref, inView } = useInView<HTMLElement>();
+  /*
+   * 末幕入口与署名文案按语种取。
+   *
+   * `to` 一律是**站内相对路径**（`/start`、`/plan`、`/method`、`/intro`），
+   * 由 `Link` 按当前语种前缀解析；这里不拼 `/en`，否则中文站会跟着坏掉。
+   */
+  const { pick } = useI18n();
+  const finalActions = pick(HOME_NARRATIVE_FINAL_ACTIONS_BY_LOCALE);
+  const chrome = pick(HOME_NARRATIVE_CHROME);
 
   return (
     <article
       ref={ref}
-      className={`home-story-act${inView ? ' in-view' : ''}${last ? ' is-final' : ''}`}
+      /*
+       * `.in-view` 只在**固定舞台**（桌面）这一形态里挂：那边它负责整幕的淡入。
+       * 自然滚动形态（手机/平板）不需要它——那里的进入动画挂在图形自己身上（`is-shown`），
+       * 因为在这个 612 个元素的子树上切一次类要 8.75ms 样式重算，切在图形上只要 0.25ms
+       * （2026-10-05，安卓流畅度：一次全程滚动有十来次切换，省下的是每幕一次的可感卡顿）。
+       */
+      className={`home-story-act${!flowMode && inView ? ' in-view' : ''}${last ? ' is-final' : ''}`}
       data-act={act.id}
       data-act-index={index}
       style={flowMode ? undefined : { opacity: state.opacity, transform: state.transform }}
     >
       <div className="home-story-act-copy">
         <p className="home-story-kicker"><span>{act.number}</span>{act.kicker}</p>
-        {/* id 供 `aria-labelledby` 指向（见 section 上的可访问描述，TODO A3-20）。 */}
-        <h2 id={`home-story-act-${act.id}-title`}>{act.title}</h2>
+        {/* id 供 `aria-labelledby` 指向（见 section 上的可访问描述，TODO A3-20）。
+            柔光缩放挂在这里：`h2::before` 是它唯一的消费者。 */}
+        <h2 id={`home-story-act-${act.id}-title`} style={{ '--act-glow-scale': glowScale } as CSSProperties}>{act.title}</h2>
         <div className="home-story-body">
           {act.paragraphs.map((paragraph) => <p key={paragraph.slice(0, 22)}>{paragraph}</p>)}
         </div>
@@ -886,7 +1016,7 @@ function HomeNarrativeActCard({ act, index, last, state, sceneLocal, flowMode, o
         {last && (
           <>
             <div className="hero-actions home-story-actions">
-              {HOME_NARRATIVE_FINAL_ACTIONS.map((action) => (
+              {finalActions.map((action) => (
                 action.to.startsWith('#')
                   ? (
                     <a
@@ -917,16 +1047,36 @@ function HomeNarrativeActCard({ act, index, last, state, sceneLocal, flowMode, o
                 它必须是**真的按钮**：键盘能聚焦、读屏会念出「按钮」，这是可访问性；
                 但外观要与原来的 <strong> 一模一样——样式全在 `.byline-author` 里抹平，
                 `cursor` 也保持继承，不额外改成 pointer。
+
+                「减少动态效果」下这条路本来就不通（见 HomeNarrative 的 portraitEnabled），
+                那就退回普通 <strong>：**入口在不在，要看得出来**——留着按钮而点不动，
+                正是 2026-10-05 手机上暴露的那个问题。
               */}
-              作者 <button type="button" className="byline-author" onClick={onAuthorClick}>{SITE.author}</button> · 联系邮箱 <a href={SITE.mailto}>{SITE.email}</a>
+              {chrome.bylineAuthor} {portraitEnabled
+                ? <button type="button" className="byline-author" onClick={onAuthorClick}>{SITE.author}</button>
+                : <strong>{SITE.author}</strong>} · {chrome.bylineContact} <a href={SITE.mailto}>{SITE.email}</a>
             </p>
           </>
         )}
       </div>
 
-      <div className="home-story-act-mobile-visual" aria-hidden="true">
-        <HomeStoryScene scene={act.scene} local={sceneLocal} compact />
-      </div>
+      {/*
+        窄屏（自然滚动）下的人像挂点：桌面端由视觉舞台挂着，这里只服务 `.is-flow`。
+        这一格**高 0**，人像在里面绝对定位——因此它既不占版面、也不推挤正文与插图；
+        位置与尺寸见 styles.css 的 `.home-story-portrait-slot`。
+      */}
+      {last && flowMode && <div className="home-story-portrait-slot">{portrait}</div>}
+
+      {/*
+        手机/平板那一块紧凑图形：桌面形态下它本来就被 `display: none` 藏着，
+        但 React 照样会重渲染它、把 SVG 的几十个属性重写一遍（2026-10-05，安卓流畅度）。
+        **不渲染**比「渲染了再藏起来」便宜：桌面一次进度更新要画的场景从 12 个降到 6 个。
+      */}
+      {flowMode && (
+        <div className="home-story-act-mobile-visual" aria-hidden="true">
+          <HomeStoryScene scene={act.scene} local={sceneLocal} compact shown={inView} />
+        </div>
+      )}
     </article>
   );
 }
@@ -936,9 +1086,11 @@ interface HomeStorySceneProps {
   local: number;
   compact?: boolean;
   className?: string;
+  /** 已进入视口：自然滚动形态下用它挂 `is-shown`（进入动画的标记，见 styles.css）。 */
+  shown?: boolean;
 }
 
-function HomeStoryScene({ scene, local, compact = false, className = '' }: HomeStorySceneProps) {
+function HomeStorySceneBase({ scene, local, compact = false, className = '', shown = false }: HomeStorySceneProps) {
   const uid = useId().replace(/:/g, '');
   const t = clamp(local, 0, 1);
   const content = scene === 'theme'
@@ -954,7 +1106,7 @@ function HomeStoryScene({ scene, local, compact = false, className = '' }: HomeS
             : <InfrastructureScene t={t} uid={uid} />;
 
   return (
-    <figure className={`home-story-scene${compact ? ' is-compact' : ''}${className ? ` ${className}` : ''}`}>
+    <figure className={`home-story-scene${compact ? ' is-compact' : ''}${shown ? ' is-shown' : ''}${className ? ` ${className}` : ''}`}>
       <svg viewBox="0 0 720 560" role="presentation" aria-hidden="true">
         <defs>
           <linearGradient id={`story-brand-${uid}`} x1="0" y1="0" x2="1" y2="1">
@@ -979,6 +1131,17 @@ function HomeStoryScene({ scene, local, compact = false, className = '' }: HomeS
     </figure>
   );
 }
+
+/**
+ * 场景包一层 `memo`（2026-10-05，安卓流畅度）。
+ *
+ * 六幕各有 2–3 个场景，一次进度更新会让父组件重渲染——没有 memo 时**每个场景都要重算一遍**，
+ * 并把几十个 SVG 属性（`opacity` / `transform` / `d` / `r` / `stroke-dashoffset`）重写一遍，
+ * 而 SVG 的呈现属性也参与层叠：写一次就是一次样式失效。实测滚一趟首页有约 300 次这样的写入，
+ * style 重算 374ms。加 memo 之后只有**本幕**的场景会重渲染（其余 props 没变，直接跳过）。
+ * props 全是原始值，比较是廉价的。
+ */
+const HomeStoryScene = memo(HomeStorySceneBase);
 
 interface SceneProps {
   t: number;
@@ -1006,6 +1169,7 @@ function StoryText({ x, y, children, className = 'story-caption' }: { x: number;
  * 与其余各幕同一套规则（见 styles.css 的 .home-story-label-layer）。
  */
 function ThemeScene({ t, uid }: SceneProps) {
+  const sceneText: HomeNarrativeSceneText = useI18n().pick(HOME_NARRATIVE_SCENE_TEXT);
   const amount = smoothstep(t);
   /*
    * 顶点：第一个是「数学对象」原点，其余是后来连上的节点。
@@ -1046,8 +1210,8 @@ function ThemeScene({ t, uid }: SceneProps) {
   return (
     <g className="story-scene story-scene-theme">
       <StoryBackdrop />
-      <StoryText x={54} y={74} className="story-kicker">主题</StoryText>
-      <StoryText x={54} y={104} className="story-title">从一到网络：知识 · 关系 · 路径</StoryText>
+      <StoryText x={54} y={74} className="story-kicker">{sceneText.themeKicker}</StoryText>
+      <StoryText x={54} y={104} className="story-title">{sceneText.themeTitle}</StoryText>
 
       <g className="story-theme-net">
         {edges.map(([from, to], index) => {
@@ -1087,8 +1251,8 @@ function ThemeScene({ t, uid }: SceneProps) {
           opacity={0.26 + amount * 0.3}
         />
         <circle className="story-theme-origin-core" cx={nodes[0].x} cy={nodes[0].y} r={9} />
-        <text className="story-side-note" x={nodes[0].x} y={nodes[0].y + 54} textAnchor="middle">数学对象</text>
-        <text className="story-route-label" x={nodes[5].x} y={nodes[5].y + 40} textAnchor="middle">已经理解</text>
+        <text className="story-side-note" x={nodes[0].x} y={nodes[0].y + 54} textAnchor="middle">{sceneText.object}</text>
+        <text className="story-route-label" x={nodes[5].x} y={nodes[5].y + 40} textAnchor="middle">{sceneText.understood}</text>
       </g>
 
       {/* 路径：起点就是网里那个已理解的节点，终点是本幕右侧的目标。 */}
@@ -1108,8 +1272,8 @@ function ThemeScene({ t, uid }: SceneProps) {
         <circle className="story-goal-halo" r="74" />
         <circle className="story-goal-disc" r="46" style={{ stroke: `url(#story-brand-${uid})` }} />
         <path className="story-goal-spark" d="M0-24 6-6 24 0 6 6 0 24-6 6-24 0-6-6Z" />
-        <text className="story-goal-title" y="-4" textAnchor="middle">想弄懂</text>
-        <text className="story-goal-note" y="20" textAnchor="middle">你的问题</text>
+        <text className="story-goal-title" y="-4" textAnchor="middle">{sceneText.goalTitle}</text>
+        <text className="story-goal-note" y="20" textAnchor="middle">{sceneText.yourQuestion}</text>
       </g>
     </g>
   );
@@ -1123,6 +1287,7 @@ function ThemeScene({ t, uid }: SceneProps) {
  * 而「已经会了」与「教材假设的前置」两枚标签始终错开。
  */
 function PainScene({ t }: SceneProps) {
+  const sceneText: HomeNarrativeSceneText = useI18n().pick(HOME_NARRATIVE_SCENE_TEXT);
   const amount = smoothstep(t);
   // 三本从「错开 44」收敛到「错开 22」：始终留着一条缝，让每本书都露出同一行内容。
   const spread = lerp(44, 22, amount);
@@ -1132,8 +1297,8 @@ function PainScene({ t }: SceneProps) {
   return (
     <g className="story-scene story-scene-pain">
       <StoryBackdrop />
-      <StoryText x={54} y={74} className="story-kicker">现状</StoryText>
-      <StoryText x={54} y={104} className="story-title">三本教材，同一份章节</StoryText>
+      <StoryText x={54} y={74} className="story-kicker">{sceneText.painKicker}</StoryText>
+      <StoryText x={54} y={104} className="story-title">{sceneText.painTitle}</StoryText>
 
       {[0, 1, 2].map((index) => (
         <g key={index} transform={`translate(${120 + index * spread} ${132 + index * 18})`}>
@@ -1156,22 +1321,22 @@ function PainScene({ t }: SceneProps) {
 
       <g opacity={0.3 + amount * 0.7}>
         <rect className="story-side-card" x="466" y="164" width="216" height="122" rx="18" />
-        <text className="story-side-title" x="490" y="202">重合的章节</text>
-        <text className="story-side-item" x="490" y="238">三本各写一遍</text>
-        <text className="story-side-note" x="490" y="268">真正新增的并不多</text>
+        <text className="story-side-title" x="490" y="202">{sceneText.overlapCardTitle}</text>
+        <text className="story-side-item" x="490" y="238">{sceneText.overlapCardLine}</text>
+        <text className="story-side-note" x="490" y="268">{sceneText.overlapCardNote}</text>
       </g>
 
       <g opacity={markerOpacity}>
         <g className="story-personal-marker is-green">
           <rect x="60" y="344" width="112" height="40" rx="20" />
-          <text x="116" y="371" textAnchor="middle">已经会了</text>
+          <text x="116" y="371" textAnchor="middle">{sceneText.knownMarker}</text>
         </g>
         <g className="story-personal-marker is-brand">
           <rect x="466" y="344" width="176" height="40" rx="20" />
-          <text x="554" y="371" textAnchor="middle">教材假设的前置</text>
+          <text x="554" y="371" textAnchor="middle">{sceneText.assumedMarker}</text>
         </g>
         <path className="story-marker-line" d="M176 364H462" />
-        <StoryText x={319} y={358} className="story-small story-centered">不重合</StoryText>
+        <StoryText x={319} y={358} className="story-small story-centered">{sceneText.noOverlap}</StoryText>
       </g>
 
       <path className="story-route story-route-fixed" d="M70 452H650" strokeDasharray="580" strokeDashoffset={580 * (1 - amount)} />
@@ -1181,27 +1346,28 @@ function PainScene({ t }: SceneProps) {
           <text className="story-route-number" y="6">{index + 1}</text>
         </g>
       ))}
-      <StoryText x={610} y={412} className="story-small story-centered">想先弄懂</StoryText>
-      <StoryText x={70} y={494} className="story-small">既定章节顺序</StoryText>
-      <StoryText x={54} y={526} className="story-small">内容重合、顺序既定、前置不问</StoryText>
+      <StoryText x={610} y={412} className="story-small story-centered">{sceneText.wantedFirst}</StoryText>
+      <StoryText x={70} y={494} className="story-small">{sceneText.presetOrder}</StoryText>
+      <StoryText x={54} y={526} className="story-small">{sceneText.painBottomNote}</StoryText>
     </g>
   );
 }
 
 function PathScene({ t, uid }: SceneProps) {
+  const sceneText: HomeNarrativeSceneText = useI18n().pick(HOME_NARRATIVE_SCENE_TEXT);
   const amount = smoothstep(t);
   const dash = 560 * (1 - amount);
   const markers = [
-    { label: '已经理解', x: 106, y: 306, tx: 176, ty: 440, className: 'is-green' },
-    { label: '当前问题', x: 300, y: 226, tx: 366, ty: 440, className: 'is-brand' },
-    { label: '学习目标', x: 496, y: 344, tx: 556, ty: 440, className: 'is-cyan' },
+    { label: sceneText.pathMarkers[0], x: 106, y: 306, tx: 176, ty: 440, className: 'is-green' },
+    { label: sceneText.pathMarkers[1], x: 300, y: 226, tx: 366, ty: 440, className: 'is-brand' },
+    { label: sceneText.pathMarkers[2], x: 496, y: 344, tx: 556, ty: 440, className: 'is-cyan' },
   ];
 
   return (
     <g className="story-scene story-scene-path">
       <StoryBackdrop />
-      <StoryText x={54} y={78} className="story-kicker">教材路径既定</StoryText>
-      <StoryText x={54} y={110} className="story-title">章节沿着一条顺序展开</StoryText>
+      <StoryText x={54} y={78} className="story-kicker">{sceneText.pathKicker}</StoryText>
+      <StoryText x={54} y={110} className="story-title">{sceneText.pathTitle}</StoryText>
 
       <g transform={`translate(${lerp(-16, 0, amount)} ${lerp(18, 0, amount)})`}>
         {[0, 1, 2].map((index) => (
@@ -1219,7 +1385,7 @@ function PathScene({ t, uid }: SceneProps) {
               />
             ))}
             <rect className="story-book-tab" x="114" y="16" width="94" height="30" rx="15" />
-            <text className="story-book-label" x="126" y="38">第 {index + 1} 本</text>
+            <text className="story-book-label" x="126" y="38">{sceneText.bookLabel.replace('{n}', String(index + 1))}</text>
           </g>
         ))}
       </g>
@@ -1231,7 +1397,7 @@ function PathScene({ t, uid }: SceneProps) {
           <text className="story-route-number" y="6">{index + 1}</text>
         </g>
       ))}
-      <StoryText x={70} y={484} className="story-small">既定章节顺序</StoryText>
+      <StoryText x={70} y={484} className="story-small">{sceneText.presetOrder}</StoryText>
 
       {markers.map((marker) => (
         <g key={marker.label} className={`story-personal-marker ${marker.className}`} opacity={0.28 + amount * 0.72}>
@@ -1240,30 +1406,31 @@ function PathScene({ t, uid }: SceneProps) {
           <text x={marker.x + 60} y={marker.y + 27} textAnchor="middle">{marker.label}</text>
         </g>
       ))}
-      <StoryText x={54} y={524} className="story-small">你的位置与目标，不必落在同一条直线上</StoryText>
+      <StoryText x={54} y={524} className="story-small">{sceneText.pathBottomNote}</StoryText>
     </g>
   );
 }
 
 function MethodsScene({ t, uid }: SceneProps) {
+  const sceneText: HomeNarrativeSceneText = useI18n().pick(HOME_NARRATIVE_SCENE_TEXT);
   const amount = smoothstep(t);
   const books = [
-    { x: 34, label: '教材 A' },
-    { x: 258, label: '教材 B' },
-    { x: 482, label: '教材 C' },
+    { x: 34, label: sceneText.bookNames[0] },
+    { x: 258, label: sceneText.bookNames[1] },
+    { x: 482, label: sceneText.bookNames[2] },
   ];
   const highlights = [
-    { label: '自然动机', from: [78, 188], to: [286, 344], tone: 'brand' },
-    { label: '直觉图景', from: [126, 250], to: [330, 386], tone: 'cyan' },
-    { label: '关键反例', from: [306, 206], to: [386, 386], tone: 'ember' },
-    { label: '证明思路', from: [522, 246], to: [432, 344], tone: 'brand' },
+    { label: sceneText.highlights[0], from: [78, 188], to: [286, 344], tone: 'brand' },
+    { label: sceneText.highlights[1], from: [126, 250], to: [330, 386], tone: 'cyan' },
+    { label: sceneText.highlights[2], from: [306, 206], to: [386, 386], tone: 'ember' },
+    { label: sceneText.highlights[3], from: [522, 246], to: [432, 344], tone: 'brand' },
   ];
 
   return (
     <g className="story-scene story-scene-methods">
       <StoryBackdrop />
-      <StoryText x={54} y={78} className="story-kicker">方法分散，再汇集</StoryText>
-      <StoryText x={54} y={110} className="story-title">好讲法在不同教材的不同位置</StoryText>
+      <StoryText x={54} y={78} className="story-kicker">{sceneText.methodsKicker}</StoryText>
+      <StoryText x={54} y={110} className="story-title">{sceneText.methodsTitle}</StoryText>
 
       {books.map((book) => (
         <g key={book.label} transform={`translate(${book.x} 148)`}>
@@ -1297,28 +1464,29 @@ function MethodsScene({ t, uid }: SceneProps) {
       <g className="story-center-node" transform={`translate(360 424) scale(${lerp(0.88, 1.06, amount)})`}>
         <circle className="story-center-halo" r="96" opacity={0.18 + amount * 0.28} />
         <circle className="story-center-disc" r="70" style={{ stroke: `url(#story-brand-${uid})` }} />
-        <text className="story-center-title" y="-4" textAnchor="middle">数学对象</text>
-        <text className="story-center-subtitle" y="24" textAnchor="middle">好讲法在此相遇</text>
+        <text className="story-center-title" y="-4" textAnchor="middle">{sceneText.object}</text>
+        <text className="story-center-subtitle" y="24" textAnchor="middle">{sceneText.meetHere}</text>
       </g>
-      <StoryText x={360} y={530} className="story-small story-centered">保留来源、条件与各自的长处</StoryText>
+      <StoryText x={360} y={530} className="story-small story-centered">{sceneText.methodsBottomNote}</StoryText>
     </g>
   );
 }
 
 function HumanScene({ t }: SceneProps) {
+  const sceneText: HomeNarrativeSceneText = useI18n().pick(HOME_NARRATIVE_SCENE_TEXT);
   const amount = smoothstep(t);
   const chain = [
-    { label: '为什么需要', y: 126 },
-    { label: '朴素想法', y: 228 },
-    { label: '规范形式', y: 330 },
+    { label: sceneText.chain[0], y: 126 },
+    { label: sceneText.chain[1], y: 228 },
+    { label: sceneText.chain[2], y: 330 },
   ];
   const detailOpacity = smoothstep((t - 0.12) / 0.62);
 
   return (
     <g className="story-scene story-scene-human">
       <StoryBackdrop />
-      <StoryText x={54} y={68} className="story-kicker">人性化设计</StoryText>
-      <StoryText x={54} y={100} className="story-title">顺着人的思维，而不是只顺着目录</StoryText>
+      <StoryText x={54} y={68} className="story-kicker">{sceneText.humanKicker}</StoryText>
+      <StoryText x={54} y={100} className="story-title">{sceneText.humanTitle}</StoryText>
 
       {chain.map((item, index) => (
         <g key={item.label}>
@@ -1333,13 +1501,13 @@ function HumanScene({ t }: SceneProps) {
 
       <g opacity={detailOpacity}>
         <rect className="story-side-card" x="30" y="170" width="172" height="168" rx="20" />
-        <text className="story-side-title" x="52" y="208">证明</text>
-        <text className="story-side-item" x="52" y="248">总览</text>
+        <text className="story-side-title" x="52" y="208">{sceneText.proofCard}</text>
+        <text className="story-side-item" x="52" y="248">{sceneText.overview}</text>
         <path className="story-side-arrow" d="M58 262H176M58 288H146" />
-        <text className="story-side-item" x="52" y="322">细节</text>
+        <text className="story-side-item" x="52" y="322">{sceneText.details}</text>
 
         <rect className="story-side-card is-warm" x="520" y="170" width="172" height="168" rx="20" />
-        <text className="story-side-title" x="542" y="208">条件</text>
+        <text className="story-side-title" x="542" y="208">{sceneText.conditionCard}</text>
         {/*
           右侧这张卡的标签**右对齐**（`textAnchor="end"`，锚在卡片右内边距上）。
           它们以前是左对齐的：文字层渲染字号约 33px（「字大一点」是设计要求），
@@ -1347,22 +1515,23 @@ function HumanScene({ t }: SceneProps) {
           实测「体验」幕有两条被屏幕切掉（TODO A3-17）。右对齐之后它们向**左**生长，
           场景怎么窄都不会出屏，字号也不必为了避让而缩小。
         */}
-        <text className="story-side-item" x="678" y="248" textAnchor="end">删掉会怎样</text>
-        <text className="story-side-item is-warm" x="678" y="288" textAnchor="end">关键反例</text>
-        <text className="story-side-note" x="678" y="318" textAnchor="end">解释结论怎么塌</text>
+        <text className="story-side-item" x="678" y="248" textAnchor="end">{sceneText.deleteIt}</text>
+        <text className="story-side-item is-warm" x="678" y="288" textAnchor="end">{sceneText.keyCounterexample}</text>
+        <text className="story-side-note" x="678" y="318" textAnchor="end">{sceneText.collapseNote}</text>
       </g>
 
       <g opacity={detailOpacity}>
         <rect className="story-outer-card" x="210" y="424" width="300" height="74" rx="20" />
-        <text className="story-outer-title" x="360" y="454" textAnchor="middle">辅助知识 · 拓展视角</text>
-        <text className="story-outer-note" x="360" y="480" textAnchor="middle">刚好够用，按需展开</text>
-        <text className="story-bottom-note" x="360" y="530" textAnchor="middle">试错记录 · 个人启发 · 日后回看</text>
+        <text className="story-outer-title" x="360" y="454" textAnchor="middle">{sceneText.supportCard}</text>
+        <text className="story-outer-note" x="360" y="480" textAnchor="middle">{sceneText.supportNote}</text>
+        <text className="story-bottom-note" x="360" y="530" textAnchor="middle">{sceneText.trialNote}</text>
       </g>
     </g>
   );
 }
 
 function InfrastructureScene({ t, uid }: SceneProps) {
+  const sceneText: HomeNarrativeSceneText = useI18n().pick(HOME_NARRATIVE_SCENE_TEXT);
   const amount = smoothstep(t);
   const backgroundNodes = [
     [110, 120], [220, 92], [560, 112], [640, 210], [108, 330], [610, 386], [250, 484], [500, 492],
@@ -1374,8 +1543,8 @@ function InfrastructureScene({ t, uid }: SceneProps) {
   return (
     <g className="story-scene story-scene-infrastructure">
       <StoryBackdrop />
-      <StoryText x={54} y={68} className="story-kicker">公共基础</StoryText>
-      <StoryText x={54} y={100} className="story-title">让知识、方法与路线可以一起生长</StoryText>
+      <StoryText x={54} y={68} className="story-kicker">{sceneText.infraKicker}</StoryText>
+      <StoryText x={54} y={100} className="story-title">{sceneText.infraTitle}</StoryText>
 
       <g className="story-space" opacity={0.3 + amount * 0.7}>
         {edges.map(([from, to]) => (
@@ -1397,17 +1566,17 @@ function InfrastructureScene({ t, uid }: SceneProps) {
       <path className="story-study-route is-cyan" d="M626 138C548 178 492 230 360 310" strokeDasharray="430" strokeDashoffset={430 * (1 - amount)} style={{ stroke: `url(#story-cyan-${uid})` }} />
       <circle className="story-route-start is-brand" cx="106" cy="438" r="14" />
       <circle className="story-route-start is-cyan" cx="626" cy="138" r="14" />
-      <text className="story-route-label" x="74" y="484">你的问题</text>
-      <text className="story-route-label" x="560" y="116">另一种入口</text>
+      <text className="story-route-label" x="74" y="484">{sceneText.yourQuestion}</text>
+      <text className="story-route-label" x="560" y="116">{sceneText.anotherEntry}</text>
 
       <g className="story-goal" transform={`translate(360 310) scale(${lerp(0.9, 1.08, amount)})`}>
         <circle className="story-goal-halo" r="98" />
         <circle className="story-goal-disc" r="72" style={{ stroke: `url(#story-brand-${uid})` }} />
         <path className="story-goal-spark" d="M0-36 10-10 36 0 10 10 0 36-10 10-36 0-10-10Z" />
-        <text className="story-goal-title" y="-6" textAnchor="middle">共同目标</text>
-        <text className="story-goal-note" y="24" textAnchor="middle">多条路径</text>
+        <text className="story-goal-title" y="-6" textAnchor="middle">{sceneText.sharedGoal}</text>
+        <text className="story-goal-note" y="24" textAnchor="middle">{sceneText.manyPaths}</text>
       </g>
-      <StoryText x={360} y={530} className="story-small story-centered">让每一份新的理解，成为后来者的起点</StoryText>
+      <StoryText x={360} y={530} className="story-small story-centered">{sceneText.infraBottomNote}</StoryText>
     </g>
   );
 }

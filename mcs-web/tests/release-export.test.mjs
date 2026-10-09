@@ -60,6 +60,29 @@ test('an exported public repository can export itself again with its root licens
   assert.equal(existsSync(join(f.out, 'LICENSE-MIT')), true);
 });
 
+test('only the known preview sandbox is excluded; other links still block export', (t) => {
+  const f = fixture(t);
+  const outside = join(f.dir, 'outside');
+  mkdirSync(outside);
+  writeFileSync(join(outside, 'private.md'), 'private fixture');
+  f.put('mcs-web/.tmp-shadow/probe.mjs', 'local probe');
+  f.put('mcs-web/web/src/App.tsx', 'export default null;');
+  try {
+    symlinkSync(outside, join(f.repo, 'mcs-web/.tmp-shadow/public'), process.platform === 'win32' ? 'junction' : 'dir');
+  } catch (error) {
+    if (['EPERM', 'EACCES', 'ENOTSUP'].includes(error.code)) return t.skip('system cannot create a link');
+    throw error;
+  }
+  const result = f.run();
+  assert.equal(result.status, 0, result.stdout + result.stderr);
+  assert.equal(existsSync(join(f.out, 'mcs-web/.tmp-shadow')), false);
+  assert.equal(existsSync(join(f.out, 'mcs-web/web/src/App.tsx')), true);
+  symlinkSync(outside, join(f.repo, 'mcs-web/.tmp-shadow-other'), process.platform === 'win32' ? 'junction' : 'dir');
+  const blocked = f.run(join(f.dir, 'export-with-unreviewed-link'));
+  assert.notEqual(blocked.status, 0);
+  assert.match(blocked.stderr, /拒绝导出符号链接或目录联接/);
+});
+
 test('missing mandatory license fails instead of claiming a complete release', (t) => {
   const f = fixture(t);
   rmSync(join(f.repo, 'mcs-web/release/LICENSE-MIT'));

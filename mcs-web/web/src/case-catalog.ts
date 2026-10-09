@@ -11,6 +11,7 @@
  */
 
 import type { NodeSummary } from './types';
+import type { Locale } from './i18n/locales';
 
 /** 案例元数据：问题的自然动机、入口与目标。人工撰写，其余全部由语料派生。 */
 export interface CaseMeta {
@@ -85,6 +86,35 @@ export function sectionOf(discipline: string): string {
   return '其他';
 }
 
+/*
+ * 分组名与证据兜底词的显示名（2026-10 中英双语）。
+ *
+ * 受控词表的值（`微分几何`、`其他`…）是本体里的标识，**不翻译**；
+ * 这里给的是它们在界面上的显示名，与 `labels.ts` 的成对表同一个道理。
+ * 中文那份逐字与从前相同，因此中文站与既有测试完全不受影响。
+ */
+export const CASE_SECTION_TITLES: Record<string, { zh: string; en: string }> = {
+  分析: { zh: '分析', en: 'Analysis' },
+  测度论: { zh: '测度论', en: 'Measure theory' },
+  微分几何: { zh: '微分几何', en: 'Differential geometry' },
+  拓扑: { zh: '拓扑', en: 'Topology' },
+  群论: { zh: '群论', en: 'Group theory' },
+  线性代数: { zh: '线性代数', en: 'Linear algebra' },
+  多重线性与张量代数: { zh: '多重线性与张量代数', en: 'Multilinear and tensor algebra' },
+  域与数系: { zh: '域与数系', en: 'Fields and number systems' },
+  相对论与宇宙论: { zh: '相对论与宇宙论', en: 'Relativity and cosmology' },
+  逻辑与基础: { zh: '逻辑与基础', en: 'Logic and foundations' },
+  其他: { zh: '其他', en: 'Other' },
+};
+
+/** 节点没有证据状态时的兜底词（本体里缺字段是事实，这里如实说明「未标注」）。 */
+export const CASE_EVIDENCE_FALLBACK: { zh: string; en: string } = { zh: '未标注', en: 'Unlabeled' };
+
+/** 分组显示名：未登记的 id 原样返回，不显示空白。 */
+export function caseSectionTitle(id: string, locale: Locale = 'zh'): string {
+  return CASE_SECTION_TITLES[id]?.[locale] ?? id;
+}
+
 /**
  * 归类所用的学科是**节点的多数学科**，而不是「任意一个学科」。
  *
@@ -104,8 +134,11 @@ function primaryDisciplineOf(nodes: NodeSummary[]): string {
   return best;
 }
 
-/** 由案例元数据 + 本体节点算出卡片的全部内容。纯函数，不读时间与随机数。 */
-export function describeCase(meta: CaseMeta, allNodes: NodeSummary[]): CaseDetail {
+/** 由案例元数据 + 本体节点算出卡片的全部内容。纯函数，不读时间与随机数。
+ *
+ * `locale` 只影响**本体里缺字段时**的兜底词（`未标注` / `Unlabeled`）与分组名；
+ * 案例的标题、问题、胚子都在调用方（`StartPage` 的 `CASE_METAS`）里，按语种各给一份。 */
+export function describeCase(meta: CaseMeta, allNodes: NodeSummary[], locale: Locale = 'zh'): CaseDetail {
   const nodes = allNodes.filter((node) => node.case === meta.id);
 
   const disciplineTally = new Map<string, number>();
@@ -122,7 +155,7 @@ export function describeCase(meta: CaseMeta, allNodes: NodeSummary[]): CaseDetai
 
   const evidenceTally = new Map<string, number>();
   for (const node of nodes) {
-    const status = node.evidenceStatus ?? '未标注';
+    const status = node.evidenceStatus ?? CASE_EVIDENCE_FALLBACK[locale];
     evidenceTally.set(status, (evidenceTally.get(status) ?? 0) + 1);
   }
   const evidence = [...evidenceTally.entries()]
@@ -148,11 +181,11 @@ export function describeCase(meta: CaseMeta, allNodes: NodeSummary[]): CaseDetai
 }
 
 /** 把所有案例归到领域分组。空分组不出现，不为了排版好看而保留空壳。 */
-export function groupByDiscipline(details: CaseDetail[]): DisciplineSection[] {
+export function groupByDiscipline(details: CaseDetail[], locale: Locale = 'zh'): DisciplineSection[] {
   const sections = new Map<string, DisciplineSection>();
   for (const detail of details) {
     const id = detail.sectionId;
-    const title = id === '其他' ? '其他' : id;
+    const title = caseSectionTitle(id, locale);
     const section = sections.get(id) ?? { id, title, cases: [], nodeCount: 0 };
     section.cases.push(detail);
     section.nodeCount += detail.nodeCount;

@@ -1138,6 +1138,20 @@ try {
       JSON.stringify({ progress: state.progress, overflow: state.overflow }));
   }
 
+  /*
+   * 桌面固定舞台仍要保留 `will-change`：那一层是给滚轮推进的 opacity / transform 用的，
+   * 触屏降级（见下面手机端那两条）只该发生在自然滚动形态里，不能连桌面一起抹掉。
+   */
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.waitForTimeout(260);
+  const desktopWillChange = await page.evaluate(() => ({
+    flow: document.querySelector('.home-story')?.classList.contains('is-flow') ?? false,
+    willChange: getComputedStyle(document.querySelector('.home-story-act')).willChange,
+  }));
+  check('桌面固定舞台仍保留合成层提示（触屏降级没有波及桌面）',
+    !desktopWillChange.flow && desktopWillChange.willChange.includes('opacity'),
+    JSON.stringify(desktopWillChange));
+
   // 不够宽或不够高的窗口：改用自然滚动，六幕完整可见，正文按站点正文大小排。
   for (const viewport of FLOW_VIEWPORTS) {
     await page.setViewportSize(viewport);
@@ -1218,6 +1232,30 @@ try {
   check('手机端「现状」幕单列卡片且每张都有图标', mobileState.pointColumns === 1 && mobileState.pointIcons === 6, JSON.stringify({ columns: mobileState.pointColumns, icons: mobileState.pointIcons }));
   check('手机端动画文字不小于 8px', mobileState.compactMinPx >= 8, String(mobileState.compactMinPx));
   check('手机端没有横向溢出', mobileState.overflow <= 2, 'overflow=' + mobileState.overflow);
+
+  /*
+   * 自然滚动形态下不该有的两处滚动代价（2026-10-05，小米平板 + Edge「滚动时整页发白」）：
+   * 每幕一个大合成层（`will-change`）在平板上是几十 MB 的栅格内存；
+   * 六幕的常驻装饰动画同时在跑则是六份持续的合成工作。
+   */
+  const scrollCost = await mobilePage.evaluate(() => {
+    const sections = [...document.querySelectorAll('.home-story-section')];
+    const state = (section) => {
+      const node = section?.querySelector('.home-story-atmosphere .home-story-orbit, .home-story-atmosphere .home-story-signal-field i');
+      return node ? getComputedStyle(node).animationPlayState : null;
+    };
+    return {
+      actWillChange: getComputedStyle(document.querySelector('.home-story-act')).willChange,
+      paused: sections.filter((section) => state(section) === 'paused').length,
+      running: sections.filter((section) => state(section) === 'running').length,
+      total: sections.length,
+    };
+  });
+  check('手机端六幕的常驻装饰动画只在看得见的那一幕里跑，其余挂起',
+    scrollCost.total === ACT_COUNT && scrollCost.running >= 1 && scrollCost.paused >= ACT_COUNT - 2,
+    JSON.stringify(scrollCost));
+  check('手机端每一幕不再白占一个合成层（自然滚动下没有 opacity/transform 动画）',
+    scrollCost.actWillChange === 'auto', String(scrollCost.actWillChange));
 
   // 手机端只截首屏：六幕全高的整页图会超出图像工具的尺寸上限，人工核对用首屏即可。
   await mobilePage.screenshot({ path: resolve(MCS_WEB_ROOT, 'tmp', 'home-narrative-mobile.png') });

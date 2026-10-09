@@ -1,4 +1,5 @@
 import type { NodeSummary } from './types.ts';
+import type { Locale } from './i18n/locales.ts';
 
 /**
  * 节点类别的划分：推荐面板按它分组，`NetworkPage` 的两处面板也用它取标签与说明。
@@ -51,6 +52,50 @@ export const NODE_GROUP_NOTES: Record<NodeGroup, string> = {
   representation: '同一对象的不同表达方式。',
   other: '其余登记类型。',
 };
+
+/**
+ * 上面两张表的英文版（2026-10 双语化，键与中文逐字对应）。
+ *
+ * 为什么把英文另放一张表、而不是把中文表改成 `{ zh, en }`：中文表被
+ * `tests/node-groups.test.mjs` 当作 `Record<NodeGroup, string>` 逐字读
+ * （`NODE_GROUP_LABELS.concept === '概念'`），也直接出现在 SVG 文本与 `<option>` 里；
+ * 保持形状不变，新增的英文与其他调用方都用下面两个取词函数。
+ */
+export const NODE_GROUP_LABELS_EN: Record<NodeGroup, string> = {
+  'method-local': 'Local techniques',
+  'method-global': 'Global methods',
+  concept: 'Concepts',
+  claim: 'Claims and proofs',
+  example: 'Examples and counterexamples',
+  misconception: 'Misconception patterns',
+  problem: 'Problems and exercises',
+  representation: 'Representations',
+  other: 'Other',
+};
+
+export const NODE_GROUP_NOTES_EN: Record<NodeGroup, string> = {
+  'method-local': 'Techniques with a definite task shape and enumerable steps; they need not transfer to another setting.',
+  'method-global': 'Strategies that cross settings, not tied to a single task.',
+  concept: 'Answers “what is it”; background theory, symbols and constructions also fall in this group. The ontology has no separate “definition” category — definitions live in the body of concept nodes (the template supports Definition, currently 0 nodes), so this group is not called “concepts and definitions”.',
+  claim: 'Answers “what is asserted”, usually with a proof or a counterexample.',
+  example: 'Concrete instances, used to check a definition.',
+  misconception: 'Common misconceptions written as objects: which step is wrong and why; anchored on the related nodes.',
+  problem: 'Open problems or exercises one can work on.',
+  representation: 'Different ways of expressing the same object.',
+  other: 'The remaining registered types.',
+};
+
+/** 取组名；未登记的组回退原值。 */
+export function nodeGroupLabel(group: NodeGroup, locale: Locale = 'zh'): string {
+  const table = locale === 'en' ? NODE_GROUP_LABELS_EN : NODE_GROUP_LABELS;
+  return table[group] ?? group;
+}
+
+/** 取组说明；未登记的组回退空串（不显示空白标签，也不会抛错）。 */
+export function nodeGroupNote(group: NodeGroup, locale: Locale = 'zh'): string {
+  const table = locale === 'en' ? NODE_GROUP_NOTES_EN : NODE_GROUP_NOTES;
+  return table[group] ?? '';
+}
 
 export function groupOfNode(node: NodeSummary): NodeGroup {
   const roles = node.roles ?? [];

@@ -1,7 +1,8 @@
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
-import { loadOntology, createOntology, MCS_WEB_ROOT, REPO_ROOT } from '../core/ontology.mjs';
+import { loadOntology, createOntology, resetOntologyCache, MCS_WEB_ROOT, REPO_ROOT } from '../core/ontology.mjs';
+import { resetOverlayCache } from '../data/i18n/index.mjs';
 import { startServer } from '../server/index.mjs';
 
 export async function testOntology() {
@@ -117,6 +118,19 @@ export async function toggleInAnimatedPage(page, selector, { index = 0, expect }
 }
 
 export async function startTestServer({ staticDir = resolve(MCS_WEB_ROOT, 'web', 'dist') } = {}) {
+  // Candidate frontend builds can be tested without replacing the running site's assets.
+  staticDir = process.env.MCS_WEB_TEST_STATIC_DIR || staticDir;
+  /*
+   * 起测试服务前**清掉本体与语言覆盖的缓存**（2026-10，双语改造时加）。
+   *
+   * 两处缓存都是「进程级、按版本键」的：本体实例按 `dataDir`、语言视图按 `version::locale`。
+   * 测试跑在一个进程里时，先在 A 组用例读过中文本体、再在 B 组用例改过
+   * `data/i18n/en/*` 之后请求英文，B 组会拿到 A 组那一刻的旧实例——表现是
+   * 「改了翻译文件但测试仍看到旧内容」，而这是**测试自身的缓存**，不是被测代码的问题。
+   * 清一次是廉价的（重新装配约几十毫秒），换来的确定性远比省这点时间重要。
+   */
+  resetOntologyCache();
+  resetOverlayCache();
   const dir = mkdtempSync(join(tmpdir(), 'mcs-web-test-'));
   const config = {
     host: '127.0.0.1',

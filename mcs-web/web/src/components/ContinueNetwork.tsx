@@ -1,11 +1,12 @@
 import { Link } from 'react-router-dom';
+import { useI18n, useLabels } from '../i18n';
 import { THEME } from '../theme';
-import { RELATION_COLOR, plainMathText, relationLabel } from '../labels';
+import { RELATION_COLOR, plainMathText } from '../labels';
 import { edgeVisual } from '../relation-visual';
-import { EDGE_FAMILY_LABELS, type NetworkGraph } from '../network';
+import { edgeFamilyLabel, type NetworkGraph } from '../network';
 import {
-  BASIS_LABELS, BASIS_RANK, CONTINUE_CENTER, CONTINUE_NODE_H, CONTINUE_NODE_W, DIRECTION_LABELS,
-  buildContinueNetwork, type ContinueLink,
+  BASIS_RANK, CONTINUE_CENTER, CONTINUE_NODE_H, CONTINUE_NODE_W,
+  basisLabel, buildContinueNetwork, directionLabel, type ContinueLink,
 } from '../continue-network';
 
 /**
@@ -15,7 +16,43 @@ import {
  * 位置由 `buildContinueNetwork` 纯函数算出，本组件只负责画。
  *
  * 只画有已登记依据的关联，且如实标注「还有 N 个」——不把没画出来的节点说成不存在。
+ *
+ * 双语（2026-10）：
+ * - 方位名与依据名走 `continue-network.ts` 的 `directionLabel()` / `basisLabel()`，
+ *   族名走 `network.ts` 的 `edgeFamilyLabel()`（都由各自的属主提供英文，键与中文值不变）；
+ * - 关系种类走 `useLabels().relationLabel()`；
+ * - 本组件自己的说明文案成对写在下表。SVG 文本不能排版 KaTeX，一律走 `plainMathText`。
  */
+
+const COPY = {
+  zh: {
+    empty: '这个节点在本体里还没有登记任何关联（关系、契约或同话题）。可以先打开它的节点页，看正文与证据；关联会在你加入更多节点后出现。',
+    aria: (title: string, nodes: number, groups: number) => `以 ${title} 为中心的关联视图，共 ${nodes} 个强关联节点，分 ${groups} 个话题方向`,
+    centerTitle: (title: string, node: string) => `上次学习：${title}（${node}）`,
+    nodeTitle: (title: string, node: string, basis: string, kind: string) => `${title}（${node}）· ${basis}${kind ? `：${kind}` : ''}`,
+    relation: (kind: string, witness: string) => `关系：${kind}（见证 ${witness}）`,
+    family: (prefix: string, label: string) => `${prefix}：${label}`,
+    familyPrefix: { contract: '契约', sharedInput: '共用前提', topic: '同一话题' },
+    omittedLead: '为了让方位读得清楚，每个方向最多画 3 个节点。',
+    omittedItem: (topic: string, count: number) => `${topic} 还有 ${count} 个`,
+    omittedJoin: '；',
+    omittedTail: '——完整邻域见组建网络页。',
+  },
+  en: {
+    empty: 'This node has no registered associations yet (relations, contracts or shared topics). Open its node page to read the text and the evidence; associations appear as you add more nodes.',
+    aria: (title: string, nodes: number, groups: number) => `Association view centred on ${title}: ${nodes} strongly related nodes across ${groups} topic directions`,
+    centerTitle: (title: string, node: string) => `Last studied: ${title} (${node})`,
+    nodeTitle: (title: string, node: string, basis: string, kind: string) => `${title} (${node}) · ${basis}${kind ? `: ${kind}` : ''}`,
+    relation: (kind: string, witness: string) => `Relation: ${kind} (witness ${witness})`,
+    family: (prefix: string, label: string) => `${prefix}: ${label}`,
+    familyPrefix: { contract: 'Contract', sharedInput: 'Shared prerequisite', topic: 'Same topic' },
+    omittedLead: 'To keep the directions readable, at most three nodes are drawn per direction. ',
+    omittedItem: (topic: string, count: number) => `${topic} has ${count} more`,
+    omittedJoin: '; ',
+    omittedTail: ' — see the network page for the full neighbourhood.',
+  },
+} as const;
+
 export function ContinueNetwork({
   centerId,
   graph,
@@ -28,14 +65,14 @@ export function ContinueNetwork({
   /** 点击邻居时的回调（用于把「继续学习」的目标切过去）。 */
   onPick?: (nodeId: string) => void;
 }) {
-  const network = buildContinueNetwork(centerId, graph, { confirmed });
+  const { locale, hrefFor } = useI18n();
+  const labels = useLabels();
+  const text = COPY[locale];
+  const network = buildContinueNetwork(centerId, graph, { confirmed, locale });
   if (!network) return null;
   if (network.nodes.length === 0) {
     return (
-      <p className="muted">
-        这个节点在本体里还没有登记任何关联（关系、契约或同话题）。
-        可以先打开它的节点页，看正文与证据；关联会在你加入更多节点后出现。
-      </p>
+      <p className="muted">{text.empty}</p>
     );
   }
 
@@ -47,7 +84,7 @@ export function ContinueNetwork({
         viewBox={`0 0 ${width} ${height}`}
         width="100%"
         role="img"
-        aria-label={`以 ${plainMathText(network.center.title)} 为中心的关联视图，共 ${network.nodes.length} 个强关联节点，分 ${network.groups.length} 个话题方向`}
+        aria-label={text.aria(plainMathText(network.center.title), network.nodes.length, network.groups.length)}
         style={{ display: 'block', maxHeight: 460 }}
       >
         <defs>
@@ -68,7 +105,7 @@ export function ContinueNetwork({
             ? members.reduce((sum, item) => sum + item.y + CONTINUE_NODE_H / 2, 0) / members.length
             : cy + (group.direction === 'up' ? -90 : group.direction === 'down' ? 90 : 0);
           // SVG 文本不能排版 KaTeX，用 Unicode 上标代替「C^k」这类记号。
-          const label = plainMathText(`${DIRECTION_LABELS[group.direction]} · ${group.topicTitle}`);
+          const label = plainMathText(`${directionLabel(group.direction, locale)} · ${group.topicTitle}`);
           if (group.direction === 'up') {
             const top = members.length ? Math.min(...members.map((item) => item.y)) : midY;
             return <text key={`label-${group.direction}-${group.topicId}`} className="continue-direction-label" x={midX} y={Math.max(12, top - 8)} textAnchor="middle">{label}</text>;
@@ -134,7 +171,7 @@ export function ContinueNetwork({
             {plainMathText(network.center.title.length > 14 ? `${network.center.title.slice(0, 14)}…` : network.center.title)}
           </text>
           <text className="continue-node-id" x={cx} y={cy + 14} textAnchor="middle" fontSize="10">{network.center.node}</text>
-          <title>{`上次学习：${network.center.title}（${network.center.node}）`}</title>
+          <title>{text.centerTitle(network.center.title, network.center.node)}</title>
         </g>
 
         {/* 邻居节点 */}
@@ -155,7 +192,7 @@ export function ContinueNetwork({
             <text className="continue-node-id" x={item.x + 10} y={item.y + 34} fontSize="9.5">
               {item.node}
             </text>
-            <title>{`${item.title}（${item.node}）· ${BASIS_LABELS[item.basis]}${item.kind ? `：${relationLabel(item.kind)}` : ''}`}</title>
+            <title>{text.nodeTitle(item.title, item.node, basisLabel(item.basis, locale), item.kind ? labels.relationLabel(item.kind) : '')}</title>
           </g>
         ))}
       </svg>
@@ -171,27 +208,27 @@ export function ContinueNetwork({
                   ? RELATION_COLOR[item.kind ?? ''] ?? THEME.neutral
                   : item.family === 'contract' ? THEME.contractEdge : THEME.line,
               }}
-              title={BASIS_LABELS[item.basis]}
+              title={basisLabel(item.basis, locale)}
             />
-            <Link to={`/nodes/${encodeURIComponent(item.node)}`} onClick={() => onPick?.(item.node)}>{plainMathText(item.title)}</Link>
+            <Link to={hrefFor(`/nodes/${encodeURIComponent(item.node)}`)} onClick={() => onPick?.(item.node)}>{plainMathText(item.title)}</Link>
             <span className="muted">
-              {plainMathText(`${DIRECTION_LABELS[item.direction]} · ${item.topicTitle}`)}
+              {plainMathText(`${directionLabel(item.direction, locale)} · ${item.topicTitle}`)}
               {' · '}
               {item.basis === 'relation'
-                ? `关系：${relationLabel(item.kind ?? '')}（见证 ${item.witnessStatus}）`
-                : item.basis === 'contract' ? `契约：${EDGE_FAMILY_LABELS.contract}`
-                  : item.basis === 'sharedInput' ? `共用前提：${EDGE_FAMILY_LABELS.sharedInput}`
-                    : `同一话题：${EDGE_FAMILY_LABELS.topic}`}
+                ? text.relation(labels.relationLabel(item.kind ?? ''), item.witnessStatus ?? '')
+                : item.basis === 'contract' ? text.family(text.familyPrefix.contract, edgeFamilyLabel('contract', locale))
+                  : item.basis === 'sharedInput' ? text.family(text.familyPrefix.sharedInput, edgeFamilyLabel('sharedInput', locale))
+                    : text.family(text.familyPrefix.topic, edgeFamilyLabel('topic', locale))}
             </span>
           </li>
         ))}
       </ul>
       {network.groups.some((group) => group.omitted > 0) && (
         <p className="muted continue-omitted">
-          为了让方位读得清楚，每个方向最多画 3 个节点。
+          {text.omittedLead}
           {network.groups.filter((group) => group.omitted > 0)
-            .map((group) => `${group.topicTitle} 还有 ${group.omitted} 个`)
-            .join('；')}——完整邻域见组建网络页。
+            .map((group) => text.omittedItem(group.topicTitle, group.omitted))
+            .join(text.omittedJoin)}{text.omittedTail}
         </p>
       )}
     </div>

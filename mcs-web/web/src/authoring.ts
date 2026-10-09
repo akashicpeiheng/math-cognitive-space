@@ -23,6 +23,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ApiError, attempt, type Attempt, type UnavailableInfo } from './api';
 import { CASE_LABELS } from './labels';
+import type { Locale } from './i18n/locales';
 import type { AuthoringDraft, DiscoveryRun, MathJudgment, PublicationRevision, RelationCandidate, RelationKind, ReviewStatus, RunStatus } from '@shared/formal';
 import type { EvidenceRecord } from './types';
 
@@ -117,8 +118,16 @@ export function caseDiscipline(caseId: string): string {
   return CASE_DISCIPLINE[caseId] ?? '';
 }
 
-export function caseLabel(id: string): string {
-  return CASE_LABELS[id] ?? id;
+/**
+ * 案例的显示名（默认中文）。
+ *
+ * `CASE_LABELS` 已改成 `{ zh, en }` 成对表；本模块是纯函数模块，**不引入 React**，
+ * 语种用第三个位置参数显式传入，默认 `'zh'` 保证既有调用与中文站逐字不变
+ * （`AuthoringPage` 等调用方按当前语种传 `locale`）。
+ */
+export function caseLabel(id: string, locale: Locale = 'zh'): string {
+  const pair = CASE_LABELS[id];
+  return pair ? (pair[locale] ?? pair.zh) : id;
 }
 
 export const CONSTRUCT_OPTIONS = ['Concept', 'Definition', 'Claim', 'Proof', 'Example', 'Counterexample', 'Problem', 'Theory', 'Construction', 'Method', 'Representation', 'Symbol', 'Term', 'MisconceptionPattern'] as const;
@@ -133,8 +142,26 @@ export const RELATION_KIND_LABEL: Record<string, string> = {
   counterexampleTo: '反例',
 };
 
-export function relationKindLabel(kind: string): string {
-  return RELATION_KIND_LABEL[kind] ?? kind;
+/**
+ * 上表的英文版（2026-10 双语化，键与中文逐字对应）。
+ *
+ * 中文表形状保持 `Record<string, string>` 不变：它进的是 SVG `<text>`、`<option>` 与
+ * `data-*` 附近，且 `tests/authoring-page.mjs`、`tests/formal-authoring-api.test.mjs`
+ * 按中文逐字核对。调用方按当前语种取，缺英文时回落中文。
+ */
+export const RELATION_KIND_LABEL_EN: Record<string, string> = {
+  definitionReference: 'Definition reference',
+  hardGeneralization: 'Hard generalization',
+  equivalentTo: 'Equivalent',
+  conditionalDerivation: 'Conditional derivation',
+  instanceOf: 'Instance of',
+  counterexampleTo: 'Counterexample to',
+};
+
+/** 取关系种类显示名；未登记的键回退原键名，绝不返回空白。 */
+export function relationKindLabel(kind: string, locale: Locale = 'zh'): string {
+  const table = locale === 'en' ? RELATION_KIND_LABEL_EN : RELATION_KIND_LABEL;
+  return table[kind] ?? kind;
 }
 
 /**
@@ -148,6 +175,12 @@ export const MATH_JUDGMENT_LABEL: Record<MathJudgment, string> = {
   verified: '已通过检查',
   refuted: '已被有限反例反驳',
   undecided: '未决',
+};
+
+export const MATH_JUDGMENT_LABEL_EN: Record<MathJudgment, string> = {
+  verified: 'Check passed',
+  refuted: 'Refuted by a finite counterexample',
+  undecided: 'Undecided',
 };
 
 export const MATH_JUDGMENT_MARK: Record<MathJudgment, string> = {
@@ -168,6 +201,24 @@ export const MATH_JUDGMENT_BOUNDARY: Record<MathJudgment, string> = {
   undecided: '「未决」= 界内没搜到证明、也没找到反例；它既不支持也不否定命题。',
 };
 
+export const MATH_JUDGMENT_BOUNDARY_EN: Record<MathJudgment, string> = {
+  verified: '“Check passed” = the certificate passed the checker and the goal matched; the checker itself is not formally verified.',
+  refuted: '“Refuted” only ever comes from a counter-model on a predefined finite object: it refutes this implication in this background, it does not overturn results about the reals or manifolds.',
+  undecided: '“Undecided” = no proof was found within the bound, and no counterexample either; it neither supports nor refutes the claim.',
+};
+
+/** 取数学判断的短语（默认中文；未登记的键回退原值）。 */
+export function mathJudgmentLabel(status: MathJudgment | string, locale: Locale = 'zh'): string {
+  const table = locale === 'en' ? MATH_JUDGMENT_LABEL_EN : MATH_JUDGMENT_LABEL;
+  return (table as Record<string, string>)[status] ?? status;
+}
+
+/** 取数学判断那一档的边界说明。 */
+export function mathJudgmentBoundary(status: MathJudgment | string, locale: Locale = 'zh'): string {
+  const table = locale === 'en' ? MATH_JUDGMENT_BOUNDARY_EN : MATH_JUDGMENT_BOUNDARY;
+  return (table as Record<string, string>)[status] ?? '';
+}
+
 export const RUN_STATUS_LABEL: Record<RunStatus | string, string> = {
   queued: '排队中',
   running: '运行中',
@@ -180,6 +231,18 @@ export const RUN_STATUS_LABEL: Record<RunStatus | string, string> = {
   check_failed: '检查未通过',
 };
 
+export const RUN_STATUS_LABEL_EN: Record<RunStatus | string, string> = {
+  queued: 'Queued',
+  running: 'Running',
+  completed: 'Completed',
+  interrupted: 'Interrupted (server restarted)',
+  cancelled: 'Cancelled',
+  error: 'Execution error',
+  timeout: 'Timed out',
+  unsupported: 'Unsupported by the language',
+  check_failed: 'Check failed',
+};
+
 export const REVIEW_LABEL: Record<ReviewStatus | string, string> = {
   pending: '未审阅',
   accepted: '已采纳',
@@ -187,6 +250,26 @@ export const REVIEW_LABEL: Record<ReviewStatus | string, string> = {
   published: '已入库',
   stale: '已失效',
 };
+
+export const REVIEW_LABEL_EN: Record<ReviewStatus | string, string> = {
+  pending: 'Not reviewed',
+  accepted: 'Accepted',
+  dismissed: 'Dismissed',
+  published: 'Published',
+  stale: 'Stale',
+};
+
+/** 取运行状态显示名；未登记的状态回退原值（原始状态码本身就是信息）。 */
+export function runStatusLabel(status: string, locale: Locale = 'zh'): string {
+  const table = locale === 'en' ? RUN_STATUS_LABEL_EN : RUN_STATUS_LABEL;
+  return table[status] ?? status;
+}
+
+/** 取审阅状态显示名。 */
+export function reviewStatusLabel(status: string, locale: Locale = 'zh'): string {
+  const table = locale === 'en' ? REVIEW_LABEL_EN : REVIEW_LABEL;
+  return table[status] ?? status;
+}
 
 /** 采集入库前必须解释清楚的边界，逐条显示在界面上。 */
 export const FLOW_BOUNDARIES = [
@@ -210,6 +293,20 @@ export const DECLARATION_ROLE_LABEL: Record<DeclarationRole, string> = {
   predicate: '谓词',
   proposition: '命题',
 };
+
+export const DECLARATION_ROLE_LABEL_EN: Record<DeclarationRole, string> = {
+  object: 'Object sort',
+  element: 'Element',
+  function: 'Function',
+  predicate: 'Predicate',
+  proposition: 'Proposition',
+};
+
+/** 取参数类型表的角色显示名。 */
+export function declarationRoleLabel(role: DeclarationRole | string, locale: Locale = 'zh'): string {
+  const table = locale === 'en' ? DECLARATION_ROLE_LABEL_EN : DECLARATION_ROLE_LABEL;
+  return (table as Record<string, string>)[role] ?? role;
+}
 
 export interface DeclarationRow {
   name: string;
@@ -298,6 +395,20 @@ export const SPEC_FIELD_LABEL: Record<SpecSourceKey, string> = {
   claims: '派生断言',
 };
 
+export const SPEC_FIELD_LABEL_EN: Record<SpecSourceKey, string> = {
+  declarations: 'Parameter type table',
+  definitions: 'Definitions (transparent abbreviations)',
+  assumptions: 'Local assumptions',
+  statement: 'Statement (must parse as a certified formula)',
+  claims: 'Derived claims',
+};
+
+/** 取源码块的显示名（未知键回退键名，不返回空白）。 */
+export function specFieldLabel(key: SpecSourceKey | string, locale: Locale = 'zh'): string {
+  const table = locale === 'en' ? SPEC_FIELD_LABEL_EN : SPEC_FIELD_LABEL;
+  return (table as Record<string, string>)[key] ?? key;
+}
+
 export function fieldsToSpecSource(fields: DraftFields): Record<SpecSourceKey, string> {
   return {
     declarations: declarationsToSource(fields.declarations),
@@ -359,11 +470,17 @@ export function fieldsToPatch(fields: DraftFields): DraftPatch {
 }
 
 export const PENDING_TEXT = '待补充';
+export const PENDING_TEXT_EN = 'To be supplied';
 
-/** 空着的解释一律显示「待补充」——不生成占位内容，也不留一个空框让人以为加载失败。 */
-export function pending(text: string | null | undefined): { text: string; pending: boolean } {
+/**
+ * 空着的解释一律显示「待补充」——不生成占位内容，也不留一个空框让人以为加载失败。
+ *
+ * `locale` 只影响**这个占位符本身**（英文站上是 `To be supplied`）；有内容时原样返回，
+ * 内容永不翻译（它来自草稿或服务端）。
+ */
+export function pending(text: string | null | undefined, locale: Locale = 'zh'): { text: string; pending: boolean } {
   const value = (text ?? '').trim();
-  return value ? { text: value, pending: false } : { text: PENDING_TEXT, pending: true };
+  return value ? { text: value, pending: false } : { text: locale === 'en' ? PENDING_TEXT_EN : PENDING_TEXT, pending: true };
 }
 
 /* ==========================================================================
@@ -976,8 +1093,17 @@ export function locateProblem(problem: ValidateProblem, fields: DraftFields): Pr
   return { field: null, line: problem.line, column: problem.column, precise: false, basis: 'none' };
 }
 
-export function problemLocationText(problem: ValidateProblem): string {
-  if (problem.line === null) return '服务端未给出位置';
+/**
+ * 位置文本（给界面显示用）：`问题在源码的哪一行/哪一列`。
+ *
+ * 中文是源语言（`第 3 行第 5 列`），英文用 `line 3, column 5`；`locale` 默认 `'zh'`，
+ * 既有调用与中文站逐字不变。
+ */
+export function problemLocationText(problem: ValidateProblem, locale: Locale = 'zh'): string {
+  if (problem.line === null) return locale === 'en' ? 'the server gave no location' : '服务端未给出位置';
+  if (locale === 'en') {
+    return problem.column === null ? `line ${problem.line}` : `line ${problem.line}, column ${problem.column}`;
+  }
   return problem.column === null ? `第 ${problem.line} 行` : `第 ${problem.line} 行第 ${problem.column} 列`;
 }
 
@@ -1300,14 +1426,18 @@ export interface CandidateGroup {
 
 const GROUP_ORDER: MathJudgment[] = ['verified', 'refuted', 'undecided'];
 
-/** 按数学判断分组。**refuted / undecided 只在这一层出现**，不进入任何「已成立关系」的视图。 */
-export function groupCandidates(candidates: CandidateView[]): CandidateGroup[] {
+/**
+ * 按数学判断分组。**refuted / undecided 只在这一层出现**，不进入任何「已成立关系」的视图。
+ *
+ * `locale` 只影响分组标题与边界说明的文字；分组依据（`math.status`）与顺序与语言无关。
+ */
+export function groupCandidates(candidates: CandidateView[], locale: Locale = 'zh'): CandidateGroup[] {
   return GROUP_ORDER.map((status) => ({
     status,
-    label: MATH_JUDGMENT_LABEL[status],
+    label: mathJudgmentLabel(status, locale),
     mark: MATH_JUDGMENT_MARK[status],
     tone: MATH_JUDGMENT_TONE[status],
-    boundary: MATH_JUDGMENT_BOUNDARY[status],
+    boundary: mathJudgmentBoundary(status, locale),
     candidates: candidates.filter((candidate) => candidate.math.status === status),
   }));
 }
@@ -1421,9 +1551,11 @@ export function buildOverlay(options: {
   decisions: Record<string, ReviewDecision>;
   /** 本次入库实际纳入的候选；给 null 表示「还没挑选，先把所有已验证的画出来」。 */
   includeIds?: string[] | null;
+  /** 显示语的语种：只影响草稿节点的占位名与图下那句说明，默认中文。 */
+  locale?: Locale;
 }): OverlayView {
-  const { fields, nodeRef, candidates, decisions, includeIds = null } = options;
-  const draftId = nodeRef?.node ?? '（当前草稿）';
+  const { fields, nodeRef, candidates, decisions, includeIds = null, locale = 'zh' } = options;
+  const draftId = nodeRef?.node ?? (locale === 'en' ? '(current draft)' : '（当前草稿）');
   const nodes: OverlayNode[] = [{ id: draftId, label: fields.name.trim() || draftId, role: 'draft' }];
   const drawn: CandidateView[] = [];
   const excluded: OverlayExcluded = { refuted: 0, undecided: 0, dismissed: 0, pendingDecision: 0, notIncluded: 0 };
@@ -1465,7 +1597,9 @@ export function buildOverlay(options: {
       edges: group.items.map((item) => byCandidate.get(item.id)).filter((edge): edge is OverlayEdge => Boolean(edge)),
     })),
     excluded,
-    note: '此图只叠加当前草稿与本次结果：公共本体图此刻没有变化；已反驳与未决项不在图上。',
+    note: locale === 'en'
+      ? 'This graph overlays only the current draft and this run’s results: the public ontology graph is unchanged right now, and refuted or undecided items are not on it.'
+      : '此图只叠加当前草稿与本次结果：公共本体图此刻没有变化；已反驳与未决项不在图上。',
   };
 }
 

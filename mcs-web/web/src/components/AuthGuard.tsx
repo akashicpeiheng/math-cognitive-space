@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../auth';
+import { useI18n } from '../i18n';
 
 /**
  * 个人页面的轻量守卫（2026-10 加）。
@@ -23,10 +24,36 @@ import { useAuth } from '../auth';
  *
  * 会话还没回来时不画「请先登录」，也不画原页面：画后者会让未登录者的页面
  * 先请求一轮个人数据（必然 401），画前者会让已登录的人看到一闪而过的登录提示。
+ *
+ * 双语（2026-10）：文案成对写在本文件；站内跳转仍用相对路径，`Link` 会带上语种前缀。
  */
+
+const COPY = {
+  zh: {
+    checking: '正在确认登录状态…',
+    unknown: '登录状态未知：',
+    title: '请先登录',
+    lead: '这一页的内容属于你自己的学习档案（事件、笔记与进度），公网模式下需要登录才能读取，也必须登录才能确认是谁在读。公共本体与知识网络不需要登录。',
+    signIn: '去登录',
+    signUp: '注册账号',
+    browse: '先看公共内容',
+  },
+  en: {
+    checking: 'Checking sign-in status…',
+    unknown: 'Sign-in status unknown: ',
+    title: 'Please sign in',
+    lead: 'This page shows your own learning record (events, notes and progress). In public mode you must sign in to read it, and to confirm who is reading. The public ontology and the knowledge network need no sign-in.',
+    signIn: 'Sign in',
+    signUp: 'Create an account',
+    browse: 'Browse public content first',
+  },
+} as const;
+
 export function AuthGuard({ children }: { children: ReactNode }) {
   const auth = useAuth();
   const location = useLocation();
+  const { locale, hrefFor } = useI18n();
+  const text = COPY[locale];
 
   if (auth.mode === 'local') return <>{children}</>;
 
@@ -34,8 +61,8 @@ export function AuthGuard({ children }: { children: ReactNode }) {
     return (
       <div className="page">
         <section className="card">
-          <p role="status">正在确认登录状态…</p>
-          {auth.error && <p className="error" role="alert">登录状态未知：{auth.error}</p>}
+          <p role="status">{text.checking}</p>
+          {auth.error && <p className="error" role="alert">{text.unknown}{auth.error}</p>}
         </section>
       </div>
     );
@@ -47,16 +74,14 @@ export function AuthGuard({ children }: { children: ReactNode }) {
     return (
       <div className="page">
         <section className="card auth-gate">
-          <h1>请先登录</h1>
-          <p>
-            这一页的内容属于你自己的学习档案（事件、笔记与进度），公网模式下需要登录才能读取，
-            也必须登录才能确认是谁在读。公共本体与知识网络不需要登录。
-          </p>
+          <h1>{text.title}</h1>
+          <p>{text.lead}</p>
           {auth.error && <p className="error" role="alert">{auth.error}</p>}
           <p className="card-actions">
-            <Link className="button primary" to={`/login?next=${next}`}>去登录</Link>
-            <Link className="button" to="/login?tab=signup">注册账号</Link>
-            <Link className="button ghost" to="/nodes">先看公共内容</Link>
+            {/* `next` 里已经带了当前路径（含 `/en` 前缀），登录页按它回跳；三个静态入口走 `hrefFor`。 */}
+            <Link className="button primary" to={hrefFor(`/login?next=${next}`)}>{text.signIn}</Link>
+            <Link className="button" to={hrefFor('/login?tab=signup')}>{text.signUp}</Link>
+            <Link className="button ghost" to={hrefFor('/nodes')}>{text.browse}</Link>
           </p>
         </section>
       </div>

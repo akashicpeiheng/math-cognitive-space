@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { api, formatError, useApi } from './api';
+import { api, formatError, useApi, useLocaleKey } from './api';
 import { useProfileContext } from './state';
 import { deriveLearning, type GraphAction, type GraphRelation, type LearningProgress } from './learning';
 import type { EventView, NodeSummary, ProfileDetailResponse } from './types';
@@ -31,6 +31,13 @@ export interface LearningData {
 export function useLearningData(): LearningData {
   const { profileId } = useProfileContext();
   const graph = useApi<OntologyGraph>('/ontology/graph');
+  /*
+   * 语种是这条 effect 的依赖（2026-10 双语）。
+   *
+   * `graph` 走 `useApi`，它已把语种内置进依赖；但档案详情与事件是本模块直接 `api()` 拉的，
+   * 少这一条就会出现「切到英文后这一块还留着上一次的中文响应」，而且不报错。
+   */
+  const localeKey = useLocaleKey();
   const [theta, setTheta] = useState<ProfileDetailResponse['theta'] | null>(null);
   const [events, setEvents] = useState<EventView[]>([]);
   const [loading, setLoading] = useState(Boolean(profileId));
@@ -52,7 +59,7 @@ export function useLearningData(): LearningData {
     } finally {
       setLoading(false);
     }
-  }, [profileId]);
+  }, [profileId, localeKey]);
 
   useEffect(() => { void load(); }, [load]);
 

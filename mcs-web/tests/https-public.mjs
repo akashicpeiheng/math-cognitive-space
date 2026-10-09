@@ -110,7 +110,7 @@ const config = {
   dbUrl: 'postgres://pglite/test',
   authoringDbFile: join(dataDir, 'authoring.sqlite3'),
   extensionsDir: join(dataDir, 'extensions'),
-  staticDir: join(REPO_ROOT, 'mcs-web', 'web', 'dist'),
+  staticDir: process.env.MCS_WEB_TEST_STATIC_DIR || join(REPO_ROOT, 'mcs-web', 'web', 'dist'),
   backupDir: join(dataDir, 'backups'),
   authFile: join(dataDir, 'auth.sqlite3'),
   repoRoot: REPO_ROOT,
@@ -211,6 +211,43 @@ try {
   check('https 下写请求成功（会话 Cookie 被接受 + CSRF 令牌 + 来源校验都成立）',
     created.status === 200 && created.body?.data?.profile?.name === 'https 验收档案',
     JSON.stringify(created).slice(0, 200));
+
+  // The network view UI must use the authenticated API client for every write.
+  const profileId = created.body.data.profile.id;
+  await page.evaluate((id) => {
+    localStorage.setItem('mcs-web-selected-profile', id);
+    localStorage.setItem('mcs-network-views-local-v1', JSON.stringify([{
+      viewId: 'local-https', name: 'HTTPS 本机视图', local: true, updatedAt: new Date().toISOString(),
+      payload: { added: ['dg:manifold'], families: ['relation'], positions: {}, camera: null },
+    }]));
+  }, profileId);
+  await page.goto(`${origin}/network?nodes=dg%3Amanifold`, { waitUntil: 'networkidle' });
+  await page.getByLabel('显示保存的视图面板').check();
+  const networkPanel = page.locator('.floating-panel[aria-label="保存的视图"]');
+  const waitForWrite = (method) => page.waitForResponse((response) =>
+    response.url().includes('/network-views') && response.request().method() === method);
+  let write = waitForWrite('POST');
+  page.once('dialog', (dialog) => dialog.accept('HTTPS 保存'));
+  await networkPanel.getByRole('button', { name: '保存当前视图', exact: true }).click();
+  check('公网浏览器保存视图通过 CSRF 校验', (await write).status() === 200);
+  const savedRow = networkPanel.locator('li', { hasText: 'HTTPS 保存' });
+  await savedRow.waitFor();
+  page.once('dialog', (dialog) => dialog.accept('HTTPS 改名'));
+  const [renameResponse] = await Promise.all([
+    waitForWrite('PATCH'),
+    savedRow.getByRole('button', { name: '重命名', exact: true }).click(),
+  ]);
+  check('公网浏览器重命名视图通过 CSRF 校验', renameResponse.status() === 200);
+  write = waitForWrite('DELETE');
+  page.once('dialog', (dialog) => dialog.accept());
+  await networkPanel.locator('li', { hasText: 'HTTPS 改名' }).getByRole('button', { name: '删除', exact: true }).click();
+  check('公网浏览器删除视图通过 CSRF 校验', (await write).status() === 200);
+  write = waitForWrite('POST');
+  await networkPanel.locator('.saved-view-migration button').click();
+  check('公网浏览器迁移本机视图通过 CSRF 校验', (await write).status() === 200);
+  await page.waitForFunction(() => document.querySelector('.saved-view-migration-status')?.textContent.includes('可以随档案导出'));
+  check('公网迁移已回读并移除本机副本',
+    await page.evaluate(() => JSON.parse(localStorage.getItem('mcs-network-views-local-v1')).length) === 0);
 
   // 不带令牌必须被拒：证明这道关不是摆设
   const noToken = await page.evaluate(async () => {

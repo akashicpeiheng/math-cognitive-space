@@ -21,6 +21,16 @@ const steps = [
   ['四案例端到端：输入 → 发现 → 重放 → 入库 → 撤出', ['node', '--test', 'tests/relation-discovery-e2e.mjs']],
   ['自动关联页（六步、窄屏、键盘、节点页入口）', ['node', 'tests/authoring-page.mjs']],
   ['领域内核与理论边界', ['node', '--test', 'tests/core.test.mjs', 'tests/planner.test.mjs', 'tests/localization.test.mjs', 'tests/tutor.test.mjs', 'tests/relation-visual.test.mjs', 'tests/example-paths.test.mjs', 'tests/stage-arrow.test.mjs', 'tests/node-groups.test.mjs', 'tests/tutor-critique.test.mjs', 'tests/node-placement.test.mjs', 'tests/edge-routing.test.mjs', 'tests/edge-merge.test.mjs', 'tests/network-stress.test.mjs', 'tests/a11y-contrast.test.mjs', 'tests/context-budget.test.mjs', 'tests/maintenance.test.mjs', 'tests/label-option-scan.test.mjs', 'tests/design-values.test.mjs', 'tests/thread-layer.test.mjs', 'tests/relation-coverage.test.mjs', 'tests/construct-registry.test.mjs']],
+  /*
+   * 中英双语：语言覆盖的机制与接口。
+   *
+   * 与其它步骤分开列，是因为失败语义不同——这一步红说明**语言层**有问题
+   * （中英本体版本不一致、覆盖写错、语种没有贯穿到接口），而不是数学内容或界面样式。
+   * 译文质量不在这一步检查（人工作业，见 `data/i18n/` 各文件的说明）。
+   */
+  ['中英双语：语言覆盖与接口语种', ['node', '--test', 'tests/i18n-core.test.mjs', 'tests/i18n-api.test.mjs']],
+  ['中英双语：结构对等与覆盖率', ['node', 'scripts/i18n-parity.mjs', '--locale', 'en']],
+  ['中英双语：正文块公式逐字核对', ['node', 'scripts/i18n-block-check.mjs', '--locale', 'en']],
   ['本机 API 与数据库', ['node', 'tests/api.test.mjs']],
   ['部署边界（公网模式缺账号体系必须拒绝启动、Host 白名单、写来源、安全头）', ['node', '--test', 'tests/deployment.test.mjs']],
   ['账号与权限（公网模式：登录、越权 404、管理员 403、CSRF、任务配额）', ['node', '--test', 'tests/auth.test.mjs']],
@@ -36,15 +46,23 @@ const steps = [
   ['分面选项（不许有筛不出东西的选项）', ['node', 'tests/facets.mjs']],
   ['单元 / 话题分层与本质领域分类', ['node', 'tests/granularity-fields.mjs']],
   ['知识网络：左键按住取强关联节点（含高亮视觉）', ['node', 'tests/network-picker.mjs']],
+  ['知识网络：移动端双指缩放（触屏手势与窄屏坐标系）', ['node', 'tests/network-pinch.mjs']],
   ['方法库（带简介的栏目与细致解析）', ['node', 'tests/method-library.mjs']],
   ['重要节点的形式表达（LaTeX 与记号）', ['node', 'tests/formal-statements.mjs']],
   ['知识网络：新增节点的自动摆位', ['node', 'tests/network-placement.mjs']],
   ['知识网络：边的颜色与遮挡关系', ['node', 'tests/network-edges.mjs']],
   ['知识网络：加节点后相机平滑居中', ['node', 'tests/network-camera.mjs']],
   ['知识网络：保存 / 载入视图（写 E，不改本体）', ['node', 'tests/network-views.mjs']],
+  ['知识网络：视图搜索、排序、同名提示与快照边界', ['node', 'tests/network-view-library.mjs']],
   ['本体：硬前置关系（只覆盖两个案例的核心）', ['node', 'tests/hard-prereq.mjs']],
   ['辅导页：DeepTutor 提示、介绍与三步引导', ['node', 'tests/tutor-page.mjs']],
   ['开始学习页：偏好引导（三问 → 你的起点）', ['node', 'tests/start-chooser.mjs']],
+  /*
+   * 中英双语浏览器验收：`/en` 深链、切换按键、切过去内容真的变、查询串保住、无控制台错误。
+   * 它**需要先 `npm run build`**（服务端跑的是构建产物）；构建失败时它看到的是旧界面，
+   * 会报「顶栏没有切换按键」——那是构建的问题，不是语言层的问题。
+   */
+  ['中英双语：英文站与切换按键（真浏览器）', ['node', 'tests/i18n-en.mjs']],
   ['研究台（前沿研究）与网站维护（专稿 / arXiv 梳理）', ['node', 'tests/research-maintenance.mjs']],
 ];
 
