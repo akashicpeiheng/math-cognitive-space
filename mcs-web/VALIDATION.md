@@ -3,6 +3,37 @@
 > 路径变更（2026-10-05）：发布副本已归位到 `E:\MCS\_ops\publish\math-cognitive-space`（原 `E:\MCS-publish`）；
 > 旧公开包 `E:\MCS-open-source` 归档到 `E:\MCS\_ops\archive\publish\mcs-open-source`。以下历史记录中的旧路径按此对应。
 
+## 第九十轮：公开源码同步到 GitHub（2026-10-09）
+
+**结论（FINITE）**：按 [维护与更新](docs/维护与更新.md) 第 4 节的流程把开发源同步到公开仓库
+[akashicpeiheng/math-cognitive-space](https://github.com/akashicpeiheng/math-cognitive-space)，
+`main` 由 `248508a6` 推进到 **`fa28118`**。推送的是**导出白名单**产物（555 个文件），不是开发根目录；
+推送前在干净导出包上重跑了严格全量。
+
+| 步骤 | 入口 | 结果 |
+|---|---|---|
+| 1. 导出并审计 | `node mcs-web/scripts/export-open-source.mjs --out _ops/releases/20261009-01-github-sync` | 555/555 复制；必需文件齐全；禁用路径 0、已列密钥模式 0、阻断机器路径 0、`disclosuresChecked=true`；13 处历史记录中的作者盘符路径与上次推送**相同**，未新增 |
+| 2. 干净包安装 | 候选 `mcs-web`：`npm ci` | 222 个包，退出码 0 |
+| 3. 构建与自检 | `npm run build`、`npm run check` | 均通过；doctor 八节全绿（中英本体版本一致、英文覆盖装配 96.9%） |
+| 4. 严格全量 | `MCS_WEB_REQUIRE_BROWSER=1` + `MCS_WEB_REQUIRE_TLS=1` + `npm test` | **45 组，424 ✔ + 889 ✓，0 失败，退出码 0**；3 条按原因跳过：mcs-bridge / DeepTutor 检出不随公开包分发，本站错误码表那一侧始终执行 |
+| 5. 同步发布副本 | 按候选清单覆盖 `_ops/publish/math-cognitive-space`（保留 `.git`） | 132 项：新增 53、修改 79、删除 0；无二进制新增；候选里被忽略的中间物（`tmp/`、`__pycache__`、测试日志）未进入副本 |
+| 6. 提交与推送 | `git commit` + `git push origin main` | `248508a..fa28118  main -> main`；`git ls-remote` 与 GitHub API 均返回 `fa281180d374977a6224b06703a6949e31b895ac` |
+
+**内容范围**：第八十二至八十九轮的前端与内核改动（中英双语、微分几何 / 梁 / Rudin 案例、形式语言层、
+视图库、账号与部署边界），以及 `mcs-foundations/publication/` 的 P1 / P3 交付物。
+
+**一条额外的证据**：候选包 `npm run build` 产出的入口资源是 `index-QQ2yfWBB.js` / `index-C488PzzS.css`，
+与 2026-10-09 线上正在服务的入口**同名同哈希**——公开源码与线上前端来自同一份源码，
+第八十九轮记录的「线上版本与公开源码不一致」由此消除。
+
+**未做与边界**：
+
+- 走 `main` 直推（沿用此前做法），**没有**建 `codex/<主题>` 分支与 PR：R3c 的 CI、必需检查与分支保护仍未建立；
+- 导出器目前不处理根级 `.github/` 与 `vercel.json`，因此本次推送**没有附带任何工作流**；
+- 推送的是源码同步，**不等于线上服务从发布副本运行**：当前服务仍直接运行开发目录（R3b 未做）；
+- 未做：整站恢复（R1）、正式域名双账号（R2）、电脑重启（R4b-2）、小米平板真机（R6a）；
+- 提交的签名状态：GitHub 显示 `verified: false`（未签名），与历史提交一致。
+
 ## 第八十九轮：第八十八轮前端发布与公网核对（2026-10-09）
 
 **结论（FINITE）**：第八十八轮候选在收尾全量回归完成后发布到正式入口。全量 **45 组 / 427 项通过 / 0 失败**，
