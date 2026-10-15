@@ -1,3 +1,4 @@
+import { normalizeNetworkExtras } from './network-workspace.mjs';
 import { McsError, CODES } from './errors.mjs';
 
 export const PROTOCOL = 'mcs-web/1';
@@ -231,6 +232,7 @@ export function normalizeNetworkView(raw) {
   assert(isPlainObject(raw), code, '视图必须是对象');
   const name = requireString(raw.name ?? '', code, '视图需要一个名字').slice(0, 80);
   const payload = isPlainObject(raw.payload) ? raw.payload : {};
+  assert(!Array.isArray(payload.added) || payload.added.length <= 2000, code, '每张视图最多 2,000 个节点');
   const added = Array.isArray(payload.added) ? payload.added.filter((id) => typeof id === 'string' && id.length > 0).slice(0, 2000) : [];
   const families = Array.isArray(payload.families) ? payload.families.filter((id) => typeof id === 'string').slice(0, 40) : [];
   const positions = {};
@@ -245,8 +247,30 @@ export function normalizeNetworkView(raw) {
     : null;
   return {
     name,
-    payload: { added: [...new Set(added)], families: [...new Set(families)], positions, camera },
+    payload: { added: [...new Set(added)], families: [...new Set(families)], positions, camera, ...normalizeNetworkExtras(payload) },
     baseRevision: raw.baseRevision === undefined || raw.baseRevision === null ? null : requireInteger(raw.baseRevision, code, 'baseRevision 必须是非负整数', { min: 0 }),
+  };
+}
+
+/**
+ * 规范化一条**学习方向**（2026-10 加）。
+ *
+ * 方向是学习者显式声明的东西：一个目标节点 + 一句自己写的说明（可空）。
+ * 三条契约：
+ * 1. `nodeId` 必填且非空——方向必须指到一个具体的对象上，没有「随便看看」这种方向；
+ *    「这个节点是不是真在本体里」由 API 层用本体核对（存储与契约层不依赖本体，
+ *    与 `normalizeNetworkView` 的分工一致）。
+ * 2. `note` 是学习者自己的话，长度设上限但不做内容检查（把关是人的事，不是校验器的事）。
+ * 3. `sourceRef` 记**谁写的**（`ui` / `seed` / `import`），事后能分清「他自己选的」与
+ *    「脚本预置的」——与档案模板的 `declared` / `template` 同一条纪律。
+ */
+export function normalizeDirection(raw) {
+  const code = CODES.BAD_REQUEST;
+  assert(isPlainObject(raw), code, '方向必须是对象');
+  return {
+    nodeId: requireString(raw.nodeId, code, '方向需要一个目标节点').slice(0, 200),
+    note: raw.note === undefined || raw.note === null ? null : requireString(raw.note, code, '方向的说明无效').slice(0, 500),
+    sourceRef: optionalString(raw.sourceRef)?.slice(0, 80) ?? 'ui',
   };
 }
 

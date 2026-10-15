@@ -196,7 +196,7 @@ export const SPEC_VERSION = 'mcs-formal/1';
 
 /** §2.11 的六种关系；与 `shared/formal.mjs#RELATION_KINDS` 同序同值（那份模块当前不可 import）。 */
 export const RELATION_KINDS = Object.freeze([
-  'definitionReference', 'hardGeneralization', 'equivalentTo',
+  'definitionReference', 'scaling', 'equivalentTo',
   'conditionalDerivation', 'instanceOf', 'counterexampleTo',
 ]);
 
@@ -420,7 +420,7 @@ const RAW_SPECS = [
   /* ======================== 案例 02：流形 ======================== */
 
   {
-    node: 'manifold:chart-atlas',
+    node: 'top:atlas',
     background: BG_MANIFOLD,
     declarations: [
       { name: 'AA', type: 'Atlas', role: 'object', label: '图册' },
@@ -482,7 +482,7 @@ const RAW_SPECS = [
     source: '人工登记：对照 data/cases/02-manifold.md「C^k 图册」（第 31–39 行）的条件段与边界段',
   },
   {
-    node: 'manifold:smooth-atlas',
+    node: 'dg:smooth-atlas',
     background: BG_MANIFOLD,
     declarations: [],
     definitions: [],
@@ -591,7 +591,7 @@ const RAW_SPECS = [
       },
     ],
     references: [
-      { node: 'manifold:ck-atlas', version: '1', kind: 'hardGeneralization', symbols: ['ck_atlas', 'max_ext'] },
+      { node: 'manifold:ck-atlas', version: '1', kind: 'scaling', symbols: ['ck_atlas', 'max_ext'] },
     ],
     boundary: [
       '**未认证**：`max_ext` 是原子常量，它的**存在性**都没有被认证；`ck_atlas`、`maximal_ck` 都是原子谓词。',
@@ -619,8 +619,8 @@ const RAW_SPECS = [
       },
     ],
     references: [
-      { node: 'manifold:smooth-atlas', version: '1', kind: 'hardGeneralization', symbols: ['smooth_atlas'] },
-      { node: 'manifold:ck-atlas', version: '1', kind: 'hardGeneralization', symbols: ['ck_atlas'] },
+      { node: 'dg:smooth-atlas', version: '1', kind: 'scaling', symbols: ['smooth_atlas'] },
+      { node: 'manifold:ck-atlas', version: '1', kind: 'scaling', symbols: ['ck_atlas'] },
     ],
     boundary: [
       '**只覆盖同载体蕴含**：原稿明写「在同一图册编码下，P_∞(A) ⇒ P_k(A)」。',
@@ -655,7 +655,7 @@ const RAW_SPECS = [
     source: '人工登记：对照 data/cases/03-tensor.md「(r,s) 型张量空间」（第 21–28 行）的定义式与边界段',
   },
   {
-    node: 'tensor:multilinear',
+    node: 'dg:tensor',
     background: BG_TENSOR,
     declarations: [
       { name: 'phi0', type: 'V -> V -> F', role: 'function', label: '二元函数（多重线性的候选）' },
@@ -1395,14 +1395,14 @@ export const SOURCE_CROSSWALK = [
   },
 
   {
-    node: 'manifold:chart-atlas',
+    node: 'top:atlas',
     caseFile: 'data/cases/02-manifold.md',
     section: '图、图册与覆盖 · 直觉',
     quote: '一张图是局部坐标，图册是覆盖整个空间的一组局部坐标。',
     relation: 'statement 里 is_atlas(A)(M) 两个参数的来源（图册 + 被覆盖的空间）。',
   },
   {
-    node: 'manifold:chart-atlas',
+    node: 'top:atlas',
     caseFile: 'data/cases/02-manifold.md',
     section: '图、图册与覆盖 · 边界',
     quote: '图册不要求有限，也不要求图之间互不相交。',
@@ -1430,7 +1430,7 @@ export const SOURCE_CROSSWALK = [
     relation: 'boundary：本 spec 不含光滑化定理。',
   },
   {
-    node: 'manifold:smooth-atlas',
+    node: 'dg:smooth-atlas',
     caseFile: 'data/cases/02-manifold.md',
     section: '光滑图册 · 否定范围',
     quote: '这个反例只否定“该图册是 C²”，不证明 $\\mathbb R$ 不能另取光滑图册。图册性质与底空间性质必须分开。',
@@ -1494,7 +1494,7 @@ export const SOURCE_CROSSWALK = [
     relation: 'boundary：有限性与指标顺序。',
   },
   {
-    node: 'tensor:multilinear',
+    node: 'dg:tensor',
     caseFile: 'data/cases/03-tensor.md',
     section: '多重线性函数 · 与张量的接口',
     quote: '只对第一个变量线性不足以推出多线性。',
@@ -1687,12 +1687,12 @@ export const RELATIONS = [
   {
     id: 'rel:manifold:smooth-atlas-uses-transition',
     kind: 'definitionReference',
-    from: { node: 'manifold:smooth-atlas', version: '1' },
+    from: { node: 'dg:smooth-atlas', version: '1' },
     to: { node: 'manifold:transition', version: '1' },
     direction: null,
     conditions: [],
     goal: null,
-    reason: 'formal:manifold:smooth-atlas 的 statement 里出现 trans 与 smooth。',
+    reason: 'formal:dg:smooth-atlas 的 statement 里出现 trans 与 smooth。',
     status: 'registered',
     evidence: '符号 + 类型核对。',
     boundary: ['smooth 与 is_ck 是两个不同符号：引用关系不蕴含任何正则性结论。'],
@@ -1737,7 +1737,7 @@ export const RELATIONS = [
     boundary: ['引用一条取值等式**不**给出收敛结论。'],
   },
 
-  /* ---- hardGeneralization（一般概念 → 特殊概念；证据证的是 特殊 ⇒ 一般） ----
+  /* ---- scaling（一般概念 → 特殊概念；证据证的是 特殊 ⇒ 一般） ----
    *
    * **四条全部 `unverified`，而且是"结构上证不出来"，不是"还没来得及跑"。**
    * 2026-10-04 用 `core/formal/search.mjs` 实地跑过（探针 `tmp/team/C/probe-concept-proofs.mjs`）：
@@ -1756,10 +1756,10 @@ export const RELATIONS = [
    */
   {
     id: 'rel:manifold:chart-atlas-generalizes-ck-atlas',
-    kind: 'hardGeneralization',
-    from: { node: 'manifold:chart-atlas', version: '1' },
+    kind: 'scaling',
+    from: { node: 'top:atlas', version: '1' },
     to: { node: 'manifold:ck-atlas', version: '1' },
-    direction: { general: 'manifold:chart-atlas', special: 'manifold:ck-atlas' },
+    direction: { general: 'top:atlas', special: 'manifold:ck-atlas' },
     conditions: [
       { id: 'K1', source: '∀(AA:Atlas)(kk:N). ck_atlas(AA)(kk) ⇒ is_atlas(AA)(carrier(AA))', readable: 'C^k 图册首先是图册（覆盖 + 局部坐标）。' },
     ],
@@ -1821,10 +1821,10 @@ export const RELATIONS = [
   },
   {
     id: 'rel:manifold:ck-atlas-generalizes-smooth-atlas',
-    kind: 'hardGeneralization',
+    kind: 'scaling',
     from: { node: 'manifold:ck-atlas', version: '1' },
-    to: { node: 'manifold:smooth-atlas', version: '1' },
-    direction: { general: 'manifold:ck-atlas', special: 'manifold:smooth-atlas' },
+    to: { node: 'dg:smooth-atlas', version: '1' },
+    direction: { general: 'manifold:ck-atlas', special: 'dg:smooth-atlas' },
     conditions: [
       { id: 'K1', source: '∀(AA:Atlas)(kk:N). (smooth_atlas(AA) ⇒ ck_atlas(AA)(kk))', readable: '同载体蕴含：所有阶导数存在且连续，特别地前 k 阶满足 C^k。' },
     ],
@@ -1991,7 +1991,7 @@ export const RELATIONS = [
   {
     id: 'rel:tensor:multilinear-derives-rank1',
     kind: 'conditionalDerivation',
-    from: { node: 'tensor:multilinear', version: '1' },
+    from: { node: 'dg:tensor', version: '1' },
     to: { node: 'tensor:rank1-additive', version: '1' },
     direction: null,
     conditions: [
@@ -2117,11 +2117,11 @@ export const RELATIONS = [
 ];
 
 /* -------------------------------------------------------------------------- *
- * 5. 背景概念层的特化（没有对应节点的概念对）
+ * 5. 背景概念层的放缩（没有对应节点的概念对）
  * -------------------------------------------------------------------------- */
 
 /**
- * **概念 spec**：有些概念在 §2.11 的意义上需要参与关系判定（`hardGeneralization`
+ * **概念 spec**：有些概念在 §2.11 的意义上需要参与关系判定（`scaling`
  * 要求"同背景、同参数类型的概念对"），但它们在案例本体里**没有节点**。
  *
  * 为什么不硬造节点：造节点会污染 M 层，且 `formalCoverage` 会把它算成"案例节点"。
@@ -2134,11 +2134,11 @@ export const RELATIONS = [
  * 这两个字段不在 §1.6 的字段表里，`specHash()` 会在喂给 `parseSpec` 之前裁掉它们
  * （裁完就是标准 §1.6 形状）。
  *
- * ## 它们怎么回答 Lead 提的「阿贝尔群到群的特化」缺失
+ * ## 它们怎么回答 Lead 提的「阿贝尔群到群的放缩」缺失
  *
  * `abelian_group` 与 `group_concept` 的参数类型**逐位相同**
- * （`(G -> G -> G) -> G -> (G -> G) -> o`），所以 §2.11 的 generalization 判定器
- * 能把它们配成一对；特化方向（特殊 ⇒ 一般）写在 `CONCEPT_RELATIONS` 里。
+ * （`(G -> G -> G) -> G -> (G -> G) -> o`），所以 §2.11 的 scaling 判定器
+ * 能把它们配成一对；放方向（特殊 ⇒ 一般）写在 `CONCEPT_RELATIONS` 里。
  * 具体载体（Z5 / S3）不参与这条关系——它们有自己的具体类型谓词，
  * 正因如此「模 5 单位群是一个群」才不会被偷换成「某个抽象 G 上的群」。
  */
@@ -2162,12 +2162,12 @@ export const CONCEPT_SPECS = [
         id: 'C1',
         source: '∀(mm:G -> G -> G)(ee:G)(ii:G -> G). (abelian_group(mm)(ee)(ii) ⇒ group_concept(mm)(ee)(ii))',
         role: 'target',
-        note: '特化方向的证据：阿贝尔群是群。它是**展开层面**的蕴含（abelian_group 的本意就是 group_concept 再合上交换律），'
+        note: '放方向的证据：阿贝尔群是群。它是**展开层面**的蕴含（abelian_group 的本意就是 group_concept 再合上交换律），'
           + '不是从公理推出来的，因此在本登记里是 target 而不是 derived。',
       },
     ],
     references: [
-      { node: 'group:group-concept', version: '1', kind: 'hardGeneralization', symbols: ['group_concept', 'abelian_group'] },
+      { node: 'group:group-concept', version: '1', kind: 'scaling', symbols: ['group_concept', 'abelian_group'] },
     ],
     boundary: [
       '**阿贝尔群在本体里没有节点**：本 spec 的 `anchor` 只是溯源用的真实节点 id，它本身不是节点。',
@@ -2199,7 +2199,7 @@ export const CONCEPT_SPECS = [
   },
   {
     concept: 'concept:tensor:linear',
-    anchor: 'tensor:multilinear',
+    anchor: 'dg:tensor',
     specVersion: SPEC_VERSION,
     background: BG_TENSOR,
     theoryVersion: '1',
@@ -2214,16 +2214,16 @@ export const CONCEPT_SPECS = [
         id: 'C1',
         source: '∀(TT:V -> V). (linear_map(TT) ⇒ additive(TT))',
         role: 'target',
-        note: '特化方向的证据：线性 ⇒ 可加。展开层面成立（linear_map 的本意是 additive ∧ 标量齐性），但本站没有把它写成公式。',
+        note: '放方向的证据：线性 ⇒ 可加。展开层面成立（linear_map 的本意是 additive ∧ 标量齐性），但本站没有把它写成公式。',
       },
     ],
     references: [
-      { node: 'tensor:multilinear', version: '1', kind: 'hardGeneralization', symbols: ['linear_map', 'additive'] },
+      { node: 'dg:tensor', version: '1', kind: 'scaling', symbols: ['linear_map', 'additive'] },
     ],
     boundary: [
       '`linear_map` 与 `additive` 都是原子谓词：上面那条蕴含没有被写成定义。',
       '反向不成立（可加不蕴含标量齐性），原稿在 F₂ 上的删条件反例正说明这一点。',
-      '这条特化**不**被用来把 rank1-additive 的结论升级成线性。',
+      '这条放缩**不**被用来把 rank1-additive 的结论升级成线性。',
     ],
     source: '人工登记：对照 data/cases/03-tensor.md「多重线性函数」接口段与「秩一映射保持加法」边界段',
   },
@@ -2258,7 +2258,7 @@ export function conceptSpecIds() {
 export const CONCEPT_RELATIONS = [
   {
     id: 'rel:concept:abelian-refines-group',
-    kind: 'hardGeneralization',
+    kind: 'scaling',
     from: { node: 'group:group-concept', version: '1' },
     to: { node: 'concept:group:abelian', version: '1' },
     direction: { general: 'group:group-concept', special: 'concept:group:abelian' },
@@ -2312,7 +2312,7 @@ export const CONCEPT_RELATIONS = [
   },
   {
     id: 'rel:concept:linear-refines-additive',
-    kind: 'hardGeneralization',
+    kind: 'scaling',
     from: { node: 'concept:tensor:additive', version: '1' },
     to: { node: 'concept:tensor:linear', version: '1' },
     direction: { general: 'concept:tensor:additive', special: 'concept:tensor:linear' },
@@ -2382,7 +2382,7 @@ export const CONCEPT_RELATIONS = [
       '两端都不是节点，是 CONCEPT_SPECS 里的概念 spec。',
       '**现状：证不出来**（不是"还没跑"）。要可证需一条背景规定公理，已报 Lead 裁决；裁决前保持 unverified。',
     ],
-    anchor: 'tensor:multilinear',
+    anchor: 'dg:tensor',
   },
 ];
 
@@ -2724,14 +2724,14 @@ export const PROVIDES = [
   { symbol: 'const_seq', node: 'limit:constant-seq', version: '1', type: 'R -> N -> R', background: BG_LIMIT, source: 'data/cases/01-limit.md「常值序列」（第 75–83 行）' },
 
   /* ---- bg:manifold/1 ---- */
-  { symbol: 'carrier', node: 'manifold:chart-atlas', version: '1', type: 'Atlas -> Set', background: BG_MANIFOLD, source: 'data/cases/02-manifold.md「图、图册与覆盖」（图册覆盖的空间）' },
-  { symbol: 'covers', node: 'manifold:chart-atlas', version: '1', type: 'Atlas -> Set -> o', background: BG_MANIFOLD, source: 'data/cases/02-manifold.md「图、图册与覆盖」（第 11–17 行）' },
-  { symbol: 'is_atlas', node: 'manifold:chart-atlas', version: '1', type: 'Atlas -> Set -> o', background: BG_MANIFOLD, source: 'data/cases/02-manifold.md「图、图册与覆盖」' },
+  { symbol: 'carrier', node: 'top:atlas', version: '1', type: 'Atlas -> Set', background: BG_MANIFOLD, source: 'data/cases/02-manifold.md「图、图册与覆盖」（图册覆盖的空间）' },
+  { symbol: 'covers', node: 'top:atlas', version: '1', type: 'Atlas -> Set -> o', background: BG_MANIFOLD, source: 'data/cases/02-manifold.md「图、图册与覆盖」（第 11–17 行）' },
+  { symbol: 'is_atlas', node: 'top:atlas', version: '1', type: 'Atlas -> Set -> o', background: BG_MANIFOLD, source: 'data/cases/02-manifold.md「图、图册与覆盖」' },
   { symbol: 'trans', node: 'manifold:transition', version: '1', type: 'Chart -> Chart -> Map', background: BG_MANIFOLD, source: 'data/cases/02-manifold.md「过渡映射」（第 19–29 行）' },
   { symbol: 'is_ck', node: 'manifold:ck-atlas', version: '1', type: 'Map -> N -> o', background: BG_MANIFOLD, source: 'data/cases/02-manifold.md「C^k 图册」（第 31–39 行）' },
   { symbol: 'ck_atlas', node: 'manifold:ck-atlas', version: '1', type: 'Atlas -> N -> o', background: BG_MANIFOLD, source: 'data/cases/02-manifold.md「C^k 图册」条件段' },
-  { symbol: 'smooth', node: 'manifold:smooth-atlas', version: '1', type: 'Map -> o', background: BG_MANIFOLD, source: 'data/cases/02-manifold.md「光滑图册」（第 41–49 行）' },
-  { symbol: 'smooth_atlas', node: 'manifold:smooth-atlas', version: '1', type: 'Atlas -> o', background: BG_MANIFOLD, source: 'data/cases/02-manifold.md「光滑图册」' },
+  { symbol: 'smooth', node: 'dg:smooth-atlas', version: '1', type: 'Map -> o', background: BG_MANIFOLD, source: 'data/cases/02-manifold.md「光滑图册」（第 41–49 行）' },
+  { symbol: 'smooth_atlas', node: 'dg:smooth-atlas', version: '1', type: 'Atlas -> o', background: BG_MANIFOLD, source: 'data/cases/02-manifold.md「光滑图册」' },
   { symbol: 'compatible_k', node: 'manifold:compatible-k', version: '1', type: 'Atlas -> Atlas -> N -> o', background: BG_MANIFOLD, source: 'data/cases/02-manifold.md「C^k 兼容」（第 51–57 行）' },
   { symbol: 'max_ext', node: 'manifold:max-k', version: '1', type: 'Atlas -> Atlas', background: BG_MANIFOLD, source: 'data/cases/02-manifold.md「最大 C^k 兼容扩张」（第 59–67 行）' },
   { symbol: 'maximal_ck', node: 'manifold:claim-max', version: '1', type: 'Atlas -> Atlas -> o', background: BG_MANIFOLD, source: 'data/cases/02-manifold.md「最大扩张是 C^k 图册且最大」命题段' },
@@ -2745,7 +2745,7 @@ export const PROVIDES = [
   { symbol: 'tensor_of', node: 'tensor:end-iso', version: '1', type: 'V -> (V -> F) -> Vt', background: BG_TENSOR, source: 'data/cases/03-tensor.md「张量与线性算子的同构」定义段' },
   { symbol: 'Phi', node: 'tensor:end-iso', version: '1', type: 'Vt -> V -> V', background: BG_TENSOR, source: 'data/cases/03-tensor.md「张量与线性算子的同构」' },
   { symbol: 'is_iso', node: 'tensor:end-iso', version: '1', type: '(Vt -> V -> V) -> o', background: BG_TENSOR, source: 'data/cases/03-tensor.md「张量与线性算子的同构」证明段' },
-  { symbol: 'multilinear', node: 'tensor:multilinear', version: '1', type: '(V -> V -> F) -> o', background: BG_TENSOR, source: 'data/cases/03-tensor.md「多重线性函数」（第 30–36 行）' },
+  { symbol: 'multilinear', node: 'dg:tensor', version: '1', type: '(V -> V -> F) -> o', background: BG_TENSOR, source: 'data/cases/03-tensor.md「多重线性函数」（第 30–36 行）' },
   { symbol: 'linear_map', node: 'concept:tensor:linear', version: '1', providerKind: 'concept', type: '(V -> V) -> o', background: BG_TENSOR, source: 'data/cases/03-tensor.md「多重线性函数」与「秩一映射保持加法」' },
   { symbol: 'additive', node: 'tensor:rank1-additive', version: '1', type: '(V -> V) -> o', background: BG_TENSOR, source: 'data/cases/03-tensor.md「秩一映射保持加法」机器认证范围段' },
   { symbol: 'rank1', node: 'tensor:rank1-additive', version: '1', type: '(V -> V) -> o', background: BG_TENSOR, source: 'data/cases/03-tensor.md「秩一映射保持加法」机器认证范围段（R(x)=α(x)v）' },
@@ -2816,9 +2816,9 @@ export const REFERENCE_PROVIDER_DIVERGENCES = [
     resolution: '以 PROVIDES 为准：`is_ck` 不产生指向 manifold:transition 的定义引用。',
   },
   {
-    spec: 'manifold:smooth-atlas',
+    spec: 'dg:smooth-atlas',
     declares: 'references → manifold:transition，symbols [trans, smooth]',
-    verdict: '`trans` 对得上；`smooth` **对不上**——它的定义处是 manifold:smooth-atlas 自己（「光滑图册」）。',
+    verdict: '`trans` 对得上；`smooth` **对不上**——它的定义处是 dg:smooth-atlas 自己（「光滑图册」）。',
     resolution: '以 PROVIDES 为准：`smooth` 不产生指向 manifold:transition 的定义引用。',
   },
 ];
@@ -2856,7 +2856,7 @@ export const DIVERGENCES = [
   },
   {
     id: 'div:manifold:atomic-predicates',
-    node: 'manifold:chart-atlas / ck-atlas / smooth-atlas / compatible-k / claim-max',
+    node: 'top:atlas / ck-atlas / smooth-atlas / compatible-k / claim-max',
     caseFile: 'data/cases/02-manifold.md',
     section: '图、图册与覆盖 · 边界',
     original: '图册不要求有限，也不要求图之间互不相交。删去一张图后要逐点检查是否仍在其他图内；最大图册指在兼容意义下不能再加入新图的图册，不是“图最多”的任意集合。',
@@ -2873,7 +2873,7 @@ export const DIVERGENCES = [
     section: '拓扑流形 · 直觉',
     original: 'Hausdorff 与第二可数性保证这些局部块不会退化，并且可以整体粘合。',
     registration: '本登记的 `manifold:*` spec 都以 bg:manifold/1 为背景，该背景只有 Set/Atlas/Chart/Map 四个排序。',
-    why: '案例 md 提到第二可数但没把它写进任何定义式；本站另一处登记（data/formal-statements.mjs#dg:manifold）明确按「Hausdorff + 局部欧氏」、不含第二可数。本登记不统一两者，只如实记录。',
+    why: '案例 md 提到第二可数但没把它写进任何定义式；本站另一处登记（data/formal-statements.mjs#top:topological-manifold）明确按「Hausdorff + 局部欧氏」、不含第二可数。本登记不统一两者，只如实记录。',
     notDone: '没有新增第二可数谓词，也没有改 data/formal-statements.mjs。',
   },
   {

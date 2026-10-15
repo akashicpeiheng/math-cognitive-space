@@ -8,14 +8,20 @@ import type { EventView, NodeSummary, ProfileTheta } from './types';
  * 2. 不产出百分比或「掌握度」：M 与 E 里没有校准过的认知模型，伪造一个数字会误导学习者。
  *    计数与节点名单都是可追溯的事实，因此只提供这两者。
  * 3. 「已读」永不参与「已知」。已知只来自 confirmation，与 Adapt 的口径一致。
+ * 4. **话题级条目不算「可学」**（2026-10 口径归位）：`ready` / `blocked` 只收单元级节点。
+ *    话题是学习线索的名字，`starting-nodes.ts` 早就把它排除在起始节点之外；两处若不同源，
+ *    同一个话题会在「我的学习」里是「现在可以新学」、在知识网络里连起始节点都不是。
+ *    被排除的条数在 `threadExcluded` 里如实报出——不静默丢弃。
  */
 
 export interface GraphAction {
   id: string;
   title: string;
   mode: string;
-  inputs: Array<{ node: string; accepts: string[] }>;
+  inputs: Array<{ node: string; accepts: string[]; condition?: string }>;
   outputs: Array<{ node: string; provides: string[] }>;
+  witness?: { status: string; ref?: string; scope?: string };
+  openAssumptions?: string[];
 }
 
 export interface GraphRelation {
@@ -87,6 +93,25 @@ export interface LearningProgress {
   /** 只差未满足输入一步的节点，用于说明「还缺什么」。 */
   blocked: ReadinessEntry[];
   reviewQueue: ReviewItem[];
+  /**
+   * 因为「话题级条目不参与前置计算」而被排除在 `ready` / `blocked` 之外的条数
+   * （2026-10 口径归位）。界面据此如实说明「没显示什么」，不静默丢弃。
+   *
+   * 为什么必须排除：`starting-nodes.ts` 的起始节点从 2026-10 起就排除了话题级条目
+   * （它是一条学习线索的名字，不是可独立认知的单元）。`ready` 若仍然列出它们，
+   * 「我的学习」与知识网络就会对同一个学习者说两套话——同一个话题在一处是「现在可以新学」，
+   * 在另一处连起始节点都不是。两处口径必须同源。
+   */
+  threadExcluded: number;
+}
+
+/**
+ * 话题级条目（一节/一章的范围）不参与「可学」判定。
+ *
+ * 判据只有一处：`granularity === 'topic'`（字段缺省视为 `unit`，与列表接口的默认档一致）。
+ */
+export function isThreadEntry(node: NodeSummary): boolean {
+  return node.granularity === 'topic';
 }
 
 function lastViewedAt(events: EventView[], nodeId: string): string | null {
@@ -112,12 +137,20 @@ export function deriveLearning({ nodes, actions, relations, theta, events }: Lea
   const read = new Set(theta?.viewed.filter((entry) => !entry.unresolved).map((entry) => entry.node) ?? []);
   const nodeIds = new Set(nodes.map((node) => node.id));
   const titles = new Map(nodes.map((node) => [node.id, node.title]));
+  /*
+   * 话题级条目：一条学习线索的名字，本来就参与不了「学它需要什么」。
+   * 这里建一次索引（O(节点数)），下面的引入路径据此跳过；条数在返回值里如实报出。
+   */
+  const nodeById = new Map(nodes.map((node) => [node.id, node]));
+  const threadCount = nodes.filter(isThreadEntry).length;
 
   // 一个节点可能由多个行动引入（OR 候选）；只要其中一个可用即视为可学。
   const knowledge = new Map<string, ReadinessEntry>();
   for (const action of actions) {
     for (const output of action.outputs) {
       if (!nodeIds.has(output.node)) continue;
+      const target = nodeById.get(output.node);
+      if (!target || isThreadEntry(target)) continue;
       const requires = action.inputs.map((input) => input.node).filter((id) => nodeIds.has(id));
       const missing = requires.filter((id) => !confirmed.has(id));
       const candidate: ReadinessEntry = {
@@ -190,6 +223,7 @@ export function deriveLearning({ nodes, actions, relations, theta, events }: Lea
     ready,
     blocked,
     reviewQueue,
+    threadExcluded: threadCount,
   };
 }
 

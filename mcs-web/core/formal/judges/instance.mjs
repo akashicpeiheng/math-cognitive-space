@@ -61,7 +61,7 @@ export function makeJudge(kind = KIND, deps = {}) {
           to: { node: spec.node, version: specVersion(spec) },
           direction: null,
           conditions: conditionsOf(spec),
-          goal: { source: `${concept} 在 ${model.id} 上成立`, canonical: null, hash: null },
+          goal: { source: concept, canonical: null, hash: null },
           reason: `在预置有限对象 ${model.id}（载体 ${model.carrier ?? '未标注'}）上逐表检查概念「${concept}」。`,
           model: model.id,
           concept,
@@ -97,7 +97,7 @@ export function makeJudge(kind = KIND, deps = {}) {
           constants: { ...(ctx.parseCtx?.constants ?? {}), ...(modelSig.constants ?? {}) },
         },
       };
-      const source = candidate.goal?.source ?? `${statementSource(spec)} 在 ${modelId} 上成立`;
+      const source = candidate.goal?.source ?? statementSource(spec);
       let formula;
       try {
         formula = parseGoal(source, localCtx);
@@ -129,9 +129,11 @@ export function makeJudge(kind = KIND, deps = {}) {
           table: verdict.table ?? null,
         };
       }
-      return proved(`在 ${modelId} 上逐表检查通过（${(verdict.table ?? []).length} 条）。`, {
+      return proved(`在 ${modelId} 上逐表检查通过（${(verdict.axioms ?? []).length} 条）。`, {
         mode: 'finite',
         evidenceKind: 'finite-check',
+        finiteResult: verdict,
+        goalFormula: formula,
         table: verdict.table ?? null,
         scope: {
           theoryId: 'finite-semantics',

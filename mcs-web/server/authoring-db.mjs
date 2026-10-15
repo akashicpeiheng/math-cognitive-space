@@ -22,6 +22,7 @@ import { dirname, resolve, basename } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { McsError, CODES } from '../shared/errors.mjs';
 import { assert } from '../shared/contracts.mjs';
+import { normalizeRelationKind } from '../shared/scaling.mjs';
 
 export const AUTHORING_SCHEMA_VERSION = 'mcs-authoring-db/1';
 
@@ -483,7 +484,7 @@ export class AuthoringDatabase {
 
   candidateView(row) {
     const payload = parseJson(row.payload_json, {});
-    return { ...payload, id: row.candidate_id, runId: row.run_id, kind: row.kind, review: row.review };
+    return { ...payload, id: row.candidate_id, runId: row.run_id, kind: normalizeRelationKind(row.kind), review: row.review };
   }
 
   /**

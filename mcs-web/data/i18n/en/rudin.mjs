@@ -65,7 +65,8 @@ const completed = (title, summary, objectType) => ({
   provenance: { note: NOTE },
 });
 
-export default {
+import { supplementNodeText } from '../../field-entry.mjs';
+const overlay = {
   nodes: {
     /* —— 早先完成的两条（补齐其余字段，标题与摘要未改） —— */
     'rudin:limit-superior': completed(
@@ -481,3 +482,6 @@ export default {
     'a-rudin:function-limit': { title: 'Introduce the limit of a function' },
   },
 };
+
+overlay.nodes=Object.fromEntries(Object.entries(overlay.nodes).map(([id,text])=>[id,supplementNodeText(id,text,'en')]));
+export default overlay;

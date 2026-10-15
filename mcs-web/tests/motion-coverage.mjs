@@ -91,7 +91,7 @@ try {
   check('CSS 里出现的每个动画都在动效清单里登记（用 CSSOM 取真实 animation-name）',
     unregistered.length === 0, JSON.stringify({ unregistered, seen: [...seen.keys()].sort() }));
   check('清单里登记的动画都还在 CSS 里（没有过期条目）', stale.length === 0, JSON.stringify(stale));
-  check('清单与 @keyframes 集合一致（21 个名字，双向一致）',
+  check('清单与 @keyframes 集合一致（23 个名字，双向一致）',
     keyframes.size === registered.size && [...keyframes].every((name) => registered.has(name)),
     JSON.stringify({ keyframes: keyframes.size, inventory: registered.size }));
   check('每个动画都写明了 reduce 处理方式（三种之一）',
@@ -139,7 +139,7 @@ try {
    * 这里在 reduce 下驱动一次长按拾取（`.is-picking` + `.pick-candidate.hovered`），
    * 覆盖 `pick-source-breathe` 与 `pick-ring-march` 两条循环装饰。
    */
-  await reducePage.goto(server.origin + '/network?nodes=' + encodeURIComponent('dg:homeomorphism,dg:manifold'), { waitUntil: 'networkidle' });
+  await reducePage.goto(server.origin + '/network?nodes=' + encodeURIComponent('top:homeomorphism,top:topological-manifold'), { waitUntil: 'networkidle' });
   await reducePage.waitForSelector('.network-node');
   await reducePage.waitForTimeout(800);
   const box = await reducePage.locator('.network-node').first().boundingBox();

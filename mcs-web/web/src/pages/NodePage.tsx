@@ -2,10 +2,18 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { api, formatError, useApi } from '../api';
 import { useProfileContext } from '../state';
+import { RelatedVaultNotes } from '../components/RelatedVaultNotes';
 import { Markdown } from '../components/Markdown';
+import { ScalingExplanationView } from '../components/ScalingExplanation';
+import { ConnectionPairNotes } from '../components/ConnectionPairNotes';
+import { ConnectionNote } from '../connection-notes';
 import { FormalLoad } from '../components/FormalLoad';
 import { StatusBadge } from '../components/StatusBadge';
+import { LeanEvidenceCards } from '../components/LeanEvidence';
 import { LearnerActions } from '../components/LearnerActions';
+import { FROM_NETWORK, FROM_PARAM, networkReturnHref, openInNetworkHref, restoreNetworkReturn } from '../network-return';
+import { useLearningPlan } from '../useLearningPlan';
+import { LearningPlanCard } from '../components/LearningGuide';
 import { NoteEditor } from '../components/NoteEditor';
 import { SelfCheckTasks } from '../components/SelfCheckTasks';
 import { recordReview } from '../review-actions';
@@ -55,6 +63,21 @@ const TEXT = {
   reviewDone: { zh: '完成本次回看', en: 'Finish this review' },
   reviewDoneMessage: { zh: '已记录一次回看；它不表示理解或掌握。', en: 'One review recorded; it does not mean understanding or mastery.' },
   backToReview: { zh: '回到待回看列表', en: 'Back to the review list' },
+  /*
+   * —— AI 生成内容声明（2026-10-13 加，出现在**每一个**数学对象页） ——
+   *
+   * 它不是「按条件出现一次」的说明（对比 `PlanPage.tsx` 那句「而不是每页都挂一段没人看的
+   * 免责声明」——那里说的是只在真有话题级线索时才说的条件性说明），而是对全部对象页
+   * **恒真**的内容来源声明：这一页的知识节点由 AI 生成，人工验证与审核尚未逐条完成。
+   * 读者要在读正文之前拿到它，所以渲染在最上面而不是页脚。
+   */
+  aiNoticeAria: { zh: 'AI 生成内容声明', en: 'AI-generated content notice' },
+  aiNoticeLabel: { zh: 'AI 生成内容声明', en: 'AI-generated content notice' },
+  aiNoticeBody: {
+    zh: '本页讲解的知识节点由 AI 生成，内容有待验证与审核；欢迎一起撰写节点。',
+    en: 'The knowledge nodes explained on this page are AI-generated; the content still awaits verification and review. You are welcome to co-write nodes.',
+  },
+  aiNoticeAction: { zh: '一起撰写这个节点', en: 'Co-write this node' },
   /* —— 页头 —— */
   evidenceLevel: { zh: '证据等级：{status}', en: 'Evidence level: {status}' },
   evidenceStatus: { zh: '证据状态：{status}', en: 'Evidence status: {status}' },
@@ -71,6 +94,30 @@ const TEXT = {
   tocTitle: { zh: '本页内容', en: 'On this page' },
   tocMotivation: { zh: '动机与生长链', en: 'Motivation and growth chain' },
   tocReading: { zh: '正文', en: 'Body' },
+  /* —— 合并登记（同一对象的其它登记）—— */
+  tocMerged: { zh: '合并前的其它登记', en: 'Other registrations merged here' },
+  mergedHeading: { zh: '合并前的其它登记', en: 'Other registrations merged here' },
+  mergedHint: {
+    zh: '同一个对象在本站的不同案例里各登记过一遍。合并把它们收成一个规范节点（本站的节点 id 因此唯一），每一处登记都逐字留在这里：标题、案例、摘要、边界与正文都没有丢。',
+    en: 'The same object was registered once in each of several cases. They have been merged into one canonical node (so each object now has a single id), and every registration is kept verbatim here: title, case, summary, boundary and body all survive.',
+  },
+  mergedDifferenceHeading: { zh: '各处登记的差别（保留，不抹平）', en: 'How the registrations differ (kept, not flattened)' },
+  mergedRationale: { zh: '为什么它们是同一个对象：', en: 'Why these are one object: ' },
+  mergedOldLink: {
+    zh: '旧链接仍然可用：打开 {id} 会重定向到本页。',
+    en: 'The old link still works: opening {id} redirects to this page.',
+  },
+  mergedRedirectNote: {
+    zh: '你打开的 {id} 已合并到本页的规范节点 {canonical}——这是同一对象的另一处登记。',
+    en: 'You opened {id}, which has been merged into the canonical node {canonical} on this page — it is another registration of the same object.',
+  },
+  mergedRegistrationCase: { zh: '登记案例：{name}', en: 'Registered in case: {name}' },
+  mergedShowBody: { zh: '展开这处登记的正文', en: 'Show this registration’s body' },
+  mergedBodyMissing: { zh: '这处登记没有正文块（当时只登记了名字与负载）。', en: 'This registration has no body block (only its name and payload were registered).' },
+  mergedSourceNote: {
+    zh: '（合并说明属于中文源记录，尚未翻译。）',
+    en: 'The merge notes belong to the Chinese source record and are not translated yet.',
+  },
   tocConditions: { zh: '条件即反例', en: 'Conditions as counterexamples' },
   tocProof: { zh: '概括证明', en: 'Proof overview' },
   /* 「形式负载 / 形式表达 / 支持族」是中英共用的概念术语，取 `messages.ts` 的
@@ -138,6 +185,44 @@ const TEXT = {
     en: 'These objects are produced by registered actions that take this node as input; which one to learn first is your decision, not an order set by the site.',
   },
   relatedHeading: { zh: '相关概念', en: 'Related concepts' },
+  /* —— 回到网络视图（2026-10 加） —— */
+  returnAria: { zh: '回到网络视图', en: 'Back to the knowledge network' },
+  returnNetwork: { zh: '← 回到网络视图', en: '← Back to the network' },
+  returnNetworkHint: {
+    zh: '回到你刚才那张图（已加入的节点与结构回放都还在）。',
+    en: 'Returns to the very graph you left (added nodes and the structure replay are still there).',
+  },
+  openInNetwork: { zh: '在网络视图里打开这个节点', en: 'Open this node in the network' },
+  openInNetworkHint: {
+    zh: '这个地址不是从网络视图点进来的（分享链接或书签），因此没有「刚才那张图」可以回——这里新建一张只含它的图。',
+    en: 'This address was not opened from the network view (a shared link or a bookmark), so there is no previous graph to return to — this starts one containing only it.',
+  },
+  /* —— 方向上的下一步（2026-10 加） —— */
+  directionHeading: { zh: '按你的方向，下一步', en: 'Next by your direction' },
+  directionNoFocus: {
+    zh: '还没有声明学习方向。声明之后，这里会按「离那个目标有多近」给出下一步——',
+    en: 'No learning direction is declared yet. Once it is, this block gives the next step ordered by how close it is to that goal — ',
+  },
+  directionNoFocusLink: { zh: '去「开始学习」挑一个方向', en: 'pick a direction on the Start learning page' },
+  directionForcedLead: {
+    zh: '现在只有这一条通向你的方向；另有 ',
+    en: 'Only this one leads to your direction right now; ',
+  },
+  directionForcedTail: { zh: ' 个选项不在这个方向上。', en: ' other option(s) are outside it.' },
+  directionChoiceLead: { zh: '方向上有 ', en: 'There are ' },
+  directionChoiceMid: { zh: ' 条可以走（现在一共 ', en: ' option(s) on your direction (out of ' },
+  directionChoiceTail: { zh: ' 个可开始的节点）。先走哪条不影响「能不能到」。', en: ' startable now). Which comes first does not change whether you arrive.' },
+  directionPlanBasis: { zh: '按已保存方案的有效顺序继续。阅读不表示知识已确认；确认可用后会重新安排下一步。', en: 'Continue in the saved plan’s valid order. Reading does not confirm knowledge; confirming usable knowledge replans the next step.' },
+  directionAdopt: { zh: '就把这个当下一步', en: 'Take this as the next step' },
+  directionAdopted: { zh: '已记为路径上的一步（还没有确认它）。', en: 'Recorded as a step on your path (it is not confirmed yet).' },
+  directionOthers: { zh: '其余可选', en: 'Other options' },
+  directionOnCore: { zh: '在方向上', en: 'on your direction' },
+  directionOutside: { zh: '不在这个方向上', en: 'outside this direction' },
+  directionUnlocks: { zh: '解锁 ', en: 'unlocks ' },
+  directionNoSteps: { zh: '现在没有可以开始的节点：已登记的前置还没确认。', en: 'Nothing can start right now: the registered prerequisites are not confirmed yet.' },
+  directionStale: {
+    zh: '方向的核心里有互相要求的节点，拆不开：', en: 'Some core nodes of your direction require each other and cannot be untangled: ',
+  },
   footerHintLead: { zh: '想看完整的结构关系，可以打开', en: 'To see the full set of structural relations, open the ' },
   footerHintMid: { zh: '，或为这个节点', en: ', or ' },
   footerHintTail: { zh: '。', en: ' for this node.' },
@@ -188,7 +273,16 @@ export function NodePage() {
   }, [nodeId]);
   const detail = useApi<NodeDetailResponse>(`/ontology/nodes/${encodeURIComponent(decoded)}`, [decoded]);
   const { profileId, profile, refreshProfiles } = useProfileContext();
-  const { graph, events, progress: learning, reload: reloadLearning } = useLearningData();
+  const learningData = useLearningData();
+  const learningPlanController = useLearningPlan(learningData);
+  const { graph, events, progress: learning, reload: reloadLearning } = learningData;
+  /*
+   * 学习方向（2026-10 加）：把**当前这个节点**当成已经走过的一步，回答「读完它之后该学什么」。
+   *
+   * 为什么要多传这一个节点：读者就在这一页，他关心的是「下一步」，而方向层的其他入口
+   * （「开始学习」页）回答的是「现在这一步」。两者用同一个派生，只是起点差一个节点。
+   * 这个额外位置**只影响推导**，不写账本——「我在这一页」不是「我选了它」。
+   */
   const [replay, setReplay] = useState<Record<string, LocalizationResultView | { status: string; note?: string; obligations?: string[] }>>({});
   const [message, setMessage] = useState('');
   const [searchParams] = useSearchParams();
@@ -197,7 +291,7 @@ export function NodePage() {
    * 界面文案与语种相关的几件事：取词、时间格式化、标注未译条目、拼带语种前缀的站内链接。
    * 站内跳转一律过 `hrefFor()`：`Link` 自己不会加 `/en` 前缀，漏一处就跳回中文站。
    */
-  const { t, pick, fmtDate, isPending, hrefFor } = useI18n();
+  const { t, pick, fmtDate, isPending, hrefFor, locale } = useI18n();
   /** 受控词表的显示名（构造、角色、关系、资源…）：跟着语种走，必须用 useLabels 才会重渲染。 */
   const labels = useLabels();
   /** 列表与从句的分隔符：中文用顿号/分号，英文用逗号/分号加空格。 */
@@ -205,6 +299,18 @@ export function NodePage() {
   const clauseSep = pick({ zh: '；', en: '; ' });
   /** 路线阅读上下文（若有）：来自学习路线的「沿此路线阅读」。 */
   const readingRoute = useMemo(() => readReadingRoute(routeId), [routeId]);
+  /**
+   * 「回到网络视图」（2026-10 加）。
+   *
+   * `?from=network` 是**分享得到的事实**（URL 上），会话里的快照是**当时的图**（sessionStorage）。
+   * 两者都在才给「回到网络视图」；只有前者时退成「在网络视图里打开这个节点」，
+   * 不编一个假的来路。语种由 `networkReturnHref` 处理（中文存的图在英文站上不会跳回中文页）。
+   */
+  const networkBack = useMemo(() => {
+    if (searchParams.get(FROM_PARAM) !== FROM_NETWORK) return null;
+    const href = networkReturnHref(decoded, locale);
+    return href ? { href } : null;
+  }, [searchParams, decoded, locale]);
   const stepParam = Number(searchParams.get('step') ?? '');
   const currentStep = readingRoute ? readingNodeAt(readingRoute, Number.isFinite(stepParam) && stepParam > 0 ? stepParam : readReadingProgress(routeId)) : null;
   const [reviewDone, setReviewDone] = useState(false);
@@ -262,19 +368,34 @@ export function NodePage() {
     return out.slice(0, 6);
   }, [graph, decoded]);
 
+  // 阅读不会改变真实可学集合；下一步采用档案方案中已验证的有效顺序。
+  const directionNext = useMemo(() => {
+    const preview = learningPlanController.preview;
+    if (!preview) return null;
+    const steps = new Map(preview.steps.map(step => [step.key, step]));
+    return preview.order.map(key => steps.get(key)!).find(step => step.ready && step.node !== decoded) ?? null;
+  }, [learningPlanController.preview, decoded]);
+
   useEffect(() => { setMessage(''); }, [decoded]);
   useEffect(() => { setReviewDone(false); }, [decoded]);
 
   if (detail.loading) return <div className="page"><p>{pick(TEXT.loadingNode)}</p></div>;
   if (detail.error) return <div className="page"><p className="error">{formatError(detail.error)}</p></div>;
   if (!detail.data) return null;
-  const { node, formation, roles, actions, relations, evidence, support, claims, patterns, boundary } = detail.data;
+  const { node, formation, roles, actions, relations, evidence, support, claims, patterns, boundary, merge = null } = detail.data;
   const teaching = node.teaching ?? {};
   const conditions = teaching.conditions ?? [];
   const selfCheck = teaching.selfCheck ?? [];
   const reviewQuestions = teaching.reviewQuestions ?? [];
   const misconceptions = teaching.commonMisconceptions ?? [];
   const representations = node.representations ?? [];
+  /*
+   * 合并登记：这个对象在别处还登记过几次（见 `data/merges.mjs`）。
+   * `redirectedFrom` 是「打开的旧 id 与规范 id 不同」这一事实——合并后旧链接仍然可用，
+   * 但读者应当知道自己在看哪一处登记，而不是以为 URL 被吃掉了。
+   */
+  const registrations = node.registrations ?? [];
+  const redirectedFrom = decoded !== node.id ? decoded : null;
 
   /*
    * 机器表达层（`formalSpec`）与给人读的「形式表达」（`formalStatement`）是两件事：
@@ -332,9 +453,84 @@ export function NodePage() {
     }
   }
 
+  // 内容可显式选择先从例子进入；动机和正文只渲染一次，屏幕阅读顺序与视觉顺序一致。
+  const lessonIntroduction = (
+    <>
+          {node.motivation && (
+            <section className="card" id="node-motivation">
+              <h2>{pick(TEXT.motivationHeading)}</h2>
+              <div className="motivation-grid">
+                <div><h3>{pick(TEXT.motivationInternal)}</h3><ul>{(node.motivation.internal ?? []).map((item) => <li key={item}>{item}</li>)}</ul></div>
+                <div><h3>{pick(TEXT.motivationExternal)}</h3><ul>{(node.motivation.external ?? []).map((item) => <li key={item}>{item}</li>)}</ul></div>
+                <div><h3>{pick(TEXT.motivationAesthetic)}</h3><ul>{(node.motivation.aesthetic ?? []).map((item) => <li key={item}>{item}</li>)}</ul></div>
+              </div>
+              {(node.motivation.growthChain ?? []).length > 0 && (
+                <ol className="growth-chain">{(node.motivation.growthChain ?? []).map((item) => <li key={item}>{item}</li>)}</ol>
+              )}
+            </section>
+          )}
+
+          {node.contentMarkdown && (
+            <section className="card reading" id="node-reading">
+              {/* 英文站上正文还没译时，这里如实说明读者看到的是中文原文（中文站不出现这行）。 */}
+              {isPending(node.contentMarkdown) && <p className="i18n-pending-note">{t('i18n.pendingItem')}</p>}
+              <Markdown>{node.contentMarkdown}</Markdown>
+            </section>
+          )}
+    </>
+  );
+
   return (
     <div className="page node-page">
       <nav className="breadcrumb"><Link to={hrefFor('/nodes')}>{t('nav.nodes')}</Link><span>/</span><span>{node.id}</span></nav>
+
+      {/*
+        AI 生成内容声明（2026-10-13 加）：每一个数学对象页都写一遍。
+
+        ## 为什么在最上面，而且不折叠
+        它说的是**这一页内容的来源与证据状态**——读者要在读正文之前拿到它。
+        放进页脚、折叠区或「关于」子页等于没说：读者不会去找，找到的也不是同一个语境。
+        对象页是本站的主要阅读面（`/nodes/:id`，每个数学对象一页），因此声明挂在这里，
+        随对象页一起出现，不需要读者自己想起来去查。
+
+        ## 为什么写成常驻而不是「有未验证内容时才出现」
+        本站的节点正文确实由 AI 参与撰写、人工复核尚未逐条完成，这个前提在当前版本
+        **恒真**，所以它不是条件性说明（对比 `PlanPage.tsx` 里那句「而不是每页都挂一段
+        没人看的免责声明」——那说的是只在真有话题级线索时才说一次的那种说明）。
+
+        ## 证据状态不夸大也不含糊
+        「由 AI 生成」「有待验证与审核」两句都按当前真实状态写：既不声称已经复核过，
+        也不把「待验证」写成「等于错」。第三句给出去处——`?mode=new` 进的是
+        **写草稿**的维护流程（与页头「以此为基础创建」同一去处），不直接改动公共本体。
+      */}
+      <aside className="ai-declaration" aria-label={pick(TEXT.aiNoticeAria)} data-testid="ai-declaration">
+        <strong>{pick(TEXT.aiNoticeLabel)}</strong>
+        <span>{pick(TEXT.aiNoticeBody)}</span>
+        <Link className="link-button" to={hrefFor(`/authoring?node=${encodeURIComponent(node.id)}&mode=new`)}>{pick(TEXT.aiNoticeAction)}</Link>
+      </aside>
+
+      {/*
+        回到网络视图（2026-10 加）。
+
+        分两档，如实区分：
+        1. 从网络点进来（`?from=network` 且会话里存着那张图）→ 「回到网络视图」，
+           回到**同一张图**（已加入的节点与结构回放参数都在）；
+        2. 直接打开这个地址（分享链接、书签、换设备）→ 不编一个假地址，
+           退成「在网络视图里打开这个节点」，并把这件事写出来。
+      */}
+      <nav className="node-return" aria-label={pick(TEXT.returnAria)}>
+        {networkBack ? (
+          <>
+            <Link className="button small" to={hrefFor(networkBack.href)} onClick={() => restoreNetworkReturn(decoded)}>{pick(TEXT.returnNetwork)}</Link>
+            <span className="muted">{pick(TEXT.returnNetworkHint)}</span>
+          </>
+        ) : (
+          <>
+            <Link className="button small" to={hrefFor(openInNetworkHref(decoded))}>{pick(TEXT.openInNetwork)}</Link>
+            <span className="muted">{pick(TEXT.openInNetworkHint)}</span>
+          </>
+        )}
+      </nav>
 
       {/* 路线阅读条：按规划器给出的事件顺序走，重复的回看事件也保留在序列里。 */}
       {readingRoute && currentStep && (
@@ -379,6 +575,10 @@ export function NodePage() {
           </div>
         </section>
       )}
+      <RelatedVaultNotes nodeId={decoded} />
+      <Link className="button small" to={hrefFor('/library/write/new?' + new URLSearchParams({ node: decoded, title: node.title }))}>
+        {pick({ zh: '围绕此节点写笔记', en: 'Write a note about this node' })}
+      </Link>
       <header className="node-header card">
         <div className="node-header-top">
           <span className="construct" title={node.construct}>{labels.constructLabel(node.construct)}</span>
@@ -409,6 +609,11 @@ export function NodePage() {
       </header>
 
       {message && <p className="notice">{message}</p>}
+      {redirectedFrom && (
+        <p className="notice merged-redirect" id="node-merged-redirect">
+          {fill(pick(TEXT.mergedRedirectNote), { id: redirectedFrom, canonical: node.id })}
+        </p>
+      )}
 
       <div className="node-layout">
         <article className="node-main">
@@ -418,6 +623,7 @@ export function NodePage() {
             <ul>
               {node.motivation && <li><a href="#node-motivation">{pick(TEXT.tocMotivation)}</a></li>}
               {node.contentMarkdown && <li><a href="#node-reading">{pick(TEXT.tocReading)}</a></li>}
+              {registrations.length > 0 && <li><a href="#node-merged">{pick(TEXT.tocMerged)}</a></li>}
               {conditions.length > 0 && <li><a href="#node-conditions">{pick(TEXT.tocConditions)}</a></li>}
               {teaching.proofOverview && <li><a href="#node-proof">{pick(TEXT.tocProof)}</a></li>}
               <li><a href="#node-formal">{t('concept.formalPayload')}</a></li>
@@ -427,11 +633,13 @@ export function NodePage() {
             </ul>
           </nav>
           {/*
-            形式表达：把对象用形式语言写出来，放在正文之前。
+            形式摘要：默认放在前面；readingFirst 的入门讲解先呈现动机和正文。
             为什么排这么前：读一个数学对象，最先要知道的是「它到底是什么」——
             而定义的形式陈述比一段自然语言更不容易走样。只有挑出来的重要节点登记了这一项
             （见 data/formal-statements.mjs），其余节点不出这一块，不用一句「暂无」占位。
           */}
+          {teaching.readingFirst && lessonIntroduction}
+
           {node.formalStatement && (
             <section className="card formal-statement" id="node-formal-statement">
               <div className="formal-statement-head">
@@ -471,25 +679,99 @@ export function NodePage() {
             </section>
           )}
 
-          {node.motivation && (
-            <section className="card" id="node-motivation">
-              <h2>{pick(TEXT.motivationHeading)}</h2>
-              <div className="motivation-grid">
-                <div><h3>{pick(TEXT.motivationInternal)}</h3><ul>{(node.motivation.internal ?? []).map((item) => <li key={item}>{item}</li>)}</ul></div>
-                <div><h3>{pick(TEXT.motivationExternal)}</h3><ul>{(node.motivation.external ?? []).map((item) => <li key={item}>{item}</li>)}</ul></div>
-                <div><h3>{pick(TEXT.motivationAesthetic)}</h3><ul>{(node.motivation.aesthetic ?? []).map((item) => <li key={item}>{item}</li>)}</ul></div>
-              </div>
-              {(node.motivation.growthChain ?? []).length > 0 && (
-                <ol className="growth-chain">{(node.motivation.growthChain ?? []).map((item) => <li key={item}>{item}</li>)}</ol>
-              )}
-            </section>
-          )}
+          {!teaching.readingFirst && lessonIntroduction}
 
-          {node.contentMarkdown && (
-            <section className="card reading" id="node-reading">
-              {/* 英文站上正文还没译时，这里如实说明读者看到的是中文原文（中文站不出现这行）。 */}
-              {isPending(node.contentMarkdown) && <p className="i18n-pending-note">{t('i18n.pendingItem')}</p>}
-              <Markdown>{node.contentMarkdown}</Markdown>
+          {/*
+            合并登记（2026-10，见 `data/merges.mjs`）。
+            站上同一个对象曾在多个案例里各登记一遍，节点列表因此出现三个「拓扑空间」、两个「同胚」。
+            合并收口的是**身份**（一个对象一个 id），不是内容：每一处登记连同它自己的正文块
+            都逐字保留在 `node.registrations` 里，在这里展开显示。
+            差别（最典型的是拓扑流形的公理表含不含第二可数）单独列一段，不许被"统一措辞"抹掉。
+          */}
+          {registrations.length > 0 && (
+            <section className="card merged-registrations" id="node-merged">
+              <h2>{pick(TEXT.mergedHeading)}</h2>
+              <p className="hint">{pick(TEXT.mergedHint)}</p>
+              {merge?.rationale && (
+                <p className={`merged-rationale${isPending(merge.rationale) ? ' i18n-pending' : ''}`} title={pendingTitle(merge.rationale)}>
+                  <strong>{pick(TEXT.mergedRationale)}</strong>{merge.rationale}
+                </p>
+              )}
+              {merge && merge.differences.length > 0 && (
+                <div className="merged-differences">
+                  <h3>{pick(TEXT.mergedDifferenceHeading)}</h3>
+                  {isPending(merge.differences.join(' ')) && <p className="i18n-pending-note">{pick(TEXT.mergedSourceNote)}</p>}
+                  <ul>{merge.differences.map((line) => (
+                    <li key={line} className={pendingClass(line)} title={pendingTitle(line)}><Markdown>{line}</Markdown></li>
+                  ))}</ul>
+                </div>
+              )}
+              <div className="merged-list">
+                {registrations.map((registration) => (
+                  <details className="merged-registration" key={registration.id}>
+                    <summary>
+                      <span className={`merged-registration-title${pendingClass(registration.title) ? ` ${pendingClass(registration.title)}` : ''}`} title={pendingTitle(registration.title)}>{plainMathText(registration.title)}</span>
+                      <span className="merged-registration-meta">
+                        {fill(pick(TEXT.mergedRegistrationCase), { name: labels.caseLabel(registration.case) })}
+                        {' · '}{(labels.tables.disciplines[registration.discipline] ?? registration.discipline)}
+                        {' · '}{labels.constructLabel(registration.construct)}
+                      </span>
+                    </summary>
+                    <p className="muted merged-registration-id">
+                      <code>{registration.id}</code>
+                      {' — '}{fill(pick(TEXT.mergedOldLink), { id: registration.id })}
+                    </p>
+                    {registration.summary && <p className={pendingClass(registration.summary)} title={pendingTitle(registration.summary)}>{plainMathText(registration.summary)}</p>}
+                    {/*
+                      这处登记的**形式表达**也要显示：它按 id 登记（`data/formal-statements.mjs`），
+                      合并只收口身份，不收回已经写出来的形式陈述。类名与上面那一块保持一致，
+                      因此排版、溢出与窄屏行为逐字相同（浏览器验收按同一组选择器核对）。
+                    */}
+                    {registration.formalStatement && (
+                      <div className="formal-statement merged-formal-statement">
+                        <div className="formal-statement-head">
+                          <span className="formal-statement-label" title={fill(pick(TEXT.evidenceStatus), { status: registration.formalStatement.label })}>
+                            {registration.formalStatement.label}
+                          </span>
+                        </div>
+                        <div className="formal-statement-math">
+                          <Markdown>{`\n$$\n${registration.formalStatement.tex}\n$$\n`}</Markdown>
+                        </div>
+                        {registration.formalStatement.reading && (
+                          <p className={pendingClass(registration.formalStatement.reading, 'formal-statement-reading')} title={pendingTitle(registration.formalStatement.reading)}>
+                            {plainMathText(registration.formalStatement.reading)}
+                          </p>
+                        )}
+                        {(registration.formalStatement.notation ?? []).length > 0 && (
+                          <dl className="formal-statement-notation">
+                            {(registration.formalStatement.notation ?? []).map((row) => (
+                              <div key={row.symbol}>
+                                <dt><code>{row.symbol}</code></dt>
+                                <dd>{plainMathText(row.means)}</dd>
+                              </div>
+                            ))}
+                          </dl>
+                        )}
+                        {registration.formalStatement.note && (
+                          <div className={pendingClass(registration.formalStatement.note, 'formal-statement-note')} title={pendingTitle(registration.formalStatement.note)}>
+                            <Markdown>{registration.formalStatement.note}</Markdown>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    {Array.isArray(registration.formal?.boundary) && (registration.formal?.boundary as string[]).length > 0 && (
+                      <ul className="merged-boundary">
+                        {(registration.formal?.boundary as string[]).map((line) => (
+                          <li key={line} className={pendingClass(line)} title={pendingTitle(line)}>{plainMathText(line)}</li>
+                        ))}
+                      </ul>
+                    )}
+                    {registration.contentMarkdown
+                      ? <Markdown>{registration.contentMarkdown}</Markdown>
+                      : <p className="muted">{pick(TEXT.mergedBodyMissing)}</p>}
+                  </details>
+                ))}
+              </div>
             </section>
           )}
 
@@ -625,6 +907,13 @@ export function NodePage() {
 
           <section className="card node-footer-actions">
             <h2>{pick(TEXT.finishedHeading)}</h2>
+            <nav className="node-next node-direction-next" aria-label={pick(TEXT.directionHeading)}>
+              <h3>{pick(TEXT.directionHeading)}</h3>
+              {directionNext ? <p><Link className={pendingClass(titleOf(directionNext.node))} title={pendingTitle(titleOf(directionNext.node))} to={hrefFor(`/nodes/${encodeURIComponent(directionNext.node)}`)}>{titleOf(directionNext.node)}</Link></p>
+                : <p className="hint">{pick(learningPlanController.state.primaryGoal ? TEXT.directionNoSteps : TEXT.directionNoFocus)}</p>}
+              <p className="hint">{pick(TEXT.directionPlanBasis)}</p>
+              <Link to={hrefFor('/start')}>{pick(TEXT.directionNoFocusLink)}</Link>
+            </nav>
             {learnerActions}
             {/*
               这里不再按节点 id 给「上一节点／下一节点」：那个顺序既不是先修关系也不是路线顺序。
@@ -661,6 +950,7 @@ export function NodePage() {
                         <li key={item.id}>
                           <Link className={pendingClass(titleOf(item.id))} title={pendingTitle(titleOf(item.id))} to={hrefFor(`/nodes/${encodeURIComponent(item.id)}`)}>{titleOf(item.id)}</Link>
                           <span className="muted">{item.label}</span>
+                          {graph && <ConnectionPairNotes graph={graph} from={node.id} to={item.id} />}
                         </li>
                       ))}
                     </ul>
@@ -675,11 +965,13 @@ export function NodePage() {
         </article>
 
         <aside className="node-aside">
+          <LearningPlanCard controller={learningPlanController} learning={learningData} />
           <section className="card">
             <h2>{pick(TEXT.evidenceHeading)}</h2>
             {evidence.length === 0 && <p>{pick(TEXT.noEvidence)}</p>}
+            <LeanEvidenceCards evidence={evidence} />
             <ul className="evidence-list">
-              {evidence.map((record) => (
+              {evidence.filter(record => record.backend !== 'lean4').map((record) => (
                 <li key={record.id}>
                   <div className="evidence-head">
                     <strong className={pendingClass(record.title)} title={pendingTitle(record.title)}>{record.title}</strong>
@@ -750,6 +1042,9 @@ export function NodePage() {
                   <span title={relation.kind}>{labels.relationLabel(relation.kind)}</span>
                   <code>{relation.from} → {relation.to}</code>
                   {relation.scope && <p>{relation.scope}</p>}
+                  {relation.witness.ref && <p className="muted">{locale === 'en' ? 'Witness' : '见证'}：<code>{relation.witness.ref}</code></p>}
+                  <ScalingExplanationView relation={relation} />
+                  <ConnectionNote target={{ key: relation.connectionKey, label: labels.relationLabel(relation.kind) }} actions />
                 </li>
               ))}
             </ul>

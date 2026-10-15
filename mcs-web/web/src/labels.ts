@@ -61,9 +61,15 @@ export const ROLE_LABELS: PairedTable = {
 };
 
 export const RELATION_LABELS: PairedTable = {
+  noteReference: { zh: '笔记引用', en: 'Note link' },
+  privateReference: { zh: '私人参考关联', en: 'Private reference' },
+  definitionReference: { zh: '定义引用', en: 'Definition reference' },
+  equivalentTo: { zh: '等价', en: 'Equivalence' },
+  conditionalDerivation: { zh: '条件推导', en: 'Conditional derivation' },
+  instanceOf: { zh: '实例', en: 'Instance' },
+  counterexampleTo: { zh: '反例', en: 'Counterexample' },
   hardPrereq: { zh: '硬前置', en: 'Hard prerequisite' },
-  hardGeneralization: { zh: '硬泛化', en: 'Hard generalization' },
-  specialization: { zh: '特化', en: 'Specialization' },
+  scaling: { zh: '放缩', en: 'Scaling' },
   bridge: { zh: '桥接', en: 'Bridge' },
   application: { zh: '应用', en: 'Application' },
   analogy: { zh: '类比', en: 'Analogy' },
@@ -141,6 +147,11 @@ export const CASE_LABELS: PairedTable = {
   dg: { zh: '微分几何', en: 'Differential geometry' },
   liang: { zh: '微分几何与广义相对论（上册）', en: 'Differential geometry and general relativity, Vol. 1' },
   rudin: { zh: '数学分析原理（Rudin）', en: 'Principles of Mathematical Analysis (Rudin)' },
+  jiang: { zh: '简明高等代数', en: 'A Concise Text on Advanced Algebra' },
+  axler: { zh: 'Linear Algebra Done Right（Axler）', en: 'Linear Algebra Done Right (Axler)' },
+  top: { zh: '点集拓扑', en: 'Point-set topology' },
+  vault: { zh: '笔记库（MCS_vault）', en: 'Note library (MCS_vault)' },
+  'field-entry': { zh: '学科入门节点', en: 'Field entry nodes' },
 };
 
 /**
@@ -335,7 +346,7 @@ export const caseLabel = (value: string | null | undefined, options: LabelOption
  * 关系种类的颜色：**色相承载「哪一种关系」**，明度/饱和度承载「有多硬」。
  *
  * 设计约束（不是随手挑的颜色）：
- * - 八种关系色相互不相同：硬前置紫、硬泛化蓝、特化淡紫、桥接橙、应用金、类比石板灰、对偶品红、跨域绿；
+ * - 七种关系色相互不相同：硬前置紫、放缩蓝、桥接橙、应用金、类比石板灰、对偶品红、跨域绿；
  * - 每一色的**明度**都压在中深区间（HSL 的 L 约 35–55%），因为画布底色是近白的浅紫，
  *   太浅的线在浅底上读不出来；
  * - 饱和度靠 `saturate()` 按权重再提一档（硬关系更「跳」），这里给的是**基数**。
@@ -345,8 +356,7 @@ export const caseLabel = (value: string | null | undefined, options: LabelOption
  */
 export const RELATION_COLOR: Record<string, string> = {
   hardPrereq: '#4c1d95',
-  hardGeneralization: '#2563eb',
-  specialization: '#0284c7',
+  scaling: '#2563eb',
   bridge: '#ea580c',
   application: '#854d0e',
   analogy: '#64748b',

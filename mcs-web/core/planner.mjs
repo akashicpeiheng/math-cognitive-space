@@ -87,7 +87,7 @@ function topologicalOrders(nodes, edges, limit = MAX_LINEAR_EXTENSIONS) {
 }
 
 // 对事件图做迭代标签规范化，用于删除同构重复的完整结果包。
-function canonicalizeEventGraph(events) {
+export function canonicalizeEventGraph(events) {
   const initial = new Map(events.map((event) => [event.id, `${event.actionId}|${event.focus.node}|${event.focus.resource}`]));
   let labels = initial;
   for (let round = 0; round < events.length + 1; round += 1) {

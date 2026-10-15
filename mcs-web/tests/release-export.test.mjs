@@ -15,10 +15,11 @@ function fixture(t, publicLayout = false) {
     writeFileSync(full, content);
   };
   put('mcs-web/scripts/export-open-source.mjs', readFileSync(new URL('../scripts/export-open-source.mjs', import.meta.url), 'utf8'));
-  for (const path of ['validation/certification', 'arxiv', 'publication', 'cases', 'edition']) {
+  for (const path of ['validation/certification', 'arxiv', 'publication', 'cases', 'edition', 'lean']) {
     put('mcs-foundations/' + path + '/README.md');
   }
   put('mcs-foundations/00-README.md');
+  put('mcs-foundations/08-关系代数与结构.md');
   put('mcs-foundations/15-验证与完成标准.md');
   for (const name of ['LICENSE-MIT', 'LICENSE-CONTENT', 'NOTICE', 'SECURITY.md', 'CONTRIBUTING.md', '.gitignore']) {
     put(publicLayout ? name : 'mcs-web/release/' + name);
@@ -39,15 +40,20 @@ test('export excludes build caches and local credentials, retains official paper
     'mcs-web/.env.local', 'mcs-web/.env.production', 'mcs-web/config.local.json',
     'mcs-web/runtime/user.sqlite3', 'mcs-web/credentials.json',
     'mcs-web/.vercel/project.json', 'mcs-web/web/dist/index.html',
+    'mcs-foundations/lean/.lake/packages/mathlib/Mathlib.olean',
+    'mcs-web/.lean-tools/lean.exe',
+    'mcs-foundations/lean/reports/lean-group-injective-' + 'a'.repeat(64) + '-2026-10-12T00-00-00-000Z.json',
   ];
   excluded.forEach(path => f.put(path));
   f.put('mcs-foundations/arxiv/submission/paper.pdf', 'original paper');
   f.put('mcs-web/web/src/App.tsx', 'export default null;');
+  f.put('mcs-foundations/lean/reports/lean-group-injective.json', 'current report fixture');
   const result = f.run();
   assert.equal(result.status, 0, result.stdout + result.stderr);
   for (const path of excluded) assert.equal(existsSync(join(f.out, path)), false, path);
   assert.equal(readFileSync(join(f.out, 'mcs-foundations/arxiv/submission/paper.pdf'), 'utf8'), 'original paper');
   assert.equal(existsSync(join(f.out, 'mcs-web/web/src/App.tsx')), true);
+  assert.equal(existsSync(join(f.out, 'mcs-foundations/lean/reports/lean-group-injective.json')), true);
   const report = JSON.parse(readFileSync(f.out + '.export-report.json', 'utf8'));
   assert.deepEqual(report.missing, []);
   assert.deepEqual(report.secrets, []);

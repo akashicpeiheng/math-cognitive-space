@@ -46,7 +46,7 @@ test('规则一：同一对节点只留一条，最强的那条留下', () => {
 test('规则二：无序对——A→B 与 B→A 算同一对', () => {
   const merged = mergeParallelEdges([
     relation('r-forward', 'a', 'b', 'hardPrereq'),
-    relation('r-backward', 'b', 'a', 'specialization'),
+    relation('r-backward', 'b', 'a', 'scaling'),
   ]);
   assert.equal(merged.length, 1, '方向相反的两条也是同一对：' + JSON.stringify(merged.map((item) => item.edge.id)));
   assert.equal(merged[0].edge.id, 'r-forward', 'hardPrereq 权重更高，应当留下');
@@ -107,7 +107,7 @@ test('真实数据：每个案例视图里同对边都被并成一条，且一�
     evidence: [],
   };
   let mergedPairs = 0;
-  for (const caseId of ['limit', 'manifold', 'tensor', 'group', 'dg', 'liang', 'rudin']) {
+  for (const caseId of ['limit', 'manifold', 'tensor', 'group', 'dg', 'liang', 'rudin', 'jiang', 'axler']) {
     const added = new Set(nodes.filter((node) => node.case === caseId).map((node) => node.id));
     const edges = buildEdges(graph, added, ['contract', 'relation']);
     const merged = mergeParallelEdges(edges);

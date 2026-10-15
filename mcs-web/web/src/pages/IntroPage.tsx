@@ -41,6 +41,7 @@ const INTRO_TEXT = {
     methodButton: '学习方法论',
     readButton: '直接开始读',
     labButton: '研究台与证据',
+    manualButton: '用户手册',
     scaleAria: '站内规模',
     scaleLoading: '正在读取站内规模…',
     scaleError: '站内规模读取失败，本页其余内容不受影响。',
@@ -64,6 +65,7 @@ const INTRO_TEXT = {
     methodButton: 'Methodology',
     readButton: 'Start reading',
     labButton: 'Research workbench and evidence',
+    manualButton: 'User manual',
     scaleAria: 'Site scale',
     scaleLoading: 'Reading the site’s scale…',
     scaleError: 'Reading the site’s scale failed; the rest of this page is unaffected.',
@@ -85,7 +87,7 @@ const INTRO_TEXT = {
 export function IntroPage() {
   const health = useApi<{ ontology: { counts: HealthCounts; version: string } }>('/health');
   const counts = health.data?.ontology.counts;
-  const { pick } = useI18n();
+  const { pick, hrefFor } = useI18n();
   const text = pick(INTRO_TEXT);
   const sections = pick(SITE_INTRO_SECTIONS_BY_LOCALE);
   const entries = pick(INTRO_ENTRIES_BY_LOCALE);
@@ -101,6 +103,7 @@ export function IntroPage() {
           <Link className="button primary" to="/method">{text.methodButton}</Link>
           <Link className="button" to="/nodes">{text.readButton}</Link>
           <Link className="button ghost" to="/lab">{text.labButton}</Link>
+          <Link className="button ghost" to={hrefFor('/manual')}>{text.manualButton}</Link>
         </div>
       </header>
 

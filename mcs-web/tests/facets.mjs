@@ -42,7 +42,8 @@ try {
       const units = graph.data.nodes.filter((node) => (node.granularity ?? 'unit') === 'unit');
       const byConstruct = {};
       for (const node of units) byConstruct[node.construct] = (byConstruct[node.construct] ?? 0) + 1;
-      return { byConstruct, nodes: units.length, topics: graph.data.nodes.length - units.length };
+      return { byConstruct, nodes: units.length, topics: graph.data.nodes.length - units.length,
+        analogyRelations: graph.data.relations.filter((edge) => edge.kind === 'analogy').length };
     }));
 
   // ---- 知识网络：「全部节点」悬浮框 ----
@@ -81,7 +82,7 @@ try {
     ['项', '定义', '表征'].every((word) => absentNote.includes(word)) && absentNote.includes('不放进筛选'),
     absentNote.replace(/\s+/g, ' ').slice(0, 120));
 
-  // 搜「类比」：它是关系种类，本体里只有 1 条关系、0 个节点——必须给出处。
+  // 「类比」同时是新方法节点与关系名：对象结果和关系入口都应可见。
   await page.selectOption(`${panel} select[aria-label="按构造类型筛选"]`, '全部');
   await page.fill(`${panel} input[aria-label="搜索节点"]`, '类比');
   await page.waitForTimeout(400);
@@ -90,7 +91,9 @@ try {
     notice: document.querySelector(`${selector} .notice`)?.textContent ?? '',
   }), panel);
   check('网络面板：搜「类比」给的是关系种类的去处，而不是空列表',
-    analogy.items === 0 && analogy.notice.includes('关系种类') && /1 条这种关系/.test(analogy.notice),
+    analogy.items === 1 && analogy.notice.includes('关系种类') && truth.analogyRelations > 0
+      && Number(analogy.notice.match(/登记了 (\d+) 条这种关系/)?.[1] ?? -1) === truth.analogyRelations
+      && !analogy.notice.includes('只会是 0'),
     JSON.stringify(analogy));
 
   /*
@@ -188,7 +191,7 @@ try {
     cards: document.querySelectorAll('.node-card').length,
   }));
   check('列表页：搜「类比」也给关系种类的去处',
-    listAnalogy.cards === 0 && listAnalogy.notice.includes('关系种类') && listAnalogy.notice.includes('知识网络'),
+    listAnalogy.cards === 1 && listAnalogy.notice.includes('关系种类') && listAnalogy.notice.includes('知识网络'),
     JSON.stringify(listAnalogy));
 
   check('两个页面都没有控制台错误', consoleErrors.length === 0, consoleErrors.join(' | '));

@@ -201,11 +201,11 @@ export const groupActions = [
 ];
 
 export const groupRelations = [
-  relation('rel-group-generalization', 'hardGeneralization', 'group:group-concept', 'group:perm', { witness: { type: 'instance-witness', status: 'PROOF', ref: 'ev-group-perm' }, scope: '置换群是群的一个实例；反向不成立。' }),
-  relation('rel-group-generalization-geom', 'hardGeneralization', 'group:group-concept', 'group:triangle-sym', { witness: { type: 'instance-witness', status: 'PROOF', ref: 'ev-group-triangle' }, scope: '几何对称群是群的一个实例。' }),
-  relation('rel-group-generalization-mod', 'hardGeneralization', 'group:group-concept', 'group:units5', { witness: { type: 'instance-witness', status: 'FINITE', ref: 'ev-group-units5' }, scope: 'Units5 是群的一个有限实例。' }),
-  // 反方向：Units5 是群概念的特化实例。与上面一条成对，依据同一处有限核验。
-  relation('rel-group-specialization', 'specialization', 'group:units5', 'group:group-concept', { witness: { type: 'inverse-of-declared-generalization', status: 'FINITE', ref: 'ev-group-units5' }, scope: '有限实例方向；该核验不推广到其他模数。' }),
+  relation('rel-group-generalization', 'scaling', 'group:group-concept', 'group:perm', { direction: { general: 'group:group-concept', special: 'group:perm', reading: 'contract' }, scalingMode: 'instance', witness: { type: 'instance-witness', status: 'PROOF', ref: 'ev-group-perm' }, scope: '置换群是群的一个实例；反向不成立。' }),
+  relation('rel-group-generalization-geom', 'scaling', 'group:group-concept', 'group:triangle-sym', { direction: { general: 'group:group-concept', special: 'group:triangle-sym', reading: 'contract' }, scalingMode: 'instance', witness: { type: 'instance-witness', status: 'PROOF', ref: 'ev-group-triangle' }, scope: '几何对称群是群的一个实例。' }),
+  relation('rel-group-generalization-mod', 'scaling', 'group:group-concept', 'group:units5', { direction: { general: 'group:group-concept', special: 'group:units5', reading: 'contract' }, scalingMode: 'instance', witness: { type: 'instance-witness', status: 'FINITE', ref: 'ev-group-units5' }, scope: 'Units5 是群的一个有限实例。' }),
+  // 反方向：Units5 沿放方向关联到群概念。与上面一条成对，依据同一处有限核验。
+  relation('rel-group-specialization', 'scaling', 'group:units5', 'group:group-concept', { direction: { general: 'group:group-concept', special: 'group:units5', reading: 'expand' }, scalingMode: 'instance', witness: { type: 'inverse-of-declared-generalization', status: 'FINITE', ref: 'ev-group-units5' }, scope: '有限实例方向；该核验不推广到其他模数。' }),
   relation('rel-group-bridge', 'bridge', 'group:group-concept', 'group:cayley', { witness: { type: 'embedding-proof', status: 'PROOF', ref: 'ev-group-cayley' }, scope: '每个群嵌入其底集的置换群。' }),
   relation('rel-group-application', 'application', 'group:group-concept', 'group:triangle-sym', { witness: { type: 'application-description', status: 'PROOF', ref: 'ev-group-triangle' }, task: '用群论统一几何对称。' }),
 
@@ -215,7 +215,7 @@ export const groupRelations = [
    *
    * 本案例的定义性依赖只有这四处：背景的公理模板 → 群概念 → 左乘映射 → 单射命题，
    * 以及置换群 → Cayley 定理。三个例子（置换群、三角形对称、Units5）与群概念的关系
-   * 已经由 `hardGeneralization` + 实例见证登记（「它是群的一个实例」），
+   * 已经由 `scaling` + 实例见证登记（「它是群的一个实例」），
    * 不重复写一条同向同端点的硬前置——那只会让同一对节点上叠两条线（见 TODO A2-14）。
    * 方法、误区、练习类节点不登记。
    */
@@ -302,7 +302,7 @@ export const groupSupport = [
 
 export const groupClaims = [
   claimRecord('claim-group-cayley', 'group:cayley', '每个群同构于其底集置换群的一个子群。', ['ev-group-cayley']),
-  claimRecord('claim-group-injective', 'group:claim-injective', 'L_g=L_h ⇒ g=h（只依赖右单位）。', ['ev-group-injective-cert'], 'FINITE'),
+  claimRecord('claim-group-injective', 'group:claim-injective', 'L_g=L_h ⇒ g=h（只依赖右单位）。', ['ev-group-injective-cert', 'ev-lean-group-injective'], 'PROOF'),
 ];
 
 export const groupPatterns = [

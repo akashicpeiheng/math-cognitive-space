@@ -1,12 +1,12 @@
 /**
- * `hardGeneralization`：同背景、同参数类型的概念对 → 全称蕴含证书。
+ * `scaling`：同背景、同参数类型的概念对 → 全称蕴含证书。
  *
  * ## 方向约定（规格 §2.11，写死在数据里）
  *
  * 存的是「**一般概念 → 特殊概念**」，证书证明的是 `特殊 ⇒ 一般`。
  * 反向只是读法，不重复产生第二份证据——所以这里对每一对概念生成**两个有序候选**
  * （两个方向各自可能成立、也可能只有一边成立），由 `core/formal/discovery.mjs`
- * 在确认之后保证「同一对概念最多留下一份证据」。
+ * 在确认之后按有序方向与目标区分证据；逆命题须独立证明。
  *
  * ## 确认链
  *
@@ -21,7 +21,7 @@ import {
   hypothesesFor, certificateContext, bundleFor, openGoalSource, hypothesesFromProof,
 } from './shared.mjs';
 
-export const KIND = 'hardGeneralization';
+export const KIND = 'scaling';
 
 function conceptSpecs(ctx) {
   return listSpecs(ctx).filter((spec) => statementSource(spec) && specParams(spec).length > 0);

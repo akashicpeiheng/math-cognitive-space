@@ -16,13 +16,17 @@ import { MCS_WEB_ROOT } from '../core/ontology.mjs';
  * 的用法，每个都必须落在下面这张**带理由的白名单**里。新增一处而不登记就会红——
  * 这正是「以后别再写出死选项」这条要求的可执行形式。
  *
- * 三类理由：
+ * 四类理由：
  * - `universe-filtered`：只作为「模板里声明过哪些值」传给 `buildFacet` 的 `declared`，
  *   选项本身来自真实数据（`present`），因此不会出现空选项；扫描会核对它确实出现在
  *   `buildFacet(...)`/`buildStartPlan(...)` 的调用里；
  * - `vocabulary-display`：展示**一整套词汇**（连接类型开关、契约 mode 条款），
  *   每一行都必须带当前视图的计数（0 也照实显示），不是「选项」；
- * - `lookup`：只用来查表（`find`/`[key]`），不产生可点条目。
+ * - `lookup`：只用来查表（`find`/`[key]`），不产生可点条目；
+ * - `closed-universe`：下拉的**选项全集就是这张表本身**（表键与值类型一一对应，
+ *   类型侧 `Record<…>` 保证全覆盖），无过滤、无截断，因此不存在「选不中任何数据」
+ *   的死选项；扫描会核对表被**完整**铺成选项（后面跟着 `<option`，且中间没有
+ *   `.filter(`/`.slice(`）。
  *
  * ## 2026-10 中英双语改造：扫描模式为什么变宽
  *
@@ -95,6 +99,13 @@ const ALLOWLIST = [
     symbol: 'Object.keys(RELATION_LABELS)',
     reason: 'lookup',
     note: '把搜索词认成关系种类（find），不产生可点条目',
+  },
+  {
+    file: 'web/src/pages/WritingPage.tsx',
+    symbol: 'Object.entries(DEPTH_LABELS)',
+    reason: 'closed-universe',
+    note: '写作深度下拉（两处）：选项全集就是这张表，WritingDepth 的 Record 全覆盖、'
+      + '两档各是合法选项，无过滤无截断，不存在死选项',
   },
 ];
 
@@ -186,6 +197,20 @@ test('全站扫描：每个「标签表当选项表」的用法都在白名单�
     const index = hit.text.indexOf(hit.symbol);
     const neighbourhood = hit.text.slice(index, index + 900);
     assert.ok(/count/.test(neighbourhood), `${hit.file} 的 ${hit.symbol} 附近没有计数：词汇表要带计数才不误导`);
+  }
+
+  // ⑤ closed-universe 的用法必须把整张表铺成选项（无过滤/截断），否则又回到「部分选项选不中」。
+  for (const hit of hits) {
+    const entry = ALLOWLIST.find((item) => item.file === hit.file && item.symbol === hit.symbol);
+    if (entry.reason !== 'closed-universe') continue;
+    const pattern = new RegExp(hit.symbol.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g');
+    let occurrence = 0;
+    for (const match of hit.text.matchAll(pattern)) {
+      occurrence += 1;
+      const neighbourhood = hit.text.slice(match.index, match.index + 500);
+      assert.ok(/<option/.test(neighbourhood), `${hit.file} 的 ${hit.symbol} 第 ${occurrence} 处没有把表铺成选项`);
+      assert.ok(!/\.(filter|slice)\s*\(/.test(neighbourhood), `${hit.file} 的 ${hit.symbol} 第 ${occurrence} 处在铺选项前做了过滤或截断`);
+    }
   }
 
   const byReason = ALLOWLIST.reduce((acc, entry) => ({ ...acc, [entry.reason]: (acc[entry.reason] ?? 0) + 1 }), {});

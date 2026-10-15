@@ -408,11 +408,11 @@ export const rudinActions = [
 
 /** 关系：与本站既有案例对接的同名接口，以及教材内部的包含方向。 */
 export const rudinRelations = [
-  relation('rel-rudin-lub-specialization', 'specialization', 'rudin:least-upper-bound', 'rudin:ordered-field',
-    { witness: { type: 'same-carrier-implication', status: 'REF', ref: source('Chapter 1 The Real and Complex Number Systems', '§1.19') },
+  relation('rel-rudin-lub-specialization', 'scaling', 'rudin:least-upper-bound', 'rudin:ordered-field',
+    { direction: { general: 'rudin:ordered-field', special: 'rudin:least-upper-bound', reading: 'expand' }, scalingMode: 'same-carrier', witness: { type: 'same-carrier-implication', status: 'REF', ref: source('Chapter 1 The Real and Complex Number Systems', '§1.19') },
       scope: '实数域是在有序域上再加最小上界性得到的；反过来不成立（有理数域是有序域但不满足最小上界性）。' }),
-  relation('rel-rudin-complete-specialization', 'specialization', 'rudin:cauchy-sequence', 'rudin:convergent-sequence',
-    { witness: { type: 'same-carrier-implication', status: 'REF', ref: source('Chapter 3 Numerical Sequences and Series', '§3.11') },
+  relation('rel-rudin-complete-specialization', 'scaling', 'rudin:cauchy-sequence', 'rudin:convergent-sequence',
+    { direction: null, scalingMode: 'unresolved', witness: { type: 'same-carrier-implication', status: 'REF', ref: source('Chapter 3 Numerical Sequences and Series', '§3.11') },
       scope: '在 R^k 中 Cauchy 序列恰是收敛序列；一般度量空间里只有一边成立。' }),
   relation('rel-rudin-crossdomain-metric', 'crossDomain', 'dg:metric-space', 'rudin:metric-space',
     { witness: { type: 'cross-domain-interface', status: 'DEF' },

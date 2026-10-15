@@ -27,7 +27,7 @@ function check(name, condition, detail = '') {
   else { failures.push(name + (detail ? ' :: ' + detail : '')); console.log('  ✗ ' + name + (detail ? ' :: ' + detail : '')); }
 }
 
-const NODES = 'dg:homeomorphism,dg:manifold';
+const NODES = 'top:homeomorphism,top:topological-manifold';
 const ZOOM_MIN = 0.25;
 const ZOOM_MAX = 3;
 

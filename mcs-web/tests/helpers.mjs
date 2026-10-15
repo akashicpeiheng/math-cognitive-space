@@ -4,6 +4,7 @@ import { join, resolve } from 'node:path';
 import { loadOntology, createOntology, resetOntologyCache, MCS_WEB_ROOT, REPO_ROOT } from '../core/ontology.mjs';
 import { resetOverlayCache } from '../data/i18n/index.mjs';
 import { startServer } from '../server/index.mjs';
+import { TEST_LEAN_TIMEOUT_MS } from './lean-test-budget.mjs';
 
 export async function testOntology() {
   return loadOntology();
@@ -117,7 +118,7 @@ export async function toggleInAnimatedPage(page, selector, { index = 0, expect }
   return after;
 }
 
-export async function startTestServer({ staticDir = resolve(MCS_WEB_ROOT, 'web', 'dist') } = {}) {
+export async function startTestServer({ staticDir = resolve(MCS_WEB_ROOT, 'web', 'dist'), lean } = {}) {
   // Candidate frontend builds can be tested without replacing the running site's assets.
   staticDir = process.env.MCS_WEB_TEST_STATIC_DIR || staticDir;
   /*
@@ -149,6 +150,7 @@ export async function startTestServer({ staticDir = resolve(MCS_WEB_ROOT, 'web',
     staticDir,
     backupDir: join(dir, 'backups'),
     repoRoot: REPO_ROOT,
+    lean: { timeoutMs: TEST_LEAN_TIMEOUT_MS, ...lean },
     dev: true,
     tutor: {
       enabled: true,
@@ -166,7 +168,9 @@ export async function startTestServer({ staticDir = resolve(MCS_WEB_ROOT, 'web',
     ...handle,
     dir,
     async cleanup() {
+      try { handle.closeApi?.(); } catch {}
       try { handle.jobs.close(); } catch {}
+      try { await handle.leanJobs?.close(); } catch {}
       try { await handle.db.close(); } catch {}
       try { await handle.auth?.close(); } catch {}
       await new Promise((resolvePromise) => handle.server.close(resolvePromise));

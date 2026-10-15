@@ -131,6 +131,64 @@ export function sampleCurve(edge: RouteEdge, bow: number, steps = 12): Array<{ x
 }
 
 /**
+ * 一条「一头粗一头细」的实心带子（2026-10-11 加）。
+ *
+ * 用途：放缩关系（`scaling`）的箭头要表达方向——**一般端粗、特殊端细**
+ * （用户的要求：「增加粗细变化，泛化方向变粗，特化方向变细」）。
+ * SVG 的 `stroke-width` 是常数，描边画不出一头粗一头细，因此这里把曲线变成**可填充的轮廓**：
+ * 沿曲线采样 → 每点取法线方向 → 两侧各偏移「该处的半宽」→ 首尾闭合。
+ *
+ * 三条保证：
+ * 1. **与那条线重合**：调用方把渲染用的**同一个**控制点传进来（`control`），
+ *    因此带子与画出来的路径是同一段几何，不会「弯的是一处、粗的是另一处」；
+ *    省略 `control` 就是直线（渲染处不弯的边走这一支）。
+ * 2. **确定性**：采样步数固定（默认 16 段）、坐标保留两位小数，同一输入逐字得到同一条 `d`。
+ * 3. **齐口端**：`stroke-linecap` 对填充形状没有意义，这里如实做成平头，不假装有圆头。
+ *
+ * @param options.startWidth 起点（`from` 端）的线宽
+ * @param options.endWidth   终点（`to` 端）的线宽
+ * @param options.control    二次贝塞尔控制点；`null` / 省略 = 直线
+ */
+export function taperedOutline(
+  edge: RouteEdge,
+  options: { startWidth: number; endWidth: number; steps?: number; control?: { cx: number; cy: number } | null },
+): string {
+  const steps = Math.max(2, Math.round(options.steps ?? 16));
+  const control = options.control ?? null;
+  const at = control
+    ? (t: number) => quadPoint(edge.x1, edge.y1, control.cx, control.cy, edge.x2, edge.y2, t)
+    : (t: number) => ({ x: edge.x1 + (edge.x2 - edge.x1) * t, y: edge.y1 + (edge.y2 - edge.y1) * t });
+  const left: string[] = [];
+  const right: string[] = [];
+  for (let index = 0; index <= steps; index += 1) {
+    const t = index / steps;
+    const point = at(t);
+    /*
+     * 切线用**相邻采样点的差分**：控制点在两端时与解析导数一致，而实现只有两行，
+     * 不会引出第二套「曲线的导数」公式（两套公式迟早会在某处不一致）。
+     */
+    const before = at(Math.max(0, t - 0.01));
+    const after = at(Math.min(1, t + 0.01));
+    const tx = after.x - before.x;
+    const ty = after.y - before.y;
+    const length = Math.hypot(tx, ty) || 1;
+    const nx = -ty / length;
+    const ny = tx / length;
+    const half = (options.startWidth + (options.endWidth - options.startWidth) * t) / 2;
+    left.push(`${round2(point.x + nx * half)} ${round2(point.y + ny * half)}`);
+    right.push(`${round2(point.x - nx * half)} ${round2(point.y - ny * half)}`);
+  }
+  // 一侧正着走、另一侧倒着回来，闭合。轮廓的**第一个点**在一侧起点、**最后一个点**在另一侧起点
+  // （验收据此量两端的宽度，见 tests/network-edges.mjs）。
+  return `M ${left.join(' L ')} L ${right.reverse().join(' L ')} Z`;
+}
+
+/** 两位小数：坐标写进 `d` 时保留两位，既够精确（亚像素）又能让同一输入逐字可复现。 */
+function round2(value: number): number {
+  return Math.round(value * 100) / 100;
+}
+
+/**
  * 一条线段要绕开某个矩形，至少需要多大的弓高。
  *
  * 判据是「曲线顶点是否离开了矩形」：顶点在 t = 0.5 处，横向位移正好等于 bow。

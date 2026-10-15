@@ -62,13 +62,23 @@ const readCamera = (page) => page.evaluate(() => {
   const node = id ? document.querySelector(`.network-node[data-node="${id}"]`) : null;
   const rect = node?.getBoundingClientRect() ?? null;
   const stage = document.querySelector('.network-stage')?.getBoundingClientRect() ?? null;
+  const hud = document.querySelector('.network-hud')?.getBoundingClientRect() ?? null;
   const view = window.__mcsNetwork ?? null;
+  /*
+   * 可用区中心：顶栏之下与整块画布的水平中心。
+   *
+   * 顶部留出的高度**从 DOM 量**（2026-10-11 起）：页面在 HUD 更高时会让出更多空间
+   * （HUD 是压在画布上的浮层，实测 1500px 下 114px、1024px 下 159px，常数 64 早就不够）。
+   * 这里按同一个规则独立算一遍——不减页面那 8px 的间隙，因为它只影响半个间隙（4px），
+   * 落在下面的 30px 容差里；页面若把「让出多少」算错，这条断言照样会红。
+   */
+  const hudSpace = hud && stage ? Math.max(64, Math.round(hud.bottom - stage.top)) : 64;
   return {
     id,
     info,
+    hudSpace,
     center: rect ? [Math.round(rect.x + rect.width / 2), Math.round(rect.y + rect.height / 2)] : null,
-    // 可用区中心：顶栏之下（hudSpace 64）与整块画布的水平中心。
-    target: stage ? [Math.round(stage.x + stage.width / 2), Math.round(stage.y + 64 + (stage.height - 64) / 2)] : null,
+    target: stage ? [Math.round(stage.x + stage.width / 2), Math.round(stage.y + hudSpace + (stage.height - hudSpace) / 2)] : null,
     camera: view ? (window.__mcsCamera ?? null) : null,
   };
 });

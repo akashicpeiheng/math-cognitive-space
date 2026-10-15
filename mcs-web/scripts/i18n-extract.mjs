@@ -67,6 +67,23 @@ function inCase(item) {
   return item.case === caseId;
 }
 
+/*
+ * 案例 id → 节点 id 前缀。`relations` / `templates` / `aggregates` / `localizations`
+ * 这几节没有 `case` 字段，只能按 id 前缀筛，所以这张表必须覆盖全部案例：
+ * 表里缺一个（例如 2026-10 之后的 `jiang` / `axler` / `top` / `vault`），
+ * `startsWith(undefined)` 会一条都匹配不上，工具**静默抽出一份空清单**——
+ * 比报错难发现得多。因此下面查不到就直接抛错，并列出可选值。
+ *
+ * 注意前缀与案例**不是一一对应**：节点合并之后，一个 `dg:` 前缀的规范节点
+ * 可能同时登记在 dg / liang / top 等案例里（见 `data/merges.mjs`）。
+ * 这张表只用于「大致按案例切一份待译清单」，不用于判定归属。
+ */
+const CASE_PREFIX = {
+  limit: 'limit', manifold: 'manifold', tensor: 'tensor', group: 'group', dg: 'dg',
+  liang: 'liang', rudin: 'rudin', jiang: 'jiang', axler: 'axler', top: 'top',
+  vault: 'vault', background: 'bg', 'field-entry': 'bg',
+};
+
 const result = {};
 for (const [name, items] of Object.entries(sections)) {
   if (section && name !== section) continue;
@@ -75,7 +92,11 @@ for (const [name, items] of Object.entries(sections)) {
     if (name === 'relations' || name === 'coverage' || name === 'templates' || name === 'aggregates' || name === 'localizations') {
       /* 这些没有 `case`：先全部列出，由调用方按 id 前缀筛选。 */
       if (caseId && name !== 'coverage') {
-        const prefix = { limit: 'limit', manifold: 'manifold', tensor: 'tensor', group: 'group', dg: 'dg', liang: 'liang', rudin: 'rudin' }[caseId];
+        const prefix = CASE_PREFIX[caseId];
+        if (!prefix) {
+          throw new Error(`未知案例：${caseId}（可选：${Object.keys(CASE_PREFIX).join('、')}）。`
+            + '新增案例时在 CASE_PREFIX 里补一行——缺一行会让这一节静默抽成空清单。');
+        }
         if (!String(item.id).startsWith(prefix)) continue;
       }
     } else if (!inCase(item) && name !== 'actions' && name !== 'evidence' && name !== 'representations') {

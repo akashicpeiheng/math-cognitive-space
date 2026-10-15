@@ -441,9 +441,10 @@ export function AuthoringPage() {
   const [searchParams] = useSearchParams();
   /** 来源节点（`?node=`）：只说清「从哪个节点进来的」，**不等于**草稿将要发布的节点 id。 */
   const sourceNodeId = searchParams.get('node');
+  const contributionDraft = searchParams.get('draft');
   const mode = searchParams.get('mode') === 'check' ? 'check' : 'new';
   const nodeRef = useMemo(() => (sourceNodeId ? { node: sourceNodeId, version: '1' } : null), [sourceNodeId]);
-  const storageKey = useMemo(() => localDraftKey(sourceNodeId), [sourceNodeId]);
+  const storageKey = useMemo(() => localDraftKey(contributionDraft ? `contribution:${contributionDraft}` : sourceNodeId), [sourceNodeId, contributionDraft]);
 
   const ontology = useApi<{ version: string; contentHash: string }>('/ontology');
   const nodeDetail = useApi<NodeDetailResponse>(sourceNodeId ? `/ontology/nodes/${encodeURIComponent(sourceNodeId)}` : null, [sourceNodeId]);
@@ -573,6 +574,18 @@ export function AuthoringPage() {
   }, [storageKey]);
 
   // 自动保存：本地草稿始终保存；服务端草稿只在用户按「保存到服务端」时写。
+  useEffect(() => {
+    if (!contributionDraft || readLocalDraft(storageKey)) return;
+    let active = true;
+    void fetchDraft(contributionDraft).then(result => {
+      if (!active || !result.ok || !result.data) return;
+      const next = draftToFields(result.data);
+      setFields(next); setDraftId(result.data.id); setDraftRevision(result.data.revision);
+      setSavedSignature(draftSignature(next)); setStep('node');
+    });
+    return () => { active = false; };
+  }, [contributionDraft, storageKey]);
+
   const debouncedFields = useDebounced(fields, 600);
   const debouncedDecisions = useDebounced(decisions, 600);
   useEffect(() => {

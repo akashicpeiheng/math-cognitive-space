@@ -247,4 +247,5 @@ for (const [caseId, module] of Object.entries(MODULES)) {
 }
 for (const [id, entry] of Object.entries(remaining)) register(id, entry, 'actions.mjs/remaining');
 
-export default actions;
+import { supplementActionText } from '../../field-entry.mjs';
+export default Object.fromEntries(Object.entries(actions).map(([id,text])=>[id,supplementActionText(id,text,'en')]));

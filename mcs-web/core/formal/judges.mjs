@@ -23,16 +23,17 @@ import { makeJudge as derivation } from './judges/derivation.mjs';
 import { makeJudge as instance } from './judges/instance.mjs';
 import { makeJudge as counterexample } from './judges/counterexample.mjs';
 import { listSpecs, pairKey, registeredShapes } from './judges/shared.mjs';
+import { normalizeRelationKind, scalingEvidenceKey } from '../../shared/scaling.mjs';
 
 /** 六类关系（与 `shared/formal.mjs` 的 RELATION_KINDS 同名同序）。 */
 export const RELATION_KINDS = Object.freeze([
-  'definitionReference', 'hardGeneralization', 'equivalentTo',
+  'definitionReference', 'scaling', 'equivalentTo',
   'conditionalDerivation', 'instanceOf', 'counterexampleTo',
 ]);
 
 const FACTORIES = Object.freeze({
   definitionReference,
-  hardGeneralization: generalization,
+  scaling: generalization,
   equivalentTo: equivalence,
   conditionalDerivation: derivation,
   instanceOf: instance,
@@ -76,13 +77,14 @@ export function listJudges(deps = {}) {
  *    （端点、方向、条件、目标都在里面）；判定器只负责**确认**；
  * 2. 判定器启发式（同背景 + 参数类型逐位相同……）—— 只用于登记表还没覆盖的端点对。
  *
- * 同一个 `kind + 端点对` 只留一条：两条来源都生成的话，会出现「同一条关系两份候选」，
+ * 放缩按 `kind + 有序方向 + 目标 + 条件` 区分；其他类别沿用端点对去重，同一键只留一条：两条来源都生成的话，会出现「同一条关系两份候选」，
  * 而两份候选迟早对不上账（一份有登记理由，一份没有）。
  *
  * 返回值是 `{ candidates, warnings }`：跳过、出错、同名冲突这类事都要能说出来，
  * 不能因为「候选池里没有」就当成「本来就没有」。
  */
 export function collectCandidates(ctx = {}, { kinds = RELATION_KINDS, specs = null } = {}) {
+  kinds = [...new Set(kinds.map(normalizeRelationKind))];
   const deps = ctx.deps ?? {};
   const index = judgeIndex(deps, kinds);
   const warnings = [];
@@ -91,7 +93,7 @@ export function collectCandidates(ctx = {}, { kinds = RELATION_KINDS, specs = nu
 
   // 1) 已登记的关系：权威形状
   for (const shape of registeredShapes(ctx, kinds, warnings)) {
-    const key = pairKey(shape.kind, shape.from, shape.to);
+    const key = shape.kind === 'scaling' ? `scaling|${scalingEvidenceKey(shape)}` : pairKey(shape.kind, shape.from, shape.to);
     if (covered.has(key)) continue;
     covered.add(key);
     out.push(shape);
@@ -113,7 +115,8 @@ export function collectCandidates(ctx = {}, { kinds = RELATION_KINDS, specs = nu
       }
       for (const candidate of generated) {
         if (!candidate?.from?.node || !candidate?.to?.node) continue;
-        const key = pairKey(candidate.kind ?? kind, candidate.from, candidate.to);
+        const candidateKind = candidate.kind ?? kind;
+        const key = candidateKind === 'scaling' ? `scaling|${scalingEvidenceKey(candidate)}` : pairKey(candidateKind, candidate.from, candidate.to);
         if (covered.has(key)) continue;
         covered.add(key);
         out.push({ ...candidate, kind: candidate.kind ?? kind, specNode: spec.node });

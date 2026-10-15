@@ -41,6 +41,21 @@ test('交叉计数跳过共享端点的边', () => {
   assert.equal(countCrossings([{ from: 'a', to: 'b' }, { from: 'c', to: 'd' }, { from: 'a', to: 'c' }], at), 1);
 });
 
+test('增量交叉数加固定旧边交叉数等于全量：退化、重复边与多候选位置', () => {
+  const at = new Map([
+    ['a', { x: 0, y: 0 }], ['b', { x: 100, y: 100 }], ['c', { x: 0, y: 100 }],
+    ['d', { x: 100, y: 0 }], ['e', { x: 50, y: 50 }],
+  ]);
+  const old = [{ from: 'a', to: 'b' }, { from: 'c', to: 'd' }, { from: 'a', to: 'b' }, { from: 'e', to: 'e' }];
+  const links = [...old, { from: 'new', to: 'a' }, { from: 'd', to: 'new' }, { from: 'new', to: 'a' }, { from: 'new', to: 'missing' }];
+  const fixed = countCrossings(old, at);
+  assert.ok(fixed > 0);
+  for (let x = -50; x <= 150; x += 25) for (let y = -50; y <= 150; y += 25) {
+    at.set('new', { x, y });
+    assert.equal(countCrossings(links, at, 'new') + fixed, countCrossings(links, at));
+  }
+});
+
 test('新节点不与任何已有节点重叠（多次摆放累积也不重叠）', () => {
   const existing = [
     { id: 'x1', x: 0, y: 0 }, { id: 'x2', x: 260, y: 0 }, { id: 'x3', x: 0, y: 200 },

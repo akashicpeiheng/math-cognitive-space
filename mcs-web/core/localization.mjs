@@ -6,6 +6,7 @@ import { querySupport, supportIntersection, supportDifference, routeFamilyRequir
 import { relationNeighborhood, reachableNodes } from './relations.mjs';
 import { makePlanner } from './planner.mjs';
 import { adapt } from './adaptation.mjs';
+import { scalingEndpoints } from '../shared/scaling.mjs';
 
 const FAMILY_PRES = {
   logical: '选择或筛选现成证书，不替未编码论证签发结论；未收录不等于不可证。',
@@ -70,6 +71,44 @@ function closureOver(initial, next) {
     }
   }
   return [...seen];
+}
+
+function scalingCone(ontology, id, params, reading) {
+  const nodeId = requireParam(params, 'nodeId');
+  const availableModes = ['same-carrier', 'cross-carrier', 'instance'];
+  assert(params.scalingMode === undefined || availableModes.includes(params.scalingMode), CODES.BAD_REQUEST, 'scalingMode 必须是 same-carrier、cross-carrier 或 instance');
+  const modes = params.scalingMode ? [params.scalingMode] : availableModes;
+  const records = ontology.raw.relationDescriptions.filter((relation) => relation.kind === 'scaling').map((relation) => ({
+    relation,
+    direction: scalingEndpoints(relation),
+    mode: relation.scalingMode ?? (relation.origin === 'auto-discovery' ? 'same-carrier' : 'unresolved'),
+  }));
+  const source = (direction) => reading === 'expand' ? direction.special : direction.general;
+  const target = (direction) => reading === 'expand' ? direction.general : direction.special;
+  // 每一模式都重新从同一个种子出发；另一模式到达的节点不能成为本模式的新种子。
+  const projections = modes.map((mode) => {
+    const edges = records.filter((record) => record.mode === mode && record.direction);
+    const nodes = closureOver([nodeId], (current) => edges.filter((record) => source(record.direction) === current).map((record) => target(record.direction)));
+    const selected = new Set(nodes);
+    const boundary = records.filter((record) => record.direction && record.mode !== mode && selected.has(source(record.direction))).map((record) => ({
+      ref: record.relation.id, kind: 'scaling-mode-boundary',
+      note: `${mode} 投影在此遇到 ${record.mode} 关系；保留边界，不跨模式继续闭包。`,
+    }));
+    return { mode, nodes, relations: edges.filter((record) => selected.has(source(record.direction))).map((record) => record.relation.id), boundary };
+  });
+  const ids = [...new Set(projections.flatMap((projection) => projection.nodes))];
+  const visible = new Set(ids);
+  const unresolved = records.filter((record) => !record.direction || !availableModes.includes(record.mode)).filter((record) => visible.has(record.relation.from) || visible.has(record.relation.to));
+  const result = makeResult(ontology, id, params, {
+    ids,
+    boundary: [
+      ...projections.flatMap((projection) => projection.boundary),
+      ...unresolved.map((record) => ({ ref: record.relation.id, kind: 'unresolved-scaling-direction', note: '原登记的方向或模式尚未核验，保留证据并排除在方向锥之外。' })),
+    ],
+    presNote: reading === 'expand' ? '沿放缩关系的放方向，从特殊端到一般端；各模式分别闭包，再合并显示。' : '沿同一放缩关系的缩方向，从一般端到特殊端；各模式分别闭包，再合并显示。',
+    losses: ['导航不新增证明、反向蕴含或跨载体逆映射；方向未核验的旧登记不入锥。'],
+  });
+  return { ...result, scaling: { reading, projections, unresolvedRelations: unresolved.map((record) => record.relation.id) } };
 }
 
 function planParams(params) {
@@ -194,14 +233,10 @@ export function makeLocalizer(ontology) {
       return makeResult(ontology, 'LC09', params, { ids: [left, right, ...difference.set], presNote: difference.note, losses: difference.minimal ? [] : ['至少一侧没有极小性证据，结果按普通支持显示。'] });
     },
     LC10(params) {
-      const nodeId = requireParam(params, 'nodeId');
-      const ids = closureOver([nodeId], (current) => ontology.raw.relationDescriptions.filter((relation) => relation.kind === 'hardGeneralization' && relation.to === current).map((relation) => relation.from));
-      return makeResult(ontology, 'LC10', params, { ids, presNote: '只沿已登记的硬泛化见证上溯。', losses: ['同载体蕴含与跨载体映射分别保留在原关系记录中。'] });
+      return scalingCone(ontology, 'LC10', params, 'expand');
     },
     LC11(params) {
-      const nodeId = requireParam(params, 'nodeId');
-      const ids = closureOver([nodeId], (current) => ontology.raw.relationDescriptions.filter((relation) => relation.kind === 'hardGeneralization' && relation.from === current).map((relation) => relation.to));
-      return makeResult(ontology, 'LC11', params, { ids, presNote: '特化是泛化关系的逆，不取逆单值函数。' });
+      return scalingCone(ontology, 'LC11', params, 'contract');
     },
     LC12(params) {
       const nodeId = requireParam(params, 'nodeId');
@@ -491,7 +526,7 @@ export function makeLocalizer(ontology) {
 export function explainLocalizationFamilies() {
   return {
     logical: 'LC01–LC06：签名、理论、公理预算、证明回溯、依赖补全与独立性边界。',
-    structural: 'LC07–LC12：种子邻域、支持交差、泛化特化锥与对偶对应。',
+    structural: 'LC07–LC12：种子邻域、支持交差、放缩双向锥与对偶对应。',
     problem: 'LC13–LC18：目标回溯、反例诊断、策略适用域、不变量、构造入口与应用迁移。',
     cognitive: 'LC19–LC24：由 Adapt 参数包产生的显示折叠、认知前沿、误区、表征、阶段与证据缺口。',
     comparison: 'LC25–LC30：共同核心、差异、汇合、瓶颈、桥接与前提失效后的替代路线。',

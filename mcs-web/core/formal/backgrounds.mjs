@@ -517,7 +517,7 @@ const GROUP = {
       scope:
         '阿贝尔群在案例本体里**没有独立节点**，因此它以一条**概念 spec** 的形式登记在 '
         + 'registry.mjs 的 CONCEPT_SPECS（`concept:group:abelian`，锚点 group:group-concept）。'
-        + '特化方向是 abelian_group ⇒ group_concept，证据形式是上面那条合取式；'
+        + '放方向是 abelian_group ⇒ group_concept，证据形式是上面那条合取式；'
         + '它不宣称"所有群交换"（那正是 group:pattern-all-commutative 被反驳的规则）。',
     },
     {
@@ -1004,7 +1004,7 @@ const TENSOR = {
       expansion: '(additive(TT) ∧ ∀(c0:F)(x0:V). TT(smul(c0)(x0)) = smul(c0)(TT(x0)))',
       axiomId: 'bg-linear-map-expansion',
       source: 'data/cases/03-tensor.md「多重线性函数」与「秩一映射保持加法」',
-      scope: 'linear_map ⇒ additive 是特化方向（见 registry.mjs 的 CONCEPT_SPECS#concept:tensor:linear 与 CONCEPT_RELATIONS）；反向不成立。',
+      scope: 'linear_map ⇒ additive 是放方向（见 registry.mjs 的 CONCEPT_SPECS#concept:tensor:linear 与 CONCEPT_RELATIONS）；反向不成立。',
     },
     {
       name: 'multilinear',

@@ -29,6 +29,54 @@ export interface NodeSummary {
    * 列表接口默认只返回 unit；想连话题一起看要显式传 `granularity=all`。
    */
   granularity?: 'unit' | 'topic';
+  /**
+   * 这个节点**登记在哪些案例里**（2026-10 的节点合并，见 `data/merges.mjs`）：
+   * 自身案例 + 被收口进来的各处登记的案例。案例筛选按它走，
+   * 否则「同一个对象在三处登记过」会在两条案例线上各少一个点。
+   */
+  cases?: string[];
+  /** 被收口进来的登记数（0 = 没有合并）。列表据此挂「含 N 处登记」的徽标。 */
+  mergeCount?: number;
+  /** 那些登记的标题（别名）：合并之后仍然搜得到「坐标图」「连通集」这些旧名字。 */
+  alsoKnownAs?: string[];
+}
+
+/**
+ * 一处**被合并的登记**（`node.registrations` 的一项）。
+ *
+ * 逐字保留登记当时的样子：标题、案例、形式负载、教学字段、来源与正文块。
+ * 节点页把它与规范节点并列显示——合并收的是**身份**，不是内容；
+ * 各处登记的差别（最典型的是拓扑流形的公理表含不含第二可数）必须留着。
+ */
+export interface MergedRegistration {
+  id: string;
+  title: string;
+  construct: Construct;
+  roles?: Role[];
+  discipline: string;
+  case: string;
+  summary: string;
+  granularity?: 'unit' | 'topic';
+  formal?: Record<string, unknown>;
+  formalStatement?: FormalStatement | null;
+  teaching?: TeachingView;
+  provenance?: { sources: string[]; note?: string };
+  contentMarkdown?: string;
+  /** 它被收口到的规范节点 id。 */
+  mergedInto: string;
+  /** 所属合并组（`data/merges.mjs` 的 `MERGE_GROUPS[].id`）。 */
+  mergeGroup?: string;
+  /** 这条登记原本的站内链接（旧链接仍然解析得到，会重定向到规范节点）。 */
+  contentRef?: string | false;
+}
+
+/** 一组合并：规范节点 + 收口进来的登记 + 为什么它们是同一个对象。 */
+export interface MergeGroupView {
+  id: string;
+  canonical: string;
+  absorbed: string[];
+  rationale: string;
+  differences: string[];
 }
 
 export interface RepresentationView {
@@ -56,6 +104,8 @@ export interface ConditionView {
 }
 
 export interface TeachingView {
+  /** 入门讲解先展示动机和正文，再提供独立形式摘要。 */
+  readingFirst?: boolean;
   /** 证据等级：DEF / PROOF / REF / FINITE / ILLUSTRATION / NOT-CLAIMED。 */
   evidenceStatus?: string;
   conditions?: ConditionView[];
@@ -92,6 +142,12 @@ export interface NodeDetail extends Omit<NodeSummary, 'actionCount' | 'relationC
   teaching?: TeachingView;
   contentMarkdown: string;
   provenance?: { sources: string[]; note?: string };
+  /**
+   * 同一对象的**其它登记**（2026-10 的节点合并）：
+   * 合并把「同一个对象在多个案例里各登记一遍」收成一个规范节点，那些登记逐字保留在这里，
+   * 节点页把它们连同正文一起显示。数组为空即「这个对象只登记过一次」。
+   */
+  registrations?: MergedRegistration[];
 }
 
 export interface ActionRecord {
@@ -114,6 +170,8 @@ export interface EvidenceRecord {
   nodes: string[];
   certificate: string | null;
   checker: string | null;
+  backend?: 'lean4' | 'mcs-nd-subset' | null;
+  leanRegistration?: string | null;
   checkerVerified: boolean;
   openAssumptions: string[];
   obligations: string[];
@@ -129,13 +187,22 @@ export interface SupportView {
   minimal?: boolean | null;
 }
 
+export interface ScalingExplanation {
+  summary: string;
+  changes: Array<{ condition: string; special: string; general: string }>;
+}
+
 export interface NodeDetailResponse {
   version: string;
+  /** 请求里的原始 id；与 `node.id` 不同时说明命中了合并别名（旧链接重定向）。 */
+  requestedId?: string;
   node: NodeDetail;
+  /** 本节点所属的合并组（为什么是同一个对象、各处登记的差别）；没有合并时为 `null`。 */
+  merge?: MergeGroupView | null;
   formation: { status: string; checks: Array<{ name: string; status: string; detail: string }>; note: string };
   roles: { roles: Role[]; claimRoles: Role[]; note: string };
   actions: ActionRecord[];
-  relations: Array<{ id: string; kind: string; from: string; to: string; witness: { type: string; status: string; ref?: string }; scope?: string; candidateNote?: string }>;
+  relations: Array<{ id: string; kind: string; from: string; to: string; witness: { type: string; status: string; ref?: string }; scope?: string; candidateNote?: string; connectionKey: string; direction?: { general: string; special: string } | null; scalingMode?: string; scalingExplanation?: ScalingExplanation | null }>;
   evidence: EvidenceRecord[];
   support: SupportView[];
   claims: Array<{ id: string; statement: string; status: string; evidence: EvidenceRecord[] }>;
@@ -154,6 +221,10 @@ export interface PlanEventView {
 }
 
 export interface PlanPackageView {
+  learningSchedule?: {
+    order: string[]; steps: Array<{ key: string; eventId: string }>; background: string[];
+    graphHash: string; ontologyVersion: string; staleManual: boolean;
+  } | null;
   id: string;
   goals: string[];
   events: PlanEventView[];
@@ -193,8 +264,64 @@ export interface ProfileView {
   updatedAt: string;
 }
 
-/** θ：Adapt(E,s,g,b) 产生的显式参数包。已知、未知、未指定与已读严格分开。 */
-export interface ThetaKnownEntry {
+/**
+ * 档案模板（2026-10 加，公共只读登记表）。
+ *
+ * 模板是 θ 的**初值**：建档案时选一个，服务端就把 `declares` 里的背景接口节点写成一串
+ * confirmation 事件（`source = { kind: 'system', ref: 'profile-template:<id>' }`、
+ * `payload.declared = true`）。因此模板本身不进本体 M，也不改 `contentHash`。
+ *
+ * 文案按成对下发（界面按当前语种取）：说明文字是资料性文案，不是本体内容；
+ * 而 `declares[].title` 是本体内容，由服务端按请求语种下发。
+ */
+export interface ProfileTemplateDeclaration {
+  node: string;
+  title: string;
+  case: string | null;
+  basis: { zh: string; en: string };
+}
+
+export interface ProfileTemplateView {
+  id: string;
+  name: { zh: string; en: string };
+  stage: { zh: string; en: string };
+  summary: { zh: string; en: string };
+  note: { zh: string; en: string };
+  declares: ProfileTemplateDeclaration[];
+}
+
+export interface ProfileTemplatesResponse {
+  version: string;
+  defaultTemplateId: string;
+  templates: ProfileTemplateView[];
+  note: string;
+}
+
+/**
+ * 学习者声明的**学习方向**（E 层，2026-10 加）。
+ *
+ * 它是「我现在要去哪」这一句显式声明：一个目标节点 + 一句自己写的说明。
+ * 界面靠它把「现在可以开始的 N 个节点」排出次序（`web/src/direction.ts`），
+ * 而不是替学习者猜兴趣——浏览记录不参与推导。
+ */
+export interface LearningDirectionView {
+  directionId: string;
+  profileId: string;
+  /** 声明的方向目标（节点 id）。 */
+  nodeId: string;
+  note: string | null;
+  /** 谁写的：`ui` = 界面上声明的，`seed` / `import` = 脚本或导入来的。事后可核。 */
+  sourceRef: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface DirectionsResponse {
+  directions: LearningDirectionView[];
+  ontologyVersion: string;
+}
+
+/** θ：Adapt(E,s,g,b) 产生的显式参数包。已知、未知、未指定与已读严格分开。 */export interface ThetaKnownEntry {
   node: string;
   resources: string[];
   evidence: string[];

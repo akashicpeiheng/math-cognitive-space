@@ -8,6 +8,7 @@ import { createOntologySource } from './snapshot.mjs';
 import { McsDatabase } from './db.mjs';
 import { createDriverFromConfig } from './sql-driver.mjs';
 import { JobManager } from './jobs.mjs';
+import { LeanJobManager } from './lean-jobs.mjs';
 import { TutorAdapter } from './tutor.mjs';
 import { createApi } from './api.mjs';
 import { createAuth, validateAuthConfig } from './auth.mjs';
@@ -100,7 +101,8 @@ export async function startServer({ config = loadConfig(), ontologySource = null
     getOntology,
   });
   const tutor = new TutorAdapter({ config, ontology, db });
-  const handleApi = createApi({ getOntology, db, jobs, tutor, config, ontologySource: source, auth });
+  const leanJobs = await new LeanJobManager({ driver, repoRoot: config.repoRoot, config: config.lean ?? {} }).init();
+  const handleApi = createApi({ getOntology, db, jobs, leanJobs, tutor, config, ontologySource: source, auth });
 
   async function serveStatic(req, res) {
     const url = new URL(req.url, `http://${req.headers.host ?? '127.0.0.1'}`);
@@ -158,6 +160,8 @@ export async function startServer({ config = loadConfig(), ontologySource = null
   const origin = `http://${config.host}:${actualPort}`;
   const shutdown = async () => {
     jobs.close();
+    handleApi.close();
+    await leanJobs.close();
     await db.close();
     await auth.close();
     server.close();
@@ -170,7 +174,7 @@ export async function startServer({ config = loadConfig(), ontologySource = null
    * 调用方据此 `reload()` / 读 `integrity()` / 取 `suspect()` 审查被拒绝的内容。
    * 旧读路由（`api.mjs` 里捕获启动 `ontology` 的那批）尚未接当前快照 —— 见 task-10 汇报。
    */
-  return { server, ontology, getOntology, ontologySource: source, db, jobs, tutor, config, origin, deployment, auth };
+  return { server, ontology, getOntology, ontologySource: source, db, jobs, leanJobs, tutor, config, origin, deployment, auth, closeApi: () => handleApi.close() };
 }
 
 const isMain = process.argv[1] && resolve(process.argv[1]) === resolve(new URL(import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1'));

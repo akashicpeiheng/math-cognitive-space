@@ -4,6 +4,15 @@
   "dbFile": "runtime/mcs-web.sqlite3",
   "backupDir": "runtime/backups",
   "dev": false,
+  "lean": {
+    "enabled": true,
+    "lakePath": null,
+    "leanPath": null,
+    "timeoutMs": 120000,
+    "maxOutputBytes": 4194304,
+    "maxConcurrent": 1,
+    "maxQueued": 20
+  },
 
   "publicMode": false,
   "publicOrigin": null,

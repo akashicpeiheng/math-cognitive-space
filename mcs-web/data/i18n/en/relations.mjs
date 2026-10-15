@@ -75,7 +75,7 @@ const remaining = {
   'rel-manifold-generalization': { scope: 'P_∞ ⇒ P_k under the same atlas encoding.' },
   'rel-manifold-forget': { scope: 'The cross-carrier forgetting map; it does not claim that the maximal atlases are literally equal.' },
   'rel-manifold-compat': { scope: 'Compatibility depends on the definition of C^k.' },
-  'rel-manifold-specialization': { scope: 'C^∞ is a specialization of C^k (k finite); the converse fails, see the scope note of the hard-generalization relation.' },
+  'rel-manifold-specialization': { scope: 'C^∞ is a specialization of C^k (k finite); the converse fails, see the scope note of the scaling relation.' },
   'rel-manifold-application': { task: 'The atlas gives the domain and the image of a transition map (φ(U∩V) and ψ(U∩V)).' },
   'rel-manifold-crossdomain': {
     scope: 'The image of a chart φ:U→R^n lies in R^n; the linear structure is declared background, not a conclusion derived inside this case.',
@@ -569,4 +569,8 @@ for (const [caseId, module] of Object.entries(MODULES)) {
 }
 for (const [id, entry] of Object.entries(remaining)) register(id, entry, 'relations.mjs/remaining');
 
+import scalingExplanations from './scaling-explanations.mjs';
+for (const [id, scalingExplanation] of Object.entries(scalingExplanations)) {
+  relations[id] = { ...relations[id], scalingExplanation };
+}
 export default relations;

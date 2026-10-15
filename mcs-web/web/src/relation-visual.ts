@@ -7,8 +7,8 @@
  *
  * 权重从哪来（三条依据，都能在公共本体里核对）：
  *
- * 1. **关系种类本身的强度**。`hardPrereq` / `hardGeneralization` 是「不满足就不成立」
- *    的硬关系；`specialization` 是硬泛化的反方向；`bridge` / `application` / `crossDomain`
+ * 1. **关系种类本身的强度**。`hardPrereq` 表示硬前置；`scaling` 合并放与缩，
+ *    其强度仍受原见证状态限制；`bridge` / `application` / `crossDomain`
  *    是结构或用法层面的联系；`analogy` 只在 `ILLUSTRATION` 下登记，明确声明不构成同构，
  *    因此最弱。这一层来自 `data/` 里的关系登记。
  * 2. **见证状态**（`witness.status`）。同一种关系里，带 `PROOF` 见证的比只带 `DEF` /
@@ -27,7 +27,7 @@ import type { EdgeFamily } from './network';
  * 行动契约按 `mode` 分档：`mode` 不是装饰，它说明「这条输入是干什么用的」。
  *
  * 这一条是被用户骂出来的：知识网络里「同胚 → 流形」画成一条几乎看不见的灰虚线，
- * 而本体里 `a-dg:manifold` 明明写着 `inputs=[拓扑空间, 同胚]`、`outputs=[流形]`、
+ * 而本体里 `a-top:topological-manifold` 明明写着 `inputs=[拓扑空间, 同胚]`、`outputs=[流形]`、
  * **`mode=definition`**——不用同胚就定义不出流形。旧规则把**所有**契约一律按
  * 「结构骨架」压到最弱一档（0.18 → ambient：1.1px、0.34 不透明、细虚线、不标名称），
  * 于是全库 85 条 definition 契约与 61 条 deduction 契约都被画得比 `crossDomain`（接口关系）还轻。
@@ -88,9 +88,9 @@ export function contractModeLabel(mode: string, locale: string = 'zh'): string {
  * 都要在**没有 React** 的前提下按语种取名字，而这两个模块是被 `node --test` 直接 import 的。
  */
 export const RELATION_KIND_LABELS: Record<string, string> = {
+  noteReference: '笔记引用', privateReference: '私人参考关联', definitionReference: '定义引用', equivalentTo: '等价', conditionalDerivation: '条件推导', instanceOf: '实例', counterexampleTo: '反例',
   hardPrereq: '硬前置',
-  hardGeneralization: '硬泛化',
-  specialization: '特化',
+  scaling: '放缩',
   bridge: '桥接',
   application: '应用',
   analogy: '类比',
@@ -99,9 +99,9 @@ export const RELATION_KIND_LABELS: Record<string, string> = {
 };
 
 export const RELATION_KIND_LABELS_EN: Record<string, string> = {
+  noteReference: 'Note link', privateReference: 'Private reference', definitionReference: 'Definition reference', equivalentTo: 'Equivalence', conditionalDerivation: 'Conditional derivation', instanceOf: 'Instance', counterexampleTo: 'Counterexample',
   hardPrereq: 'Hard prerequisite',
-  hardGeneralization: 'Hard generalization',
-  specialization: 'Specialization',
+  scaling: 'Scaling',
   bridge: 'Bridge',
   application: 'Application',
   analogy: 'Analogy',
@@ -138,8 +138,8 @@ export const TIER_LABELS: Record<RelationTier, string> = {
 };
 
 export const TIER_NOTES: Record<RelationTier, string> = {
-  core: '不满足就不成立（硬前置、硬泛化），以及定义性前置——不用它就定义不出这个节点。',
-  strong: '有明确数学内容的关系（特化、应用、跨域、对偶）。',
+  core: '硬前置以及有充分见证的放缩关系，以及定义性前置——不用它就定义不出这个节点。',
+  strong: '有明确数学内容的关系（应用、跨域、对偶等）。',
   medium: '桥接与类比、推导前置：结构或用法上的联系，不构成定义性的蕴含。',
   structural: '产出某节点需要哪些输入（构造 / 方法 / 任务 / 证据 / 表征）。是结构骨架，不是数学断言。',
   ambient: '同属一个话题块、共用前提、同一份证据、支持族依赖。只表示登记上的关联。',
@@ -155,8 +155,8 @@ export const TIER_LABELS_EN: Record<RelationTier, string> = {
 };
 
 export const TIER_NOTES_EN: Record<RelationTier, string> = {
-  core: 'If it does not hold, the node does not stand (hard prerequisites, hard generalizations), plus definitional prerequisites — without them the node cannot be defined.',
-  strong: 'Relations with definite mathematical content (specialization, application, cross-domain, duality).',
+  core: 'Hard prerequisites and scaling relations with sufficient witnesses, plus definitional prerequisites — without them the node cannot be defined.',
+  strong: 'Relations with definite mathematical content (application, cross-domain, duality).',
   medium: 'Bridges and analogies, deduction prerequisites: links of structure or usage, not definitional entailment.',
   structural: 'Which inputs it takes to produce a node (construction / method / task / evidence / representation). This is the structural skeleton, not a mathematical assertion.',
   ambient: 'Same topic block, shared prerequisites, same evidence record, support-family dependency. Registration-level association only.',
@@ -177,8 +177,7 @@ export function tierNote(tier: RelationTier, locale: string = 'zh'): string {
 /** 每种关系的视觉权重基数（0–1）。数值即规格，改动必须同步更新本条注释与测试。 */
 export const RELATION_WEIGHT: Record<string, number> = {
   hardPrereq: 1,
-  hardGeneralization: 0.95,
-  specialization: 0.9,
+  scaling: 0.95,
   application: 0.72,
   crossDomain: 0.68,
   duality: 0.62,
@@ -238,6 +237,71 @@ export const TIER_SAMPLE_COLOR: Record<RelationTier, string> = {
   structural: '#64748b',
   ambient: '#94a3b8',
 };
+
+/**
+ * 放缩关系的**粗细变化**（2026-10-11 加）。
+ *
+ * 用户的要求：「给表达放缩关系的箭头进行视觉优化：增加粗细变化，泛化方向变粗，特化方向变细。」
+ *
+ * 倍数**相对该边所属档位的线宽**（放缩关系落在 core 4.6px / strong 3.2px 两档，
+ * 再按权重微调后是 5.01 / 3.38 / 3.31px）：一般端 2.2×、特殊端 0.5×。
+ * 于是同一支箭头上「粗的一端 = 泛化、细的一端 = 特化」，线宽比约 4.4:1：
+ * 5.01px 的 core 档 → 11.02px 对 2.51px。
+ *
+ * 为什么用**倍数**而不是绝对像素：线宽已经由「关系强度 × 见证状态」决定；
+ * 粗细变化只该是这条边**内部**的第二层信息（方向），不该覆盖第一层（强弱）。
+ * 用一个倍数，两条不同档位的放缩边仍然保持原有的强弱差。
+ *
+ * **倍数为什么要这么大**（第一版是 1.6 / 0.6，被用户当场否掉：「还是两头一样粗」）：
+ * 箭头是固定像素的（core 档 13 单位，三角形的横向宽度约 10.1px），
+ * 1.6× 的一般端才 8.0px——**比箭头还窄**，于是「细的那端」被箭头重新撑粗，两端看起来一样。
+ * 现在的取值让一般端（11.0px）明显宽于箭头，细端则由下面的 `scalingTaperArrowWidth`
+ * 换成小一号的箭头（横向约 4.7px），两端因此读得出差别（这一条有断言，见 `tests/network-edges.mjs`）。
+ *
+ * 未核验方向的旧记录（`scaling: null`）**不做变化**：不知道哪端是一般端就不假装知道。
+ */
+export const SCALING_TAPER = { general: 2.2, special: 0.5 } as const;
+
+/**
+ * 一条放缩关系两端的线宽：一般端粗、特殊端细。
+ *
+ * @param width        该边所属档位的线宽（`EdgeVisual.width`）
+ * @param generalAtFrom `from` 端是不是**一般端**（由服务端下发的已验证方向决定，
+ *                      不是按 `from`/`to` 猜的——`direction.reading` 两种朝向都存在）
+ */
+export function scalingTaperWidths(width: number, generalAtFrom: boolean): { startWidth: number; endWidth: number } {
+  const thick = +(width * SCALING_TAPER.general).toFixed(2);
+  const thin = +(width * SCALING_TAPER.special).toFixed(2);
+  return generalAtFrom ? { startWidth: thick, endWidth: thin } : { startWidth: thin, endWidth: thick };
+}
+
+/**
+ * 放缩边的箭头尺寸：按**细端**的线宽定，而不是按档位的固定箭头尺寸。
+ *
+ * 为什么必须单独定：`TIER_ARROW_SIZE` 是 13 / 10.5 / 8.5 三档固定像素，三角形横向约
+ * 10.1px 宽——比细端（2.5px）粗四倍。第一版直接沿用档位箭头，结果**细端比粗端还宽**，
+ * 用户看到的就是「两头一样粗」。现在细端配 6–9px 的小箭头，粗端（11.0px）因此明显宽于细端。
+ *
+ * 下界 6px 是「还认得出是箭头」的界限：再小就只剩一个点，方向读不出来；
+ * 上界 9px 保证它不会超过 strong 档的一般端（7.4px）太多。
+ */
+export function scalingTaperArrowWidth(thinWidth: number): number {
+  return Math.min(9, Math.max(6, Math.round(thinWidth * 2.4)));
+}
+
+/**
+ * 两支箭头的形状（`viewBox="0 0 10 10"`，尺寸由 `markerWidth` 定）。
+ *
+ * - `ARROW_PATH`：档位箭头，横向 7.8 单位（略瘦的三角，同宽下比 0–10 等腰三角更轻）；
+ * - `TAPER_ARROW_PATH`：放缩边细端的小箭头，**同样长 8.8 单位，横向只有 3.4 单位**。
+ *
+ * 为什么不只是把档位箭头等比缩小：细端的线宽只有 1.7–2.5px，等比缩小到 6px 的箭头横向仍有 4.7px，
+ * 会把细端重新撑粗（strong 档的粗端才 7.4px，两端可见宽度比掉到 1.6 倍，肉眼与「一样粗」无异）。
+ * 细长的三角既保住「这是一个箭头」，又让**线本身的粗细差**成为两端的主要差别。
+ * 这两个路径字符串是**判据的一部分**（`tests/relation-visual.test.mjs` 按它算可见宽度），因此放在这里导出。
+ */
+export const ARROW_PATH = 'M 0.6 1.1 L 9.4 5 L 0.6 8.9 z';
+export const TAPER_ARROW_PATH = 'M 0.6 3.3 L 9.4 5 L 0.6 6.7 z';
 
 export function tierOf(weight: number): RelationTier {
   if (weight >= 0.85) return 'core';
@@ -311,7 +375,7 @@ export interface EdgeVisual {
  * 2026-10 本体里开始登记 `hardPrereq`（此前为 0 条）时一并定了这条。
  *
  * 范围说清：只对 `hardPrereq` + `DEF` 生效。其它种类、其它见证一律照旧打折——
- * 一条只登记了定义、没有证明的「硬泛化」本来就该弱于有证明的那条。
+ * 一条只登记了定义、没有证明的「放缩」本来就该弱于有证明的那条。
  */
 export function witnessFactorOf(kind: string | null, status: string | null): number {
   if (!status) return 0.7;

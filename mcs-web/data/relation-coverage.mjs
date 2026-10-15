@@ -62,23 +62,26 @@ export const PENDING_RELATION_REGISTRATION = {
   'manifold:claim-max': '与构造 manifold:max-k 之间应有「构造 → 断言」的关系（现在是引入它的行动契约）。',
   'manifold:claim-generalization': '与 manifold:smooth-atlas / manifold:ck-atlas 之间应有陈述级关系（现在只在契约里）。',
 
-  // ---- dg：两条「同一结论的概念版与断言版」------
-  'dg:claim-tangent-equivalence': '与 dg:tangent-vector-equivalence 是同一结论的两种登记，两者之间没有关系，只有各自的行动契约。',
-  'dg:claim-d-squared-zero': '与 dg:d-squared-zero 同上：概念版与断言版之间缺少一条显式关系。',
+  /*
+   * ---- dg：概念版与断言版已合并（2026-10，见 data/merges.mjs）----
+   *
+   * 这里原先有两条欠账：「dg:claim-tangent-equivalence 与 dg:tangent-vector-equivalence
+   * 之间没有关系」「dg:claim-d-squared-zero 与 dg:d-squared-zero 同上」。这一轮把概念版
+   * 并进断言版（同一结论不再登记两次），两条欠账随之注销——不是补了一条关系，
+   * 而是那一对登记不再存在。
+   */
 
   // ---- liang：主干已登记，次一级里程碑仍欠 ----
-  'liang:compactness': '与 liang:topological-space 之间应有定义性依赖（开覆盖用开集定义），本轮只登记了主干。',
-  'liang:dual-vector-field': '与 liang:vector-field / liang:tensor-field 之间应有定义性依赖（对偶矢量场是 (0,1) 型张量场）。',
-  'liang:minkowski-spacetime': '与 liang:manifold / liang:metric-tensor 之间应有定义性依赖（闵氏度规是平直时空的度规）。',
+  'liang:dual-vector-field': '与 dg:smooth-vector-field（矢量场）/ tensor:field（张量场）之间应有定义性依赖（对偶矢量场是 (0,1) 型张量场）。这两处登记原先写作 liang:vector-field 与 liang:tensor-field，2026-10 合并到规范节点。',
+  'liang:minkowski-spacetime': '与 top:differentiable-manifold（微分流形）/ liang:metric-tensor 之间应有定义性依赖（闵氏度规是平直时空的度规）。微分流形原先写作 liang:manifold，2026-10 合并到 top:differentiable-manifold。',
   'liang:birkhoff-theorem': '与 liang:schwarzschild-solution 之间应有推导依赖（Birkhoff 定理的结论说的是球对称真空解必为施瓦西解）。',
   'liang:reissner-nordstrom': '与 liang:einstein-equation 之间应有「解 → 方程」关系（与施瓦西解同一形状）。',
 
   // ---- rudin：第 5–11 章的其余里程碑 ----
   'rudin:extended-real': '与 rudin:least-upper-bound 之间应有定义性依赖（扩充实数系是为上确界写的）。',
   'rudin:complex-field': '与 rudin:ordered-field 之间缺乏关系（两个数系结构之间只通过节点顺序相邻）。',
-  'rudin:euclidean-space': '与 rudin:metric-space 之间应有定义性依赖（R^k 的度量由内积给出）。',
-  'rudin:bolzano-weierstrass': '与 rudin:convergent-sequence / rudin:compact-set 之间应有推导依赖。',
-  'rudin:continuous-function': '与 rudin:function-limit 之间应有定义性依赖（连续 = 极限等于函数值）。',
+  'rudin:euclidean-space': '与 dg:metric-space 之间应有定义性依赖（R^k 的度量由内积给出）。度量空间原先写作 rudin:metric-space，2026-10 合并到 dg:metric-space。',
+  'rudin:bolzano-weierstrass': '与 limit:seq-conv（收敛序列）/ top:compactness（紧致性）之间应有推导依赖。这两处原先写作 rudin:convergent-sequence 与 rudin:compact-set，2026-10 合并到规范节点。',
   'rudin:lhospital-rule': '与 rudin:mean-value-theorem 之间应有推导依赖（法则的证明用中值定理）。',
   'rudin:taylor-theorem': '与 rudin:mean-value-theorem 之间应有推导依赖（Taylor 定理是广义中值定理）。',
   'rudin:vector-derivative': '与 rudin:derivative / rudin:linear-transformation 之间应有定义性依赖。',
@@ -86,18 +89,21 @@ export const PENDING_RELATION_REGISTRATION = {
   'rudin:integral-properties': '与 rudin:riemann-stieltjes 之间应有关系（性质是对该积分的性质）。',
   'rudin:fundamental-theorem': '与 rudin:riemann-stieltjes / rudin:derivative 之间应有推导依赖。',
   'rudin:rectifiable-curve': '与 rudin:derivative 之间应有定义性依赖（可求长用分割与上和）。',
-  'rudin:uniform-convergence': '与 rudin:convergent-sequence 之间应有定义性依赖（一致收敛是在函数空间上的一致 Cauchy 条件）。',
+  'rudin:uniform-convergence': '与 limit:seq-conv 之间应有定义性依赖（一致收敛是在函数空间上的一致 Cauchy 条件）。收敛序列原先写作 rudin:convergent-sequence，2026-10 合并到 limit:seq-conv。',
   'rudin:equicontinuous': '与 rudin:uniform-convergence / rudin:continuity-compactness 之间应有定义性依赖。',
-  'rudin:stone-weierstrass': '与 rudin:uniform-convergence / rudin:continuous-function 之间应有推导依赖。',
+  'rudin:stone-weierstrass': '与 rudin:uniform-convergence / limit:continuous（连续函数）之间应有推导依赖。连续函数原先写作 rudin:continuous-function，2026-10 合并到 limit:continuous。',
   'rudin:fourier-series': '与 rudin:trigonometric-functions / rudin:l2-space 之间应有定义性依赖。',
   'rudin:gamma-function': '与 rudin:integral-properties 之间应有定义性依赖（Γ 由含参积分定义）。',
-  'rudin:rank-theorem': '与 rudin:implicit-function-theorem / rudin:linear-transformation 之间应有推导依赖。',
+  'rudin:rank-theorem': '与 dg:implicit-function-theorem / rudin:linear-transformation 之间应有推导依赖。隐函数定理原先写作 rudin:implicit-function-theorem，2026-10 合并到 dg:implicit-function-theorem。',
   'rudin:lebesgue-measure': '与 rudin:set-function 之间应有定义性依赖。',
-  'rudin:measurable-function': '与 rudin:lebesgue-measure 之间应有定义性依赖。',
-  'rudin:lebesgue-integral': '与 rudin:measurable-function 之间应有定义性依赖。',
   'rudin:l2-space': '与 rudin:lebesgue-integral 之间应有定义性依赖。',
   'rudin:trigonometric-functions': '与 rudin:exponential-logarithm 之间应有定义性依赖（三角函数由指数函数定义）。',
-  'rudin:algebraic-completeness': '与 rudin:complex-field 之间应有关系（代数完备性是关于这个域的性质）。',
+  /*
+   * 这里原有 `rudin:algebraic-completeness`（「与 rudin:complex-field 之间应有关系」）。
+   * 2026-10-13 补上了：`data/cases/jiang.mjs` 的 `rel-jiang-crossdomain-aft` 把它接到
+   * 《简明高等代数》案例的同一条定理（代数/线性代数路线的证明）上。按本文件的纪律，
+   * 补了关系就把它从待办清单删掉——留着会变成一句过期的话。
+   */
   'rudin:set-function': '与 rudin:lebesgue-measure 之间应有定义性依赖（测度是一种集合函数）。',
 };
 

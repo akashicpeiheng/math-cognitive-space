@@ -30,7 +30,7 @@ export const LOCALIZATION_CASES = {
   LC07: { seedNodes: ['limit:limit-ed'], radius: 2 },
   LC08: { left: 'limit:limit-ed', right: 'limit:limit-seq', use: 'expression' },
   LC09: { left: 'limit:limit-ed', right: 'limit:seq-conv', use: 'expression' },
-  LC10: { nodeId: 'manifold:smooth-atlas' },
+  LC10: { nodeId: 'dg:smooth-atlas' },
   LC11: { nodeId: 'manifold:ck-atlas' },
   LC12: { nodeId: 'limit:bridge' },
   LC13: { goalId: 'limit:bridge' },

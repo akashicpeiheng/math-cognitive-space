@@ -3,7 +3,9 @@ import { Link } from 'react-router-dom';
 import { formatError, useApi } from '../api';
 import { useI18n, useLabels } from '../i18n';
 import { StatusBadge } from '../components/StatusBadge';
+import { LeanEvidenceCards } from '../components/LeanEvidence';
 import { Markdown } from '../components/Markdown';
+import { ConnectionNote } from '../connection-notes';
 import { RELATION_COLOR, plainMathText } from '../labels';
 /** 本体里的一条登记关系（与 /ontology/graph 的返回一致）。 */
 interface ResearchRelation {
@@ -14,6 +16,7 @@ interface ResearchRelation {
   scope?: string;
   task?: string;
   candidateNote?: string;
+  connectionKey: string;
 }
 import type { EvidenceRecord, NodeSummary } from '../types';
 
@@ -231,6 +234,10 @@ export function ResearchPage() {
         </p>
       </div>
 
+      <section className="card" id="lean-verification">
+        <h2>{pick({ zh: 'Lean 形式验证', en: 'Lean formal verification' })}</h2>
+        <LeanEvidenceCards evidence={evidence.data?.evidence ?? []} />
+      </section>
       {/* ---------- 公开问题 ---------- */}
       <section className="card research-open" id="open">
         <div className="research-open-head">
@@ -358,6 +365,7 @@ export function ResearchPage() {
                   </span>
                   {relation.scope && <p className="muted">{relation.scope}</p>}
                   {relation.task && <p className="muted">{text.usage(relation.task)}</p>}
+                  <ConnectionNote target={{ key: relation.connectionKey, label: labels.relationLabel(relation.kind) }} actions />
                 </li>
               ))}
             </ul>

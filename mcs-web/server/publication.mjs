@@ -751,9 +751,9 @@ export async function buildChangeSet(ctx, request = {}) {
   for (const entry of certificates) certByPath.set(entry.path, entry);
   const allCertificates = [...certByPath.values()];
 
-  // 关系方向约定：hardGeneralization 存「一般 → 特殊」，证据证明的是 特殊 ⇒ 一般。
+  // 关系方向约定：scaling 存「一般 → 特殊」，证据证明的是 特殊 ⇒ 一般。
   for (const relation of additions.relations) {
-    if (relation.kind !== 'hardGeneralization') continue;
+    if (relation.kind !== 'scaling') continue;
     const direction = relation.direction;
     if (!direction?.general || !direction?.special) { problems.push(`关系 ${relation.id} 缺少精确方向（general/special）。`); continue; }
     if (direction.general !== relation.from || direction.special !== relation.to) {

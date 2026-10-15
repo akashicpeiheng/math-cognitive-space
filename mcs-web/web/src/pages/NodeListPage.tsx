@@ -24,10 +24,18 @@ const SERVER_LIMIT = 500;
  */
 const FILTER_ALL = '全部';
 
-type SortId = 'content' | 'registered' | 'title';
+type SortId = 'relevance' | 'content' | 'registered' | 'title';
 
-/** 排序档位的 id 顺序＝下拉里的显示顺序；中文渲染顺序与从前逐字相同。 */
-const SORT_IDS: SortId[] = ['content', 'registered', 'title'];
+/**
+ * 排序档位。
+ *
+ * `relevance`（2026-10-12 加）**排在第一位**，因为它是检索时的默认档：
+ * 一旦有 `q`，服务端已按相关性排好（规则见 `shared/search-rank.mjs`），
+ * 前端**不再重排**——否则「服务端按相关性排序 → 前端按标题/id 重排」会把相关性直接抹掉，
+ * 那正是用户报的「搜『紧』时连续性与紧致性排到后面」的成因之一。
+ * 用户显式选了别的档（标题 / 有正文 / 登记顺序）时以他的选择为准。
+ */
+const SORT_IDS: SortId[] = ['relevance', 'content', 'registered', 'title'];
 
 /** 成对文案：漏写一边编译不过，取用时走 `useI18n().pick`。 */
 interface Pair { zh: string; en: string }
@@ -130,6 +138,7 @@ const TEXT = {
   toNetwork: { zh: '到知识网络里按关系找', en: 'Find it by relation in the knowledge network' },
 
   evidenceLevel: { zh: '证据等级：{status}', en: 'Evidence level: {status}' },
+  mergeBadge: { zh: '含 {n} 处登记', en: '{n} registrations merged' },
   relationCount: { zh: '{n} 条登记关系', en: '{n} registered relations' },
   noRelations: { zh: '暂无登记关系', en: 'No registered relations yet' },
   bodyPending: { zh: '正文待写', en: 'Body not written yet' },
@@ -153,6 +162,13 @@ const TEXT = {
 
 /** 排序档位的标签与说明（说明当前只在词表里备着，与从前一样不出现在界面上）。 */
 const SORT_TEXT: Record<SortId, { label: Pair; note: Pair }> = {
+  relevance: {
+    label: { zh: '相关性', en: 'Relevance' },
+    note: {
+      zh: '检索时的默认档：按命中字段与位置排（标题命中优先，只有摘要命中的排最后）。规则见 `shared/search-rank.mjs`。',
+      en: 'The default while searching: ordered by which field matched and where (title matches first, summary-only matches last). The rule lives in `shared/search-rank.mjs`.',
+    },
+  },
   content: {
     label: { zh: '有正文优先', en: 'With a body first' },
     note: { zh: '把已经写好正文的对象排在前面；正文待写的排在后面，仍然可以看。', en: 'Objects that already have a body come first; those whose body is still to be written come after and remain readable.' },
@@ -212,9 +228,18 @@ export function NodeListPage() {
   const discipline = read('discipline');
   const construct = read('construct');
   const role = read('role');
-  const sortId = read('sort', 'content') as SortId;
-  /** 未登记或拼错的排序值回落到默认档，与从前 `SORTS.find(...) ?? SORTS[0]` 的行为一致。 */
-  const activeSort: SortId = SORT_IDS.includes(sortId) ? sortId : 'content';
+  const sortId = read('sort', '');
+  /**
+   * 排序档位的解析（2026-10-12 改）。
+   *
+   * 判据分两步，而不是一句 `read('sort','content')`：
+   * 1. URL 上**显式给了**合法档位 → 用它（用户的选择优先）；
+   * 2. 没给（或拼错）→ **有检索词时用相关性**（服务端已按它排好），否则沿用原来的「有正文优先」。
+   *
+   * 这样「不选排序」的默认行为分成了两种，符合直觉：浏览时按正文/登记，检索时按相关性。
+   */
+  const requestedSort = SORT_IDS.includes(sortId as SortId) ? (sortId as SortId) : null;
+  const activeSort: SortId = requestedSort ?? (query.trim() ? 'relevance' : 'content');
   /** 标题排序的排序规则跟着语种走：中文保持原来的 `zh-Hans-CN`，英文用 `en`。 */
   const collation = locale === 'en' ? 'en' : 'zh-Hans-CN';
   const onlyWithContent = searchParams.get('content') === '1';
@@ -305,7 +330,12 @@ export function NodeListPage() {
    * 「跟着语种重算」——分面只有几百个节点，这点开销换「英文站上选项不会留着中文」是值得的。
    */
   const caseFacet = useMemo(
-    () => buildFacet(facetNodes, (node) => [node.case], (value) => plainMathText(labels.caseLabel(value)), Object.keys(CASE_LABELS)),
+    /*
+     * 案例按**登记归属**（`cases`）计数，不按 `case`：2026-10 的节点合并把同一对象的
+     * 多处登记收成一个规范节点（见 `data/merges.mjs`），按登记归属筛才不会让
+     * 「微分几何」这类案例线凭空少几个点。没有合并的节点 `cases` 就是它自己的案例。
+     */
+    () => buildFacet(facetNodes, (node) => node.cases ?? [node.case], (value) => plainMathText(labels.caseLabel(value)), Object.keys(CASE_LABELS)),
     [facetNodes, labels],
   );
   const constructFacet = useMemo(
@@ -345,7 +375,12 @@ export function NodeListPage() {
   if (onlyWithContent) activeFilters.push(['content', pick(TEXT.onlyContent)]);
   if (onlyUnread) activeFilters.push(['unread', pick(TEXT.onlyUnread)]);
 
-  /** 排序与两个本地开关都在前端算：数据已经全在手里，不需要再问服务端一遍。 */
+  /**
+   * 排序与两个本地开关都在前端算：数据已经全在手里，不需要再问服务端一遍。
+   *
+   * `relevance` 档**不动顺序**：服务端已经按相关性排好（`shared/search-rank.mjs`），
+   * 前端再排一次只会把相关性抹掉——这一条曾经是 bug 的一半（另一半见本页 `SORT_IDS` 的注释）。
+   */
   const nodes = useMemo(() => {
     const list = [...(result.data?.nodes ?? [])];
     if (activeSort === 'title') list.sort((a, b) => a.title.localeCompare(b.title, collation));
@@ -586,6 +621,11 @@ export function NodeListPage() {
                 <span className="construct" title={node.construct}>{labels.constructLabel(node.construct)}</span>
                 {node.roles.slice(0, 3).map((item) => <span className="role" key={item} title={item}>{labels.roleLabel(item)}</span>)}
                 {node.evidenceStatus && <StatusBadge status={node.evidenceStatus} title={fill(pick(TEXT.evidenceLevel), { status: node.evidenceStatus })} />}
+                {(node.mergeCount ?? 0) > 0 && (
+                  <span className="merge-badge" title={fill(pick(TEXT.mergeBadge), { n: node.mergeCount ?? 0 })}>
+                    {fill(pick(TEXT.mergeBadge), { n: node.mergeCount ?? 0 })}
+                  </span>
+                )}
                 {state && <span className={`node-state is-${state.key}`}>{state.label}</span>}
               </div>
               {/* 卡片是纯文本上下文：C^k 这类记号要走 Unicode 上标，不能留脱字符。 */}

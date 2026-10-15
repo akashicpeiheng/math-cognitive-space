@@ -108,13 +108,19 @@ export function segmentsCross(a1: PlacementPoint, a2: PlacementPoint, b1: Placem
   return false;
 }
 
-/** 一组边之间的交叉数；共享端点的两条边不算交叉（那是「相接」）。 */
-export function countCrossings(links: PlacementLink[], at: Map<string, PlacementPoint>): number {
-  const segments = links
+/** Count all crossings, or only pairs affected by changedId. Shared endpoints do not cross. */
+export function countCrossings(links: PlacementLink[], at: Map<string, PlacementPoint>, changedId?: string): number {
+  let segments = links
     .filter((link) => at.has(link.from) && at.has(link.to) && link.from !== link.to)
     .map((link) => ({ from: link.from, to: link.to }));
+  let firstCount = segments.length;
+  if (changedId !== undefined) {
+    const changed = segments.filter(link => link.from === changedId || link.to === changedId);
+    segments = [...changed, ...segments.filter(link => link.from !== changedId && link.to !== changedId)];
+    firstCount = changed.length;
+  }
   let crossings = 0;
-  for (let i = 0; i < segments.length; i += 1) {
+  for (let i = 0; i < firstCount; i += 1) {
     for (let j = i + 1; j < segments.length; j += 1) {
       const first = segments[i]; const second = segments[j];
       if (first.from === second.from || first.from === second.to || first.to === second.from || first.to === second.to) continue;
@@ -197,7 +203,8 @@ export function placeNewNodes(input: PlacementInput): PlacementResult {
         // 只数这个节点自己的新边：先试放，再评交叉、边长与位移。
         const trial = new Map(placed);
         trial.set(id, candidate);
-        const crossings = countCrossings(input.links, trial);
+        // Crossings between unchanged edges are constant for every candidate.
+        const crossings = countCrossings(input.links, trial, id);
         const length = neighboursOf(id).reduce((acc, other) => {
           const point = trial.get(other)!;
           return acc + Math.hypot(candidate.x - point.x, candidate.y - point.y);

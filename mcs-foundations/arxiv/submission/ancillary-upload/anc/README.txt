@@ -6,8 +6,7 @@ MCS: A Formal Framework for Mathematical Knowledge and Learning Routes
 with External Learner Models
 Peiheng Liu
 
-Run from the extracted ancillary root (the directory containing anc/ and
-evidence/):
+Run from the extracted source or ancillary root (the directory containing anc/):
 
     python anc/run.py --output replay
 
@@ -26,10 +25,11 @@ source/policy cycle checks, view boundary checks, bounded source enumeration,
 three-valued entry availability, and annotated incidence graph round-trip.
 certification/: byte-identical selected existing MCS certification files.
 upstream-manifest.json: SHA-256 pins for those selected files.
-evidence/replay-final/ (package root): the reference run's four stable
-reports and summary.
-The main LaTeX source archive contains references.bib; its reading scope is
-noted per entry there.
+reference-results/ (inside anc/ in the combined source archive): the reference
+run's four stable reports and summary. The working project and older separate
+ancillary bundles keep these at evidence/replay-final/ instead.
+source-audit.json: external references consulted, including actual reading scope.
+The main LaTeX source archive also contains references.bib.
 
 Results
 -------
@@ -44,7 +44,7 @@ records, four independent schedule checks, and 11 negative cases. The accepted
 constant-function value certificate is also passed into a checked-proof route.
 summary.json: executed commands, input hashes, and report hashes.
 Only diagnostic elapsed_seconds_diagnostic values are removed for stable replay.
-Reports evidence/replay-final/*-report.json can be compared byte for byte.
+The four reference *-report.json files can be compared byte for byte.
 The summary includes interpreter/environment information and is not required
 to be identical across environments.
 

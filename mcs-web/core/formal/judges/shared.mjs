@@ -13,6 +13,7 @@
  */
 
 import { sha256 } from '../../hash.mjs';
+import { normalizeScalingRecord, scalingEvidenceKey } from '../../../shared/scaling.mjs';
 
 /**
  * 给概念级 spec 补一个**稳定 id**。
@@ -341,8 +342,8 @@ function modelOf(entry, from) {
  * 判定器的启发式只在登记表没覆盖的端点对上兜底——两条路都生成，就会出现
  * 「同一条关系两份候选」这种迟早对不上的账。
  *
- * 一条健全性检查：`hardGeneralization` 的端点对若同时被登记成 `counterexampleTo`，
- * 说明那条"推广"已经被反例打掉（例如「所有群都交换」），**不能**当泛化候选去证。
+ * 只有方向、目标与条件完全匹配的反例才排除对应放缩候选。
+ * 相同无向端点对上的反例不能排除另一个方向或另一个条件下的命题。
  */
 export function registeredShapes(ctx = {}, kinds = null, warnings = []) {
   const registry = ctx.registry ?? null;
@@ -350,10 +351,11 @@ export function registeredShapes(ctx = {}, kinds = null, warnings = []) {
   const relations = [
     ...(Array.isArray(registry?.RELATIONS) ? registry.RELATIONS : []),
     ...(Array.isArray(registry?.CONCEPT_RELATIONS) ? registry.CONCEPT_RELATIONS : []),
-  ];
-  const refutedPairs = new Set(relations
+  ].map(normalizeScalingRecord);
+  const refutedClaims = new Set(relations
     .filter((entry) => entry?.kind === 'counterexampleTo')
-    .map((entry) => pairKey('hardGeneralization', entry.from, entry.to)));
+    .filter((entry) => entry.goal?.hash || entry.goal?.source)
+    .map(scalingEvidenceKey));
 
   const out = [];
   for (const entry of relations) {
@@ -361,8 +363,8 @@ export function registeredShapes(ctx = {}, kinds = null, warnings = []) {
     const kind = entry.kind;
     if (!kind || (allowed && !allowed.has(kind))) continue;
     if (!entry.from?.node || !entry.to?.node) continue;
-    if (kind === 'hardGeneralization' && refutedPairs.has(pairKey(kind, entry.from, entry.to))) {
-      warnings.push(`跳过已登记的过度推广 ${entry.id ?? ''}：同一对端点已被登记为反例（该陈述有反例，不是泛化）。`);
+    if (kind === 'scaling' && refutedClaims.has(scalingEvidenceKey(entry))) {
+      warnings.push(`跳过已登记的过度推广 ${entry.id ?? ''}：该方向、目标与条件已有反例；另一方向保持独立。`);
       continue;
     }
     out.push({

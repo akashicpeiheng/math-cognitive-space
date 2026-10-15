@@ -67,17 +67,39 @@ export interface DraggablePanel {
   clampIntoView: () => void;
 }
 
-export function useDraggablePanel(id: string, defaultPosition: PanelPosition): DraggablePanel {
+export interface DraggablePanelOptions {
+  /**
+   * 顶部要避开的浮层高度（像素）——HUD 压在画布上，标题栏若躲到它底下就点不到了。
+   *
+   * 为什么要这个参数（2026-10-11 用户报「节点详情的关闭键点不到」）：夹取原本只保证
+   * 「面板落在画布内」（top ≥ 0），而 HUD 是**浮在画布上**的（`z-index` 更高）。
+   * HUD 只有两行时 0 也够用；本轮往 HUD 里加了排法/锚点/保留手动摆放之后它变成三行
+   * （实测 1500px 下 174px 高），面板被拖到最上面时标题栏正好压在 HUD 底下——
+   * 关闭按钮看得见、点下去却被 HUD 接走。
+   */
+  topInset?: number;
+}
+
+export function useDraggablePanel(id: string, defaultPosition: PanelPosition, options: DraggablePanelOptions = {}): DraggablePanel {
   const [position, setPosition] = useState<PanelPosition | null>(null);
   const [dragging, setDragging] = useState(false);
   const elementRef = useRef<HTMLElement | null>(null);
   const offsetRef = useRef({ x: 0, y: 0 });
+  /*
+   * 顶部留白放进 ref 而不是依赖：`clampToBounds` 的**身份必须稳定**——
+   * 它被 handleRef 的补夹回调与两个 effect 引用，身份一变就会反复重建
+   * （拖动过程中每次 setState 都会重建，等于把窗口监听器拆了又装）。
+   */
+  const topInsetRef = useRef(options.topInset ?? 0);
+  topInsetRef.current = options.topInset ?? 0;
 
   /**
    * 把位置夹进父容器（画布）的可见区域。
    *
    * 用 offsetParent 的尺寸而不是窗口尺寸：浮窗挂在画布上，右侧面板在较窄的窗口里
    * 会被推出画布——关闭按钮正好落在屏幕外（实测 1280 宽时面板右边到 1353）。
+   *
+   * 上边界不是 0 而是 `topInset`：HUD 浮在画布顶部，标题栏躲到它底下就点不到了（见 options.topInset）。
    */
   const clampToBounds = useCallback((base: PanelPosition): PanelPosition => {
     const element = elementRef.current;
@@ -87,10 +109,12 @@ export function useDraggablePanel(id: string, defaultPosition: PanelPosition): D
     const height = bounds?.height ?? window.innerHeight;
     const panelWidth = element?.offsetWidth || 320;
     const panelHeight = element?.offsetHeight || 200;
+    // 留白不能超过可用高度，否则会出现 min > max、夹取反而把面板推出画布。
+    const inset = Math.min(Math.max(topInsetRef.current, 0), Math.max(height - 40, 0));
     const maxLeft = Math.max(0, width - panelWidth - 8);
-    const maxTop = Math.max(0, height - Math.min(panelHeight, height) - 8);
+    const maxTop = Math.max(inset, height - Math.min(panelHeight, height - inset) - 8);
     const left = clamp(base.x * width, 0, maxLeft);
-    const top = clamp(base.y * height, 0, maxTop);
+    const top = clamp(base.y * height, inset, maxTop);
     return {
       x: clamp(left / Math.max(width, 1), 0, 1),
       y: clamp(top / Math.max(height, 1), 0, 1),

@@ -29,6 +29,8 @@ import { startServer } from '../server/index.mjs';
 import { JobManager } from '../server/jobs.mjs';
 import { REPO_ROOT } from '../core/ontology.mjs';
 import { McsError } from '../shared/errors.mjs';
+import { leanCapabilities } from '../core/lean.mjs';
+import { TEST_LEAN_TIMEOUT_MS } from './lean-test-budget.mjs';
 import { PGlite } from '@electric-sql/pglite';
 
 const PUBLIC_ORIGIN = 'https://mcs.test';
@@ -146,6 +148,7 @@ async function startPublicServer(provider) {
     backupDir: join(dir, 'backups'),
     authFile: join(dir, 'auth.sqlite3'),
     repoRoot: REPO_ROOT,
+    lean: { timeoutMs: TEST_LEAN_TIMEOUT_MS },
     dev: false,
     publicMode: true,
     publicOrigin: PUBLIC_ORIGIN,
@@ -177,6 +180,7 @@ async function startPublicServer(provider) {
     dir,
     async cleanup() {
       try { handle.jobs.close(); } catch { /* 已关闭 */ }
+      await handle.leanJobs.close();
       try { await handle.db.close(); } catch { /* 已关闭 */ }
       try { await handle.auth.close(); } catch { /* 已关闭 */ }
       try { await pg.close(); } catch { /* 已关闭 */ }
@@ -194,10 +198,14 @@ test('公网模式：未登录只能读公共本体，个人数据一律 401', a
     const guest = new Client(server.origin);
     const health = await guest.request('/api/v2/health');
     assert.equal(health.status, 200, '健康检查对公网开放');
+    const guides = await guest.request('/api/v2/field-guides?locale=en');
+    assert.equal(guides.status,200);assert.equal(guides.payload.data.guides.length,12);assert.equal(guides.payload.data.locale,'en');
     const ontology = await guest.request('/api/v2/ontology');
     assert.equal(ontology.status, 200, '公共本体对公网开放');
+    assert.equal((await guest.request('/api/v2/lean/capabilities')).status, 200);
+    assert.equal((await guest.request('/api/v2/lean/registrations/lean-group-injective')).status, 200);
 
-    for (const [method, path] of [['GET', '/api/v2/profiles'], ['POST', '/api/v2/plans'], ['POST', '/api/v2/backup']]) {
+    for (const [method, path] of [['GET', '/api/v2/profiles'], ['GET', '/api/v2/me/vaults'], ['POST', '/api/v2/backup'], ['POST', '/api/v2/lean/jobs'], ['GET', '/api/v2/lean/jobs/unknown'], ['DELETE', '/api/v2/lean/jobs/unknown']]) {
       const response = await guest.request(path, { method });
       assert.equal(response.status, 401, `${method} ${path} 未登录必须是 401`);
       assert.equal(response.payload.error.code, 'AUTH_REQUIRED');
@@ -205,6 +213,34 @@ test('公网模式：未登录只能读公共本体，个人数据一律 401', a
   } finally {
     await server.cleanup();
   }
+});
+
+test('公网 Lean：登录重放、CSRF 与来源检查、跨账号隔离，不写学习状态', { timeout: TEST_LEAN_TIMEOUT_MS + 60000 }, async t => {
+  const ready = await leanCapabilities(REPO_ROOT);
+  if (!ready.ready) { if (process.env.MCS_WEB_REQUIRE_LEAN === '1') assert.fail(ready.reason); return t.skip(ready.reason); }
+  const provider = new StubProvider(); provider.add('lean-user-a', 'lean-a@example.com'); provider.add('lean-user-b', 'lean-b@example.com');
+  const server = await startPublicServer(provider);
+  try {
+    const a = new Client(server.origin), b = new Client(server.origin);
+    assert.equal((await a.login('lean-a@example.com')).status, 200); assert.equal((await b.login('lean-b@example.com')).status, 200);
+    const body = { evidenceId: 'ev-lean-group-injective', ontologyVersion: server.getOntology().version };
+    const before = await server.db.dumpAll();
+    assert.equal((await a.request('/api/v2/lean/jobs', { method: 'POST', body, csrf: false })).status, 403);
+    assert.equal((await a.request('/api/v2/lean/jobs', { method: 'POST', body, origin: 'https://untrusted.test' })).status, 403);
+    const started = await a.request('/api/v2/lean/jobs', { method: 'POST', body }); assert.equal(started.status, 200, JSON.stringify(started.payload));
+    const id = started.payload.data.id;
+    for (const method of ['GET', 'DELETE']) assert.equal((await b.request(`/api/v2/lean/jobs/${id}`, { method })).status, 404);
+    let job;
+    for (let i = 0; i < Math.ceil(TEST_LEAN_TIMEOUT_MS / 250) + 40; i++) {
+      job = (await a.request(`/api/v2/lean/jobs/${id}`)).payload.data;
+      if (!['queued', 'running'].includes(job.status)) break;
+      await new Promise(resolvePromise => setTimeout(resolvePromise, 250));
+    }
+    assert.equal(job.status, 'completed', JSON.stringify(job)); assert.equal(job.result.status, 'passed', JSON.stringify(job.result));
+    const after = await server.db.dumpAll();
+    for (const key of ['profiles', 'events', 'notes', 'networkViews', 'directions', 'learningPlans', 'connectionNotes']) assert.deepEqual(after[key], before[key], key);
+    assert.equal(server.getOntology().version, body.ontologyVersion);
+  } finally { await server.cleanup(); }
 });
 
 test('公网模式：两个账号的数据互不可见、互不可改（越权一律 404）', async () => {
@@ -237,6 +273,9 @@ test('公网模式：两个账号的数据互不可见、互不可改（越权�
       ['DELETE', `/api/v2/profiles/${profileId}`],
       ['GET', `/api/v2/profiles/${profileId}/export`],
       ['GET', `/api/v2/profiles/${profileId}/events`],
+      ['GET', `/api/v2/profiles/${profileId}/learning-plan`],
+      ['PUT', `/api/v2/profiles/${profileId}/learning-plan`, { primaryGoal: 'group:cayley', baseRevision: 0 }],
+      ['POST', '/api/v2/learning-plan-preview', { profileId, preferences: { primaryGoal: 'group:cayley' } }],
       ['POST', `/api/v2/profiles/${profileId}/events`, { eventId: 'e1', ontologyVersion: 'x', kind: 'view', nodeId: 'bg:real:metric', occurredAt: '2026-10-05T00:00:00.000Z', baseRevision: null, source: { kind: 'system', ref: 'test' }, evidenceRefs: [], payload: { context: 'read' } }],
       ['POST', `/api/v2/profiles/${profileId}/notes`, { title: '偷偷写', body: 'x' }],
     ];
@@ -253,9 +292,53 @@ test('公网模式：两个账号的数据互不可见、互不可改（越权�
     /* 带 profileId 的公共纯计算接口同样要判归属：只看路径会漏掉这条路。 */
     const computed = await b.request('/api/v2/localizations/LC01/compute', { method: 'POST', body: { profileId } });
     assert.equal(computed.status, 404, 'body 里的 profileId 也要判归属');
+    const planPath = `/api/v2/profiles/${profileId}/learning-plan`;
+    assert.equal((await a.request(planPath, { method: 'PUT', csrf: false, body: { primaryGoal: 'group:cayley', baseRevision: 0 } })).status, 403);
+    assert.equal((await a.request(planPath, { method: 'PUT', body: { primaryGoal: 'group:cayley', baseRevision: 0 } })).status, 200);
+    const preview = await a.request('/api/v2/learning-plan-preview', { method: 'POST', body: { profileId, preferences: { primaryGoal: 'group:cayley' } } });
+    assert.equal(preview.status, 200);
+    const previewPath = `/api/v2/learning-plan-preview/${preview.payload.data.job.id}`;
+    const guest = new Client(server.origin);
+    await guest.openSession();
+    assert.equal((await a.request(previewPath)).status, 200);
+    for (const client of [b, guest]) {
+      assert.equal((await client.request(previewPath)).status, 404);
+      assert.equal((await client.request(previewPath, { method: 'DELETE' })).status, 404);
+    }
+    await a.request(previewPath, { method: 'DELETE' });
+    // A guest can explore public data, but cannot attach another learner's profile.
+    const publicPreview = await guest.request('/api/v2/learning-plan-preview', { method: 'POST', body: { preferences: { primaryGoal: 'group:cayley' } } });
+    assert.equal(publicPreview.status, 200);
+    await guest.request(`/api/v2/learning-plan-preview/${publicPreview.payload.data.job.id}`, { method: 'DELETE' });
   } finally {
     await server.cleanup();
   }
+});
+
+test('公网模式：用户共用连接备注，账号隔离与 CSRF', async () => {
+  const provider = new StubProvider();
+  provider.add('user-a', 'a@example.com'); provider.add('user-b', 'b@example.com');
+  const server = await startPublicServer(provider);
+  try {
+    const guest = new Client(server.origin);
+    assert.equal((await guest.request('/api/v2/me/connection-notes')).status, 401);
+    const a = new Client(server.origin); const b = new Client(server.origin);
+    await a.login('a@example.com'); await b.login('b@example.com');
+    const graph = (await a.request('/api/v2/ontology/graph')).payload.data;
+    const key = graph.relations.find(relation => relation.id === 'rel-manifold-generalization').connectionKey;
+    const path = '/api/v2/me/connection-notes/' + encodeURIComponent(key);
+    assert.equal((await guest.request(path, { method: 'PUT', body: { body: '访客', baseRevision: 0 } })).status, 401);
+    const saved = await a.request(path, { method: 'PUT', body: { body: 'A 的关系理解', baseRevision: 0, ownerId: 'user-b' } });
+    assert.equal(saved.status, 200, JSON.stringify(saved.payload));
+    assert.deepEqual((await b.request('/api/v2/me/connection-notes')).payload.data.notes, []);
+    const bSaved = await b.request(path, { method: 'PUT', body: { body: 'B 的关系理解', baseRevision: 0 } });
+    assert.equal(bSaved.status, 200);
+    assert.equal((await a.request('/api/v2/me/connection-notes?ownerId=user-b')).payload.data.notes[0].body, 'A 的关系理解');
+    assert.equal((await b.request(path, { method: 'DELETE', body: { baseRevision: 1 } })).status, 200);
+    assert.equal((await a.request('/api/v2/me/connection-notes')).payload.data.notes[0].body, 'A 的关系理解');
+    assert.equal((await a.request(path, { method: 'DELETE', csrf: false, body: { baseRevision: 1 } })).status, 403);
+    assert.equal((await a.request(path, { method: 'PUT', csrf: false, body: { body: '没有 CSRF', baseRevision: 1 } })).status, 403);
+  } finally { await server.cleanup(); }
 });
 
 test('公网模式：入库、发布、备份恢复只有管理员能做', async () => {
@@ -457,4 +540,93 @@ test('任务队列：并发与队列有界，每账号配额当场报 429', asyn
     jobs.close();
     rmSync(dir, { recursive: true, force: true });
   }
+});
+
+
+test('游客完整规划：匿名归属、预览隔离、CSRF、档案边界与同步入口', async () => {
+  const provider = new StubProvider(); provider.add('reader', 'reader@example.com');
+  const server = await startPublicServer(provider);
+  try {
+    const a = new Client(server.origin), b = new Client(server.origin), user = new Client(server.origin);
+    await a.openSession(); await b.openSession(); await user.login('reader@example.com');
+    const stats = await server.db.stats();
+    const request = { goalId: 'group:cayley', horizon: 8, background: [] };
+    assert.equal((await a.request('/api/v2/plans', { method: 'POST', csrf: false, body: request })).status, 403);
+    assert.equal((await a.request('/api/v2/plans', { method: 'POST', body: { ...request, sync: true } })).status, 400);
+    assert.equal((await a.request('/api/v2/plans?sync=1', { method: 'POST', body: request })).status, 400);
+    assert.equal((await a.request('/api/v2/plans', { method: 'POST', body: { ...request, profileId: 'someone-else' } })).status, 401);
+    const start = await a.request('/api/v2/plans', { method: 'POST', body: request });
+    assert.equal(start.status, 200, start.text); const id = start.payload.data.job.id;
+    for (const other of [b, user]) {
+      assert.equal((await other.request('/api/v2/plans/' + id)).status, 404);
+      assert.equal((await other.request('/api/v2/plans/' + id, { method: 'DELETE' })).status, 404);
+    }
+    assert.equal((await a.request('/api/v2/plans/' + id)).status, 200);
+    assert.equal((await a.request('/api/v2/plans/' + id, { method: 'DELETE' })).status, 200);
+    const preview = await a.request('/api/v2/learning-plan-preview', { method: 'POST', body: { preferences: { primaryGoal: 'group:cayley' } } });
+    assert.equal(preview.status, 200, preview.text);
+    const previewPath = '/api/v2/learning-plan-preview/' + preview.payload.data.job.id;
+    const previewView = await a.request(previewPath);
+    assert.equal(previewView.status, 200); assert.equal(Object.hasOwn(previewView.payload.data.job, 'owner'), false);
+    assert.equal((await b.request(previewPath)).status, 404);
+    assert.equal((await b.request(previewPath, { method: 'DELETE' })).status, 404);
+    assert.equal((await a.request(previewPath, { method: 'DELETE' })).status, 200);
+    const after = await server.db.stats(); assert.equal(after.events, stats.events); assert.equal(after.profiles, stats.profiles);
+  } finally { await server.cleanup(); }
+});
+
+test('私有笔记库 API：分块、Range、节点关联、双账号隔离与只读导出', async () => {
+  const provider = new StubProvider(); provider.add('alice', 'vault-a@example.com'); provider.add('bob', 'vault-b@example.com');
+  const server = await startPublicServer(provider);
+  try {
+    const a = new Client(server.origin), b = new Client(server.origin), guest = new Client(server.origin);
+    await a.login('vault-a@example.com'); await b.login('vault-b@example.com'); await guest.openSession();
+    const ontology = (await a.request('/api/v2/ontology')).payload.data.version;
+    const content = Buffer.from('# 极限\n$x^2$\n'); const sha = (await import('node:crypto')).createHash('sha256').update(content).digest('hex');
+    const create = await a.request('/api/v2/me/vaults', { method: 'POST', body: { name: '私有库' } }); assert.equal(create.status, 200, create.text);
+    const id = create.payload.data.vault.id, base = '/api/v2/me/vaults/' + id;
+    assert.equal((await b.request(base)).status, 404); assert.equal((await guest.request(base)).status, 401);
+    const manifest = [{ id: 'note-one', path: '中文/极限.md', kind: 'note', size: content.length, sha256: sha, nodeIds: [] }];
+    const started = await a.request(base + '/imports', { method: 'POST', body: { baseRevision: 0, files: manifest } }); assert.equal(started.status, 200, started.text);
+    const batch = base + '/imports/' + started.payload.data.batch.id;
+    assert.equal((await b.request(batch)).status, 404);
+    assert.equal((await a.request(batch + '/chunks/' + sha + '/0', { method: 'PUT', csrf: false, body: { data: content.toString('base64') } })).status, 403);
+    assert.equal((await a.request(batch + '/chunks/' + sha + '/0', { method: 'PUT', body: { data: content.toString('base64') } })).status, 200);
+    assert.equal((await a.request(batch + '/commit', { method: 'POST', body: {} })).status, 200);
+    assert.equal((await a.request(base + '/files/note-one/nodes', { method: 'PUT', body: { baseRevision: 1, nodeIds: ['group:cayley'] } })).status, 200);
+    const related = await a.request('/api/v2/me/vaults/related/group%3Acayley'); assert.equal(related.payload.data.notes.length, 1);
+    assert.equal((await b.request('/api/v2/me/vaults/related/group%3Acayley')).payload.data.notes.length, 0);
+    const raw = await fetch(server.origin + base + '/files/note-one', { headers: { Cookie: a.header(), Range: 'bytes=0-3' } });
+    assert.equal(raw.status, 206); assert.equal((await raw.arrayBuffer()).byteLength, 4); assert.equal(raw.headers.get('content-range'), `bytes 0-3/${content.length}`);
+    const invalid = await fetch(server.origin + base + '/files/note-one', { headers: { Cookie: a.header(), Range: 'bytes=9999-' } }); assert.equal(invalid.status, 416);
+    assert.equal((await b.request(base + '/files/note-one')).status, 404);
+    const exported = await a.request(base + '/export'); assert.equal(exported.status, 200); assert.ok(exported.text.includes('mcs-private-vault/1')); assert.ok(exported.text.includes('chunk'));
+    assert.equal((await a.request('/api/v2/ontology')).payload.data.version, ontology);
+  } finally { await server.cleanup(); }
+});
+
+
+test('公网混合网络：私人关系、任务和投稿按账号隔离；访客和普通用户无管理员写权限', async () => {
+  const provider = new StubProvider(); provider.add('user-a', 'a@example.com'); provider.add('user-b', 'b@example.com');
+  const server = await startPublicServer(provider);
+  try {
+    const guest = new Client(server.origin), a = new Client(server.origin), b = new Client(server.origin);
+    for (const path of ['/me/network-relations', '/me/relation-submissions']) assert.equal((await guest.request('/api/v2' + path)).status, 401);
+    assert.equal((await guest.request('/api/v2/network-relation-checks', { method: 'POST', body: {} })).status, 401);
+    await a.login('a@example.com'); await b.login('b@example.com');
+    const graph = (await a.request('/api/v2/ontology/graph')).payload.data;
+    const [from, to] = graph.nodes.slice(0, 2).map(n => ({ source: 'ontology', id: n.id, version: n.version }));
+    const relation = { from, to, kind: 'related', reason: 'A 的私人参考', conditions: '', source: '', bindings: {}, checks: [{ math: { status: 'verified' } }] };
+    const saved = (await a.request('/api/v2/me/network-relations', { method: 'POST', body: relation })).payload.data.relation;
+    assert.deepEqual(saved.checks, []);
+    for (const method of ['PUT', 'DELETE']) assert.equal((await b.request('/api/v2/me/network-relations/' + saved.id, { method, body: { ...relation, baseRevision: 1 } })).status, 404);
+    assert.equal((await b.request('/api/v2/me/network-relations')).payload.data.relations.length, 0);
+    const check = (await a.request('/api/v2/network-relation-checks', { method: 'POST', body: { relation } })).payload.data.check;
+    for (const method of ['GET', 'DELETE']) assert.equal((await b.request('/api/v2/network-relation-checks/' + check.id, { method })).status, 404);
+    const submission = (await a.request('/api/v2/me/relation-submissions', { method: 'POST', body: { relation, endpoints: { from: { title: 'A', publicNodeId: from.id }, to: { title: 'B', publicNodeId: to.id } } } })).payload.data.submission;
+    assert.equal((await b.request('/api/v2/me/relation-submissions/' + submission.id, { method: 'DELETE', body: { baseRevision: 1 } })).status, 404);
+    assert.equal((await b.request('/api/v2/authoring/relation-submissions')).status, 403);
+    assert.equal((await a.request('/api/v2/me/network-relations', { method: 'POST', body: relation, csrf: false })).status, 403);
+    assert.equal(server.getOntology().version, graph.version);
+  } finally { server.closeApi(); await server.cleanup(); }
 });

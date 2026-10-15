@@ -16,6 +16,7 @@ const LABELS: Record<string, Pair> = {
   tensor: { zh: '张量：同一对象在两组基之间协同变换', en: 'Tensor: one object transforms consistently between two bases' },
   group: { zh: '群：不同对称操作组成同一个封闭结构', en: 'Group: different symmetry operations form one closed structure' },
   dg: { zh: '微分几何：曲面、切向量与边界积分相互连接', en: 'Differential geometry: surfaces, tangent vectors and boundary integrals connected' },
+  top: { zh: '点集拓扑：两个开邻域覆盖一点，局部片与平面坐标相互对应', en: 'Point-set topology: two open neighbourhoods covering a point, a local patch corresponding to plane coordinates' },
 };
 
 const FALLBACK: Pair = { zh: '数学对象之间的结构关系图', en: 'A diagram of structural relations between mathematical objects' };
@@ -158,6 +159,31 @@ export function CaseThumbnail({ caseId }: CaseThumbnailProps) {
             <text className="thumb-math-label thumb-label-primary" x="74" y="65">∂M</text>
             <text className="thumb-math-label" x="409" y="54">TₚM</text>
             <text className="thumb-math-label thumb-dg-integral" x="494" y="196">∫</text>
+          </g>
+        )}
+
+        {/*
+          点集拓扑的场景：两个相交的开邻域（U、V）与落在其中一点上的实心点构成「附近」；
+          右侧网格片与左边的局部片由一条双向箭头相连，表示坐标卡把局部片读成平面坐标。
+          图形刻意只用直线与圆：拓扑的直观就是「只有邻域，没有距离」。
+          样式写在 styles.css 的 `.thumb-top-*` 一组里（与其它场景同一套 CSS 变量）。
+        */}
+        {caseId === 'top' && (
+          <g className="thumb-scene thumb-top">
+            <circle className="thumb-top-space" cx="238" cy="118" r="86" />
+            <ellipse className="thumb-top-open" cx="205" cy="101" rx="72" ry="47" transform="rotate(-14 205 101)" />
+            <ellipse className="thumb-top-open thumb-top-open-second" cx="272" cy="133" rx="64" ry="42" transform="rotate(11 272 133)" />
+            <circle className="thumb-top-basepoint" cx="238" cy="117" r="15" />
+            <circle className="thumb-solid-point" cx="238" cy="117" r="6.5" />
+            <path className="thumb-guided-arrow" d="M327 117h58" markerEnd={`url(#${arrowId})`} />
+            <path className="thumb-guided-arrow thumb-guided-arrow-reverse" d="M385 141h-58" markerEnd={`url(#${arrowId})`} />
+            <rect className="thumb-grid-panel" x="421" y="61" width="140" height="118" rx="14" />
+            <path className="thumb-grid-line" d="M470 62v116m49-116v116M422 99h138M422 140h138" />
+            <circle className="thumb-solid-point" cx="470" cy="120" r="6" />
+            <text className="thumb-math-label thumb-label-primary" x="176" y="66">U</text>
+            <text className="thumb-math-label" x="306" y="176">V</text>
+            <text className="thumb-math-label" x="238" y="93">x</text>
+            <text className="thumb-math-label" x="452" y="200">ℝⁿ</text>
           </g>
         )}
       </svg>

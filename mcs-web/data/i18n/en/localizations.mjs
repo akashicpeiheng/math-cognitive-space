@@ -65,15 +65,15 @@ export default {
     boundary: 'It does not assume that every support can be minimised; non-minimal results are marked separately.',
   },
   LC10: {
-    name: 'Generalization cone',
-    definition: 'Take all generalization ancestors of a given object under the hard-generalization relation.',
+    name: 'Expansion cone',
+    definition: 'Follow the expansion direction of scaling relations to their general endpoints.',
     preserves: 'It keeps the type-matching implication or mapping witness.',
-    boundary: 'Same-carrier and cross-carrier modes are kept apart; an infinite cone need not be exhaustible.',
+    boundary: 'Same-carrier, cross-carrier and instance modes remain separate; unresolved directions are excluded, and an infinite cone need not be exhaustible.',
   },
   LC11: {
-    name: 'Specialization cone',
-    definition: 'Take all specialization descendants of a given object.',
-    preserves: 'Specialization is the converse of the generalization relation; it is not taken as an inverse single-valued function.',
+    name: 'Contraction cone',
+    definition: 'Follow the contraction direction of the same scaling relations to their special endpoints.',
+    preserves: 'Both readings retain the same witness; neither implication nor a cross-carrier map is inverted.',
     boundary: 'Correspondences outside the cone enter the boundary; cognitive effects are not guaranteed here.',
   },
   LC12: {

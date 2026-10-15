@@ -35,6 +35,40 @@ async function loadModule(relativePath) {
 const readAt = (value, path) => (Array.isArray(path) ? path.reduce((acc, key) => (acc === undefined ? acc : acc[key]), value) : value);
 const fileText = (relativePath) => readFileSync(resolve(ROOT, relativePath), 'utf8');
 
+/**
+ * 取一条 CSS 规则的**声明块原文**（按大括号配对，注释原样保留）。返回所有同名规则的块。
+ *
+ * 为什么需要它：原先的 `css` 检查用「选择器 + `[\s\S]{0,400}?` + 声明」这种**定长窗口**匹配，
+ * 于是**往规则里加一段注释就会让它失败**——实测 `home-veil` 那条就是这么红的：
+ * 选择器与 `animation:` 之间因为多了一段说明从 <400 字长到 423 字，正则匹配不到，
+ * 而代码本身一个字都没错。检查一个「取值」不该依赖注释的长度。
+ *
+ * 返回**全部**匹配的块（不是最后一块）：同一个类名会出现在不同选择器里
+ * （`.home-story-act-copy`、`.home-story-act[data-act="pain"] .home-story-act-copy`、
+ * `.home-story.is-flow .home-story-act-copy`……），其中只有一条带我们要查的声明。
+ * 调用方按顺序找第一条**真的匹配 pattern** 的块——这比猜「哪一条才生效」稳。
+ */
+function cssBlocks(text, selector) {
+  const blocks = [];
+  let from = 0;
+  for (;;) {
+    const start = text.indexOf(selector, from);
+    if (start < 0) break;
+    from = start + selector.length;
+    const open = text.indexOf('{', start);
+    if (open < 0) continue;
+    let depth = 0;
+    for (let index = open; index < text.length; index += 1) {
+      if (text[index] === '{') depth += 1;
+      else if (text[index] === '}') {
+        depth -= 1;
+        if (depth === 0) { blocks.push(text.slice(open + 1, index)); break; }
+      }
+    }
+  }
+  return blocks;
+}
+
 /** 色相（HSL 的 H，0–360）。 */
 function hueOf(hex) {
   const [r, g, b] = [0, 2, 4].map((index) => Number.parseInt(hex.slice(1 + index, 3 + index), 16) / 255);
@@ -92,6 +126,23 @@ async function runCheck(check) {
     if (!match) return { value: null, ok: false, reason: '样式里没匹配到' };
     const captured = match.slice(1).filter((part) => part !== undefined).join('x');
     return { value: captured, ok: captured === check.equals };
+  }
+  /*
+   * `css-block`：在**某一条规则**的声明块里匹配，不受块外注释长度影响（2026-10-12 加）。
+   *
+   * `selector` 是选择器片段；同名规则可能有多条，取**第一条真的匹配 `pattern`** 的
+   * （猜「哪一条才生效」会随样式重排而失效）。全部都不匹配时才报失败，并说明找过几条。
+   */
+  if (check.type === 'css-block') {
+    const blocks = cssBlocks(fileText(check.file), check.selector);
+    if (blocks.length === 0) return { value: null, ok: false, reason: `样式里找不到规则 ${check.selector}` };
+    for (const block of blocks) {
+      const match = new RegExp(check.pattern).exec(block);
+      if (!match) continue;
+      const captured = match.slice(1).filter((part) => part !== undefined).join('x');
+      return { value: captured, ok: captured === check.equals };
+    }
+    return { value: null, ok: false, reason: `${check.selector} 的 ${blocks.length} 条规则里都没匹配到 ${check.pattern}` };
   }
   if (check.type === 'source') {
     const text = fileText(check.file);

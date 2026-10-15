@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { controlFor, quadPoint, routeEdges, sampleCurve } from '../web/src/edge-routing.ts';
+import { controlFor, quadPoint, routeEdges, sampleCurve, taperedOutline } from '../web/src/edge-routing.ts';
 
 /**
  * 边在「实在绕不开」时才弯。
@@ -180,4 +180,76 @@ test('直线段与曲线共用同一套几何：控制点偏移是弓高的两�
   const apex = quadPoint(edge.x1, edge.y1, control.cx, control.cy, edge.x2, edge.y2, 0.5);
   assert.equal(Math.round(apex.x), 50);
   assert.equal(Math.round(apex.y), bow, '曲线顶点应当正好偏一个弓高');
+});
+
+/* —— 放缩关系的渐变带子（2026-10-11 加）—— */
+
+/** 把轮廓的 `d` 解析成点列（只认自己生成的写法：M x y L x y … Z）。 */
+function outlinePoints(d) {
+  const match = /^M (.+) Z$/.exec(d);
+  assert.ok(match, '轮廓应当是闭合路径：' + d.slice(0, 60));
+  return match[1].split(' L ').map((pair) => {
+    const parts = pair.trim().split(' ');
+    assert.equal(parts.length, 2, `每一段应当是一个坐标对：${pair}`);
+    return { x: Number(parts[0]), y: Number(parts[1]) };
+  });
+}
+
+/** 轮廓两端的宽度：第一点与最后一点是一侧起点的两侧；中间那对是另一端的两个侧点。 */
+function endWidths(points) {
+  const half = points.length / 2;
+  const start = Math.hypot(points[0].x - points[points.length - 1].x, points[0].y - points[points.length - 1].y);
+  const end = Math.hypot(points[half - 1].x - points[half].x, points[half - 1].y - points[half].y);
+  return { start, end };
+}
+
+test('渐变带子：两端宽度就是给的线宽，中间线性过渡', () => {
+  const edge = { id: 'e', from: 'a', to: 'b', x1: 0, y1: 0, x2: 200, y2: 0 };
+  const d = taperedOutline(edge, { startWidth: 8, endWidth: 3, steps: 16 });
+  const points = outlinePoints(d);
+  assert.equal(points.length, 34, '两侧各 17 个点（steps+1）');
+  const widths = endWidths(points);
+  assert.ok(Math.abs(widths.start - 8) < 0.05, '起点宽度应当是 8：' + widths.start);
+  assert.ok(Math.abs(widths.end - 3) < 0.05, '终点宽度应当是 3：' + widths.end);
+  // 中点宽度 = 两端平均（线性过渡）。
+  const midLeft = points[8];
+  const midRight = points[points.length - 1 - 8];
+  const mid = Math.hypot(midLeft.x - midRight.x, midLeft.y - midRight.y);
+  assert.ok(Math.abs(mid - 5.5) < 0.05, '中点宽度应当是两端平均 5.5：' + mid);
+  // 直线时轮廓关于轴线上下对称：左右两侧的 x 相同。
+  for (let index = 0; index <= 16; index += 1) {
+    const left = points[index];
+    const right = points[points.length - 1 - index];
+    assert.equal(left.x, right.x, `第 ${index} 对侧点的 x 应当相同`);
+    assert.ok(Math.abs(left.y + right.y) < 0.05, '两侧应当关于轴线对称');
+  }
+});
+
+test('渐变带子：同一输入逐字得到同一条 d（确定性），步数可调', () => {
+  const edge = { id: 'e', from: 'a', to: 'b', x1: 10, y1: 20, x2: 210, y2: 120 };
+  const options = { startWidth: 7.5, endWidth: 2.4, steps: 12 };
+  assert.equal(taperedOutline(edge, options), taperedOutline(edge, options));
+  assert.notEqual(taperedOutline(edge, options), taperedOutline(edge, { ...options, steps: 24 }));
+  // 坐标保留两位小数：`d` 里不出现长尾浮点。
+  assert.ok(!/\d\.\d{3,}/.test(taperedOutline(edge, options)), 'd 里出现了三位以上小数');
+});
+
+test('渐变带子：弯的边用同一个控制点，带子与曲线重合', () => {
+  const edge = { id: 'e', from: 'a', to: 'b', x1: 0, y1: 0, x2: 100, y2: 0 };
+  const bow = 30;
+  const control = controlFor(edge, bow);
+  const d = taperedOutline(edge, { startWidth: 6, endWidth: 6, control, steps: 10 });
+  const points = outlinePoints(d);
+  // 等宽带子的中线就是那条二次贝塞尔：逐点核对（中线 = 两侧点的中点）。
+  for (let index = 0; index <= 10; index += 1) {
+    const left = points[index];
+    const right = points[points.length - 1 - index];
+    const mid = { x: (left.x + right.x) / 2, y: (left.y + right.y) / 2 };
+    const on = quadPoint(edge.x1, edge.y1, control.cx, control.cy, edge.x2, edge.y2, index / 10);
+    assert.ok(Math.hypot(mid.x - on.x, mid.y - on.y) < 0.05, `第 ${index} 个采样点偏离曲线：${JSON.stringify({ mid, on })}`);
+  }
+  // 曲线顶点处（t=0.5）的宽度也应当是 6。
+  const half = points.length / 2;
+  const width = Math.hypot(points[half - 1].x - points[half].x, points[half - 1].y - points[half].y);
+  assert.ok(Math.abs(width - 6) < 0.05, '等宽带子的每一处都应当等于给它的线宽：' + width);
 });

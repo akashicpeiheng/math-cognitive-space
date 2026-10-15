@@ -112,10 +112,16 @@ export function mergeStructured(base, overlay, trail = [], problems = []) {
  *
  * 覆盖里出现**基础里没有的键**直接报错：那不是「多余」，那是把译文挂到了不存在的对象上
  * （改键时最容易发生），静默忽略会让译者以为已经翻好，而页面永远显示中文。
+ *
+ * `extraKnown` 是**合并表登记的 id**（见 `data/merges.mjs`）：被合并掉的节点、被收掉的
+ * 关系在这张表里都有名有姓，译文因此仍然是「挂在真实对象上」的——它们要么由规范节点的
+ * `registrations` 显示出来（节点），要么留在合并报告里（关系）。这不是放宽检查，
+ * 是把检查的口径从「基础节点表」扩到「基础节点表 + 合并登记表」。
  */
-export function mergeCollection(items, overlayMap, section, problems) {
+export function mergeCollection(items, overlayMap, section, problems, extraKnown = null) {
   if (!overlayMap) return items;
   const known = new Set(items.map((item) => keyOf(section, item)).filter(Boolean));
+  if (extraKnown) for (const key of extraKnown) known.add(key);
   for (const key of Object.keys(overlayMap)) {
     if (RESERVED_KEYS.has(key)) continue;
     if (!known.has(key)) problems.push(`${section}：覆盖里有基础数据中不存在的键「${key}」`);
@@ -129,6 +135,23 @@ export function mergeCollection(items, overlayMap, section, problems) {
 }
 
 /**
+ * 合并表里出现过的 id：被合并的节点别名 + 被收掉的关系 id。
+ *
+ * 语言覆盖按 id 写，这些 id 在英文目录里都有译文。装配顺序是「合并 → 语言覆盖」，
+ * 所以覆盖层必须知道这些 id 仍然「有名有姓」：节点别名由规范节点的 `registrations`
+ * 显示（译文照样套上去），被收掉的关系留在合并报告里。
+ */
+export function mergeAwareIds(raw) {
+  const merges = raw?.merges ?? null;
+  const aliases = Object.keys(merges?.aliases ?? {});
+  const retired = [
+    ...(merges?.sameObjectLinks ?? []).map((item) => item.id),
+    ...(merges?.droppedDuplicates ?? []).map((item) => item.dropped),
+  ];
+  return { aliases: new Set(aliases), retired: new Set(retired.filter(Boolean)) };
+}
+
+/**
  * 把正文块覆盖套到节点的 `contentMarkdown` 上。
  *
  * 正文不是「整篇一份」，而是按 `<!-- node:id -->` 切成块再拼回整篇。
@@ -138,7 +161,22 @@ export function mergeCollection(items, overlayMap, section, problems) {
 export function applyContentOverlay(node, blocks, problems) {
   if (!blocks) return node;
   const id = node.contentRef && node.contentRef !== false ? node.contentRef : node.id;
-  const translated = blocks[id];
+  let translated = blocks[id];
+  /*
+   * 回退查找：讨论班笔记那批的**刷新对**（2026-10-12）。
+   *
+   * 那批把若干节点的正文换成了同一批源笔记的更新世代，块名相应改成
+   * `dg-<名字>-seminar`（见 `data/seminar-notes.mjs` 的文件头）。而英文覆盖是按块名写的、
+   * 目前只有旧世代那一份，块名一改就找不到，`npm run check:i18n` 报「中文源里不存在这个正文块」。
+   *
+   * 这里加一条**显式回退**：去掉 `-seminar` 再找一次。命中说明「这一块有旧世代译文」——
+   * 英文站因此不会退回中文，但那一段的**内容对不上新正文**（`check:i18n` 的形状检查会如实报出来）。
+   * 这是**翻译欠账**，不是通过了检查：欠账清单见 README 的「已知的翻译缺口」与 TODO。
+   * 不用「把译文删掉」来让检查变绿——那只会把「没翻译」伪装成「没有这一块」。
+   */
+  if (translated === undefined && id.endsWith('-seminar')) {
+    translated = blocks[id.slice(0, -'-seminar'.length)];
+  }
   if (translated === undefined) return node;
   return { ...node, contentMarkdown: translated };
 }
@@ -184,6 +222,13 @@ export function localizeOntologyRaw(raw, overlay) {
   ];
 
   let applied = 0;
+  const { aliases, retired } = mergeAwareIds(raw);
+  const contentBlocks = meta.contentBlocks ?? overlay.cases ?? null;
+  /*
+   * 节点一节要特殊处理：除了规范节点本身，还要把译文套到它的 `registrations` 上。
+   * 不做这一步的后果不是「英文少一点」——被合并的登记会整段掉回中文，而覆盖率
+   * 仍报 100%，因为覆盖率数的是基础节点。合并登记的正文块同理（见下面的 contentBlocks）。
+   */
   for (const [rawKey, overlayKey, overlayMap] of sections) {
     if (!overlayMap) continue;
     if (!Array.isArray(raw[rawKey])) {
@@ -194,7 +239,30 @@ export function localizeOntologyRaw(raw, overlay) {
       problems.push(`${overlayKey}：覆盖里有 ${Object.keys(overlayMap).length} 条译文，但基础本体里没有 ${rawKey} 这一节（键名不一致？）`);
       continue;
     }
-    result[rawKey] = mergeCollection(raw[rawKey], overlayMap, overlayKey, problems);
+    if (rawKey === 'nodes') {
+      const known = new Set([...raw.nodes.map((node) => node.id), ...aliases, ...retired]);
+      for (const key of Object.keys(overlayMap)) {
+        if (!RESERVED_KEYS.has(key) && !known.has(key)) problems.push(`${overlayKey}：覆盖里有基础数据中不存在的键「${key}」`);
+      }
+      result.nodes = raw.nodes.map((node) => {
+        const localized = overlayMap[node.id]
+          ? mergeStructured(node, overlayMap[node.id], ['nodes', node.id], problems)
+          : node;
+        if (!Array.isArray(node.registrations) || node.registrations.length === 0) return localized;
+        return {
+          ...localized,
+          registrations: node.registrations.map((record) => {
+            const translated = overlayMap[record.id]
+              ? mergeStructured(record, overlayMap[record.id], ['nodes', record.id], problems)
+              : record;
+            return applyContentOverlay(translated, contentBlocks, problems);
+          }),
+        };
+      });
+      applied += Object.keys(overlayMap).filter((id) => !RESERVED_KEYS.has(id)).length;
+      continue;
+    }
+    result[rawKey] = mergeCollection(raw[rawKey], overlayMap, overlayKey, problems, retired.size ? retired : null);
     applied += Object.keys(overlayMap).filter((id) => !RESERVED_KEYS.has(id)).length;
   }
 
@@ -210,7 +278,6 @@ export function localizeOntologyRaw(raw, overlay) {
   }
 
   /* 正文块：按节点单独替换，未覆盖的节点保持中文（并由 coverage 计入缺口）。 */
-  const contentBlocks = meta.contentBlocks ?? overlay.cases ?? null;
   if (contentBlocks) {
     result.nodes = result.nodes.map((node) => {
       const next = applyContentOverlay(node, contentBlocks, problems);

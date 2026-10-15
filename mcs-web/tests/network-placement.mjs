@@ -165,7 +165,33 @@ try {
   check('同一 URL 重新加载得到同一套坐标（确定性）', mismatch.length === 0, JSON.stringify(mismatch));
 
   // 手动拖动仍然优先：拖一个节点之后，再加节点不会把它挪回去。
-  const target = page.locator('.network-node').first();  const targetId = await target.getAttribute('data-node');
+  /*
+   * 拖哪一个：**挑一个真的点得到的节点**（2026-10-11 修）。
+   *
+   * 原来固定取 DOM 序里的第一个，那是个偶然的依赖：画布是整屏浮层版式，
+   * 顶部 HUD 与左右悬浮框都压在画布上，而适配只保证「内容落在它们**之间**的可用区」——
+   * 面板是**之后**才打开的，适配时并不知道它会盖住哪一片。于是同一个页面，
+   * HUD 高一点、或者内容按可用区重心挪一点，第一个节点就可能落到面板底下，
+   * `page.mouse.down()` 点在面板上，拖动静默失败（实测两种都踩过：先是 HUD，后是面板）。
+   *
+   * 判据用 `elementFromPoint`：节点中心那一点确实命中这个节点（或它的子元素）。
+   * 这**不是放宽**断言——拖动的三条断言一条没动，只是让「拖哪一个」不再依赖版面巧合；
+   * 万一一个可拖的节点都没有，这里会红，而不是静默跳过。
+   */
+  const pickDraggable = () => page.evaluate(() => {
+    for (const node of document.querySelectorAll('.network-node')) {
+      const rect = node.getBoundingClientRect();
+      const x = rect.x + rect.width / 2;
+      const y = rect.y + rect.height / 2;
+      if (x < 0 || y < 0 || x > window.innerWidth || y > window.innerHeight) continue;
+      const hit = document.elementFromPoint(x, y);
+      if (hit && node.contains(hit)) return node.getAttribute('data-node');
+    }
+    return null;
+  });
+  const targetId = await pickDraggable();
+  check('画布上至少有一个可以直接拖动的节点（不被 HUD 与悬浮框盖住）', Boolean(targetId), String(targetId));
+  const target = page.locator(`.network-node[data-node="${targetId}"]`);
   const targetBox = await target.boundingBox();
   await page.mouse.move(targetBox.x + targetBox.width / 2, targetBox.y + targetBox.height / 2);
   await page.mouse.down();
@@ -236,6 +262,151 @@ try {
   });
   check('「重置」只复位视角：节点坐标一个都不变（与「重新布局」分工不同）',
     resetMoved.length === 0, JSON.stringify(resetMoved.map((node) => node.id)));
+
+  /*
+   * ---- 拖动时的斥力（2026-10-15 加）----
+   *
+   * 用户的要求：「拖动节点使其与另一个节点靠近的时候会有闪的情况，是因为之前写的避免节点遮挡的逻辑，
+   * 现在改进为节点被拖动的时候会因为斥力相互挤压而不至于出现闪的情况。」
+   *
+   * 「闪」在旧实现里量得出来：**放手时**才做避让（螺线搜索找空位），把卡片拖到邻座中心再松手，
+   * 它当场下移 128px、再飘 31px；有序摆位还会在拖动中把别的卡片跟着重算（实测 23 步里有 5 步在动）。
+   * 现在拖动中每帧做斥力（拖动者不动、被压住的让开一点点），放手只是一次确认。
+   *
+   * 这一段在**干净的场景**里量（另开一张小图）：前面那些手动位置会让「谁被挤开」不可预期，
+   * 而这里要断言的正是「被挤开的那一张到底动了多少」。四件事：
+   * ① 放手不跳；② 邻座是**连续**被挤开的（单步位移小、总位移够）；③ 全程没有残留重叠；
+   * ④ 有序摆位下拖动中远处的卡片一个都不动（布局冻结，不再整片重排）。
+   */
+  const cleanIds = await page.evaluate(() => [...document.querySelectorAll('.network-node')]
+    .map((node) => node.dataset.node).filter((id) => !id.startsWith('note:')).slice(0, 6));
+  await page.goto(server.origin + '/network?nodes=' + encodeURIComponent(cleanIds.join(',')), { waitUntil: 'networkidle' });
+  await page.waitForFunction((count) => document.querySelectorAll('.network-node').length === count, cleanIds.length);
+  for (const label of ['显示全部节点面板', '显示推荐加入面板']) {
+    const input = page.locator(`input[aria-label="${label}"]`);
+    if (await input.count()) await input.uncheck().catch(() => {});
+  }
+  await page.waitForTimeout(700);
+
+  const readWorld = () => page.evaluate(() => Object.fromEntries([...document.querySelectorAll('.network-node')].map((node) => {
+    const match = /translate\((-?[\d.]+),(-?[\d.]+)\)/.exec(node.getAttribute('transform') ?? '');
+    return [node.dataset.node, { id: node.dataset.node, x: Number(match[1]), y: Number(match[2]) }];
+  })));
+
+  /** 挑一对「拖得动、且点得到」的节点：A 拖向 B（与上面那段拖动同一套 `elementFromPoint` 判据）。 */
+  const pickPair = () => page.evaluate(() => {
+    const boxes = [...document.querySelectorAll('.network-node')].map((node) => ({ id: node.dataset.node, rect: node.getBoundingClientRect() }));
+    const hits = (rect) => Boolean(document.elementFromPoint(rect.x + rect.width / 2, rect.y + rect.height / 2)?.closest('.network-node'));
+    for (const source of boxes) {
+      if (!hits(source.rect)) continue;
+      const target = boxes.filter((item) => item.id !== source.id && hits(item.rect))
+        .sort((a, b) => Math.hypot(a.rect.x - source.rect.x, a.rect.y - source.rect.y) - Math.hypot(b.rect.x - source.rect.x, b.rect.y - source.rect.y))[0];
+      if (target) return { source, target };
+    }
+    return null;
+  });
+
+  const dragOnto = async (pair, steps) => {
+    const from = { x: pair.source.rect.x + pair.source.rect.width / 2, y: pair.source.rect.y + pair.source.rect.height / 2 };
+    const to = { x: pair.target.rect.x + pair.target.rect.width / 2, y: pair.target.rect.y + pair.target.rect.height / 2 };
+    await page.mouse.move(from.x, from.y);
+    await page.mouse.down();
+    const track = [];
+    let frozenDuring = '';
+    for (let index = 1; index <= steps; index += 1) {
+      const t = index / steps;
+      await page.mouse.move(from.x + (to.x - from.x) * t, from.y + (to.y - from.y) * t);
+      await page.waitForTimeout(55);
+      track.push(await readWorld());
+      // 布局本身（不含拖动层）必须在**松手之前**读，否则读到的已经是落位后的那一份。
+      frozenDuring = await page.evaluate(() => JSON.stringify(window.__mcsNetwork?.columns ?? []));
+    }
+    await page.mouse.up();
+    await page.waitForTimeout(600);
+    return { track, frozenDuring, settled: await readWorld() };
+  };
+
+  const pair = await pickPair();
+  check('斥力用例：找得到一对可拖动的节点', pair !== null, JSON.stringify(pair?.source?.id ?? null));
+  let pushedAppart = 0;
+  if (pair) {
+    const before = await readWorld();
+    const { track, settled } = await dragOnto(pair, 12);
+    const draggedBeforeUp = track[track.length - 1][pair.source.id];
+    const targetTrack = track.map((frame) => frame[pair.target.id]).filter(Boolean);
+    const first = targetTrack[0];
+    const last = targetTrack[targetTrack.length - 1];
+    pushedAppart = Math.hypot(last.x - first.x, last.y - first.y);
+    let maxStep = 0;
+    for (let index = 1; index < targetTrack.length; index += 1) {
+      maxStep = Math.max(maxStep, Math.hypot(targetTrack[index].x - targetTrack[index - 1].x, targetTrack[index].y - targetTrack[index - 1].y));
+    }
+    check('斥力用例：松手不再跳位（落点与松手前一帧一致）',
+      Math.hypot(settled[pair.source.id].x - draggedBeforeUp.x, settled[pair.source.id].y - draggedBeforeUp.y) < 1.5,
+      JSON.stringify({ 松手前: draggedBeforeUp, 稳定后: settled[pair.source.id] }));
+    check('邻座被斥力挤开，而且是连续的（单步位移不超过卡片高度的一半）',
+      pushedAppart >= 40 && maxStep <= NODE_H / 2,
+      JSON.stringify({ 总位移: Math.round(pushedAppart), 单步最大: Math.round(maxStep * 10) / 10 }));
+    check('挤开之后没有任何两张卡片重叠',
+      overlapPairs(Object.values(settled)).length === 0, JSON.stringify(overlapPairs(Object.values(settled))));
+    check('被挤开的那一张与拖动者之间留出了缝（不是刚好贴住）',
+      Math.abs(last.x - settled[pair.source.id].x) >= NODE_W + 8 || Math.abs(last.y - settled[pair.source.id].y) >= NODE_H + 6,
+      JSON.stringify({ 被挤开: last, 拖动者: settled[pair.source.id] }));
+    check('拖动前后没有凭空多出/少掉卡片',
+      Object.keys(before).length === Object.keys(settled).length,
+      JSON.stringify({ before: Object.keys(before).length, after: Object.keys(settled).length }));
+  }
+
+  // 有序摆位：拖动中布局**冻结**（debug 钩子里的 columns 是布局本身，不含拖动层）。
+  const modeSelect = page.locator('.network-zoom select').first();
+  if (await modeSelect.count()) {
+    await modeSelect.selectOption({ label: '学习顺序' });
+    await page.waitForTimeout(900);
+    const orderedPair = await pickPair();
+    if (orderedPair) {
+      const frozenBefore = await page.evaluate(() => JSON.stringify(window.__mcsNetwork?.columns ?? []));
+      const beforeOrdered = await readWorld();
+      const { track, frozenDuring, settled } = await dragOnto(orderedPair, 10);
+      const duringOrdered = track[track.length - 1];
+      check('有序摆位下拖动中布局本身没有重算（整片重排被冻结）',
+        frozenBefore === frozenDuring && frozenBefore !== '[]',
+        JSON.stringify({ same: frozenBefore === frozenDuring, length: frozenBefore.length }));
+
+      /*
+       * 动的只能是**被碰到的那几张**：拖动者 + 被它压住的一圈（连带把邻居顶开）。
+       * 旧实现是「布局跟着 `overrides` 每帧重算」，实测 8 个节点里有 4 张会在拖动中移动。
+       * 单步位移的上界按**拖动本身的步长**给：这段拖动分 10 步、每步几十个世界单位，
+       * 被挤开的那张同步跟一段是应有的行为；真正要排除的是「布局重排」那种整卡跳位。
+       */
+      const movedIds = Object.keys(beforeOrdered).filter((id) => {
+        const start = beforeOrdered[id];
+        const now = duringOrdered[id];
+        return now && Math.hypot(now.x - start.x, now.y - start.y) > 1;
+      }).filter((id) => id !== orderedPair.source.id);
+      let maxStep = 0;
+      for (let index = 1; index < track.length; index += 1) {
+        for (const id of Object.keys(track[index])) {
+          const previous = track[index - 1][id];
+          const now = track[index][id];
+          if (!previous || !now) continue;
+          maxStep = Math.max(maxStep, Math.hypot(now.x - previous.x, now.y - previous.y));
+        }
+      }
+      check('有序摆位下拖动中只有被挤压的那几张在动，且没有整卡跳位',
+        movedIds.length <= 4 && maxStep <= 120,
+        JSON.stringify({ 移动的卡片: movedIds, 单步最大: Math.round(maxStep * 10) / 10 }));
+      check('有序摆位下松手也不跳位',
+        Math.hypot(settled[orderedPair.source.id].x - duringOrdered[orderedPair.source.id].x,
+          settled[orderedPair.source.id].y - duringOrdered[orderedPair.source.id].y) < 1.5,
+        JSON.stringify({ 拖动中: duringOrdered[orderedPair.source.id], 松手后: settled[orderedPair.source.id] }));
+      check('有序摆位下挤开之后也不重叠',
+        overlapPairs(Object.values(settled)).length === 0, JSON.stringify(overlapPairs(Object.values(settled))));
+      await modeSelect.selectOption({ label: '自由摆位' });
+      await page.waitForTimeout(600);
+    } else {
+      check('有序摆位下找得到一对可拖动的节点', false, '没有可拖的一对（版面被面板挡住？）');
+    }
+  }
 
   check('自动摆位没有控制台错误', consoleErrors.length === 0, consoleErrors.join(' | '));
 } finally {

@@ -63,9 +63,14 @@ export interface ActionRecord {
 
 export interface RelationRecord {
   id: string;
-  kind: 'hardPrereq' | 'hardGeneralization' | 'specialization' | 'application' | 'analogy' | 'duality' | 'bridge' | 'crossDomain';
+  kind: 'hardPrereq' | 'scaling' | 'application' | 'analogy' | 'duality' | 'bridge' | 'crossDomain';
   from: string;
   to: string;
+  /** 放与缩是同一关系的方向；null 表示旧登记的端点含义仍待核验。 */
+  direction?: { general: string; special: string; reading: 'expand' | 'contract' } | null;
+  scalingMode?: 'same-carrier' | 'cross-carrier' | 'instance' | 'unresolved';
+  scalingExplanation?: { summary: string; changes: Array<{ condition: string; special: string; general: string }> };
+  connectionKey?: string;
   witness: { type: string; ref?: string; status: EvidenceStatus };
   scope?: string;
   task?: string;
@@ -82,6 +87,8 @@ export interface EvidenceRecord {
   nodes: string[];
   certificate?: string;
   checker?: string;
+  backend?: 'lean4' | 'mcs-nd-subset';
+  leanRegistration?: string;
   checkerVerified?: boolean;
   usedAxioms?: string[];
   openAssumptions?: string[];
@@ -111,6 +118,11 @@ export interface LocalizationResult {
   pres: Array<{ claim: string; status: 'kept' | 'conditional' | 'not-claimed'; note: string }>;
   losses: string[];
   reason?: string;
+  scaling?: {
+    reading: 'expand' | 'contract';
+    projections: Array<{ mode: 'same-carrier' | 'cross-carrier' | 'instance'; nodes: string[]; relations: string[]; boundary: Array<{ ref: string; kind: string; note: string }> }>;
+    unresolvedRelations: string[];
+  };
   params: Record<string, unknown>;
   meta: { ontologyVersion: string; algorithmVersion: string; computedAt: string };
 }

@@ -19,6 +19,7 @@ try {
   const consoleErrors = [];
   page.on('console', (message) => { if (message.type() === 'error') consoleErrors.push(message.text()); });
   page.on('pageerror', (error) => consoleErrors.push(error.message));
+  page.on('response', response => { if (response.status() === 404) consoleErrors.push('HTTP 404: ' + response.url()); });
 
   // 首页只有六幕动画；学习入口、原型问题与档案信息都在紧接着它的「开始学习」页（/start）。
   await page.goto(server.origin, { waitUntil: 'networkidle' });
@@ -26,7 +27,14 @@ try {
   check('首页不再挂学习板块', (await page.locator('.case-card, .continue-card, #cases, #angles').count()) === 0);
 
   await page.goto(server.origin + '/start', { waitUntil: 'networkidle' });
-  check('开始学习页原型问题卡片齐全', (await page.locator('.case-card').count()) === 5);
+  /*
+   * 卡片由本体派生（`describeCase` 现场统计每个案例的节点数与学科分布），
+   * `networkidle` 之后还要等 React 把这一批算完——2026-10-13 本体涨到 340 个节点（2026-10-14 已到 405）后，
+   * 这一拍不再稳（同一次运行里红过一次、重跑即绿）。因此先等卡片出现再数，
+   * 断言本身不变，仍然是「恰好 6 张原型问题卡片」。
+   */
+  await page.waitForSelector('.case-card', { timeout: 15000 });
+  check('开始学习页原型问题卡片齐全', (await page.locator('.case-card').count()) === 6);
   check('侧栏不再用本体哈希占位', (await page.locator('.sidebar-note').count()) === 0);
   // 本体哈希与运行时版本搬到了「我的学习 · 高级设置」，仍然可查。
   await page.goto(server.origin + '/profile?tab=advanced', { waitUntil: 'networkidle' });
@@ -35,10 +43,11 @@ try {
 
   // ---- 原型问题缩略图（在开始学习页） ----
   await page.goto(server.origin + '/start', { waitUntil: 'networkidle' });
+  await page.waitForSelector('.case-thumbnail svg[role="img"][aria-label]');
   const thumbnailCases = await page.evaluate(() =>
     [...document.querySelectorAll('.case-thumbnail')].map((item) => item.getAttribute('data-case')));
-  check('五个原型问题都有专属缩略图', thumbnailCases.length === 5 && new Set(thumbnailCases).size === 5, JSON.stringify(thumbnailCases));
-  check('缩略图带可访问说明', await page.locator('.case-thumbnail svg[role="img"][aria-label]').count() === 5);
+  check('六个原型问题都有专属缩略图', thumbnailCases.length === 6 && new Set(thumbnailCases).size === 6, JSON.stringify(thumbnailCases));
+  check('缩略图带可访问说明', await page.locator('.case-thumbnail svg[role="img"][aria-label]').count() === 6);
 
   await page.goto(server.origin, { waitUntil: 'networkidle' });
 
@@ -695,17 +704,65 @@ try {
   await page.goto(server.origin + '/nodes?case=dg', { waitUntil: 'networkidle' });
   await page.waitForSelector('.node-card');
   const dgCards = await page.locator('.node-card').count();
-  // 30 个核心节点 + 2 个从语料提炼的断言 + 4 个误区模式 + 2 个方法 = 38。
-  check('微分几何案例筛选只出该案例节点', dgCards === 38, `dg 节点卡 ${dgCards}`);
+  /*
+   * 2026-10 的节点合并（`data/merges.mjs`）之后，案例筛选按**登记归属**（`node.cases`）走：
+   * 收口到别的案例规范节点上的登记仍然出现在 dg 案例里。因此这里数的是「dg 案例有多少处登记」
+   * （35 = 28 个 case 为 dg 的节点 + 7 处收口进来的登记），而不是「case 字段等于 dg 的节点数」。
+   * 口径与首页案例卡片、网络视图的案例筛选完全一致（都读 `cases`）。
+   *
+   * 35 → 54（2026-10-12）：讨论班笔记那批的 19 个新节点也登记在 dg 案例里
+   * （`data/seminar-notes.mjs`，`gt:` 前缀）。刷新对不新增登记，因此只加 19。
+   */
+  check('微分几何案例筛选只出该案例登记', dgCards === 54, `dg 节点卡 ${dgCards}`);
   check('案例筛选写入 URL', (await page.url()).includes('case=dg'));
-  const dgCaseChips = await page.evaluate(() =>
-    [...document.querySelectorAll('.node-card')].map((card) => card.getAttribute('href')).filter((href) => !href.includes('dg%3A')).length);
+  const dgCaseChips = await page.evaluate(async () => {
+    const cards = [...document.querySelectorAll('.node-card')]
+      .map((card) => decodeURIComponent((card.getAttribute('href') ?? '').replace('/nodes/', '')));
+    const listed = await (await fetch('/api/v2/ontology/nodes?limit=500&granularity=all')).json();
+    const byId = new Map(listed.data.nodes.map((node) => [node.id, node]));
+    // 每一张卡都必须**登记在 dg 案例里**：卡片的 href 已经不再统一是 `dg%3A` 前缀。
+    return cards.filter((id) => !(byId.get(id)?.cases ?? []).includes('dg')).length;
+  });
   check('案例筛选未混入其他案例', dgCaseChips === 0, `混入 ${dgCaseChips} 个`);
 
-  await page.goto(server.origin + '/nodes/' + encodeURIComponent('dg:smooth-manifold'), { waitUntil: 'networkidle' });
+  /*
+   * 这一段的其余断言要看的是**dg 语料自己的正文**，因此取一个规范节点就落在 dg 案例里的节点
+   * （`dg:smooth-structure`），而不是被收口过的 `top:differentiable-manifold`——
+   * 后者的正文与来源属于 top 案例，dg 那一份作为登记显示在「合并前的其它登记」里。
+   */
+  await page.goto(server.origin + '/nodes/' + encodeURIComponent('dg:smooth-structure'), { waitUntil: 'networkidle' });
   await page.waitForSelector('.node-header h1');
-  check('微分几何节点页标题', (await page.locator('.node-header h1').innerText()).includes('光滑流形'));
+  check('微分几何节点页标题', (await page.locator('.node-header h1').innerText()).includes('光滑结构'));
   check('微分几何正文含公式', (await page.locator('.reading .katex').count()) > 0);
+
+  /*
+   * AI 生成内容声明（2026-10-13 加）：**每一个**数学对象页的顶部都要有。
+   *
+   * 为什么这三条要一起查：只查「有个盒子」证明不了它有用——声明必须同时说出
+   * ① 内容来源（AI 生成）；② 证据状态（有待验证与审核，不夸大成「已复核」）；
+   * ③ 撰写入口（真的接到编写流程上，而不是一句空口号）。声明是**常驻**的，
+   * 不能由 `route-strip` / `review-strip` 那类条件性提示顶替。
+   */
+  const aiDeclaration = await page.evaluate(() => {
+    const box = document.querySelector('[data-testid="ai-declaration"]');
+    if (!box) return null;
+    return {
+      text: (box.innerText ?? '').replace(/\s+/g, ' ').trim(),
+      href: box.querySelector('a')?.getAttribute('href') ?? '',
+    };
+  });
+  check('对象页有 AI 生成内容声明', Boolean(aiDeclaration), JSON.stringify(aiDeclaration));
+  check('声明写清来源、待验证与欢迎撰写',
+    Boolean(aiDeclaration)
+      && aiDeclaration.text.includes('AI 生成')
+      && aiDeclaration.text.includes('有待验证与审核')
+      && aiDeclaration.text.includes('欢迎一起撰写节点'),
+    aiDeclaration?.text.slice(0, 120));
+  check('声明里的撰写入口指向该节点的编写流程（写草稿，不改本体）',
+    aiDeclaration?.href.startsWith('/authoring?node=')
+      && aiDeclaration.href.includes(encodeURIComponent('dg:smooth-structure'))
+      && aiDeclaration.href.includes('mode=new'),
+    aiDeclaration?.href);
   check('微分几何显示来源', (await page.locator('.provenance-list').innerText()).includes('DifferentialGeometry'));
   // wiki 链接必须已改写成站内链接：正文里不该再出现方括号形式的 [[...]]。
   const wikiLeftover = await page.evaluate(() => (document.querySelector('.reading')?.innerText ?? '').includes('[['));
@@ -727,7 +784,7 @@ try {
   check('定理节点标注为命题', (await page.locator('.node-header-top .construct').innerText()).includes('命题'));
   check('定理节点证据状态为正文级', (await page.locator('.evidence-list').innerText()).includes('正文证明'));
 
-  await page.goto(server.origin + '/network?nodes=' + encodeURIComponent('dg:topological-space,dg:homeomorphism'), { waitUntil: 'networkidle' });
+  await page.goto(server.origin + '/network?nodes=' + encodeURIComponent('top:space,top:homeomorphism'), { waitUntil: 'networkidle' });
   await page.waitForSelector('.network-stage');
   // 重复访问时面板默认收起，因此显式打开「推荐加入」再断言。
   await page.locator('input[aria-label="显示推荐加入面板"]').check();
@@ -743,10 +800,10 @@ try {
    * 「同胚 → 流形」这条边必须画成定义性前置，而不是一条几乎看不见的灰虚线。
    *
    * 用户的原话：「流形和同胚的关联的视觉效果怎么可能这么差！」数据侧的真相是
-   * `a-dg:manifold` 的 inputs 里含 `dg:homeomorphism`、mode=definition——不用同胚就定义不出流形。
+   * `a-top:topological-manifold` 的 inputs 里含 `top:homeomorphism`、mode=definition——不用同胚就定义不出流形。
    * 旧规则把所有契约一律压到最弱一档（1.1px / 0.34 / 细虚线 / 不标名称），这条断言把它钉住。
    */
-  await page.goto(server.origin + '/network?nodes=' + encodeURIComponent('dg:homeomorphism,dg:manifold'), { waitUntil: 'networkidle' });
+  await page.goto(server.origin + '/network?nodes=' + encodeURIComponent('top:homeomorphism,top:topological-manifold'), { waitUntil: 'networkidle' });
   await page.waitForSelector('.network-edge');
   await page.waitForTimeout(900);
   const definitionEdge = await page.evaluate(() => {
@@ -786,11 +843,18 @@ try {
     JSON.stringify({ label: definitionEdge?.visibleLabel, title: definitionEdge?.title?.slice(0, 120) }));
 
   // ---- 节点网络：整屏画布 + 可拖动悬浮框 + 全屏 + 平移缩放 ----
-  // 清掉上一次运行留下的面板位置与「来过」标记，让首次访问的引导状态生效。
+  /*
+   * 清掉上一次运行留下的面板位置、「来过」标记与**本次会话的暂存**，让首次访问的引导状态生效。
+   *
+   * 暂存（`sessionStorage` 的 `mcs-network-draft-v1`，2026-10-13 加）必须一起清：它按会话走，
+   * 而这一套用的是**同一个浏览器上下文**——前面几段已经往网络里加过节点（dg 那些视图），
+   * 不清的话下面「网络视图默认从空开始」会看到上一段的那张图，红在一个与本节无关的地方。
+   */
   await page.goto(server.origin + '/network', { waitUntil: 'networkidle' });
   await page.evaluate(() => {
     localStorage.removeItem('mcs-network-panels-v1');
     localStorage.removeItem('mcs-network-visited-v1');
+    sessionStorage.removeItem('mcs-network-draft-v1');
   });
   await page.goto(server.origin + '/network', { waitUntil: 'networkidle' });
   await page.waitForSelector('.network-stage');
@@ -943,8 +1007,10 @@ try {
   check('加入多个节点后出现边', (await page.locator('.network-edge').count()) >= 1);
   check('前一轮动画已结束', (await page.locator('.network-edge.growing').count()) === 0);
 
-  // ---- 新边要有生成动画：把线「画」出来 ----
-  // 加一个与现有网络有连接的节点，动画期间该边应带 .growing 并跑 network-edge-draw。
+  // ---- 新边要有生成动画：把线「画」出来，而且方向是「已在场的节点 → 新节点」 ----
+  // 加一个与现有网络有连接的节点，动画期间该边应带 .growing：
+  // 起点是已在场的那个节点时正向揭示（network-edge-draw），
+  // 起点是新节点时反向揭示（network-edge-draw-from-end）——读起来才是「已有的知识接上了它」。
   // 边源默认只开「行动契约 + 登记关系」两类；要观察边生长，先把七类都打开。
   await page.locator('input[aria-label="显示连接类型面板"]').check();
   await page.waitForTimeout(300);
@@ -960,13 +1026,34 @@ try {
   await page.waitForTimeout(300);
   const growth = await page.evaluate((before) => {
     const growing = [...document.querySelectorAll('.network-edge.growing')];
-    const animated = growing.filter((el) => getComputedStyle(el).animationName === 'network-edge-draw');
-    const offsets = animated.map((el) => parseFloat(getComputedStyle(el).strokeDashoffset) || 0);
-    return { before, growing: growing.length, animated: animated.length, maxOffset: Math.max(0, ...offsets) };
+    const animationOf = (el) => getComputedStyle(el).animationName;
+    const drawing = growing.filter(el => animationOf(el) === 'network-edge-draw');
+    const inward = growing.filter(el => animationOf(el) === 'network-edge-draw-from-end');
+    const fading = growing.filter(el => animationOf(el) === 'network-edge-fade');
+    const offsets = drawing.map(el => parseFloat(getComputedStyle(el).strokeDashoffset) || 0);
+    const inwardOffsets = inward.map(el => parseFloat(getComputedStyle(el).strokeDashoffset) || 0);
+    /** 这一步刚加入的那个节点：它的入场动画还在跑。 */
+    const entering = document.querySelector('.network-node-enter')?.closest('.network-node')?.dataset.node ?? null;
+    return {
+      before, entering,
+      growing: growing.length, drawing: drawing.length, inward: inward.length, fading: fading.length,
+      animated: drawing.length + inward.length + fading.length,
+      maxOffset: Math.max(0, ...offsets),
+      fromNew: entering ? growing.filter(el => el.dataset.from === entering).length : -1,
+      toNew: entering ? growing.filter(el => el.dataset.to === entering).length : -1,
+      inwardStarted: inwardOffsets.every(offset => offset < 0),
+      fadeStarted: fading.every(el => Number(getComputedStyle(el).opacity) < 0.85),
+    };
   }, growthBefore);
   if (!clickedRecommend) growth.skipped = true;
   check('新加入的边带生成动画', growth.growing >= 1 && growth.animated === growth.growing, JSON.stringify(growth));
-  check('生成动画从「未画出」开始', growth.maxOffset > 0, JSON.stringify(growth));
+  check('线段画出或实线关系淡入均有中间状态',
+    (!growth.drawing || growth.maxOffset > 0) && (!growth.fading || growth.fadeStarted)
+      && (!growth.inward || growth.inwardStarted),
+    JSON.stringify(growth));
+  check('新边一律从已在场的节点长向新节点（起点是它的那几条反向揭示）',
+    growth.entering ? growth.inward === growth.fromNew && growth.toNew === growth.growing - growth.inward : true,
+    JSON.stringify({ entering: growth.entering, inward: growth.inward, fromNew: growth.fromNew, toNew: growth.toNew }));
   // 动画结束后标记必须清理，否则后续交互会一直被动画覆盖。
   await page.waitForTimeout(1800);
   check('生成动画结束后清理标记', (await page.locator('.network-edge.growing').count()) === 0);
@@ -1024,15 +1111,21 @@ try {
   check('双击把节点放回算法位置', (await page.locator('.network-node.placed').count()) === 0);
   check('复位后清掉 localStorage 记录', await page.evaluate(() => !localStorage.getItem('mcs-network-positions-v1')));
 
-  // 重叠保护：把节点拖到另一个节点正上方，放手时被推开，不能停在别人卡片上。
+  // 重叠保护：把节点拖到另一个节点正上方，不能停在别人卡片上。
   // 这是用户抱怨过的「节点堆叠导致关系不可见」的回归判据。
-  // 注意：只核对**被拖动的那个节点**——其余节点之间的位置关系不是这次拖动造成的，
-  // 也不该由 avoidOverlaps 负责（它刻意只移动被拖者）。
+  /*
+   * 谁让开，2026-10-15 改过一次：
+   * 早先是**放手时**把被拖动的那一张挪到最近的空位（`avoidOverlaps` 的螺线搜索）——
+   * 用户看到的是一放手就跳（实测 128px），报告成「拖动靠近时会闪」。
+   * 现在拖动中每帧做**斥力**（`repelFromDrag`）：被压住的那张让开，被拖动的那张留在指针下。
+   * 因此这里除了「不重叠」，还要核对**让开的是邻座、被拖动的那张停在落点**。
+   */
   const dropInfo = await page.evaluate(() => {
     const groups = [...document.querySelectorAll('.network-node')];
     const rects = groups.map((g) => g.querySelector('rect').getBoundingClientRect());
     return {
-      draggedId: groups[1]?.querySelector('.network-node-id')?.textContent ?? '',
+      draggedId: groups[1]?.dataset.node ?? '',
+      targetId: groups[0]?.dataset.node ?? '',
       a: { x: rects[0].left + rects[0].width / 2, y: rects[0].top + rects[0].height / 2 },
       b: { x: rects[1].left + rects[1].width / 2, y: rects[1].top + rects[1].height / 2 },
     };
@@ -1057,16 +1150,36 @@ try {
     }
     return { missing: false, count: with_.length, with: with_ };
   }, dropInfo.draggedId);
+  /*
+   * 让开的是**邻座**，不是被拖动的那一张：这条语义由 `tests/network-placement.mjs` 在受控场景里
+   * 逐帧核对（世界坐标 + 单步位移）。这里只保留**原有的**那条「不留下重叠」——
+   * 本条用例的场景里画布上同时有几十个节点与若干悬浮框，屏幕坐标还随相机重新适配而变，
+   * 拿它来量「落点偏差」会把相机位移算成卡片位移。
+   */
   check('拖到别的节点上不会留下重叠', overlapReport.count === 0, JSON.stringify(overlapReport));
 
   // 拖到空白处则保持落点不动（不该被无谓地推开）
   await page.evaluate(() => localStorage.removeItem('mcs-network-positions-v1'));
   await page.reload({ waitUntil: 'networkidle' });
   await page.waitForTimeout(1400);
+  /*
+   * 挑一个**真的能被点中**的节点（与上面那段拖动用同一条判据）：悬浮框浮在画布上，
+   * 排在 DOM 第一位的不一定在最上层。原来这里直接取 `rects[0]`，节点集合一变就可能
+   * 点在面板上——2026-10 的节点合并改了空网络推荐出来的节点集合，这条脆弱性因此暴露。
+   */
   const freeDrop = await page.evaluate(() => {
-    const rects = [...document.querySelectorAll('.network-node rect')].map((r) => r.getBoundingClientRect());
-    return { x: rects[0].left + rects[0].width / 2, y: rects[0].top + rects[0].height / 2 };
+    const nodes = [...document.querySelectorAll('.network-node')];
+    for (let index = 0; index < nodes.length; index += 1) {
+      const rect = nodes[index].querySelector('rect').getBoundingClientRect();
+      const x = rect.left + rect.width / 2;
+      const y = rect.top + rect.height / 2;
+      if (x < 0 || y < 0 || x > window.innerWidth || y > window.innerHeight) continue;
+      const top = document.elementFromPoint(x, y);
+      if (top && nodes[index].contains(top)) return { index, x, y };
+    }
+    return null;
   });
+  check('拖到空白处前有可点中的节点', Boolean(freeDrop), JSON.stringify(freeDrop));
   await page.mouse.move(freeDrop.x, freeDrop.y);
   await page.mouse.down();
   await page.mouse.move(freeDrop.x + 260, freeDrop.y + 210, { steps: 16 });
@@ -1081,7 +1194,7 @@ try {
   // ---- 力导向布局：斥力、吸力、话题配色 ----
   // 节点集合要**跨话题块**，否则「按话题上色」只会得到一种颜色——那不是配色出错，
   // 而是这组节点本来就同属一个块。这里取「流形结构 / 切向量 / 微分形式」三块各若干。
-  const physicsIds = 'dg:topological-space,dg:coordinate-chart,dg:smooth-atlas,dg:smooth-manifold,dg:tangent-vector-curve,dg:tangent-vector-derivation,dg:tangent-bundle,dg:differential-form,dg:form-wedge-product,dg:poincare-lemma';
+  const physicsIds = 'top:space,top:coordinate-chart,dg:smooth-atlas,top:differentiable-manifold,dg:tangent-vector-curve,dg:tangent-vector-derivation,dg:tangent-bundle,dg:differential-form,dg:form-wedge-product,dg:poincare-lemma';
   await page.goto(server.origin + '/network?nodes=' + encodeURIComponent(physicsIds), { waitUntil: 'networkidle' });
   await page.waitForTimeout(1600);
   const physics = await page.evaluate(() => {
@@ -1243,9 +1356,9 @@ try {
   check('放大时光标下的点保持不动', Math.abs(anchorDrift.dx) < 4 && Math.abs(anchorDrift.dy) < 4, JSON.stringify(anchorDrift));
 
   // ---- 关系可视化条款：关系越硬，渲染越明显 ----
-  // 造一个确定含硬关系的网络：光滑流形 → 拓扑流形（硬泛化）、流形 → 拓扑流形（特化）、
+  // 造一个确定含硬关系的网络：光滑流形 → 拓扑流形（放缩）、流形 → 拓扑流形（特化）、
   // 坐标图 → 光滑图册（应用）。这三条都是本体里已登记的关系。
-  await page.goto(server.origin + '/network?nodes=' + encodeURIComponent('dg:smooth-manifold,dg:topological-manifold,dg:manifold,dg:coordinate-chart,dg:smooth-atlas'), { waitUntil: 'networkidle' });
+  await page.goto(server.origin + '/network?nodes=' + encodeURIComponent('top:differentiable-manifold,top:topological-manifold,top:topological-manifold,top:coordinate-chart,dg:smooth-atlas'), { waitUntil: 'networkidle' });
   await page.waitForTimeout(1200);
   const visuals = await page.evaluate(() => [...document.querySelectorAll('.network-edge')].map((el) => ({
     source: el.getAttribute('data-source') ?? [...el.classList].find((cls) => cls !== 'network-edge'),
@@ -1282,7 +1395,7 @@ try {
       interfaceRelations.length === 0 || Math.min(...semanticContracts.map((v) => v.width)) > maxInterfaceWidth,
       JSON.stringify({ semantic: semanticContracts.map((v) => v.width), interface: interfaceRelations.map((v) => [v.kind, v.width]) }));
     check('定义性前置不越过硬关系',
-      Math.max(...semanticContracts.map((v) => v.weight)) <= Math.max(...relationEdges.filter((v) => v.kind === 'hardPrereq' || v.kind === 'hardGeneralization').map((v) => v.weight), 1),
+      Math.max(...semanticContracts.map((v) => v.weight)) <= Math.max(...relationEdges.filter((v) => v.kind === 'hardPrereq' || v.kind === 'scaling').map((v) => v.weight), 1),
       JSON.stringify(semanticContracts.map((v) => v.weight)));
   }
   check('每条边都带上视觉权重', visuals.every((v) => Number.isFinite(v.weight) && v.weight > 0 && v.weight <= 1), JSON.stringify(visuals.filter((v) => !(v.weight > 0)).slice(0, 3)));
@@ -1312,7 +1425,7 @@ try {
   check('刷新后不重放入场动画', (await page.locator('.network-node.entering').count()) === 0);
 
   // 多元关系：登记的关系种类必须多于「桥接/泛化/应用」这三种老种类。
-  await page.goto(server.origin + '/network?nodes=' + encodeURIComponent('tensor:tensor-product,tensor:dual,tensor:tensor-rs,manifold:top-manifold,tensor:bundle'), { waitUntil: 'networkidle' });
+  await page.goto(server.origin + '/network?nodes=' + encodeURIComponent('tensor:tensor-product,tensor:dual,tensor:tensor-rs,top:topological-manifold,tensor:bundle'), { waitUntil: 'networkidle' });
   await page.waitForTimeout(900);
   const lightKinds = await page.evaluate(() =>
     [...document.querySelectorAll('.network-edge.relation')].map((edge) => edge.getAttribute('stroke')));
@@ -1427,8 +1540,13 @@ try {
   check('无法解析的引用不进入画布', (await page.locator('.network-node').count()) === 1);
 
   // 清空网络
+  /*
+   * 等到画布真的空了再断言：固定等 600ms 在负载高的机器上会量到中间态
+   * （2026-10-13 本体涨到 340 个节点、2026-10-14 到 405 后，同一条断言红过一次、重跑即绿）。
+   * 判据不变，仍然是「清空之后一个节点都不剩」——没清掉的话 5 秒后照旧红。
+   */
   await page.locator('.network-hud button:has-text("清空")').click();
-  await page.waitForTimeout(600);
+  await page.waitForFunction(() => document.querySelectorAll('.network-node').length === 0, null, { timeout: 5000 }).catch(() => {});
   check('可以清空网络', (await page.locator('.network-node').count()) === 0);
 
   await page.goto(server.origin + '/plan?goal=' + encodeURIComponent('limit:bridge'), { waitUntil: 'networkidle' });
@@ -1439,10 +1557,31 @@ try {
     const text = await bgItems.nth(index).innerText();
     if (text.includes('bg:real:metric') || text.includes('bg:logic:quantifier')) await bgItems.nth(index).locator('input[type=checkbox]').check();
   }
-  await page.click('text=开始规划');
+  const planSubmitButton = page.locator('[data-testid="plan-submit"]');
+  await planSubmitButton.click();
+  /*
+   * 「点完要有明确反馈」（2026-10-14 加）：任务在跑的那一段，按钮必须已经换字成「规划中…」。
+   * 这段时间不短于一次轮询（600ms），所以 rAF 轮询必然看得到；看不到就是反馈丢了。
+   */
+  const sawPlanning = await page.waitForFunction(
+    () => document.querySelector('[data-testid="plan-submit"]')?.textContent.trim() === '规划中…',
+    null, { timeout: 5000 },
+  ).then(() => true).catch(() => false);
+  check('点「开始规划」后按钮先进入「规划中…」状态', sawPlanning);
   await page.waitForSelector('.route-card', { timeout: 20000 });
   check('规划返回路线', (await page.locator('.route-card').count()) >= 1);
   check('规划状态徽章', (await page.locator('.plan-status .badge').first().innerText()).length > 0);
+  check('规划完成后主按钮显示「重新规划」', (await planSubmitButton.innerText()).trim() === '重新规划', await planSubmitButton.innerText());
+  /* 结果落地后视线要落在「③ 比较路线」栏目上，而不是停在表单那儿。 */
+  const summaryInView = await page.waitForFunction(() => {
+    const box = document.querySelector('.plan-summary')?.getBoundingClientRect();
+    return Boolean(box) && box.top <= window.innerHeight * 0.5;
+  }, null, { timeout: 8000 }).then(() => true).catch(() => false);
+  check('规划完成后视线自动落到「③ 比较路线」', summaryInView,
+    JSON.stringify(await page.evaluate(() => ({
+      scrollY: Math.round(window.scrollY),
+      top: Math.round(document.querySelector('.plan-summary')?.getBoundingClientRect().top ?? NaN),
+    }))));
 
   /*
    * 路线 → 节点网络的回放入口。
@@ -1465,6 +1604,17 @@ try {
     chips: [...document.querySelectorAll('.replay-chip')].map((c) => c.textContent.trim()),
     title: document.querySelector('.replay-step-title')?.textContent?.trim() ?? '',
     panelTop: Math.round(document.querySelector('.replay-panel').getBoundingClientRect().top),
+    /*
+     * 失败时要看得见「是被谁遮住的」：内容底边来自节点组的包围盒（点模式下含圆点下方的名字），
+     * 卡片底边只有卡片本身，两者一起看才知道是卡片还是名字越界。面板高与缩放同理——
+     * 缩到下限（25%）还装不下时，问题在「内容比可用区大」，不在相机算错。
+     */
+    panelH: Math.round(document.querySelector('.replay-panel').getBoundingClientRect().height),
+    scale: Number((document.querySelector('.network-zoom-value')?.textContent ?? '').replace(/[^\d.]/g, '')),
+    cardBottom: (() => {
+      const cards = [...document.querySelectorAll('.network-node rect')].map((r) => r.getBoundingClientRect().bottom);
+      return cards.length ? Math.round(Math.max(...cards)) : 0;
+    })(),
     contentBottom: (() => {
       const bs = [...document.querySelectorAll('.network-node')].map((n) => n.getBoundingClientRect());
       return bs.length ? Math.round(Math.max(...bs.map((b) => b.bottom))) : 0;
@@ -1474,84 +1624,175 @@ try {
   check('回放起点只有种子节点', atStart.step === 0 && atStart.nodes >= 1, JSON.stringify({ nodes: atStart.nodes, step: atStart.step, total: atStart.total }));
 
   /*
-   * 丝质箭头：从刚立住的那张卡片，绵延到下一步的目标节点。
+   * 路径箭头（2026-10-15 改版）：从刚立住的卡片，一支细箭头指向下一步的目标。
    *
-   * 这一段不只检查「画出来一束丝」，而是检查三件容易做砸的事：
+   * 这一段不只检查「画出来一支箭头」，而是检查四件容易做砸的事：
    * 1. 它**指对了地方**——把目的地卡片的布局坐标记下来，走一步，再看那里是不是真的长出节点；
-   *    这样「丝带只是装饰」的实现会直接红。
-   * 2. 它**是丝**——多股、有锥度、分叉张开、每股共用一道浓淡渐变；
-   *    只画一个半透明四边形也能「看起来像箭头」，但那是上一版，被否掉的就是它。
-   * 3. 它**两端都认得出**——源卡片带高亮，目的地卡片带「下一步」徽标与节点名。
+   *    这样「箭头只是装饰」的实现会直接红。
+   * 2. 它**很细**——一条 1.6px 的主干 + 12px 的小箭镞，而不是上一版那束中段 11–30 世界单位宽的丝带
+   *    （`.stage-silk` 必须一个都不剩，否则说明旧形状还在）；
+   * 3. 它**记得住顺序**——走过的每一步各留一支，步号就是学习顺序（数字挂在曲线上）；
+   * 4. 它**在长**——最新那一支从源头画出来（`stage-arrow-grow`），箭镞比主干晚一步落下。
    */
-  const readSilk = () => page.evaluate(() => {
-    const silk = document.querySelector('.stage-silk');
-    const strands = [...document.querySelectorAll('.stage-silk-strand')];
-    const head = document.querySelector('.stage-silk-head');
-    const flow = document.querySelector('.stage-silk-flow');
+  const readArrows = () => page.evaluate(() => {
+    const arrows = [...document.querySelectorAll('.stage-arrow')];
     const target = document.querySelector('.network-stage-target');
     const match = /translate\((-?[\d.]+),\s*(-?[\d.]+)\)/.exec(target?.getAttribute('transform') ?? '');
-    const boxes = strands.map((strand) => strand.getBBox());
+    const scale = Number(document.querySelector('[data-zoom]')?.dataset.zoom ?? 0);
+    const current = document.querySelector('.stage-arrow.is-current');
+    const currentLine = current?.querySelector('.stage-arrow-line');
+    const currentHead = current?.querySelector('.stage-arrow-head');
     return {
-      present: Boolean(silk),
-      strandCount: strands.length,
-      fillRefs: strands.map((strand) => getComputedStyle(strand).fill),
-      opacities: strands.map((strand) => Number(strand.getAttribute('fill-opacity'))),
-      widths: boxes.map((box) => Math.round(box.width)),
-      forkSpan: boxes.length
-        ? Math.round(Math.max(...boxes.map((box) => box.y + box.height)) - Math.min(...boxes.map((box) => box.y)))
-        : 0,
-      headPath: head?.getAttribute('d') ?? '',
-      flowDash: flow ? getComputedStyle(flow).strokeDasharray : null,
-      flowAnimation: flow ? getComputedStyle(flow).animationName : null,
+      count: arrows.length,
+      steps: arrows.map((arrow) => Number(arrow.dataset.step)),
+      previewSteps: arrows.filter((arrow) => arrow.dataset.preview === '1').map((arrow) => Number(arrow.dataset.step)),
+      badgeText: arrows.map((arrow) => arrow.querySelector('.stage-arrow-badge text')?.textContent ?? ''),
+      bindings: arrows.map((arrow) => [arrow.dataset.source, arrow.dataset.target]),
+      /** 主干在**屏幕上**的粗细：几何按 1/scale 换算，因此这里应当恒为 1.6px 上下。 */
+      lineWidthsPx: arrows.map((arrow) => Number(arrow.querySelector('.stage-arrow-line')?.getAttribute('stroke-width') ?? 0) * scale),
+      headLenPx: arrows.map((arrow) => {
+        const line = arrow.querySelector('.stage-arrow-line');
+        const head = arrow.querySelector('.stage-arrow-head');
+        if (!line || !head) return 0;
+        const box = head.getBBox();
+        return Math.max(box.width, box.height) * scale;
+      }),
+      headClosed: arrows.every((arrow) => /^M .+ Z$/.test(arrow.querySelector('.stage-arrow-head')?.getAttribute('d') ?? '')),
+      silkCount: document.querySelectorAll('.stage-silk, .stage-silk-strand').length,
+      currentAnimation: currentLine ? getComputedStyle(currentLine).animationName : null,
+      currentDashOffset: currentLine ? parseFloat(getComputedStyle(currentLine).strokeDashoffset) || 0 : null,
+      currentLength: currentLine ? parseFloat(getComputedStyle(currentLine).getPropertyValue('--arrow-len')) || 0 : 0,
+      headAnimation: currentHead ? getComputedStyle(currentHead).animationName : null,
+      flowAnimation: current ? getComputedStyle(current.querySelector('.stage-arrow-flow')).animationName : null,
       /** 目的地卡片自带「下一步」徽标与节点名。 */
       targetBadge: target?.querySelector('.network-stage-target-badge')?.textContent?.trim() ?? '',
       targetTitle: target?.querySelector('.network-stage-target-title')?.textContent?.trim() ?? '',
       targetPos: match ? { x: Number(match[1]), y: Number(match[2]) } : null,
-      /** 丝带根部所在的那张源卡片：高亮圈数应当恰好是 1。 */
-      sourceRings: document.querySelectorAll('.network-node.silk-source').length,
-      /** 已经画出来的节点的布局位置，用来核对「丝带指的下一步真的在那儿长出来」。 */
+      /** 当前这一支的源头卡片：高亮圈数应当恰好是 1。 */
+      sourceRings: document.querySelectorAll('.network-node.path-source').length,
+      /** 已经画出来的节点的布局位置，用来核对「箭头指的下一步真的在那儿长出来」。 */
       nodePositions: [...document.querySelectorAll('.network-node')].map((node) => node.getAttribute('transform')),
     };
   });
 
-  const startSilk = await readSilk();
-  check('回放出现丝质箭头', startSilk.present && startSilk.strandCount >= 3,
-    JSON.stringify({ present: startSilk.present, strands: startSilk.strandCount }));
-  check('丝带是分叉的多股，且每股共用一道浓淡渐变（丝的光泽）',
-    startSilk.fillRefs.length >= 3 && startSilk.fillRefs.every((fill) => /gradient|url/.test(fill)),
-    JSON.stringify(startSilk.fillRefs.slice(0, 2)));
-  check('丝带有锥度且外侧更细', new Set(startSilk.widths).size >= 2, JSON.stringify(startSilk.widths));
-  check('分叉张开有实际高度', startSilk.forkSpan > 40, String(startSilk.forkSpan));
-  check('箭镞是闭合的曲线轮廓（凹边掠形，不是实心三角）',
-    startSilk.headPath.startsWith('M ') && startSilk.headPath.endsWith('Z'), startSilk.headPath.slice(0, 40));
-  check('中央丝线是流动虚线', Boolean(startSilk.flowDash) && startSilk.flowDash !== 'none' && startSilk.flowAnimation === 'stage-silk-flow',
-    JSON.stringify({ dash: startSilk.flowDash, animation: startSilk.flowAnimation }));
+  const startArrows = await readArrows();
+  check('回放出现路径箭头，且旧的多股丝带已经不存在',
+    startArrows.count >= 1 && startArrows.silkCount === 0,
+    JSON.stringify({ arrows: startArrows.count, silk: startArrows.silkCount }));
+  check('箭头很细：主干在屏幕上 1.6px 上下、箭镞 12px 上下',
+    startArrows.lineWidthsPx.length > 0 && startArrows.lineWidthsPx.every((width) => width > 1 && width <= 2.2)
+      && startArrows.headLenPx.every((length) => length > 6 && length <= 16),
+    JSON.stringify({ widths: startArrows.lineWidthsPx, heads: startArrows.headLenPx }));
+  check('箭镞是闭合的小轮廓（不是一团填充）', startArrows.headClosed);
+  check('起点上只有一支箭头，步号从 1 开始', startArrows.steps[0] === 1 && startArrows.badgeText[0] === '1',
+    JSON.stringify({ steps: startArrows.steps, badges: startArrows.badgeText }));
+  check('最新那一支在生长（主干按长度画出来 + 箭镞随后落下 + 一道高光在跑）',
+    startArrows.currentAnimation === 'stage-arrow-grow' && startArrows.headAnimation === 'stage-arrow-head-in'
+      && startArrows.flowAnimation === 'stage-arrow-flow',
+    JSON.stringify({ line: startArrows.currentAnimation, head: startArrows.headAnimation, flow: startArrows.flowAnimation }));
   check('目的地卡片带「下一步」徽标与节点名',
-    startSilk.targetBadge === '下一步' && startSilk.targetTitle.length > 0,
-    JSON.stringify({ badge: startSilk.targetBadge, title: startSilk.targetTitle }));
-  check('源卡片被高亮（丝从哪张卡片来）', startSilk.sourceRings === 1, String(startSilk.sourceRings));
+    startArrows.targetBadge === '下一步' && startArrows.targetTitle.length > 0,
+    JSON.stringify({ badge: startArrows.targetBadge, title: startArrows.targetTitle }));
+  check('源卡片被高亮（这一步从哪张卡片来）', startArrows.sourceRings === 1, String(startArrows.sourceRings));
 
-  // 走一步：丝带预告的那个位置必须真的长出节点来。
+  // 走一步：箭头预告的那个位置必须真的长出节点来，而且走过的箭头要**留住**。
   await page.click('.replay-controls button[aria-label="下一步"]');
-  await page.waitForTimeout(500);
-  const afterStep = await readSilk();
-  const promised = `translate(${startSilk.targetPos.x},${startSilk.targetPos.y})`;
+  /*
+   * 生长动画只有 720ms，所以中间态必须在**刚走完这一步**的那一小段里采：
+   * 等页面静下来再读，dashoffset 早已是 0——那时「有没有动画」这件事已经无从分辨。
+   */
+  await page.waitForTimeout(140);
+  const midGrowth = await readArrows();
+  check('生长动画有时间中间态（不是一步到位）',
+    midGrowth.currentDashOffset > 0 && midGrowth.currentDashOffset <= midGrowth.currentLength + 1,
+    JSON.stringify({ offset: midGrowth.currentDashOffset, length: midGrowth.currentLength }));
+  await page.waitForTimeout(700);
+  const afterStep = await readArrows();
+  const promised = `translate(${startArrows.targetPos.x},${startArrows.targetPos.y})`;
   const laidDown = afterStep.nodePositions.some((transform) => transform?.replace(/\s+/g, '') === promised.replace(/\s+/g, ''));
-  check('丝带预告的下一步真的在那个位置长出了节点', laidDown, JSON.stringify({ promised, positions: afterStep.nodePositions.length }));
-  check('丝带随状态推进改换根部与目标',
-    afterStep.present && afterStep.targetPos
-      && (afterStep.targetPos.x !== startSilk.targetPos.x || afterStep.targetPos.y !== startSilk.targetPos.y),
-    JSON.stringify({ from: startSilk.targetPos, to: afterStep.targetPos }));
+  check('箭头预告的下一步真的在那个位置长出了节点', laidDown, JSON.stringify({ promised, positions: afterStep.nodePositions.length }));
+  check('来源与目标随状态推进改换',
+    afterStep.targetPos && (afterStep.targetPos.x !== startArrows.targetPos.x || afterStep.targetPos.y !== startArrows.targetPos.y),
+    JSON.stringify({ from: startArrows.targetPos, to: afterStep.targetPos }));
+  check('走过的那一支被留住（第 1 步的箭头没被后一支顶掉）',
+    afterStep.steps[0] === 1 && afterStep.steps.length === startArrows.steps.length + 1,
+    JSON.stringify({ before: startArrows.steps, after: afterStep.steps }));
+  check('步号按学习顺序编号，只有末尾那一支是预告',
+    afterStep.steps.every((step, index) => step === index + 1)
+      && afterStep.previewSteps.length === 1 && afterStep.previewSteps[0] === afterStep.steps.at(-1),
+    JSON.stringify({ steps: afterStep.steps, previews: afterStep.previewSteps }));
+  check('留下的那一支不再是「正在长」的那一支（生长动画跟着最新那支走）',
+    afterStep.badgeText.includes('1'), JSON.stringify(afterStep.badgeText));
+
+  /*
+   * 路径箭头要**绕开关系边**（2026-10-15，用户截图里的问题）。
+   *
+   * 判据是「中段并行重叠」：把箭头与每条边都采样成折线，数箭头中段（25%–75%）
+   * 有多少采样点落在某条边的 3px 之内——这正是「路径箭头和逻辑关系挤在同一条走廊里」的量。
+   * 同一支箭头的**直线走法**作为基线：新规则至少不能比它差，而且要真的更松。
+   * 另外量一下弓高：一条笔直的箭头说明「往外扩散」根本没生效。
+   */
+  const readArrowEdgeOverlap = () => page.evaluate(() => {
+    const scale = Number(document.querySelector('[data-zoom]')?.dataset.zoom ?? 0);
+    const sample = (path, count) => {
+      const length = path.getTotalLength();
+      return Array.from({ length: count + 1 }, (_, index) => {
+        const point = path.getPointAtLength((length * index) / count);
+        return { x: point.x, y: point.y, t: index / count };
+      });
+    };
+    const segmentDistance = (point, a, b) => {
+      const dx = b.x - a.x; const dy = b.y - a.y;
+      const squared = dx * dx + dy * dy;
+      const t = squared > 1e-9 ? Math.max(0, Math.min(1, ((point.x - a.x) * dx + (point.y - a.y) * dy) / squared)) : 0;
+      return Math.hypot(point.x - (a.x + t * dx), point.y - (a.y + t * dy));
+    };
+    const edges = [...document.querySelectorAll('.network-edge')].map((edge) => sample(edge, 30));
+    const arrows = [...document.querySelectorAll('.stage-arrow-line')].map((line) => sample(line, 40));
+    const overlapRatio = (points) => {
+      const middle = points.filter((point) => point.t >= 0.25 && point.t <= 0.75);
+      let hit = 0;
+      for (const point of middle) {
+        let near = Infinity;
+        for (const edge of edges) {
+          for (let index = 0; index < edge.length - 1; index += 1) near = Math.min(near, segmentDistance(point, edge[index], edge[index + 1]));
+        }
+        if (near * scale < 3) hit += 1;
+      }
+      return middle.length ? hit / middle.length : 0;
+    };
+    let bowPx = 0;
+    const rows = arrows.map((arrow) => {
+      const first = arrow[0]; const last = arrow[arrow.length - 1];
+      const straight = arrow.map((_, index) => {
+        const t = index / (arrow.length - 1);
+        return { x: first.x + (last.x - first.x) * t, y: first.y + (last.y - first.y) * t, t };
+      });
+      bowPx = Math.max(bowPx, segmentDistance(arrow[Math.floor(arrow.length / 2)], first, last) * scale);
+      return { overlap: overlapRatio(arrow), straight: overlapRatio(straight) };
+    });
+    const mean = (key) => (rows.length ? rows.reduce((sum, row) => sum + row[key], 0) / rows.length : 0);
+    return { arrows: rows.length, edges: edges.length, overlap: +mean('overlap').toFixed(3), straight: +mean('straight').toFixed(3), maxBowPx: Math.round(bowPx) };
+  });
+  await page.click('.replay-controls button[aria-label="到终点"]');
+  await page.waitForTimeout(900);
+  const avoidance = await readArrowEdgeOverlap();
+  check('路径箭头不再与关系边并排挤在同一条走廊里（中段重叠率低于直线走法）',
+    avoidance.arrows >= 2 && avoidance.overlap < avoidance.straight,
+    JSON.stringify(avoidance));
+  check('箭头确实往外扩散（存在明显弓高）', avoidance.maxBowPx >= 16, JSON.stringify(avoidance));
 
   await page.click('.replay-controls button[aria-label="回到起点"]');
   await page.waitForTimeout(400);
 
   // 逐步推进：节点与边必须单调不减，且至少在某一步真的增加（否则不叫「扩张」）。
   const walk = [];
+  const arrowCounts = [];
   for (let index = 0; index < atStart.total; index += 1) {
     await page.click('.replay-controls button[aria-label="下一步"]');
     await page.waitForTimeout(420);
     walk.push(await readReplay());
+    arrowCounts.push((await readArrows()).steps);
   }
   const monotone = walk.every((frame, index) => index === 0
     || (frame.nodes >= walk[index - 1].nodes && frame.edges >= walk[index - 1].edges));
@@ -1560,12 +1801,19 @@ try {
   check('回放每一步说明加入了什么', walk.every((frame) => frame.chips.length >= 1 || frame.nodes === walk[0].nodes),
     JSON.stringify(walk.map((f) => f.chips)));
   check('回放内容不被控制台遮住', walk.every((frame) => frame.contentBottom <= frame.panelTop + 1),
-    JSON.stringify(walk.map((f) => `${f.contentBottom}/${f.panelTop}`)));
+    JSON.stringify(walk.map((f) => ({ 内容底: f.contentBottom, 卡片底: f.cardBottom, 面板顶: f.panelTop, 面板高: f.panelH, 缩放: f.scale }))));
+  check('箭头随步数单调增加（每一步都留下一支，走过的不会被顶掉）',
+    arrowCounts.every((steps, index) => steps.length >= (arrowCounts[index - 1]?.length ?? 0)
+      && steps.every((step, position) => step === position + 1)),
+    JSON.stringify(arrowCounts.map((steps) => steps.length)));
 
-  // 走到最后一步就没有「下一阶段」了：丝带与目的地卡片都必须消失，而不是指着不存在的节点。
-  const endSilk = await readSilk();
-  check('最后一步不再画丝带', !endSilk.present && endSilk.sourceRings === 0,
-    JSON.stringify({ present: endSilk.present, rings: endSilk.sourceRings }));
+  // 走到最后一步就没有「下一阶段」了：预告箭头与目的地卡片都必须消失，而不是指着不存在的节点。
+  // 高亮跟着最后那一支走（它标记的是「最后这一步从哪儿来」），因此这里仍然是 1 圈而不是 0。
+  const endArrows = await readArrows();
+  check('最后一步不再有预告箭头，但走过的全部留着',
+    endArrows.previewSteps.length === 0 && endArrows.sourceRings === 1
+      && endArrows.count === endArrows.steps.length && endArrows.steps.every((step, index) => step === index + 1),
+    JSON.stringify({ steps: endArrows.steps, previews: endArrows.previewSteps, rings: endArrows.sourceRings }));
 
   // 进度条可以直接跳步：这才是「可调状态」的判据，而不是只能顺序播放。
   await page.locator('.replay-slider').evaluate((element) => {
@@ -1662,11 +1910,11 @@ try {
   check('窄屏规划表单不撑宽页面', planOverflow.overflow <= 2 && planOverflow.widestControl <= planOverflow.formWidth,
     JSON.stringify(planOverflow));
   check('窄屏规划页目标在首屏附近', (await page.evaluate(() => document.querySelector('.plan-form').getBoundingClientRect().top + scrollY)) < 1200);
-  check('窄屏保留主导航', (await page.locator('.nav-item:not(.secondary)').count()) === 5);
+  check('窄屏保留主导航', (await page.locator('.nav-item:not(.secondary)').count()) === 6);
   // 主导航顺序是产品决定：知识网络在学习路线之前（先看清结构，再定路线）。
   const navOrder = await page.locator('.nav-item:not(.secondary) .nav-label').allInnerTexts();
-  check('主导航顺序为开始学习 → 数学对象 → 知识网络 → 学习路线 → 我的学习',
-    JSON.stringify(navOrder.map((label) => label.trim())) === JSON.stringify(['开始学习', '数学对象', '知识网络', '学习路线', '我的学习']),
+  check('主导航順序包含我的笔记库，知识网络仍先于学习路线',
+    JSON.stringify(navOrder.map((label) => label.trim())) === JSON.stringify(['开始学习', '数学对象', '知识网络', '学习路线', '我的笔记库', '我的学习']),
     JSON.stringify(navOrder));
 
   // ---- 学习闭环 ----
@@ -1739,7 +1987,18 @@ try {
   check('画出强关联邻居', continueView.neighbors >= 1, JSON.stringify(continueView));
   check('邻居卡片全部在画布内', continueView.inside === continueView.neighbors, JSON.stringify(continueView));
   check('邻居卡片不重叠', continueView.overlap === 0, JSON.stringify(continueView));
-  check('每个方向对应一个话题', continueView.dirs.length === continueView.usedDirections.length && continueView.dirs.every((d) => /^[上右下左] · /.test(d)), JSON.stringify(continueView.dirs));
+  /*
+   * 方向标签：**每个话题组一条**，方向只取上/右/下/左。
+   *
+   * 话题数超过 4 时方向会环形复用（`continue-network.ts` 的方向分配规则 3），
+   * 因此标签条数**大于**不同方向数——2026-10 加入第八个案例「点集拓扑」的 4 个话题块之后，
+   * 这个中心的话题数从 3 变成 7，第一版断言（标签数 === 不同方向数）就不成立了。
+   * 断言改成设计实际保证的两件事：标签方向合法，且每条标签都是「方向 · 话题」形式。
+   */
+  check('方向标签只用上右下左，且每个话题组一条',
+    continueView.dirs.length >= continueView.usedDirections.length
+      && continueView.dirs.every((d) => /^[上右下左] · .+/.test(d)),
+    JSON.stringify(continueView.dirs));
   check('关联依据来自本体（关系或契约）', continueView.bases.some((b) => b === 'relation' || b === 'contract'), JSON.stringify(continueView.bases));
   check('视图配有可点的节点列表', continueView.links === continueView.neighbors, JSON.stringify(continueView));
 
@@ -1789,7 +2048,7 @@ try {
   check('原型问题栏目存在', prototype.headings.includes('从原型问题进入'), JSON.stringify(prototype.headings));
   check('原型问题按领域分组', prototype.sections.length >= 3, JSON.stringify(prototype.sections.map((s) => s.title)));
   check('每组标出思路数与节点数', prototype.sections.every((s) => /\d+\s*条思路/.test(s.meta) && /\d+\s*个节点/.test(s.meta)), JSON.stringify(prototype.sections.map((s) => s.meta)));
-  check('五个案例都在且只出现一次', prototype.cardCount === 5, `实际 ${prototype.cardCount} 张卡`);
+  check('六个案例都在且只出现一次', prototype.cardCount === 6, `实际 ${prototype.cardCount} 张卡`);
   check('每张卡给出「胚子」', prototype.allHaveEmbryo);
   check('每张卡列出学科分布', prototype.allHaveDisciplines);
   check('每张卡列出构造分布', prototype.allHaveConstructs);
@@ -1798,11 +2057,18 @@ try {
   // 节点数必须与本体一致：从接口取真值比对，防止卡片写死数字后与数据脱节。
   const caseCounts = await page.evaluate(async () => {
     const graph = await (await fetch('/api/v2/ontology/graph')).json();
+    /*
+     * 按**登记归属**计数：合并后的规范节点可能登记在多个案例里（`cases`，见 `data/merges.mjs`），
+     * 首页案例卡片走的是同一条口径（`describeCase` 用 `cases` 筛）。按 `case` 数会让
+     * 微分几何卡片比本体少 7 —— 那不是卡片写错，是两边口径不一致。
+     */
     const tally = {};
-    for (const node of graph.data.nodes) tally[node.case] = (tally[node.case] ?? 0) + 1;
+    for (const node of graph.data.nodes) {
+      for (const caseId of node.cases ?? [node.case]) tally[caseId] = (tally[caseId] ?? 0) + 1;
+    }
     return tally;
   });
-  const expectedCounts = ['limit', 'manifold', 'tensor', 'group', 'dg'].map((id) => caseCounts[id]).sort((a, b) => a - b);
+  const expectedCounts = ['limit', 'manifold', 'tensor', 'group', 'dg', 'top'].map((id) => caseCounts[id]).sort((a, b) => a - b);
   check('卡片节点数与本体一致', JSON.stringify([...prototype.counts].sort((a, b) => a - b)) === JSON.stringify(expectedCounts),
     `卡片 ${JSON.stringify([...prototype.counts].sort((a, b) => a - b))} vs 本体 ${JSON.stringify(expectedCounts)}`);
   check('含数学记号的标题按公式排版', prototype.katex >= 1, `katex ${prototype.katex}`);
@@ -1861,7 +2127,7 @@ try {
   await page.waitForTimeout(600);
   check('研究台仍在 /lab 可达（辅助导航里现在叫「前沿研究」）',
     (await page.locator('h1').first().innerText()).includes('研究台'));
-  check('研究条目未进入主导航', (await page.locator('.nav-item:not(.secondary)').count()) === 5);
+  check('研究条目未进入主导航', (await page.locator('.nav-item:not(.secondary)[href$="/lab"], .nav-item:not(.secondary)[href$="/maintenance"]').count()) === 0);
   await page.goto(server.origin + '/maintenance', { waitUntil: 'networkidle' });
   await page.waitForTimeout(600);
   check('原研究台的维护材料搬到 /maintenance（网站维护）',
@@ -1876,19 +2142,138 @@ try {
   await page.setViewportSize({ width: 1440, height: 1000 });
 
   /*
-   * 路径规划页的「范例路径」栏目。
+   * 路径规划页的「范例路径」栏目（2026-10-13 第二版：压缩态 → 悬浮简介 → 点击展开）。
    *
-   * 这一段是端到端的：不只检查卡片渲染出来了，还要**点一次「载入并规划这一程」**，
-   * 确认范例真的把目标组、事件界与起点声明写进了表单，并且服务端据此返回了路线。
-   * 卡片文案里的「实测最少 N 个事件」如果只是写死的数字，这里就会露馅。
+   * 用户的要求是「这一栏太臃肿，改成压缩态、按学科选书、悬浮书名看简介、点击展开具体路径」。
+   * 因此这一段按**用户真的会做的三步**来验收，而不是只看 DOM 里有没有元素：
+   *
+   * 1. 落地是压缩态：一程卡片一张都不渲染，只有学科行与书名按钮，且这一栏在规划表单之前；
+   * 2. 鼠标悬浮书名，**这套路径的简介**出现（`page.hover()` 是真的移指针，能触发 `:hover`）；
+   * 3. 点书名，**只有这一本的七程**就地展开；再点一次收起。
+   *
+   * 之后照旧端到端跑一遍：点「载入并规划这一程」，核对表单里的目标/事件界与服务端路线，
+   * 并数一遍时间线上的事件数——卡片上写的事件数如果是假的，这里就会露馅。
    */
   await page.goto(server.origin + '/plan', { waitUntil: 'networkidle' });
-  // 范例是「不知道从哪开始」时的可选出口，默认折叠；这一段要验证端到端流程，先展开它。
-  await page.locator('.example-picker > summary').click();
-  await page.waitForSelector('.example-card');
-  const exampleCards = page.locator('.example-card');
+  await page.waitForSelector('.example-hub');
+  /* 学科分组要等本体到位（本体未到时组件如实显示「正在从本体读取学科分布……」）。 */
+  await page.waitForFunction(() => document.querySelectorAll('.example-book').length >= 2, null, { timeout: 15000 });
+
+  const compact = await page.evaluate(() => {
+    const hub = document.querySelector('.example-hub');
+    const form = document.querySelector('#plan-form');
+    return {
+      hubTop: hub?.getBoundingClientRect().top ?? null,
+      formTop: form?.getBoundingClientRect().top ?? null,
+      hubHeight: Math.round(hub?.getBoundingClientRect().height ?? 0),
+      cards: document.querySelectorAll('.example-card').length,
+      books: [...document.querySelectorAll('.example-book')].map((el) => el.textContent.replace(/\s+/g, ' ').trim()),
+      disciplines: [...document.querySelectorAll('.example-discipline-head')].map((el) => el.textContent.replace(/\s+/g, ' ').trim()),
+      expanded: document.querySelectorAll('.example-book[aria-expanded="true"]').length,
+      introsVisible: [...document.querySelectorAll('.example-book-intro')].filter((el) => getComputedStyle(el).display !== 'none').length,
+    };
+  });
+  check('范例路径在规划表单之前，且落地是压缩态（一张程卡片都不渲染）',
+    Number.isFinite(compact.hubTop) && Number.isFinite(compact.formTop) && compact.hubTop < compact.formTop
+      && compact.cards === 0 && compact.expanded === 0 && compact.introsVisible === 0,
+    JSON.stringify(compact));
+  check('压缩态按学科列出书名（不是把每条路径的程卡片平铺）',
+    /*
+     * 一个学科下可以有**不止一本**书：2026-10-14 起「线性代数」下并排站着
+     * 《简明高等代数》与 Axler《Linear Algebra Done Right》。因此这里是
+     * 「书 ≮ 学科」而不是「书 = 学科」——原来的等式在第四套进来的当天就红了。
+     */
+    compact.disciplines.length >= 2 && compact.books.length >= compact.disciplines.length
+      && compact.books.every((book) => book.length > 0),
+    JSON.stringify({ disciplines: compact.disciplines, books: compact.books }));
+
+  /*
+   * 每一本书归在哪个学科下：**《简明高等代数》必须是「线性代数」**。
+   * 2026-10-13 用户截图里它被归到了「其他」——书单来自数据文件、分组名却只在
+   * 本体节点里查得到，两边不同步时就会那样。现在统计拿不到东西时用声明主学科兜底。
+   */
+  const bookGroups = await page.evaluate(() => [...document.querySelectorAll('.example-discipline')].map((el) => ({
+    heading: el.querySelector('.example-discipline-head')?.textContent.replace(/\s+/g, ' ').trim() ?? '',
+    books: [...el.querySelectorAll('.example-book-name')].map((book) => book.textContent.trim()),
+  })));
+  const jiangGroup = bookGroups.find((group) => group.books.some((name) => name.includes('简明高等代数')));
+  check('《简明高等代数》归在「线性代数」下（不是「其他」）',
+    Boolean(jiangGroup) && jiangGroup.heading.startsWith('线性代数'),
+    JSON.stringify(bookGroups));
+
+  // 悬浮书名 → 这套路径的简介**与它的取舍**出现（导语、学科分布、规模、特色/优点/代价）。
+  const firstBook = page.locator('.example-book').first();
+  await firstBook.hover();
+  const intro = page.locator('.example-book-intro').first();
+  await intro.waitFor({ state: 'visible', timeout: 5000 });
+  const introText = (await intro.innerText()).replace(/\s+/g, ' ').trim();
+  check('悬浮书名显示这套路径的简介（导语 + 学科分布 + 规模）',
+    introText.length >= 60 && /学科分布/.test(introText) && /里程碑/.test(introText),
+    introText.slice(0, 120));
+  /*
+   * 用户 2026-10-13 的要求：「悬停不要只显示路径的介绍，要把这样规划的优缺点和特色也写出来」。
+   * 三块都要在、都要有真内容（各 ≥2 条），并且缩进里的 `**强调**` 要被渲染，不能漏出星号。
+   */
+  const introNotes = await intro.evaluate((el) => ({
+    titles: [...el.querySelectorAll('.example-plan-note-title')].map((item) => item.textContent.trim()),
+    bullets: [...el.querySelectorAll('.example-plan-note')].map((item) => item.querySelectorAll('li').length),
+    texts: [...el.querySelectorAll('.example-plan-note li')].map((item) => item.textContent.trim()),
+    rawAsterisks: el.textContent.includes('**'),
+  }));
+  check('悬浮卡里写出特色 / 优点 / 代价三块，且各有内容',
+    introNotes.titles.length === 3
+      && introNotes.titles.join('/') === '特色/优点/代价与局限'
+      && introNotes.bullets.every((count) => count >= 2)
+      && introNotes.texts.every((text) => text.length >= 10),
+    JSON.stringify({ titles: introNotes.titles, bullets: introNotes.bullets }));
+  check('利弊里的强调走 Markdown 渲染（不漏出星号）', introNotes.rawAsterisks === false);
+
+  // 点书名 → 只有这一本的七程就地展开；再点一次收起。
+  await firstBook.click();
+  await page.waitForSelector('.example-book-paths .example-card');
+  const expanded = await page.evaluate(() => {
+    const open = document.querySelector('.example-book[aria-expanded="true"]');
+    const paths = document.querySelector('.example-book-paths');
+    const cards = [...(paths?.querySelectorAll('.example-card') ?? [])];
+    return {
+      openBook: open?.textContent.replace(/\s+/g, ' ').trim() ?? null,
+      cards: cards.length,
+      ids: cards.map((card) => card.getAttribute('data-example-id')),
+      otherBooksOpen: document.querySelectorAll('.example-book[aria-expanded="true"]').length,
+      hasSource: Boolean(paths?.querySelector('.example-source')),
+      hasNote: Boolean(paths?.querySelector('.example-note')),
+    };
+  });
+  check('点书名就地展开这一本的七程（同一时刻只开一本，并给出出处与边界说明）',
+    expanded.cards === 7 && expanded.otherBooksOpen === 1 && expanded.hasSource && expanded.hasNote
+      && expanded.ids.every((id) => typeof id === 'string' && id.length > 0),
+    JSON.stringify({ openBook: expanded.openBook, cards: expanded.cards, hasSource: expanded.hasSource }));
+
+  await firstBook.click();
+  await page.waitForFunction(() => document.querySelectorAll('.example-card').length === 0, null, { timeout: 5000 }).catch(() => {});
+  check('再点一次收起，回到压缩态', (await page.locator('.example-card').count()) === 0);
+
+  /*
+   * 展开要检查的那一本（《简明高等代数》），后面的端到端流程在它的卡片上跑。
+   *
+   * 定位到**书名元素**（`.example-book-name`），不按整张卡片 `hasText` 找：
+   * 2026-10-14 起 Axler 那本的特色/局限里也写着「与《简明高等代数》同一口径」
+   * 「SVD 与《简明高等代数》第七程登记为接口」，按卡片全文匹配会同时命中两本，
+   * Playwright 的 strict 模式当场报「resolved to 2 elements」。书名是唯一的锚。
+   */
+  const bookByName = (name) => page.locator('.example-book-wrap')
+    .filter({ has: page.locator('.example-book-name', { hasText: name }) });
+  const targetBook = bookByName('简明高等代数').locator('.example-book');
+  await targetBook.click();
+  await page.waitForSelector('.example-book-paths .example-card');
+  const exampleCards = page.locator('.example-book-paths .example-card');
   const exampleCount = await exampleCards.count();
-  check('路径规划页有范例路径栏目', exampleCount >= 1, String(exampleCount));
+  check('展开后这一本的七程都在', exampleCount === 7, String(exampleCount));
+  const cardIds = await page.evaluate(() => [...document.querySelectorAll('.example-book-paths .example-card')]
+    .map((card) => card.getAttribute('data-example-id')));
+  check('展开的卡片都属于这一本（没有混进别的教材）',
+    cardIds.every((id) => id.startsWith('jiang-jdga-')), JSON.stringify(cardIds));
+
   const firstCard = exampleCards.first();
   const firstFeature = await firstCard.locator('.example-feature').innerText();
   check('范例卡带特色简介', firstFeature.length >= 40, firstFeature.slice(0, 40));
@@ -1897,6 +2282,11 @@ try {
   const declaredHorizon = Number((firstFactText.match(/事件界\s*h\s*=\s*(\d+)/) ?? [])[1] ?? NaN);
   check('范例卡写明实测事件数与事件界', Number.isFinite(declaredEvents) && Number.isFinite(declaredHorizon), firstFactText.replace(/\n/g, ' '));
   check('范例卡列出里程碑', (await firstCard.locator('.example-highlights li').count()) >= 3);
+  /*
+   * 目标 id 从卡片上读，不写死某一本的 id：展开的是哪一本由这段流程决定，
+   * 写死前缀会让「换一本验收」一改就红。要守的是「表单里的目标 = 卡片上的目标」。
+   */
+  const firstCardGoal = (await firstCard.locator('.example-facts code').first().innerText()).trim();
 
   await firstCard.locator('button:has-text("载入并规划这一程")').click();
   // 载入后事件界应当换成范例声明的值；这一步同时说明「载入」不是只改了个标题。
@@ -1907,7 +2297,7 @@ try {
   );
   check('载入范例写入了声明的事件界', true);
   const goalValue = await page.locator('.plan-form select').first().inputValue();
-  check('载入范例改写了目标节点', goalValue.startsWith('liang:'), goalValue);
+  check('载入范例改写了目标节点', goalValue === firstCardGoal, `${goalValue} vs ${firstCardGoal}`);
   const multiGoalNotice = await page.locator('.plan-form .notice').first().innerText().catch(() => '');
   check('多目标规划如实说明目标个数', /共\s*\d+\s*个目标/.test(multiGoalNotice), multiGoalNotice.slice(0, 60));
   // 起点里含前几程的成果，它们不在「可用背景」网格里，必须单独列全。
@@ -1918,6 +2308,292 @@ try {
   const summaryFacts = await page.locator('.plan-summary .facts').first().innerText();
   check('结果摘要显示目标个数', /（\d+ 个）/.test(summaryFacts), summaryFacts.replace(/\n/g, ' ').slice(0, 80));
   await page.screenshot({ path: resolve(MCS_WEB_ROOT, 'tmp', 'example-paths.png'), fullPage: false });
+
+  /*
+   * ---- 一键导入**整条**路径（2026-10-13 加）----
+   *
+   * 用户要的是「导入范例的**整体**路径」，不是一程一程自己接。这里按用户会做的动作验：
+   *
+   * 1. 在展开的那一本上点「一键导入整条路径」；
+   * 2. 表单下面出现七程进度轨：第一程是「当前」，其余「未开始」；
+   * 3. 点「下一程」：第二程变「当前」、第一程变「本次已载入」，表单里的目标跟着换；
+   * 4. 结束整条路径 → 进度轨消失。
+   */
+  await page.evaluate(() => window.sessionStorage.removeItem('mcs-example-walk-v1'));
+  /*
+   * 七程各自的目标 id 从卡片上读（第一程就是上面那一段已经载入过的那一程）。
+   * 写死 `jiang:field-axioms` 会让「换一本书验收」一改就红。
+   */
+  const stageGoals = await page.evaluate(() => [...document.querySelectorAll('.example-book-paths .example-card')]
+    .map((card) => card.querySelector('.example-facts code')?.textContent.trim() ?? ''));
+  /*
+   * 「一键」= **不用先展开**：压缩态的选书行上每本书都有一个「整条路径」按钮。
+   * 展开块里另有带说明的完整入口（`一键导入整条路径（七程）`）。
+   *
+   * 条数不写死：书从 3 本涨到 4 本（2026-10-14，Axler）时，写死的 3 会红，
+   * 而要守的其实是「**每一本**都有入口」——因此拿书行数当基准。
+   */
+  const rowImports = page.locator('.example-book-import');
+  const bookRows = await page.locator('.example-book').count();
+  check('压缩态的每本书都有「整条路径」一键入口（不用先展开）',
+    bookRows >= 3 && (await rowImports.count()) === bookRows
+      && (await rowImports.first().innerText()).trim() === '整条路径',
+    `${await rowImports.count()} 个入口 / ${bookRows} 本书`);
+  check('展开的那一本另有带说明的完整入口',
+    (await page.locator('.example-book-paths button', { hasText: '一键导入整条路径' }).count()) === 1
+      && /从第一程开始/.test(await page.locator('.example-book-paths-hint').first().innerText()));
+  const walkButton = bookByName('简明高等代数').locator('.example-book-import');
+  await walkButton.click();
+  await page.waitForSelector('.example-walk');
+  const walkStart = await page.evaluate(() => ({
+    heading: document.querySelector('.example-walk h2')?.textContent.trim() ?? '',
+    stages: [...document.querySelectorAll('.example-walk-stage')].map((el) => el.className.replace('example-walk-stage ', '')),
+    ordinals: [...document.querySelectorAll('.example-walk-ordinal')].map((el) => el.textContent.trim()),
+    current: document.querySelector('.example-walk-stage.current .example-walk-state')?.textContent.trim() ?? '',
+    metaRows: [...document.querySelectorAll('.example-walk-meta')].length,
+    goal: document.querySelector('.plan-form select')?.value ?? '',
+    session: JSON.parse(window.sessionStorage.getItem('mcs-example-walk-v1') ?? 'null'),
+  }));
+  check('一键导入整条路径：七程进度轨出现，第一程是「当前」',
+    walkStart.stages.length === 7 && walkStart.stages[0] === 'current'
+      && walkStart.stages.slice(1).every((state) => state === 'todo')
+      && walkStart.ordinals[0] === '第一程' && walkStart.current === '当前'
+      && walkStart.metaRows === 7,
+    JSON.stringify({ stages: walkStart.stages, current: walkStart.current }));
+  check('导入之后表单里是**第一程**的目标，并且本次会话记住了这一本',
+    walkStart.goal === stageGoals[0] && walkStart.session?.setId === 'jiang-jdga'
+      && walkStart.session?.visited?.length === 1,
+    JSON.stringify({ goal: walkStart.goal, expected: stageGoals[0], session: walkStart.session }));
+
+  const nextLabel = await page.locator('.example-walk .button.primary').innerText();
+  check('「下一程」写清是哪一程', /下一程：第二程/.test(nextLabel), nextLabel);
+  await page.locator('.example-walk .button.primary').click();
+  await page.waitForFunction(
+    () => document.querySelector('.example-walk-stage.current .example-walk-state')?.textContent.trim() !== '当前'
+      || document.querySelectorAll('.example-walk-stage.visited').length >= 1,
+    null,
+    { timeout: 10000 },
+  ).catch(() => {});
+  await page.waitForTimeout(800);
+  const walkNext = await page.evaluate(() => ({
+    stages: [...document.querySelectorAll('.example-walk-stage')].map((el) => el.className.replace('example-walk-stage ', '')),
+    labels: [...document.querySelectorAll('.example-walk-state')].map((el) => el.textContent.trim()),
+    goal: document.querySelector('.plan-form select')?.value ?? '',
+    session: JSON.parse(window.sessionStorage.getItem('mcs-example-walk-v1') ?? 'null'),
+  }));
+  check('点「下一程」推进到第二程，第一程记为「本次已载入」',
+    walkNext.stages[0] === 'visited' && walkNext.stages[1] === 'current'
+      && walkNext.labels[0] === '本次已载入' && walkNext.labels[1] === '当前'
+      && walkNext.goal === stageGoals[1] && walkNext.session?.visited?.length === 2,
+    JSON.stringify({ stages: walkNext.stages, labels: walkNext.labels, goal: walkNext.goal }));
+
+  /*
+   * ---- 多程合一图（2026-10-15 加）----
+   *
+   * 用户要求：「设置可以选择把一条范例路径的好多程放进一张节点网络视图里面」。
+   * 按用户会做的动作验：勾两程 → 点「放进一张网络视图」→ 网络页里真的把两程接起来，
+   * 控制台写明「这一步属于哪一程」，每一程的第一支箭头上有一圈环。
+   *
+   * 这一段在「整条路径」那一节**之后**跑：它要跳去网络页，跳走之后就回不到那次会话的进度轨了。
+   */
+  const stagePick = page.locator('.example-pick input');
+  await stagePick.nth(0).check();
+  await stagePick.nth(1).check();
+  await page.waitForTimeout(150);
+  const combineState = await page.evaluate(() => ({
+    count: document.querySelector('.example-combine-count')?.textContent.trim() ?? '',
+    picks: document.querySelectorAll('.example-pick input:checked').length,
+    href: document.querySelector('.example-combine-go')?.getAttribute('href') ?? '',
+    /*
+     * 比**程名**而不是序数：卡片上写「第一程」（汉字），控制台里写「第 1 程」（阿拉伯数字），
+     * 两者都对，但字符串不相等——按序数比会把一个正确的实现判红。
+     */
+    titles: [...document.querySelectorAll('.example-book-paths .example-card')]
+      .map((card) => card.querySelector('h4, h5')?.textContent.trim() ?? ''),
+  }));
+  const combinePath = new URLSearchParams(combineState.href.split('?')[1] ?? '').get('path')?.split(',').filter(Boolean) ?? [];
+  const combineEntry = new URLSearchParams(combineState.href.split('?')[1] ?? '').get('entry')?.split(',').filter(Boolean).length ?? 0;
+  check('勾选两程后如实显示已选几程', combineState.picks === 2 && /2/.test(combineState.count), JSON.stringify(combineState.count));
+  check('「放进一张网络视图」给出一条带程边界的回放链接',
+    combineState.href.includes('play=1') && combineState.href.includes('stages=') && combinePath.length > 1
+      && combineState.href.split('?')[1].includes('entry='),
+    combineState.href.slice(0, 120));
+  check('链接里的程边界是「两程」而不是凑出来的一程',
+    (new URLSearchParams(combineState.href.split('?')[1] ?? '').get('stages') ?? '').split(',').length === 2,
+    combineState.href.slice(0, 160));
+
+  await page.locator('.example-combine-go').click();
+  await page.waitForSelector('.replay-panel', { timeout: 20000 });
+  await page.waitForTimeout(900);
+  const combined = await page.evaluate(() => ({
+    total: Number(document.querySelector('.replay-slider')?.getAttribute('max') ?? -1),
+    stageItems: [...document.querySelectorAll('.replay-stage-item')].map((el) => el.textContent.replace(/\s+/g, ' ').trim()),
+    arrows: document.querySelectorAll('.stage-arrow').length,
+  }));
+  check('网络页把两程接成一条回放（步数 = 链接里的节点数）',
+    combined.total === combinePath.length && combined.total > 1,
+    JSON.stringify({ total: combined.total, path: combinePath.length }));
+  check('控制台列全这张视图里的各程', combined.stageItems.length === 2
+    && combined.stageItems[0].includes(combineState.titles[0]) && combined.stageItems[1].includes(combineState.titles[1]),
+    JSON.stringify({ items: combined.stageItems, titles: combineState.titles }));
+
+  // 走到终点：每一程的第一支箭头上有一圈环，当前程写着第二程。
+  await page.evaluate(() => {
+    const slider = document.querySelector('.replay-slider');
+    const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set;
+    setter.call(slider, slider.getAttribute('max'));
+    slider.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+  await page.waitForTimeout(900);
+  const combinedEnd = await page.evaluate(() => ({
+    rings: document.querySelectorAll('.stage-arrow-stage-mark').length,
+    chip: document.querySelector('.replay-stage-chip')?.textContent.replace(/\s+/g, ' ').trim() ?? '',
+    currentStage: document.querySelector('.replay-stage-item.is-current')?.textContent.replace(/\s+/g, ' ').trim() ?? '',
+    nodes: document.querySelectorAll('.network-node').length,
+  }));
+  check('每一程的第一支箭头都带一圈环（看得出程在哪儿断开）', combinedEnd.rings === 2, JSON.stringify(combinedEnd));
+  check('走到最后一步写着「当前在第几程」',
+    combinedEnd.chip.includes(combineState.titles[1]) && combinedEnd.currentStage.includes(combineState.titles[1]),
+    JSON.stringify({ chip: combinedEnd.chip, current: combinedEnd.currentStage, title: combineState.titles[1] }));
+  check('两程的节点都在同一张画布上（= 起点 + 两程的新节点）',
+    combinedEnd.nodes === combineEntry + combinePath.length,
+    JSON.stringify({ nodes: combinedEnd.nodes, entry: combineEntry, path: combinePath.length }));
+  await page.screenshot({ path: resolve(MCS_WEB_ROOT, 'tmp', 'example-combined.png'), fullPage: false });
+
+  /*
+   * ---- 目标可选（2026-10-13 用户要求「确定目标设置为可选项」）----
+   *
+   * 规划器契约里目标仍然是必填（没有目标就没有「要走到哪」），所以「可选」不是把空目标
+   * 塞给规划器，而是：目标留空时**不发规划请求**，改列**可学前沿**（与「我的学习」的
+   * 下一步表同源），再由用户一键把候选变成目标或标记为已有。
+   *
+   * 三条都要验：① 有空选项且点了不报错；② 候选带依据句；③ 两条候选动作都能走通
+   * （有产出行动的 → 当目标并规划；没有产出行动的 → 标记为已有，前沿当场重算）。
+   */
+  await page.goto(server.origin + '/plan', { waitUntil: 'networkidle' });
+  await page.waitForSelector('.plan-form select');
+  const emptyOption = await page.locator('.plan-form select option[value=""]').first().innerText();
+  check('目标下拉框里有「不选目标」这一项', /不选目标/.test(emptyOption), emptyOption);
+  await page.locator('.plan-form select').selectOption('');
+  /*
+   * 主按钮按 `data-testid` 取，不按文案取（2026-10-14 改）：
+   * 点过之后按钮就叫「重新规划」，同一段会话里第二次再按「开始规划」去找它就找不到了。
+   */
+  const planSubmit = page.locator('[data-testid="plan-submit"]');
+  check('主按钮初始文案是「开始规划」', (await planSubmit.innerText()).trim() === '开始规划', await planSubmit.innerText());
+  await planSubmit.click();
+  await page.waitForSelector('.plan-frontier', { timeout: 15000 });
+  check('点过之后主按钮换成「重新规划」', (await planSubmit.innerText()).trim() === '重新规划', await planSubmit.innerText());
+  /*
+   * 反馈不只是一行字：页面还要把**已经在那儿的那一份**带进视野。
+   * 用 waitForFunction 而不是固定等待——平滑滚动在负载高的机器上会明显变慢。
+   */
+  const frontierInView = await page.waitForFunction(() => {
+    const box = document.querySelector('.plan-frontier')?.getBoundingClientRect();
+    return Boolean(box) && box.top <= window.innerHeight * 0.5;
+  }, null, { timeout: 8000 }).then(() => true).catch(() => false);
+  check('点「开始规划」后视线自动落到结果栏目', frontierInView,
+    JSON.stringify(await page.evaluate(() => ({
+      scrollY: Math.round(window.scrollY),
+      top: Math.round(document.querySelector('.plan-frontier')?.getBoundingClientRect().top ?? NaN),
+    }))));
+  const frontier = await page.evaluate(() => ({
+    title: document.querySelector('.plan-frontier h2')?.textContent.trim() ?? '',
+    facts: [...document.querySelectorAll('.plan-frontier .facts div')].map((d) => d.textContent.replace(/\s+/g, ' ').trim()),
+    options: document.querySelectorAll('.frontier-option').length,
+    basis: document.querySelector('.frontier-option .frontier-basis')?.textContent.trim() ?? '',
+    routes: document.querySelectorAll('.route-card').length,
+    error: document.querySelector('.error')?.textContent ?? null,
+  }));
+  check('不选目标也能「开始规划」：如实给出可学前沿，不报错也不硬给空结果',
+    frontier.options >= 3 && /可学前沿/.test(frontier.title) && !frontier.error
+      && frontier.routes === 0 && frontier.facts.some((item) => /现在就能开始/.test(item)),
+    JSON.stringify({ title: frontier.title, options: frontier.options, error: frontier.error }));
+  check('每条候选都带依据句（与方向面板同一句 `optionBasis`）', frontier.basis.length >= 20, frontier.basis.slice(0, 60));
+
+  /*
+   * 再点一次（仍在无目标模式）：这一下状态没有任何变化，不能因此退化成「点了没反应」——
+   * 视线要照样被带回结果栏目。
+   */
+  await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
+  await page.waitForFunction(() => window.scrollY === 0, null, { timeout: 5000 }).catch(() => {});
+  await planSubmit.click();
+  const backInView = await page.waitForFunction(() => {
+    const box = document.querySelector('.plan-frontier')?.getBoundingClientRect();
+    return Boolean(box) && box.top <= window.innerHeight * 0.5;
+  }, null, { timeout: 8000 }).then(() => true).catch(() => false);
+  check('无目标模式下再点一次（按钮此时是「重新规划」），视线仍回到结果栏目', backInView,
+    JSON.stringify(await page.evaluate(() => ({
+      scrollY: Math.round(window.scrollY),
+      top: Math.round(document.querySelector('.plan-frontier')?.getBoundingClientRect().top ?? NaN),
+    }))));
+
+  // ① 有产出行动的候选 → 「用它当目标」：写进下拉框并真的规划一次
+  const goalCandidate = page.locator('.frontier-option')
+    .filter({ has: page.getByRole('button', { name: '用它当目标' }) }).first();
+  const candidateNode = await goalCandidate.getAttribute('data-node');
+  await goalCandidate.getByRole('button', { name: '用它当目标' }).click();
+  await page.waitForFunction((node) => document.querySelector('.plan-form select')?.value === node, candidateNode, { timeout: 15000 });
+  await page.waitForSelector('.plan-summary', { timeout: 30000 });
+  const afterUseAsGoal = await page.evaluate(() => ({
+    goal: document.querySelector('.plan-form select')?.value ?? '',
+    frontierGone: !document.querySelector('.plan-frontier'),
+    status: document.querySelector('.plan-status')?.textContent.replace(/\s+/g, ' ').trim() ?? '',
+  }));
+  check('「用它当目标」把候选写进下拉框、离开无目标模式并给出规划结果',
+    afterUseAsGoal.goal === candidateNode && afterUseAsGoal.frontierGone
+      && afterUseAsGoal.status.length > 0 && !/失败/.test(afterUseAsGoal.status),
+    JSON.stringify(afterUseAsGoal));
+
+  // ② 没有产出行动的候选（符号类）→ 只能「标记为已有」；标记后前沿与背景计数当场重算
+  await page.locator('.plan-form select').selectOption('');
+  await planSubmit.click();
+  await page.waitForSelector('.plan-frontier', { timeout: 15000 });
+  const declareCandidate = page.locator('.frontier-option')
+    .filter({ has: page.getByRole('button', { name: '标记为已有' }) }).first();
+  const declareNode = await declareCandidate.getAttribute('data-node');
+  const beforeDeclare = await page.evaluate(() => {
+    const facts = [...document.querySelectorAll('.plan-frontier .facts div')].map((d) => d.textContent.replace(/\s+/g, ' ').trim());
+    const background = Number((facts.find((item) => /背景声明/.test(item))?.match(/(\d+)\s*项/) ?? [])[1] ?? NaN);
+    return { background, options: document.querySelectorAll('.frontier-option').length };
+  });
+  await declareCandidate.getByRole('button', { name: '标记为已有' }).click();
+  await page.waitForTimeout(600);
+  const afterDeclare = await page.evaluate((node) => {
+    const facts = [...document.querySelectorAll('.plan-frontier .facts div')].map((d) => d.textContent.replace(/\s+/g, ' ').trim());
+    const background = Number((facts.find((item) => /背景声明/.test(item))?.match(/(\d+)\s*项/) ?? [])[1] ?? NaN);
+    return {
+      background,
+      options: document.querySelectorAll('.frontier-option').length,
+      stillListed: Boolean(document.querySelector(`.frontier-option[data-node="${node}"]`)),
+    };
+  }, declareNode);
+  check('没有产出行动的候选只能「标记为已有」：标记后它离开前沿、背景计数 +1、前沿当场重算',
+    afterDeclare.background === beforeDeclare.background + 1 && afterDeclare.stillListed === false,
+    JSON.stringify({ node: declareNode, before: beforeDeclare, after: afterDeclare }));
+
+  /*
+   * 进度轨只记「本次会话载入过哪几程」——**不是学习进度**：刷新之后仍然记着（两程都记为已载入，
+   * 但没有任何一程是「当前」，因为刷新后表单里什么都没载入），而且**不落 localStorage**。
+   */
+  await page.reload({ waitUntil: 'networkidle' });
+  await page.waitForSelector('.example-walk');
+  const walkReloaded = await page.evaluate(() => ({
+    visited: document.querySelectorAll('.example-walk-stage.visited').length,
+    current: document.querySelectorAll('.example-walk-stage.current').length,
+    labels: [...document.querySelectorAll('.example-walk-state')].map((el) => el.textContent.trim()),
+    inLocalStorage: Boolean(window.localStorage.getItem('mcs-example-walk-v1')),
+  }));
+  check('刷新后进度轨仍记得本次载入过的两程（会话级，不落 localStorage）',
+    walkReloaded.visited === 2 && walkReloaded.current === 0
+      && walkReloaded.labels.filter((label) => label === '本次已载入').length === 2
+      && walkReloaded.inLocalStorage === false,
+    JSON.stringify(walkReloaded));
+  await page.locator('.example-walk .link-button', { hasText: '结束整条路径' }).click();
+  await page.waitForTimeout(300);
+  check('结束整条路径后进度轨消失（并清掉会话状态）',
+    (await page.locator('.example-walk').count()) === 0
+      && (await page.evaluate(() => window.sessionStorage.getItem('mcs-example-walk-v1'))) === null);
 
   /*
    * ---- 主要按键的「按下」反馈（2026-10-04 加）----
@@ -2018,7 +2694,16 @@ try {
     }
     await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
     await page.mouse.down();
-    await page.waitForTimeout(120);
+    /*
+     * 按下反馈是**过渡**出来的：写死 sleep 120ms 在高负载下会量到中间值——
+     * 实测 `::after` 的 opacity 停在 0.85（终点是 1），于是这条断言假失败过两次
+     * （同一次提交重跑就绿）。这里等它真的到位再读；等不到也照读，
+     * 真坏了仍然会以同样的消息红，只是不再因为机器忙而红。
+     */
+    const pressedHandle = await target.elementHandle();
+    await page
+      .waitForFunction((element) => Number(getComputedStyle(element, '::after').opacity) >= 0.9, pressedHandle, { timeout: 2000 })
+      .catch(() => {});
     const state = await target.evaluate((element) => {
       const style = getComputedStyle(element);
       return {

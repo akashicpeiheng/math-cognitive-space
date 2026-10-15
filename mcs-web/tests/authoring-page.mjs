@@ -399,7 +399,7 @@ try {
     pending: [],
     excluded: [{
       candidateId: 'cand:concept-anchor-demo',
-      kind: 'hardGeneralization',
+      kind: 'scaling',
       from: 'draft:（验收）骨架检查',
       to: 'concept:group:abelian',
       reason: '端点 concept:group:abelian 是概念锚点（只在登记表里有位置，本体与发布模型里都没有它）；这条需要取消勾选或驳回，不影响本次其余内容入库。',

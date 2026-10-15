@@ -22,6 +22,7 @@ import { readFileSync, statSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { sha256 } from '../hash.mjs';
 import { RELATION_KINDS, collectCandidates, judgeIndex } from './judges.mjs';
+import { normalizeRelationKind, normalizeScalingRecord, scalingEvidenceKey } from '../../shared/scaling.mjs';
 import { listSpecs, specForId, withStableNodeId } from './judges/shared.mjs';
 
 const require = createRequire(import.meta.url);
@@ -158,6 +159,12 @@ function mathFromConfirmation(confirmation, engine, context) {
     };
   }
   if (confirmation?.status === 'proved') {
+    if (confirmation.mode === 'finite') {
+      const finite = confirmation.finiteResult;
+      const valid = finite?.holds === true && Array.isArray(finite.axioms) && finite.axioms.length > 0 && finite.axioms.every(a => a.holds === true && JSON.stringify(a.formula) === JSON.stringify(confirmation.goalFormula));
+      const judged = { math: { status: valid ? 'verified' : 'undecided', reason: confirmation.reason ?? '', scope: confirmation.scope?.certificateScope ?? '' }, run: { status: 'completed', reason: confirmation.reason ?? '', stats: {} }, label: valid ? 'FINITE' : 'NOT-CLAIMED', notes: ['完整有限表检查；不构成一般数学证明。'] };
+      return { ...judged, evidence: valid ? evidenceFromConfirmation(confirmation, judged) : null, counterexample: null };
+    }
     /*
      * 定义引用这一类的「确认」不是内核检查，而是**登记表核对**（版本 + 类型 + 符号归属）。
      * 为了不绕过 §2.9 的硬规则（verified 只能来自 check.status === 'passed'），
@@ -994,6 +1001,7 @@ export function discoverRelations({
   background = null, repoRoot = null, signal = null,
 } = {}) {
   const startedAt = Date.now();
+  kinds = [...new Set(kinds.map(normalizeRelationKind))];
   const limits = normalizeBudget(budget);
   const engine = resolveEngine({ registry, ...(deps ?? {}) });
   const deadline = startedAt + limits.totalMs;
@@ -1047,10 +1055,15 @@ export function discoverRelations({
   shapes = shapes.map((shape) => ({ ...shape, from: withOrigin(shape.from), to: withOrigin(shape.to) }));
   if (focus.size) shapes = shapes.filter((item) => focus.has(item.from?.node) || focus.has(item.to?.node));
 
-  // 去重：同一 kind + 同一对端点 + 同一目标只留一条。
+  // 放缩的命题身份包含方向、目标和条件；条件不同的候选不能合并。
+  const shapeFingerprint = (shape) => sha256({
+    kind: shape.kind, from: shape.from, to: shape.to,
+    symbol: shape.symbol ?? null, model: shape.model ?? null, goal: shape.goal?.source ?? null,
+    ...(shape.kind === 'scaling' ? { claim: scalingEvidenceKey(shape) } : {}),
+  });
   const seen = new Map();
   for (const shape of shapes) {
-    const key = sha256({ kind: shape.kind, from: shape.from, to: shape.to, symbol: shape.symbol ?? null, model: shape.model ?? null, goal: shape.goal?.source ?? null });
+    const key = shapeFingerprint(shape);
     if (seen.has(key)) continue;
     seen.set(key, shape);
   }
@@ -1062,14 +1075,14 @@ export function discoverRelations({
   const candidates = [];
   const covered = new Set();
   let checkerSha256 = null;
-  const generalizationPairs = new Map();
+  const scalingDirections = new Map();
   /** 判定还在异步跑的候选：结算时按同一套规则就地补结论。 */
   const pending = [];
   let timedOut = 0;
   let cancelled = 0;
 
   for (const shape of capped) {
-    const candidateId = `cand:${shape.kind}:${sha256({ kind: shape.kind, from: shape.from, to: shape.to, symbol: shape.symbol ?? null, model: shape.model ?? null, goal: shape.goal?.source ?? null }).slice(0, 12)}`;
+    const candidateId = `cand:${shape.kind}:${shapeFingerprint(shape).slice(0, 12)}`;
     const budgetLeft = Math.min(limits.perCandidateMs, deadline - Date.now());
     const base = {
       id: candidateId,
@@ -1083,7 +1096,9 @@ export function discoverRelations({
       reason: shape.reason ?? '',
       review: 'pending',
       generatorVersion: GENERATOR_VERSION,
-      inputHash: `sha256:${sha256({ ontology: ontology?.version ?? null, from: shape.from, to: shape.to, kind: shape.kind, goal: shape.goal?.source ?? null })}`,
+      inputHash: `sha256:${sha256({ ontology: ontology?.version ?? null, from: shape.from, to: shape.to, kind: shape.kind, goal: shape.goal?.source ?? null,
+        ...(shape.kind === 'scaling' ? { claim: scalingEvidenceKey(shape) } : {}),
+      })}`,
       replay: null,
       counterexample: null,
       evidence: null,
@@ -1138,19 +1153,18 @@ export function discoverRelations({
     }
     if (candidate.evidence && confirmation?.check?.checkerSha256) checkerSha256 = confirmation.check.checkerSha256;
     /*
-     * `hardGeneralization` 的方向约定：同一对概念的**反向读法**不产生第二份证据。
-     * 第一个证出来的方向照常入库；之后出现的同对候选标记为「读法」并自动置为
-     * dismissed（人还能在审阅里看到它，但它不会作为第二条关系被发布）。
+     * 同一条蕴含的放、缩读法共用证据；P ⇒ Q 与 Q ⇒ P 是两个不同命题。
+     * 因此按一般端、特殊端的有序对以及目标/条件去重，不能按无向端点对删除逆命题。
      */
-    if (candidate.kind === 'hardGeneralization' && candidate.math.status === 'verified') {
-      const pair = [candidate.from?.node, candidate.to?.node].sort().join('|');
-      const first = generalizationPairs.get(pair);
+    if (candidate.kind === 'scaling' && candidate.math.status === 'verified') {
+      const pair = scalingEvidenceKey(candidate);
+      const first = scalingDirections.get(pair);
       if (first) {
         candidate.duplicateOf = first;
         candidate.review = 'dismissed';
-        candidate.reason = `${candidate.reason}（反向读法：同一对概念只保留一份证据，见 ${first}）`;
+        candidate.reason = `${candidate.reason}（同一放缩方向、目标与条件的重复读法，见 ${first}）`;
       } else {
-        generalizationPairs.set(pair, candidate.id);
+        scalingDirections.set(pair, candidate.id);
       }
     }
 
@@ -1352,6 +1366,8 @@ export async function replayCandidate({ candidate, registry = null, ontology = n
     return { candidate: null, check: null, ok: false, problems: ['重放需要一个候选对象。'] };
   }
   const engine = resolveEngine({ registry, ...(deps ?? {}) });
+  candidate = normalizeScalingRecord(candidate);
+  kinds = [...new Set(kinds.map(normalizeRelationKind))];
   const next = { ...candidate };
   const warnings = [];
 
@@ -1388,10 +1404,16 @@ export async function replayCandidate({ candidate, registry = null, ontology = n
     const collected = collectCandidates(ctx, { kinds: [candidate.kind], specs: assembled.allSpecs });
     const shapes = collected.candidates;
     warnings.push(...collected.warnings);
-    shape = shapes.find((item) => item.from?.node === candidate.from?.node && item.to?.node === candidate.to?.node
-      && (item.symbol ?? null) === (candidate.symbol ?? null) && (item.model ?? null) === (candidate.model ?? null))
-      ?? shapes.find((item) => item.from?.node === candidate.from?.node && item.to?.node === candidate.to?.node)
-      ?? null;
+    if (candidate.kind === 'scaling') {
+      const claim = scalingEvidenceKey(candidate);
+      shape = shapes.find((item) => item.from?.node === candidate.from?.node && item.to?.node === candidate.to?.node
+        && scalingEvidenceKey(item) === claim) ?? null;
+    } else {
+      shape = shapes.find((item) => item.from?.node === candidate.from?.node && item.to?.node === candidate.to?.node
+        && (item.symbol ?? null) === (candidate.symbol ?? null) && (item.model ?? null) === (candidate.model ?? null))
+        ?? shapes.find((item) => item.from?.node === candidate.from?.node && item.to?.node === candidate.to?.node)
+        ?? null;
+    }
   } catch (error) {
     problems.push(`目标重算失败：${error.message}`);
   }

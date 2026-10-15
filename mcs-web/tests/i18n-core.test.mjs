@@ -94,9 +94,15 @@ test('未译条目回落中文原文且不为空白（合成覆盖，与翻译�
     assert.ok(node.summary.length > 0, `${node.id} 的摘要对空白`);
   }
 
-  /* 真实数据侧只检查这一条不变量：232 个节点，每个标题都非空（无论中英）。 */
-  return loadOntology({ locale: 'en' }).then((en) => {
-    assert.equal(en.raw.nodes.length, 232);
+  /*
+   * 真实数据侧只检查这条不变量：中英**节点数一致**，且每个节点（含第八个案例）的标题都非空。
+   *
+   * 这里原先写死「266」这个数字，2026-10 的节点合并（同一对象的多处登记收成一个规范节点）
+   * 让它变成 231。写死节点数会把「机制测试」绑到「数据进度」上——正是这个文件开头警告过的
+   * 那件事，因此改成与中文源比：**数字会变，两边一致这条不会变**。
+   */
+  return Promise.all([loadOntology(), loadOntology({ locale: 'en' })]).then(([zh, en]) => {
+    assert.equal(en.raw.nodes.length, zh.raw.nodes.length, '中英节点数必须一致');
     for (const node of en.raw.nodes) assert.ok(node.title.length > 0, `${node.id} 的英文标题是空白`);
   });
 });
@@ -135,7 +141,12 @@ test('覆盖率如实清点，未译条目不静默消失', async () => {
   resetOverlayCache();
   const report = await coverage('en');
   assert.equal(report.overlay, true);
-  assert.equal(report.sections.nodes.total, 232);
+  /*
+   * 分母取自**中文源本体**，不写死数字（写死会在新增案例时变成绊脚石：
+   * 2026-10 加第八个案例「点集拓扑」时它就从 232 变成 266）。
+   */
+  const zhCount = (await loadOntology()).raw.nodes.length;
+  assert.equal(report.sections.nodes.total, zhCount);
   /*
    * 两条**不随翻译进度漂移**的断言：
    * - 已译不为零（覆盖真的生效了，不是空目录）；
@@ -151,7 +162,7 @@ test('覆盖率如实清点，未译条目不静默消失', async () => {
     if (gap > 0) assert.equal(listed, gap, `${section}：缺口 ${gap} 条，但 missing 里列了 ${listed} 条`);
   }
   const line = formatCoverage(report);
-  assert.match(line, /nodes \d+\/232/);
+  assert.match(line, new RegExp(`nodes \\d+/${zhCount}`));
   assert.match(line, /整体/);
   /* 中文是源语言：没有覆盖目录，覆盖率恒为满。 */
   const zhReport = await coverage('zh');

@@ -40,8 +40,10 @@ export const MESSAGES = {
   'nav.nodes': { zh: '数学对象', en: 'Objects' },
   'nav.network': { zh: '知识网络', en: 'Knowledge network' },
   'nav.plan': { zh: '学习路线', en: 'Learning route' },
+  'nav.library': { zh: '我的笔记库', en: 'My note libraries' },
   'nav.profile': { zh: '我的学习', en: 'My learning' },
   'nav.intro': { zh: '网站介绍', en: 'About' },
+  'nav.manual': { zh: '用户手册', en: 'User manual' },
   'nav.method': { zh: '学习方法论', en: 'Methodology' },
   'nav.tutor': { zh: '辅导', en: 'Tutor' },
   'nav.lab': { zh: '前沿研究', en: 'Research' },
@@ -49,8 +51,8 @@ export const MESSAGES = {
   'nav.authoring': { zh: '自动关联', en: 'Relation discovery' },
   'nav.secondaryTitle': { zh: '按需查阅', en: 'Look up as needed' },
   'nav.secondaryNote': {
-    zh: '介绍、方法论、辅导（已接入 DeepTutor）、前沿研究，以及站点自身的维护材料与「自动关联」（把对象写成形式表达并自动找关系）。',
-    en: 'About, methodology, tutoring (connected to DeepTutor), research, together with the site’s own maintenance material and “relation discovery” (writing objects as formal expressions and finding relations automatically).',
+    zh: '用户手册、介绍、方法论、辅导（已接入 DeepTutor）、前沿研究，以及站点自身的维护材料与「自动关联」（把对象写成形式表达并自动找关系）。',
+    en: 'The user manual, about, methodology, tutoring (connected to DeepTutor), research, together with the site’s own maintenance material and “relation discovery” (writing objects as formal expressions and finding relations automatically).',
   },
   'nav.tutorBadgeTitle': {
     zh: '辅导已接入 DeepTutor：本机可选入口，导通状态在辅导页按证据显示',
@@ -72,6 +74,16 @@ export const MESSAGES = {
   'profile.pickerLabel': { zh: '学习者档案（E）', en: 'Learner profile (E)' },
   'profile.none': { zh: '未选择档案', en: 'No profile selected' },
   'profile.revisionTitle': { zh: '修订号 rev', en: 'revision rev' },
+  /*
+   * 下拉里的**动作**项（2026-10 加）：用户找「学习者档案」时看的就是这个下拉，
+   * 而档案模板原先只在「我的学习 → 高级设置」里——反馈是「没看见学习者档案」。
+   * 选中它只跳转，不改当前选择（见 Layout.tsx 的 onChange）。
+   *
+   * 措辞刻意**不含「新建档案」四个字**：那是「高级设置」里那个按钮的文案，
+   * 两处都含它会让 `text=新建档案` 这类定位（人和测试都一样）一次匹配到两个元素
+   * ——README 里「文案不能叫『视图』」那条踩过的坑，同一条规矩。
+   */
+  'profile.newOption': { zh: '＋ 用模板新开一份…', en: '+ New from a template…' },
 
   'common.loading': { zh: '读取中…', en: 'Loading…' },
   'common.retry': { zh: '重试', en: 'Retry' },
@@ -156,8 +168,8 @@ export const MESSAGES = {
    * 放在这里是因为它是全站文案的唯一来源：纯函数模块直接读 `MESSAGES[key][locale]`，
    * 不引入 React（`translate()` 不做插值，所以模板留在值里、替换留在调用处）。 */
   'facets.relationHint': {
-    zh: '「{label}」是关系种类，不是节点类型，所以按节点筛只会是 0。{tail}：{where}',
-    en: '“{label}” is a relation kind, not an object type, so filtering by object can only return 0. {tail}: {where}',
+    zh: '「{label}」也可表示关系种类；下面列出匹配的对象，关系请从另一入口探索。{tail}：{where}',
+    en: '“{label}” also names a relation kind. Matching objects are listed below; explore relations through the separate entry. {tail}: {where}',
   },
   'facets.relationHintCounted': {
     zh: '本体里登记了 {count} 条这种关系',

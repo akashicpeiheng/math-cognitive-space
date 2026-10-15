@@ -4,7 +4,7 @@
 import type { EvidenceStatus, CheckStatus, EvidenceRecord, NodeRecord } from './types';
 
 export type RelationKind =
-  | 'definitionReference' | 'hardGeneralization' | 'equivalentTo'
+  | 'definitionReference' | 'scaling' | 'equivalentTo'
   | 'conditionalDerivation' | 'instanceOf' | 'counterexampleTo';
 
 export type MathJudgment = 'verified' | 'refuted' | 'undecided';
@@ -40,7 +40,7 @@ export interface RelationCandidate {
   kind: RelationKind;
   from: { node: string; version: string };
   to: { node: string; version: string };
-  /** hardGeneralization 的精确方向：证据证明的是 special ⇒ general。 */
+  /** scaling 的精确方向：证据证明的是 special ⇒ general。 */
   direction: { general: string; special: string } | null;
   conditions: Array<{ id: string; source: string; readable: string }>;
   goal: { source: string; canonical: unknown; hash: string } | null;

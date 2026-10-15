@@ -57,6 +57,8 @@ export function loadConfig() {
     backupDir: resolve(MCS_WEB_ROOT, 'runtime', 'backups'),
     repoRoot: REPO_ROOT,
     dev: false,
+    vaultLimits: { markdownBytes: 2097152, attachmentBytes: 104857600, notes: 10000, vaultBytes: 524288000, ownerBytes: 1073741824, chunkBytes: 524288 },
+    lean: { enabled: true, lakePath: null, leanPath: null, timeoutMs: 120000, maxOutputBytes: 4194304, maxConcurrent: 1, maxQueued: 20 },
     /*
      * 部署形态（2026-10 发布前加）。
      *
@@ -67,6 +69,7 @@ export function loadConfig() {
     publicMode: false,
     publicOrigin: null,
     allowedHosts: [],
+    sitesBridge: { origin: null, secret: null },
     /*
      * 账号体系（2026-10 公网发布前加）。
      *
@@ -118,8 +121,14 @@ export function loadConfig() {
   if (process.env.MCS_WEB_DB_POOL_MAX) merged.dbPoolMax = Number(process.env.MCS_WEB_DB_POOL_MAX);
   if (process.env.MCS_WEB_AUTHORING_DB) merged.authoringDbFile = resolve(process.env.MCS_WEB_AUTHORING_DB);
   if (process.env.MCS_WEB_DEV === '1') merged.dev = true;
+  if (process.env.MCS_WEB_LEAN_ENABLED === '0') merged.lean.enabled = false;
+  if (process.env.MCS_WEB_LAKE) merged.lean.lakePath = process.env.MCS_WEB_LAKE;
+  if (process.env.MCS_WEB_LEAN) merged.lean.leanPath = process.env.MCS_WEB_LEAN;
+  if (process.env.MCS_WEB_LEAN_WORK_DIR) merged.lean.workDir = resolve(process.env.MCS_WEB_LEAN_WORK_DIR);
   if (process.env.MCS_WEB_PUBLIC_MODE === '1') merged.publicMode = true;
   if (process.env.MCS_WEB_PUBLIC_ORIGIN) merged.publicOrigin = process.env.MCS_WEB_PUBLIC_ORIGIN;
+  if (process.env.MCS_WEB_SITES_ORIGIN) merged.sitesBridge.origin = process.env.MCS_WEB_SITES_ORIGIN;
+  if (process.env.MCS_WEB_SITES_SECRET) merged.sitesBridge.secret = process.env.MCS_WEB_SITES_SECRET;
   if (process.env.MCS_WEB_ALLOWED_HOSTS) {
     merged.allowedHosts = process.env.MCS_WEB_ALLOWED_HOSTS.split(',').map((item) => item.trim()).filter(Boolean);
   }

@@ -9,6 +9,7 @@ import {
   canonicalString, assert,
 } from '../shared/contracts.mjs';
 import { sha256 } from './hash.mjs';
+import { scalingEndpoints } from '../shared/scaling.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 export const MCS_WEB_ROOT = resolve(HERE, '..');
@@ -57,17 +58,44 @@ export async function buildOntology({ dataDir = join(MCS_WEB_ROOT, 'data') } = {
   const blocks = readCaseBlocks(dataDir);
   const coverage = await loadModule(join(dataDir, 'coverage.mjs'));
   const localizations = await loadModule(join(dataDir, 'localizations.mjs'));
+  /*
+   * 正文块按 `contentRef ?? id` 取。合并登记（`node.registrations`）走同一条规则：
+   * 被合并的登记保留自己的正文块，节点页因此能把「另一处登记」的正文一并显示，
+   * 而不是只留一行标题。背景接口那类 `contentRef === false` 的条目保持空正文。
+   */
+  const withContent = (record) => ({
+    ...record,
+    contentMarkdown: record.contentRef === false
+      ? (record.contentMarkdown ?? '')
+      : (blocks[record.contentRef ?? record.id] ?? record.contentMarkdown ?? ''),
+  });
   const nodes = manifest.nodes.map((node) => ({
-    ...node,
-    contentMarkdown: node.contentRef === false ? (node.contentMarkdown ?? '') : (blocks[node.contentRef ?? node.id] ?? node.contentMarkdown ?? ''),
+    ...withContent(node),
+    ...(Array.isArray(node.registrations) ? { registrations: node.registrations.map(withContent) } : {}),
   }));
   const ontology = {
     schema: 'mcs-web-ontology/1',
     signature: manifest.signature,
     theory: manifest.theory,
     nodes,
-    payload: Object.fromEntries(nodes.map((node) => [node.id, node.formal ?? node.payload ?? {}])),
-    representations: nodes.flatMap((node) => (node.representations ?? []).map((rep) => ({ ...rep, node: node.id }))),
+    /*
+     * 形式负载按 id 索引。被合并的登记也进这张表：编写台与形式检查仍要按**原来的 id**
+     * 找到它们的负载（它们在被合并之前是正常节点），少这一条会让旧链接悄无声息地失效。
+     */
+    payload: Object.fromEntries([
+      ...nodes.map((node) => [node.id, node.formal ?? node.payload ?? {}]),
+      ...nodes.flatMap((node) => (node.registrations ?? []).map((record) => [record.id, record.formal ?? {}])),
+    ]),
+    /*
+     * 表征一节：规范节点自己的表征，加上**各合并登记**带进来的表征。
+     * 后者标 `registrationOf`（这条表征原本属于哪一处登记），节点页据此分组显示；
+     * 归属改写为规范节点，是因为 `node` 字段是这一节的索引键，不指规范节点就悬空了。
+     */
+    representations: nodes.flatMap((node) => [
+      ...(node.representations ?? []).map((rep) => ({ ...rep, node: node.id })),
+      ...(node.registrations ?? []).flatMap((record) => (record.representations ?? [])
+        .map((rep) => ({ ...rep, node: node.id, registrationOf: record.id }))),
+    ]),
     evidence: manifest.evidence,
     support: manifest.support,
     actions: manifest.actions,
@@ -77,6 +105,8 @@ export async function buildOntology({ dataDir = join(MCS_WEB_ROOT, 'data') } = {
     environmentBoundary: manifest.environmentBoundary,
     claims: manifest.claims ?? [],
     patterns: manifest.patterns ?? [],
+    // 合并表随本体一起发布：别名、理由、差异与「明确不合并」的清单都在其中（见 data/merges.mjs）。
+    merges: manifest.merges ?? null,
     coverage,
     localizations,
   };
@@ -171,6 +201,15 @@ export function validateOntologyShape(ontology, { repoRoot = REPO_ROOT } = {}) {
 
   for (const relation of ontology.relationDescriptions) {
     duplicate('relation', relation.id);
+    if (relation.kind === 'scaling' && relation.direction && !scalingEndpoints(relation)) problems.push(`放缩关系 ${relation.id} 的方向与端点或模式不一致`);
+    if (relation.scalingExplanation !== undefined) {
+      const explanation = relation.scalingExplanation;
+      if (relation.kind !== 'scaling' || typeof explanation?.summary !== 'string' || !explanation.summary.trim()
+        || !Array.isArray(explanation.changes) || explanation.changes.some(change =>
+          ['condition', 'special', 'general'].some(key => typeof change?.[key] !== 'string' || !change[key].trim()))) {
+        problems.push(`关系 ${relation.id} 的放缩条件说明格式无效`);
+      }
+    }
     if (!resolves(relation.from)) problems.push(`关系 ${relation.id} 的起点 ${relation.from} 无法解析`);
     if (!resolves(relation.to)) problems.push(`关系 ${relation.id} 的终点 ${relation.to} 无法解析`);
     if (!EVIDENCE_STATUS.includes(relation.witness?.status)) problems.push(`关系 ${relation.id} 的见证状态无效`);
@@ -270,7 +309,53 @@ export function validateOntologyShape(ontology, { repoRoot = REPO_ROOT } = {}) {
    * 「判为单元」的例外表里，两者都要写理由。这条断言把「逐案例复核过」
    * 从一句承诺变成可核对的检查：漏判一条就红。
    */
-  for (const problem of granularityGaps(ontology.nodes)) problems.push(problem);
+  /*
+   * 合并表（2026-10 加，见 `data/merges.mjs`）。
+   *
+   * 装配期已经把所有引用改写过了，这里只钉三件事：被合并的 id **不再**是顶层节点、
+   * 别名必须指向存在的规范节点、每个规范节点的 `registrations` 与别名表**逐条对得上**。
+   * 第三条是关键：它让「节点页显示的其它登记」与「旧链接解析到的规范节点」不可能各说各话。
+   */
+  const merges = ontology.merges ?? null;
+  if (merges) {
+    if (!Array.isArray(merges.groups) || merges.groups.length === 0) problems.push('合并表没有任何合并组');
+    const nodeIds = new Set(ontology.nodes.map((node) => node.id));
+    const aliasEntries = Object.entries(merges.aliases ?? {});
+    if (aliasEntries.length === 0) problems.push('合并表没有别名');
+    for (const [from, to] of aliasEntries) {
+      if (nodeIds.has(from)) problems.push(`被合并的 id 仍在节点表里：${from}`);
+      if (!nodeIds.has(to)) problems.push(`合并别名指向未知节点：${from} → ${to}`);
+    }
+    for (const group of merges.groups ?? []) {
+      if (!nodeIds.has(group.canonical)) problems.push(`合并组 ${group.id} 的规范节点不存在：${group.canonical}`);
+      for (const id of group.absorbed ?? []) {
+        if (merges.aliases?.[id] !== group.canonical) problems.push(`合并组 ${group.id} 的 ${id} 不在别名表里或指向别处`);
+      }
+    }
+    for (const node of ontology.nodes) {
+      const registrations = node.registrations ?? [];
+      if (!registrations.length) {
+        if (node.mergeGroup) problems.push(`节点 ${node.id} 标了合并组却没有登记：${node.mergeGroup}`);
+        continue;
+      }
+      const seen = new Set();
+      for (const record of registrations) {
+        if (seen.has(record.id)) problems.push(`节点 ${node.id} 的合并登记重复：${record.id}`);
+        seen.add(record.id);
+        if (merges.aliases?.[record.id] !== node.id) problems.push(`节点 ${node.id} 的合并登记 ${record.id} 与别名表不一致`);
+        if (record.mergedInto !== node.id) problems.push(`节点 ${node.id} 的合并登记 ${record.id} 的 mergedInto 不是它`);
+        if (record.contentRef && record.contentRef !== false && !record.contentMarkdown) {
+          problems.push(`合并登记 ${record.id} 的内容块未找到：${record.contentRef}`);
+        }
+      }
+      if (!(node.cases ?? []).includes(node.case)) problems.push(`节点 ${node.id} 的 cases 没有包含自己的案例 ${node.case}`);
+      for (const record of registrations) {
+        if (record.case && !node.cases.includes(record.case)) problems.push(`节点 ${node.id} 的 cases 缺少登记案例 ${record.case}`);
+      }
+    }
+  }
+
+  for (const problem of granularityGaps(ontology.nodes, { mergedIds: new Set(Object.keys(merges?.aliases ?? {})) })) problems.push(problem);
 
   if (!Array.isArray(ontology.localizations) || ontology.localizations.length !== 36) {
     problems.push(`局部化算子应登记 36 项，实际 ${ontology.localizations?.length ?? 0}`);
@@ -301,6 +386,12 @@ export function createOntology(ontology, { validate = true, repoRoot = REPO_ROOT
   const claimsById = new Map(ontology.claims.map((claim) => [claim.id, claim]));
   const aggregatesById = new Map(ontology.aggregates.map((aggregate) => [aggregate.id, aggregate]));
   const boundaryRefs = new Set(ontology.environmentBoundary?.refs ?? []);
+  /*
+   * 别名表：被合并 id → 规范 id。**只有解析走别名**——`nodesById` 不含被合并的 id，
+   * 因此列表、计数、网络视图里一个对象只出现一次；而 `/nodes/dg:topological-space`
+   * 这类旧链接仍然解析得到，页面据此提示「已合并到 top:space」。
+   */
+  const aliasOf = new Map(Object.entries(ontology.merges?.aliases ?? {}));
   return {
     raw: ontology,
     version: `sha256:${contentHash}`,
@@ -312,12 +403,16 @@ export function createOntology(ontology, { validate = true, repoRoot = REPO_ROOT
     claimsById,
     aggregatesById,
     boundaryRefs,
+    aliasOf,
+    alias(id) { return aliasOf.get(id) ?? null; },
+    canonicalId(id) { return aliasOf.get(id) ?? id; },
     node(id) {
-      const node = nodesById.get(id);
+      const canonical = aliasOf.get(id) ?? id;
+      const node = nodesById.get(canonical);
       if (!node) throw new McsError(CODES.UNKNOWN_NODE, `无法解析节点：${id}`, 404, { node_id: id });
       return node;
     },
-    maybeNode(id) { return nodesById.get(id) ?? null; },
+    maybeNode(id) { return nodesById.get(aliasOf.get(id) ?? id) ?? null; },
     action(id) {
       const action = actionsById.get(id);
       if (!action) throw new McsError(CODES.UNKNOWN_ACTION, `无法解析行动：${id}`, 404, { action_id: id });
@@ -352,6 +447,18 @@ export function createOntology(ontology, { validate = true, repoRoot = REPO_ROOT
           patterns: ontology.patterns.length,
           localizations: ontology.localizations.length,
           coverage: ontology.coverage.length,
+          /*
+           * 合并口径：`absorbed` 是**已经不在节点表里**的登记数，`merges.nodes` 是收口前的
+           * 节点数（= 现有节点 + 被吸收登记）。写出来是为了让「站点上到底少了几个重复节点」
+           * 有一个可核对的口径，而不是靠记忆。
+           */
+          merges: ontology.merges
+            ? {
+              groups: ontology.merges.groups.length,
+              absorbed: Object.keys(ontology.merges.aliases).length,
+              keptSeparate: ontology.merges.keptSeparate.length,
+            }
+            : null,
         },
       };
     },

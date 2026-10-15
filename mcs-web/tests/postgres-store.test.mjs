@@ -155,20 +155,37 @@ test('PostgreSQL：笔记与视图的写入都会推高档案 revision，并按�
     assert.equal((await db.listNetworkViews(profile.id)).length, 1);
     assert.equal((await db.getProfile(profile.id)).revision, 4);
 
-    // 归属：另一个档案拿不到这条笔记 / 视图
+    /*
+     * 学习方向（2026-10 加）走同一套 E 层语义：写入推高 revision、幂等、按归属隔离。
+     */
+    const madeDirection = await db.createDirection(profile.id, { nodeId: 'limit:bridge', note: '先把极限说清楚' });
+    assert.equal(madeDirection.created, true);
+    assert.equal((await db.getProfile(profile.id)).revision, 5, '声明方向也要推高档案 revision');
+    const again = await db.createDirection(profile.id, { nodeId: 'limit:bridge' });
+    assert.equal(again.created, false, '同一目标重复声明是幂等的');
+    assert.equal((await db.listDirections(profile.id)).length, 1);
+    assert.equal((await db.getProfile(profile.id)).revision, 5, '幂等的那次不该再推高 revision');
+
+    // 归属：另一个档案拿不到这条笔记 / 视图 / 方向
     const other = await db.createProfile({ name: '另一个档案' });
     assert.equal((await db.listNotes(other.id)).length, 0);
     assert.equal((await db.listNetworkViews(other.id)).length, 0);
+    assert.equal((await db.listDirections(other.id)).length, 0);
     await assert.rejects(() => db.updateNote(other.id, note.noteId, { title: 'x' }), (error) => error.status === 404);
     await assert.rejects(() => db.deleteNetworkView(other.id, view.viewId), (error) => error.status === 404);
+    await assert.rejects(() => db.deleteDirection(other.id, madeDirection.direction.directionId), (error) => error.status === 404);
 
     assert.equal((await db.deleteNote(profile.id, note.noteId)).deleted, true);
     assert.equal((await db.deleteNetworkView(profile.id, view.viewId)).deleted, true);
+    assert.equal((await db.deleteDirection(profile.id, madeDirection.direction.directionId)).deleted, true);
+    assert.ok((await db.listDirections(profile.id)).length === 0);
     // 级联删除：档案没了，事件也没了
     await db.appendEvent(profile.id, event('cascade-1'));
+    await db.createDirection(profile.id, { nodeId: 'group:cayley' });
     await db.deleteProfile(profile.id);
     await assert.rejects(() => db.getProfile(profile.id), (error) => error.code === 'UNKNOWN_PROFILE');
     assert.equal((await db.stats()).events, 0, '删档案要级联删事件');
+    assert.equal((await db.listProfiles()).length >= 1, true);
   } finally {
     await db.close();
     await pg.close();
@@ -190,10 +207,25 @@ test('PostgreSQL：导出完整、导入全有或全无（超过 2000 条也不�
     assert.ok(bundle.events.some((item) => item.eventId === 'long-0000'), '最早的确认事件不得被截断');
     assert.ok(bundle.events.some((item) => item.eventId === 'long-2000'));
 
-    // 导入：正常包完整搬过来
-    const imported = await db.importProfile({ profile: { name: '导入的档案' }, events: bundle.events.slice(0, 5), notes: [], networkViews: [] });
+    // 导入：正常包完整搬过来（含方向，2026-10 加）
+    const imported = await db.importProfile({ profile: { name: '导入的档案' }, events: bundle.events.slice(0, 5), notes: [], networkViews: [], directions: [] });
     assert.equal(imported.imported.events, 5);
+    assert.equal(imported.imported.directions, 0);
     assert.deepEqual(imported.skipped, []);
+
+    // 导入：旧 bundle（没有 directions 字段）仍然能导入
+    const legacy = await db.importProfile({ profile: { name: '旧包' }, events: [], notes: [], networkViews: [] });
+    assert.equal(legacy.imported.directions, 0);
+
+    // 导入：带方向的 bundle 往返一致
+    const withDirection = await db.importProfile({
+      profile: { name: '带方向的包' }, events: [], notes: [], networkViews: [],
+      directions: [{ nodeId: 'limit:bridge', note: '先把极限说清楚', sourceRef: 'import' }],
+    });
+    assert.equal(withDirection.imported.directions, 1);
+    const roundTripped = await db.listDirections(withDirection.profile.id);
+    assert.deepEqual(roundTripped.map((item) => item.nodeId), ['limit:bridge']);
+    assert.equal(roundTripped[0].sourceRef, 'import', '导入进来的方向要标明来源不是本人点的');
 
     // 导入：冲突事件 ID → 整体回退，不留半份档案
     const before = (await db.listProfiles()).length;
@@ -203,6 +235,7 @@ test('PostgreSQL：导出完整、导入全有或全无（超过 2000 条也不�
         events: [event('ok-1'), event('ok-2'), event('bad-1', { kind: '不是合法类型' })],
         notes: [],
         networkViews: [],
+        directions: [],
       }),
       (error) => error.status === 422 && Array.isArray(error.details?.skipped) && error.details.skipped.length === 1,
     );

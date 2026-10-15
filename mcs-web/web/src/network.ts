@@ -1,5 +1,5 @@
 import { edgeVisual, relationKindLabel } from './relation-visual.ts';
-import type { NodeSummary } from './types';
+import type { NodeSummary, ScalingExplanation } from './types';
 import type { Locale } from './i18n/locales.ts';
 
 /**
@@ -25,8 +25,10 @@ export interface NetworkAction {
   id: string;
   title: string;
   mode: string;
-  inputs: Array<{ node: string; accepts: string[] }>;
+  inputs: Array<{ node: string; accepts: string[]; condition?: string }>;
   outputs: Array<{ node: string; provides: string[] }>;
+  witness?: { status: string; ref?: string; scope?: string };
+  openAssumptions?: string[];
 }
 
 export interface NetworkRelation {
@@ -34,11 +36,27 @@ export interface NetworkRelation {
   kind: string;
   from: string;
   to: string;
-  witness: { status: string };
+  witness: { status: string; ref?: string };
   scope?: string | null;
+  connectionKey?: string;
+  scalingMode?: string;
+  scalingExplanation?: ScalingExplanation | null;
+  /**
+   * 放缩关系的**已验证**一般端 / 特殊端（2026-10-11 加，由服务端用 `shared/scaling.mjs`
+   * 的 `scalingEndpoints` 解析后下发）。
+   *
+   * 为什么需要它：渲染要表达「泛化方向粗、特化方向细」，而 `from`/`to` 的朝向由
+   * `direction.reading` 决定（`contract` = 一般→特殊、`expand` = 特殊→一般），
+   * 实测 14 条有方向的放缩关系里两种朝向**各占一半**——按 `from`/`to` 猜会有一半画反。
+   * 未核验的旧记录（11 条）这里是 `null`，渲染不做粗细变化。
+   */
+  scaling?: { general: string; special: string } | null;
 }
 
 export interface NetworkGraph {
+  version?: string;
+  /** Private display projection only; excluded from ontology and prerequisite semantics. */
+  displayEdges?: RelationEdge[];
   nodes: NodeSummary[];
   relations: NetworkRelation[];
   actions: NetworkAction[];
@@ -151,13 +169,19 @@ export interface ContractEdge {
 }
 
 export interface RelationEdge {
+  origin?: 'noteReference' | 'privateReference' | 'privateRelation';
   source: 'relation';
   id: string;
   from: string;
   to: string;
   kind: string;
   witnessStatus: string;
+  witnessRef?: string;
   scope: string | null;
+  connectionKey?: string;
+  scalingExplanation?: ScalingExplanation | null;
+  /** 放缩关系的对照端点（见 `NetworkRelation.scaling`）；非放缩或未核验时为 null。 */
+  scaling: { general: string; special: string } | null;
 }
 
 /** 其余边源共用一个结构：都属于「同一登记的弱结构边」，用 source 区分。 */
@@ -172,12 +196,22 @@ export interface FamilyEdge {
 
 export type NetworkEdge = ContractEdge | RelationEdge | FamilyEdge;
 
-export type ReasonKind = 'ready' | 'relation' | 'shares-input' | 'thread' | 'same-topic' | 'pattern' | 'background';
+export type ReasonKind = 'ready' | 'relation' | 'shares-input' | 'thread' | 'same-topic' | 'pattern' | 'background' | 'starting';
 
 export interface Recommendation {
   node: string;
   title: string;
   kind: ReasonKind;
+  /**
+   * 该节点是不是**当前档案的起始节点**（前置已确认、可以直接开始）。
+   *
+   * 这是一个**独立于推荐理由**的事实：理由说的是「为什么把它放到你眼前」（图中前提已加入 /
+   * 已有登记关系 / 同话题…），起始节点说的是「按你档案里的确认记录，它现在可以开始了」。
+   * 两者可以同时成立，因此不合并成一种理由——合并会让人以为「起始节点」是推荐算法的一种档位。
+   *
+   * 只有调用方把起始节点集合传进来时才会为 true（不传时既不出现这个字段，行为也与从前一致）。
+   */
+  starting?: boolean;
   /** 结构化依据；用于渲染，也便于测试断言理由不是自由编造的。 */
   evidence: {
     actionId?: string;
@@ -277,7 +311,12 @@ export function relationEdges(relations: NetworkRelation[], added: Set<string>):
       to: relation.to,
       kind: relation.kind,
       witnessStatus: relation.witness.status,
+      witnessRef: relation.witness.ref,
       scope: relation.scope ?? null,
+      connectionKey: relation.connectionKey,
+      scalingExplanation: relation.scalingExplanation,
+      // 只有放缩关系有「一般端 / 特殊端」；其余种类一律 null（渲染不据此改线宽）。
+      scaling: relation.kind === 'scaling' ? (relation.scaling ?? null) : null,
     }))
     .sort((a, b) => a.id.localeCompare(b.id, 'en'));
 }
@@ -381,7 +420,10 @@ export function buildEdges(graph: NetworkGraph, added: Set<string>, families: Ed
   const enabled = new Set(families);
   const edges: NetworkEdge[] = [];
   if (enabled.has('contract')) edges.push(...contractEdges(graph.actions, added));
-  if (enabled.has('relation')) edges.push(...relationEdges(graph.relations, added));
+  if (enabled.has('relation')) {
+    edges.push(...relationEdges(graph.relations, added));
+    edges.push(...(graph.displayEdges ?? []).filter(edge => added.has(edge.from) && added.has(edge.to)));
+  }
   for (const [family, build] of Object.entries(FAMILY_BUILDERS)) {
     if (!enabled.has(family as EdgeFamily)) continue;
     edges.push(...build(graph, added));
@@ -538,6 +580,13 @@ const REASON_ORDER: Record<ReasonKind, number> = {
   background: 4,
   'same-topic': 5,
   pattern: 6,
+  /*
+   * `starting` 只在**冷启动**那一支出现（空网络 + 前置已确认的节点），
+   * 与 `background` 同属「起点」这一档，排在它后面：背景节点的依据是「没有任何行动能产出它」，
+   * 比「你的档案里前置已经齐了」更硬（前者不依赖任何声明）。顺序取 4.5 → 用整数档位表达：
+   * background 4、starting 4（同档内按关联数/id 排），这里给 4 保持与 background 并列。
+   */
+  starting: 4,
 };
 
 /**
@@ -564,10 +613,19 @@ export function isThreadNode(node: { granularity?: string } | null | undefined):
 /**
  * 推荐加入的节点。
  *
- * 空网络时给出「起点」推荐：背景节点没有任何行动能产出它们（实测 0 / 9 个可被产出），
- * 只能由学习者先确认，因此它们是真正的最小起点。
+ * 空网络时给出「起始节点」推荐：没有任何行动能产出它们的背景节点（只能由学习者先确认），
+ * 以及传进来的 `starting` 集合里那些**前置已确认**的节点——它们才是这一份档案真正的最小起点。
+ *
+ * `starting` 是可选参数（`web/src/starting-nodes.ts` 派生），不传时行为与从前逐字一致：
+ * 冷启动只推荐背景节点，返回的条目上也不会有 `starting` 字段。
  */
-export function recommend(graph: NetworkGraph, added: Set<string>, limit = 24, families: EdgeFamily[] = DEFAULT_FAMILIES): Recommendation[] {
+export function recommend(
+  graph: NetworkGraph,
+  added: Set<string>,
+  limit = 24,
+  families: EdgeFamily[] = DEFAULT_FAMILIES,
+  starting?: ReadonlySet<string>,
+): Recommendation[] {
   const nodes = graph.nodes.filter((node) => !added.has(node.id));
   const producers = producersOf(graph.actions);
   const recommendations: Recommendation[] = [];
@@ -576,13 +634,28 @@ export function recommend(graph: NetworkGraph, added: Set<string>, limit = 24, f
     const relationHits = relationReasonsFor(node.id, added, graph.relations);
     const contract = added.size > 0 ? contractReasonFor(node.id, added, producers) : null;
 
-    // 空网络（冷启动）：只推荐背景节点。
+    /*
+     * 空网络（冷启动）：背景节点 + 当前档案的起始节点。
+     *
+     * 口径变化（2026-10）：从前这里只列 `case === 'background'` 的节点，
+     * 那对「已经声明过前置的学习者」是错的——例如声明了实数度量背景之后，
+     * 「实数距离」已经可以直接开始，却不出现在起点推荐里。
+     * 背景节点仍走 `background` 这一档（理由文案与徽标不动），
+     * 其余起始节点走 `starting`：它们的依据是**档案里的确认记录**，不是「没有行动能产出它」。
+     *
+     * 同时补上一条本来就在注释里、却没被代码执行的判据：**必须没有任何行动能产出它**。
+     * `bg:misc:counterexample-method` 是 `case: 'background'` 但有一条引入契约
+     * （`data/cases/background.mjs` 的 `a-bg:counterexample-method`），
+     * 从前它照样被推成「背景起点：没有任何行动能产出它」——那句话对它是假的。
+     * 现在它只在真的能被引入时（契约输入齐了）才出现，理由也换成正牌的那几种。
+     */
     if (added.size === 0) {
-      if (node.case !== 'background') continue;
+      const isBackground = node.case === 'background' && producers.get(node.id) === undefined;
+      if (!isBackground && !starting?.has(node.id)) continue;
       recommendations.push({
         node: node.id,
         title: node.title,
-        kind: 'background',
+        kind: isBackground ? 'background' : 'starting',
         evidence: {
           via: [],
           scope: null,
@@ -709,7 +782,12 @@ export function recommend(graph: NetworkGraph, added: Set<string>, limit = 24, f
     || (links.get(b.node) ?? 0) - (links.get(a.node) ?? 0)
     || a.node.localeCompare(b.node, 'en'));
 
-  return recommendations.slice(0, limit);
+  /*
+   * 起始节点标记是**最后贴上去的**：它不参与排序，也不改理由。
+   * 传了 `starting` 才贴，因此不传的调用点（既有测试、别处的调用）拿到的对象与从前逐字相同。
+   */
+  if (!starting || starting.size === 0) return recommendations.slice(0, limit);
+  return recommendations.slice(0, limit).map((rec) => (starting.has(rec.node) ? { ...rec, starting: true } : rec));
 }
 
 /*
@@ -826,6 +904,8 @@ export function reasonText(rec: Recommendation, titleOf: (id: string) => string,
     switch (rec.kind) {
       case 'background':
         return 'Background node: no action can produce it, so you confirm it first.';
+      case 'starting':
+        return 'Starting node: every prerequisite registered for it is already confirmed in your profile, so you can begin here. This is a reading of your confirmation records, not a measurement of ability.';
       case 'ready':
         return `Prerequisites already in the graph: every input of the action “${rec.evidence.actionTitle}”${viaTitles.length ? ` (${viaTitles.join(sep)})` : ''} is in the network. This only says the current view has what it takes, not that you have mastered them.`;
       case 'relation': {
@@ -847,6 +927,8 @@ export function reasonText(rec: Recommendation, titleOf: (id: string) => string,
   switch (rec.kind) {
     case 'background':
       return '背景节点：没有任何行动能产出它，需要先由你确认。';
+    case 'starting':
+      return '起始节点：它的每一条登记前置都已经在你的档案里确认过，可以直接从这里开始。依据是你的确认记录，不是本站测出的能力。';
     case 'ready':
       return `图中前提已加入：行动「${rec.evidence.actionTitle}」的全部输入${viaTitles.length ? `（${viaTitles.join('、')}）` : ''}都在网络里。这只说明当前视图已经具备条件，不代表你已经掌握它们。`;
     case 'relation': {
@@ -898,6 +980,23 @@ export function layout(graph: NetworkGraph, added: Set<string>, families: EdgeFa
     neighbors.get(edge.to)?.add(edge.from);
   }
   const trulyIsolated = ids.filter((id) => (neighbors.get(id)?.size ?? 0) === 0);
+
+  // Above 600 nodes, use a bounded component layout instead of quadratic forces.
+  // Keep each connected component together; cells guarantee non-overlap.
+  if (ids.length > 600) {
+    const seen = new Set<string>(), walk: string[] = [];
+    for (const root of [...ids].sort((a, b) => (neighbors.get(b)?.size ?? 0) - (neighbors.get(a)?.size ?? 0) || a.localeCompare(b, 'en'))) {
+      if (seen.has(root)) continue;
+      const queue = [root]; seen.add(root);
+      for (let i = 0; i < queue.length; i++) {
+        const id = queue[i]; walk.push(id);
+        for (const next of [...neighbors.get(id)!].sort((a, b) => a.localeCompare(b, 'en'))) if (!seen.has(next)) { seen.add(next); queue.push(next); }
+      }
+    }
+    const columns = Math.ceil(Math.sqrt(ids.length * .65));
+    const placed = walk.map((id, at) => { const row = Math.floor(at / columns), column = row % 2 ? columns - 1 - at % columns : at % columns; return { id, title: titles.get(id) ?? id, row, column, x: MARGIN + column * (NODE_W + GAP_X), y: MARGIN + row * (NODE_H + GAP_Y), connected: Boolean(neighbors.get(id)?.size) }; });
+    return { placed, width: MARGIN * 2 + columns * (NODE_W + GAP_X), height: MARGIN * 2 + Math.ceil(ids.length / columns) * (NODE_H + GAP_Y), isolated: trulyIsolated, maxColumn: columns - 1, maxRow: Math.ceil(ids.length / columns) - 1 };
+  }
 
   // 1) 确定性初值：阿基米德螺线，先放度数高的，让枢纽落在中心附近。
   const center = 0;
@@ -1159,6 +1258,18 @@ function relaxToSpacing(points: Array<{ id: string; x: number; y: number }>): Ar
     if (!hasOverlap(work, minDx, minDy)) break;
   }
 
+  // Dense components can exhaust the relaxation budget. A monotone final pass
+  // moves only remaining collisions downward, with a finite bound per node.
+  if (hasOverlap(work, NODE_W, NODE_H)) {
+    for (let i = 1; i < work.length; i++) {
+      const point = work[i];
+      for (let pass = 0; pass < i + 1; pass++) {
+        const blocked = work.slice(0, i).filter(other => Math.abs(point.x - other.x) < NODE_W + 16 && Math.abs(point.y - other.y) < NODE_H + 10);
+        if (!blocked.length) break;
+        point.y = Math.max(...blocked.map(other => other.y + NODE_H + 10));
+      }
+    }
+  }
   // 平移到正坐标。
   const minX = Math.min(...work.map((point) => point.x));
   const minY = Math.min(...work.map((point) => point.y));
@@ -1273,6 +1384,165 @@ export function applyOverrides(fitted: NetworkLayout, overrides: PositionOverrid
     width: maxX + NODE_W + MARGIN,
     height: maxY + NODE_H + MARGIN,
   };
+}
+
+/**
+ * 拖动时的**斥力**：被拖动的那一张留在指针下，被它压住的卡片沿最小代价的方向让开。
+ *
+ * ## 它替掉了什么
+ *
+ * 早先的避让只在**放手**时发生：把被拖动的那一张挪到最近的空位（`avoidOverlaps`，螺线搜索）。
+ * 结果是**一放手就跳**——实测把卡片拖到邻座中心再松手，它当场下移 128px、再飘 31px 才停。
+ * 用户把这种现象叫「闪」，要求改成「被拖动的时候因为斥力相互挤压」。
+ *
+ * 现在拖动**过程中**每一帧都在解：拖动者不动，被压住的让开一点点——位移与压入深度成正比，
+ * 指针走 1px 邻座也只让 1px，因此是连续的；放手时已经互不压住，不需要任何跳位。
+ *
+ * ## 为什么让的是**别人**
+ *
+ * 指针在拖动者身上：把它挪开等于「手没松、卡片自己跑了」。其余卡片本来就在让位
+ * （算法或用户先前的决定），被推一下符合直觉——像在桌上用手推开一叠卡片。
+ *
+ * ## 与 `avoidOverlaps` 的分工（两个都留着）
+ *
+ * - 本函数：拖动中每帧调用，**保证连续**，只看被拖动者附近一圈；
+ * - `avoidOverlaps`：放手时的**兜底**，只在「斥力没能解开」时才会真的移动（指针最后一下跳得太远、
+ *   或邻座被夹在一堆卡片中间推不动）。它保证最终一定不重叠。
+ *
+ * ## 确定性与边界
+ *
+ * 候选按输入顺序遍历、让开方向取「相对重叠更小的轴」（与 `relaxToSpacing` 同一条判据），
+ * 同输入必得同输出。只看被拖动者周围 `minDx×2 / minDy×3` 的一圈：再远的卡片不可能与它重叠，
+ * 而把全图拉进来会让每一次 pointermove 都变成平方级开销。后果是「被挤开的卡片正好压到圈外的
+ * 某一张」这一帧看不出来——下一帧的续推与放手时的兜底会接着处理。
+ */
+export interface RepelOptions {
+  gapX?: number;
+  gapY?: number;
+  /** 迭代轮数：一轮解「拖动者压住谁」，随后几轮解「被挤开的互相压」。 */
+  rounds?: number;
+  /**
+   * 是否处理**全部**卡片（默认只看拖动者附近一圈）。
+   *
+   * 拖动中每一帧都跑，因此默认要窗口；**放手那一次**用 `full`——
+   * 那时只跑一遍，代价可以付，换来的是「谁被压住都解得开」，
+   * 于是兜底的 `avoidOverlaps` 几乎不会被用到（它一用就是在挪被拖动者，正是「闪」）。
+   */
+  full?: boolean;
+}
+
+export function repelFromDrag(
+  placed: PlacedNode[],
+  draggedId: string,
+  draggedPosition: { x: number; y: number },
+  options: RepelOptions = {},
+): PositionOverrides {
+  const gapX = options.gapX ?? 20;
+  const gapY = options.gapY ?? 12;
+  const rounds = options.rounds ?? 3;
+  const minDx = NODE_W + gapX;
+  const minDy = NODE_H + gapY;
+  const draggedIndex = placed.findIndex((node) => node.id === draggedId);
+  if (draggedIndex < 0) return {};
+
+  const work = placed.map((node, index) => (index === draggedIndex
+    ? { x: draggedPosition.x, y: draggedPosition.y }
+    : { x: node.x, y: node.y }));
+  const dragged = work[draggedIndex];
+
+  /*
+   * 候选：被拖动者周围一圈。一个轴上已经分开的卡片无论另一个轴多近都不会重叠（矩形碰撞），
+   * 因此这个窗口不会漏掉真正的冲突。
+   */
+  const near: number[] = [];
+  for (let index = 0; index < work.length; index += 1) {
+    if (index === draggedIndex) continue;
+    if (options.full) { near.push(index); continue; }
+    if (Math.abs(work[index].x - dragged.x) <= minDx * 2 && Math.abs(work[index].y - dragged.y) <= minDy * 3) near.push(index);
+  }
+  if (near.length === 0) return {};
+
+  /** 把 a 与 b 分开；**a 是被拖动者时只动 b**，两者都能动时各让一半。 */
+  const separate = (aIndex: number, bIndex: number, targetDx: number, targetDy: number) => {
+    const a = work[aIndex];
+    const b = work[bIndex];
+    const dx = b.x - a.x;
+    const dy = b.y - a.y;
+    const gapXNow = targetDx - Math.abs(dx);
+    const gapYNow = targetDy - Math.abs(dy);
+    if (gapXNow <= 0 || gapYNow <= 0) return false;
+    const vertical = (Math.abs(dx) < 1 && Math.abs(dy) < 1) || gapYNow / targetDy <= gapXNow / targetDx;
+    const aFixed = aIndex === draggedIndex;
+    const bFixed = bIndex === draggedIndex;
+    const share = aFixed || bFixed ? 1 : 0.5;
+    // 一点点余量：正好贴边的坐标在浮点下会来回抖，那就是另一种「闪」。
+    const slack = 0.5;
+    if (vertical) {
+      const shift = (gapYNow + slack) * share * (dy >= 0 ? 1 : -1);
+      if (!aFixed) a.y -= shift;
+      if (!bFixed) b.y += shift;
+    } else {
+      const shift = (gapXNow + slack) * share * (dx >= 0 ? 1 : -1);
+      if (!aFixed) a.x -= shift;
+      if (!bFixed) b.x += shift;
+    }
+    return true;
+  };
+
+  /*
+   * 收敛策略：**间距逐档放大**。
+   *
+   * 固定间距下，三张以上互相挤压会原地打转（A 推 B、B 推 C、C 又压回 A）——
+   * 实测真浏览器里就留下过一对残余重叠（`axler:alternating-multilinear ~ axler:basis`）。
+   * 这与 `relaxToSpacing` 踩的是同一个坑，用的也是同一条经验：间距足够大时任何有限点集都能排开。
+   * 因此每跑完 `rounds` 轮就把目标间距放大一档再跑；**只有真还在冲突时才放大**，
+   * 普通情况第一档就收敛，让开的距离不会变大（单测钉着「让开量刚好」）。
+   */
+  const attempts = options.full ? 4 : 1;
+  /** 按**基础间距**还剩下哪些冲突；只有它非空才值得放大间距。 */
+  const remains = () => {
+    for (let i = 0; i < near.length; i += 1) {
+      const a = work[near[i]];
+      if (Math.abs(a.x - dragged.x) < minDx && Math.abs(a.y - dragged.y) < minDy) return true;
+      for (let j = i + 1; j < near.length; j += 1) {
+        const b = work[near[j]];
+        if (Math.abs(a.x - b.x) < minDx && Math.abs(a.y - b.y) < minDy) return true;
+      }
+    }
+    return false;
+  };
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
+    const targetDx = minDx * (1 + attempt * 0.22);
+    const targetDy = minDy * (1 + attempt * 0.22);
+    let moved = false;
+    for (let round = 0; round < rounds; round += 1) {
+      let step = false;
+      /*
+       * 每一轮**以「拖动者 vs 其余」收尾**，这条顺序不是随意的：
+       * 「被挤开的互相压」那一步会把某张卡片推回去，正好推回拖动者身上——
+       * 实测就是这个顺序漏掉的一帧，让放手时的兜底（`avoidOverlaps`）以为还有冲突，
+       * 于是把被拖动的那一张又挪开 70px，变成了另一种「松手一跳」。
+       */
+      for (let i = 0; i < near.length; i += 1) {
+        for (let j = i + 1; j < near.length; j += 1) step = separate(near[i], near[j], targetDx, targetDy) || step;
+      }
+      for (const index of near) step = separate(draggedIndex, index, targetDx, targetDy) || step;
+      moved = moved || step;
+      if (!step) break;
+    }
+    // 只按基础间距看：已经排开就别再撑大（否则「让开量刚好」这条性质会被自己破坏）。
+    if (!moved || !remains()) break;
+  }
+
+  const pushed: PositionOverrides = {};
+  for (const index of near) {
+    const before = placed[index];
+    const after = work[index];
+    if (Math.abs(after.x - before.x) > 0.05 || Math.abs(after.y - before.y) > 0.05) {
+      pushed[placed[index].id] = { x: Math.round(after.x * 10) / 10, y: Math.round(after.y * 10) / 10 };
+    }
+  }
+  return pushed;
 }
 
 /**

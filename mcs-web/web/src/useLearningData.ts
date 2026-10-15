@@ -2,9 +2,11 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { api, formatError, useApi, useLocaleKey } from './api';
 import { useProfileContext } from './state';
 import { deriveLearning, type GraphAction, type GraphRelation, type LearningProgress } from './learning';
-import type { EventView, NodeSummary, ProfileDetailResponse } from './types';
+import type { DirectionsResponse, EventView, LearningDirectionView, NodeSummary, ProfileDetailResponse } from './types';
+import type { LearningPlanView } from '../../shared/learning-plan.mjs';
 
 export interface OntologyGraph {
+  version?: string;
   nodes: NodeSummary[];
   relations: GraphRelation[];
   actions: GraphAction[];
@@ -17,6 +19,9 @@ export interface LearningData {
   theta: ProfileDetailResponse['theta'] | null;
   events: EventView[];
   progress: LearningProgress | null;
+  /** 学习者声明的学习方向（E 层，按声明时间升序）；没有选档案时是空数组。 */
+  directions: LearningDirectionView[];
+  learningPlan?: LearningPlanView | null;
   loading: boolean;
   error: string | null;
   reload: () => Promise<void>;
@@ -40,24 +45,42 @@ export function useLearningData(): LearningData {
   const localeKey = useLocaleKey();
   const [theta, setTheta] = useState<ProfileDetailResponse['theta'] | null>(null);
   const [events, setEvents] = useState<EventView[]>([]);
+  const [directions, setDirections] = useState<LearningDirectionView[]>([]);
+  const [learningPlan, setLearningPlan] = useState<LearningPlanView | null>(null);
+  const [loadedFor, setLoadedFor] = useState<string | null>(null);
+  const loadGeneration = useRef(0);
   const [loading, setLoading] = useState(Boolean(profileId));
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    if (!profileId) { setTheta(null); setEvents([]); setLoading(false); setError(null); return; }
+    const generation = ++loadGeneration.current;
+    if (!profileId) { setTheta(null); setEvents([]); setDirections([]); setLearningPlan(null); setLoadedFor(null); setLoading(false); setError(null); return; }
     setLoading(true);
     try {
-      const [detail, listed] = await Promise.all([
+      const [detail, listed, aimed, planned] = await Promise.all([
         api<ProfileDetailResponse>(`/profiles/${profileId}`),
         api<{ events: EventView[] }>(`/profiles/${profileId}/events?limit=2000`),
+        /*
+         * 方向与档案详情、事件**一起**取：三者是同一份 E 层状态的不同切面，
+         * 分开取会让「下一步」在某一帧里按旧方向算出来——
+         * 那正是「方向不清晰」最容易变成「方向来回跳」的地方。
+         * 方向接口失败时整块按错误处理（下面的 catch），不静默当成「没有方向」：
+         * 「你以为没声明过方向」比「明确报错」更误导。
+         */
+        api<DirectionsResponse>(`/profiles/${profileId}/directions`),
+        api<{ plan: LearningPlanView }>(`/profiles/${profileId}/learning-plan`),
       ]);
+      if (generation !== loadGeneration.current) return;
       setTheta(detail.theta);
       setEvents(listed.events);
+      setDirections(aimed.directions);
+      setLearningPlan(planned.plan);
+      setLoadedFor(profileId);
       setError(null);
     } catch (reason) {
-      setError(formatError(reason));
+      if (generation === loadGeneration.current) setError(formatError(reason));
     } finally {
-      setLoading(false);
+      if (generation === loadGeneration.current) setLoading(false);
     }
   }, [profileId, localeKey]);
 
@@ -71,16 +94,21 @@ export function useLearningData(): LearningData {
     await Promise.all([load(), Promise.resolve(graphReload.current())]);
   }, [load]);
 
+  const matchesProfile = loadedFor === profileId;
+  const visibleTheta = matchesProfile ? theta : null;
+  const visibleEvents = matchesProfile ? events : [];
   const progress = graph.data
-    ? deriveLearning({ nodes: graph.data.nodes, actions: graph.data.actions, relations: graph.data.relations, theta, events })
+    ? deriveLearning({ nodes: graph.data.nodes, actions: graph.data.actions, relations: graph.data.relations, theta: visibleTheta, events: visibleEvents })
     : null;
 
   return {
     graph: graph.data,
-    theta,
-    events,
+    theta: visibleTheta,
+    events: visibleEvents,
     progress,
-    loading: loading || graph.loading,
+    directions: matchesProfile ? directions : [],
+    learningPlan: matchesProfile ? learningPlan : null,
+    loading: loading || graph.loading || Boolean(profileId && !matchesProfile && !error),
     error: error ?? (graph.error ? formatError(graph.error) : null),
     reload,
   };

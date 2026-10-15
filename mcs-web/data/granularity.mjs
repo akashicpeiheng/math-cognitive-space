@@ -106,6 +106,10 @@ export const TOPIC_REASONS = {
   'rudin:simplex-chain': '并列单形与链两个对象（含边界算子 ∂²=0）。',
   'rudin:closed-exact-form': '并列闭形式与恰当形式两个对象。',
   'rudin:integral-properties': '标题没有并列词，但登记范围是「积分的性质」这一整节（线性性、单调性、可加性、估计式…），不是可独立认知的单个对象。',
+
+  // ---- top（点集拓扑案例，2026-10 判定）----
+  'top:countability-axioms': '并列 A1、A2、可分与 Lindelöf 四条各自可独立定义、各自有独立反例的条款；它们只在「可数」上相撞，判成话题而不是把它们压成一个概念的四种说法。',
+  'top:separation-axioms': '并列 T0 至 T4、正则与正规七个各自独立的分离条款；每一条都对应一个否定上一档的具体空间，是一族线索而不是一个对象。',
 };
 
 /**
@@ -140,6 +144,61 @@ export const UNIT_REASONS = {
   'group:method-cayley-table': '方法条目：核验公理与交换性是同一个查表流程的两件事。',
   'liang:method-index-balance': '方法条目：配平与升降指标是同一个流程的两步。',
   'rudin:method-epsilon-estimate': '方法条目：ε–N 与 ε–δ 是同一种估算手法的两个场景。',
+
+  // ---- top（点集拓扑案例，2026-10 判定）----
+  'top:continuous-map': '辅助前置：标题「连续映射」不含并列词，登记它是因为它是 top:homeomorphism 的定义材料；本案例把它作为**辅助节点**与 12 项区分开（12 项本身不含连续映射）。',
+  'top:homeomorphism': '标题「同胚」不含并列词；登记它是因为它的定义写作「双射 + f 与 f⁻¹ 都连续」，两半是同一条定义的两个条件，不是两个并列对象。',
+  'top:paracompactness': '标题「仿紧性」不含并列词；登记它是因为正文把它与紧性并置对照（有限子覆盖 对 局部有限加细），这一对是同一条件的两个档位，不是两个对象。',
+  'top:metric-space': '辅助前置：标题「度量空间（本案例的辅助前置）」里的括号是说明而不是并列；它与 12 项的区分写在标题与 formal.boundary 里，粒度仍是单元。',
+
+  // ---- jiang（《简明高等代数》案例，2026-10-13 判定）----
+  /*
+   * 这个案例 51 条标题里只有一条命中并列词：`jiang:eigenvector`（「特征值与特征向量」）。
+   * 它属于例外规则 3——λ 是特征值，当且仅当存在非零向量 v 使 T(v) = λv：两个名字
+   * 是同一条定义的两端，不是两个可独立认知的对象。其余 50 条标题不含并列词，按构造默认 unit。
+   */
+  'jiang:eigenvector': '例外规则 3：特征值就是「存在非零特征向量时那个 λ」，两个名字是同一条定义的两端，不是并列的两个对象。',
+
+  // ---- axler（《Linear Algebra Done Right》案例，2026-10-14 判定）----
+  /*
+   * 这个案例 61 条标题里 17 条命中并列词（`、与及和`，见本文件头部的 `TOPIC_TITLE_HINTS`），
+   * 逐条写在下面；另登记 1 条不含并列词但同样要说明判定的条目（`axler:polynomial-division`，
+   * 「多项式的带余除法」按「像一节的范围」判 unit），因此下面共 18 条。它们分三类：
+   * 1. **同一条定义/定理的两端**（特征值与特征向量、零空间与值域、内积与范数…）——
+   *    例外规则 3：两个名字分开讲不成对象，合起来才是这一条；
+   * 2. **同一节的一对结构**（自伴与正规、等距与酉、QR 与 Cholesky、积空间与商空间…）——
+   *    例外规则 2：它们是同一节里并置对照的一对，粒度仍是一个单元；
+   * 3. **术语里含并列字但不表并列**（「直和」里的「和」、「列表与 Fⁿ」里的「与」）——
+   *    字面上命中，语义上不是清单。
+   * 判据与规则表见本文件头部；这里只登记**为什么这一条是单元**。
+   */
+  'axler:list-fn': '例外规则 3：Fⁿ 就是「长度 n 的列表」的全体，两个名字是同一种对象的两端（列表是元素、Fⁿ 是集合），不是并列的两个对象。',
+  'axler:direct-sum': '例外规则 1：标题里的「和」是术语的一部分（直和 = direct sum，写作 U₁ ⊕ … ⊕ Uₘ），不是「A 与 B」这样的并列；节点登记的是这一个构造与它的判据。',
+  'axler:subspace-dimension': '例外规则 3：这条结论的主语就是「子空间的维数」，dim U ≤ dim V 与 dim(U₁+U₂) 的等式都写在同一句话里；两半分开不成一条结论。',
+  'axler:null-range': '例外规则 3：零空间与值域是同一条定理（dim V = dim null T + dim range T）的两端，单个拿出来都只是「映射的一半」。',
+  'axler:product-quotient': '例外规则 2：积空间与商空间是同一节（§3E）里并置对照的两种构造，共享同一个动机（由已知空间造新空间），粒度是一个单元。',
+  'axler:dual-space': '例外规则 3：对偶映射的陪域就是 V′，两个名字是同一条对偶结构的两面（空间与它上面的泛函），分开讲不完整。',
+  'axler:dual-null-range': '例外规则 3：null T′ = (range T)⁰ 与 range T′ = (null T)⁰ 是同一条定理的两条等式，同一个零化子的两侧。',
+  'axler:polynomial-division': '例外规则 3：零点判据（x − z 整除 p）与带余除法是同一个小节里的同一件事（除法给出判据），不是两个可独立认知的对象。',
+  'axler:eigenvalue': '例外规则 3：特征值就是「存在非零特征向量时那个 λ」，两个名字是同一条定义的两端，不是并列的两个对象（与 `jiang:eigenvector` 同一口径）。',
+  'axler:inner-product': '例外规则 3：范数由内积定义（‖v‖ = √⟨v, v⟩），两个名字是同一个结构与其导出量，不是并列的两个对象。',
+  'axler:orthogonal-decomposition': '例外规则 3：正交补就是正交分解的另一半（V = U ⊕ U^⊥），拆开讲任何一半都不成立。',
+  'axler:self-adjoint-normal': '例外规则 2：自伴与正规是同一节（§7A）里并置对照的两类算子（正规是自伴的放宽），粒度是一个单元。',
+  'axler:positive-operator': '例外规则 3：平方根是「正算子的唯一正平方根」这同一条存在性结论，主语只有一个（正算子）。',
+  'axler:isometry-unitary': '例外规则 2：酉算子就是可逆的等距算子，两个名字是同一个定义加上可逆性，粒度是一个单元。',
+  'axler:qr-cholesky': '例外规则 2：QR 与 Cholesky 是同一个小节（§7D）里的两种三角分解，后者由前者去掉符号得到——并置对照的一对。',
+  'axler:generalized-eigenvector': '例外规则 3：广义特征空间上 T − λI 是幂零的，这两个名字是同一条结构描述的两半（空间与它上面的算子），分开讲不完整。',
+  'axler:multiplicity': '例外规则 3：dim G(λ, T) 等于代数重数，块对角形式就是这条分解的写法；两半是同一条结论的两种表述。',
+  'axler:bilinear-form': '例外规则 3：对称性是双线性形的一个附加条件（β(u,v) = β(v,u)），不是与它并列的第二个对象。',
+
+  // ---- 讨论班笔记（2026-10-12 判定）----
+  /*
+   * 这批 19 个新节点里只有一条需要登记：`gt:holonomy-group`（「和乐群」）。
+   * 它的标题命中了并列词表里的「群」，但那不是并列——和乐群是**一个具体的群对象**
+   * （沿闭环平行移动所成的子群），不是「群论」那一族对象的范围，也不是若干并列对象的集合。
+   * 其余 18 条标题不含并列词，按构造默认 unit，不必登记（校验器的规则：只有命中并列词的条目才要求写理由）。
+   */
+  'gt:holonomy-group': '标题里的「群」是对象名的一部分（和乐群 = 沿闭环平行移动所得的子群），不是并列词；节点登记的是这一个群对象，粒度是单元。',
 };
 
 /**
@@ -163,12 +222,17 @@ export function applyGranularity(nodes) {
  * 规则：**参与判定的构造**（`GRANULARITY_CONSTRUCTS`）里，标题命中并列词、
  * 或本身就是话题的条目，必须出现在 `TOPIC_REASONS` 或 `UNIT_REASONS` 里；
  * 反过来，登记表里的 id 必须真的存在。背景节点只在标题命中并列词时要求登记（例外规则 2）。
+ *
+ * `mergedIds` 是被合并掉的登记 id（见 `data/merges.mjs`）：它们在节点表里不再出现，
+ * 但**判定结果仍然有效**——那份登记仍挂在规范节点的 `registrations` 上，节点页照旧按
+ * 它自己的粒度显示（话题级登记仍然显示成话题级）。因此这里对它们只查「有没有理由」，
+ * 不查「节点在不在」。
  */
-export function granularityGaps(nodes) {
+export function granularityGaps(nodes, { mergedIds = new Set() } = {}) {
   const problems = [];
   const byId = new Map(nodes.map((node) => [node.id, node]));
   for (const [id, reason] of Object.entries({ ...TOPIC_REASONS, ...UNIT_REASONS })) {
-    if (!byId.has(id)) problems.push(`粒度登记表引用了不存在的节点：${id}`);
+    if (!byId.has(id) && !mergedIds.has(id)) problems.push(`粒度登记表引用了不存在的节点：${id}`);
     if (!reason || reason.length < 8) problems.push(`粒度登记表缺少理由：${id}`);
   }
   for (const node of nodes) {

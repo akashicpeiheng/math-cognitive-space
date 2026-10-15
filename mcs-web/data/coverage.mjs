@@ -88,9 +88,15 @@ export default [
   {
     module: '贯通案例', chapter: '13', status: 'implemented',
     definitions: ['案例 01–04'],
-    implementation: ['data/cases/limit、manifold、tensor、group 四个数据集与教学正文'],
-    tests: ['doctor.mjs：四案例证据与动作引用检查', 'tests/browser.mjs：四案例页面可进入'],
-    boundary: '四案例只覆盖专稿选定的数学片段；完整桥梁的机器形式化仍缺。',
+    implementation: [
+      'data/cases/limit、manifold、tensor、group 四个数据集与教学正文',
+      'data/cases/dg、liang、rudin 三个后续案例（微分几何语料、梁灿彬上册凝练路径、Rudin 名单；dg 带教学正文，liang 带凝练笔记，rudin 只挂名字）',
+      'data/cases/top.mjs 与 data/cases/08-topology.md：点集拓扑案例（用户点名的 12 项：拓扑空间、可数公理、分离公理、同胚、紧、仿紧、σ-紧、连通性、拓扑流形、微分流形、坐标卡、图册）',
+      'data/cases/jiang.mjs：《简明高等代数》凝练路径（8 章七程，47 里程碑 + 4 方法；第一程四站及消元法已精修，源在 11-jiang-first-stage.md，其余保留草稿）',
+      'data/cases/axler.mjs：《Linear Algebra Done Right》第 4 版凝练路径（9 章一章一程，61 里程碑 + 4 方法，只挂名字、正文留空，contentRef: false）',
+    ],
+    tests: ['doctor.mjs：各案例证据与动作引用检查', 'tests/browser.mjs：案例页面可进入', 'tests/topology-case.mjs：用户点名的 12 项与节点一一对应'],
+    boundary: '各案例只覆盖专稿与语料选定的数学片段；完整桥梁的机器形式化仍缺。点集拓扑案例的断言一律为正文级证据（prose-proof / not_run），不签发机器证书。',
   },
   {
     module: '反例与边界审计', chapter: '14', status: 'partial',

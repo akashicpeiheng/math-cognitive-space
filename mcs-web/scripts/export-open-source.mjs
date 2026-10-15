@@ -41,6 +41,8 @@ const RELEASE_DIR = join(MCS_WEB_ROOT, 'release');
 const INCLUDE = [
   ['mcs-web', 'mcs-web'],
   ['mcs-foundations/validation/certification', 'mcs-foundations/validation/certification'],
+  ['mcs-foundations/lean', 'mcs-foundations/lean'],
+  ['mcs-foundations/08-关系代数与结构.md', 'mcs-foundations/08-关系代数与结构.md'],
   ['mcs-foundations/arxiv', 'mcs-foundations/arxiv'],
   ['mcs-foundations/publication', 'mcs-foundations/publication'],
   ['mcs-foundations/cases', 'mcs-foundations/cases'],
@@ -60,7 +62,7 @@ const INCLUDE = [
  * 它们的公开价值低，而「和历史版本对不上」会实际误导读者。
  */
 const SKIP_DIRS = new Set([
-  'node_modules', 'runtime', 'tmp', 'dist', 'backups', '.git', '__pycache__',
+  'node_modules', 'runtime', 'tmp', 'dist', 'backups', '.git', '__pycache__', '.lake', '.lean-tools',
   'revisions', 'history', 'notes', '.vercel', 'browser-profile', 'pc-profile',
   'chrome-profile', 'diagnostics',
   // `mcs-web/release/` 是发布包**素材**（许可证、声明、投稿指南的源文件与 README 改名源）。
@@ -166,6 +168,8 @@ function parseArgs(argv) {
 
 function shouldSkip(name, source) {
   const path = relative(REPO_ROOT, source).split(sep).join('/');
+  // Maintainer receipts stay in the source workspace; publish only current report pointers.
+  if (/^mcs-foundations\/lean\/reports\/[^/]+-[a-f0-9]{64}-\d{4}-\d{2}-\d{2}T/.test(path)) return true;
   if (SKIP_PATHS.some((prefix) => path === prefix || path.startsWith(`${prefix}/`))) return true;
   if (SKIP_DIRS.has(name) || SKIP_FILES.has(name) || name.startsWith('.env.')) return true;
   return SKIP_SUFFIXES.some((suffix) => name.endsWith(suffix));

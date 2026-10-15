@@ -24,7 +24,18 @@ function check(name, condition, detail = '') {
  * 4. **遮挡按逻辑强弱**：画序按视觉权重升序，最强的边最后画（压在最上面）；
  *    选中某节点时，与它相连的边再压到最上面。
  */
-const NODES = 'dg:homeomorphism,dg:manifold,dg:topological-manifold,dg:topological-space,dg:smooth-manifold,dg:smooth-atlas,dg:coordinate-chart,dg:tangent-bundle';
+/*
+ * 视图用的节点集合：要同时满足两件事——**关系种类不止一种**（这条验收的核心是「颜色按种类分」），
+ * 且相邻卡片之间留得出弧线的余地。
+ *
+ * 2026-10 的节点合并（`data/merges.mjs`）改了这里的两件事：
+ * 1. 原先用「同一个对象的几处登记」互相之间的 crossDomain / bridge 边凑种类，那些边在合并后
+ *    成了自环、不再存在；
+ * 2. 节点的度数变了，卡片尺寸随之变化，5 个节点的老视图不再总有解。
+ * 因此样本改成「一条定义链 + 几个跨层接口」：集合内部同时有 hardPrereq / scaling /
+ * application / crossDomain 四种关系。
+ */
+const NODES = 'top:homeomorphism,top:topological-manifold,top:space,top:differentiable-manifold,dg:smooth-atlas,top:coordinate-chart,dg:tangent-bundle,dg:tangent-vector-curve,top:atlas,top:compactness,top:continuous-map,dg:metric-space';
 
 const server = await startTestServer();
 let browser;
@@ -108,7 +119,7 @@ try {
     JSON.stringify({ weakest: paint.edges[0], strongest: paint.edges.at(-1) }));
 
   // 选中节点后：与它相连的边压到最上面（否则选中了也看不清它连着谁）。
-  const nodeId = 'dg:homeomorphism';
+  const nodeId = 'top:homeomorphism';
   await page.locator(`.network-node[data-node="${nodeId}"]`).click();
   await page.waitForTimeout(700);
   const afterSelect = await page.evaluate((selected) => {
@@ -144,6 +155,22 @@ try {
   await page.goto(server.origin + '/network?nodes=' + encodeURIComponent(NODES), { waitUntil: 'networkidle' });
   await page.waitForSelector('.network-edge');
   await page.waitForTimeout(1200);
+  /*
+   * 先放大到标注阈值再量（2026-10-12 修）。
+   *
+   * 边上直接写名字有一条**可见性规则**：`showEdgeLabels = viewport.scale >= 0.85`
+   * （密网里文字会糊成一片，所以只有放大到一定程度才标）。这张 7 节点视图适配后的比例
+   * 是 **0.6691**，于是 `.network-edge-label` 一个都不渲染——而下面那条断言要读
+   * 「标签带 +N」。它检查的是**合并标注**，却因为与它无关的缩放阈值而红：
+   * 实测这一次是 0 个 label、12 条被合并的边（`data-merged` 都在，只是没有标签）。
+   *
+   * 因此这里显式放大到阈值之上（点两次 ＋，1.25² ≈ 1.56 倍），这条断言才真的在测它要测的东西。
+   */
+  for (let step = 0; step < 2; step += 1) {
+    await page.locator('button[aria-label="放大"]').click();
+    await page.waitForTimeout(250);
+  }
+  const mergeZoom = await page.evaluate(() => document.querySelector('.network-canvas-full')?.getAttribute('data-zoom') ?? null);
   const merge = await page.evaluate(() => {
     const edges = [...document.querySelectorAll('.network-edge')].map((element) => ({
       from: element.getAttribute('data-from'),
@@ -315,9 +342,16 @@ try {
     };
   });
 
-  // A. 有解：dg 的定义链（拓扑空间 → 同胚 → 流形 → 坐标图 → 光滑图册）里有一条边压住卡片，
-  //    弧线把它绕开了，因此画布上不该再看到压卡。
-  await page.goto(server.origin + '/network?nodes=' + encodeURIComponent('dg:topological-space,dg:homeomorphism,dg:manifold,dg:coordinate-chart,dg:smooth-atlas'), { waitUntil: 'networkidle' });
+  /*
+   * A. 有解：一条定义链（拓扑空间 → 连续映射 → 同胚 → 坐标卡 → 图册）里本该有边压住卡片，
+   *    弧线把它绕开了，因此画布上不该再看到压卡。
+   *
+   *    样本在 2026-10 换过一次：**同一个对象的几处登记**合并成一个节点之后，原来的五节点视图
+   *    （拓扑空间/同胚/拓扑流形/坐标卡/光滑图册）度数变大、卡片随之变宽，96px 的弓高上限内
+   *    已经绕不干净——那是「密集视图」的处境，不是这条断言要测的场景。这里换成同一条链上
+   *    度数更小的一组（实测 throughCard ≥ 1 且残余为 0）。
+   */
+  await page.goto(server.origin + '/network?nodes=' + encodeURIComponent('top:space,top:continuous-map,top:homeomorphism,top:coordinate-chart,top:atlas'), { waitUntil: 'networkidle' });
   await page.waitForSelector('.network-edge');
   await page.waitForTimeout(1200);
   const sparse = await measureOcclusion();
@@ -345,6 +379,167 @@ try {
   check('因压卡而弯的条数落在实际弯曲的边里（统计与画布对得上）',
     dense.routes?.throughCard >= 1 && dense.bowed >= dense.routes.throughCard,
     JSON.stringify({ bowed: dense.bowed, throughCard: dense.routes?.throughCard, routes: dense.routes }));
+
+  /*
+   * 放缩关系的**粗细变化**（2026-10-11 加）。
+   *
+   * 用户的要求：「给表达放缩关系的箭头进行视觉优化：增加粗细变化，泛化方向变粗，特化方向变细。」
+   *
+   * 这一档不用像素量（截图比对既脆弱又说不清阈值），而是**量几何**：
+   * 带子是一条闭合轮廓（`d` 里两侧各 17 个点），两端宽度就是首尾两对点的距离；
+   * 再拿两端的中点与 `data-general` 那个节点的位置比距离，就能判定「粗的那端在不在泛化端」。
+   * 样本里三种情形都要有：一般端在 `from`（缩读法）、一般端在 `to`（放读法）、
+   * 以及**方向未核验**的旧记录（不该有带子）。
+   */
+  await page.goto(server.origin + '/network?nodes=' + encodeURIComponent(
+    'limit:limit-ed,limit:continuous,dg:smooth-atlas,manifold:ck-atlas,group:group-concept,group:perm,'
+    + 'top:countability-axioms,top:claim-a2-a1,top:claim-a2-separable',
+  ), { waitUntil: 'networkidle' });
+  await page.waitForSelector('.network-edge');
+  await page.waitForTimeout(1200);
+  /*
+   * 期望值**从接口重算**，不写死条数（与 `network-node-menu.mjs` 同一种做法）：
+   * 哪些放缩关系的方向核验过、哪些没有，是本体下发的事实；这里逐条比对画布。
+   */
+  const scalingFacts = await (await fetch(server.origin + '/api/v2/ontology/graph')).json()
+    .then((payload) => payload.data.relations
+      .filter((relation) => relation.kind === 'scaling')
+      .map((relation) => ({
+        id: relation.id,
+        pair: [relation.from, relation.to].sort().join('~'),
+        verified: Boolean(relation.scaling?.general && relation.scaling?.special),
+        general: relation.scaling?.general ?? null,
+        special: relation.scaling?.special ?? null,
+      })));
+  const taper = await page.evaluate(() => {
+    const posOf = (id) => {
+      const element = document.querySelector(`.network-node[data-node="${id}"]`);
+      const match = /translate\(([-\d.]+),([-\d.]+)\)/.exec(element?.getAttribute('transform') ?? '');
+      return match ? { x: Number(match[1]) + 86, y: Number(match[2]) + 29 } : null;
+    };
+    const ribbons = [...document.querySelectorAll('.network-edge-taper')].map((element) => {
+      const points = (element.getAttribute('d') ?? '').replace(/^M /, '').replace(/ Z$/, '').split(' L ')
+        .map((pair) => pair.split(' ').map(Number));
+      const half = points.length / 2;
+      const mid = (a, b) => ({ x: (a[0] + b[0]) / 2, y: (a[1] + b[1]) / 2 });
+      // 同一条边的主路径：带子要与它走同两个锚点（起点对 x1,y1），「粗端在不在泛化端」按 id 判。
+      const path = element.parentElement?.querySelector('.network-edge');
+      /*
+       * 箭头也一起量（2026-10-11 补）：箭头是固定像素的，它的横向宽度会决定细端**看起来**多粗。
+       * 第一版就是漏了这一步——带子几何 8.0→3.0 明明对了，可 10.1px 的箭头比粗端还宽，
+       * 肉眼两头一样粗。这里把 marker 的横向宽度算出来，供下面「两端看得见的宽度」那条判据用。
+       */
+      const markerId = (path?.getAttribute('marker-end') ?? '').replace('url(#', '').replace(')', '');
+      const marker = [...document.querySelectorAll('marker')].find((item) => item.id === markerId) ?? null;
+      const markerYs = [...(marker?.querySelector('path')?.getAttribute('d') ?? '')
+        .matchAll(/[ML]\s*([\d.]+)\s+([\d.]+)/g)].map((match) => Number(match[2]));
+      const arrowCross = marker && markerYs.length
+        ? Number(marker.getAttribute('markerWidth')) * ((Math.max(...markerYs) - Math.min(...markerYs)) / 10)
+        : null;
+      return {
+        edgeId: element.getAttribute('data-edge-id'),
+        general: element.getAttribute('data-general'),
+        special: element.getAttribute('data-special'),
+        from: path?.getAttribute('data-from') ?? null,
+        to: path?.getAttribute('data-to') ?? null,
+        anchorStart: { x: Number(path?.getAttribute('data-x1')), y: Number(path?.getAttribute('data-y1')) },
+        anchorEnd: { x: Number(path?.getAttribute('data-x2')), y: Number(path?.getAttribute('data-y2')) },
+        startWidth: Number(element.getAttribute('data-start-width')),
+        endWidth: Number(element.getAttribute('data-end-width')),
+        measuredStart: Math.hypot(points[0][0] - points[points.length - 1][0], points[0][1] - points[points.length - 1][1]),
+        measuredEnd: Math.hypot(points[half - 1][0] - points[half][0], points[half - 1][1] - points[half][1]),
+        points: points.length,
+        fill: (element.getAttribute('fill') ?? '').toLowerCase(),
+        markerId,
+        arrowCross,
+        startMid: mid(points[0], points[points.length - 1]),
+        endMid: mid(points[half - 1], points[half]),
+      };
+    });
+    const edges = [...document.querySelectorAll('.network-edge')].map((element) => ({
+      edgeId: element.getAttribute('data-edge-id'),
+      from: element.getAttribute('data-from'),
+      to: element.getAttribute('data-to'),
+      kind: element.getAttribute('data-kind'),
+      stroke: (element.getAttribute('stroke') ?? '').toLowerCase(),
+      strokeWidth: Number(element.getAttribute('stroke-width')),
+      strokeOpacity: element.getAttribute('stroke-opacity'),
+      marker: element.getAttribute('marker-end'),
+      hasRibbon: Boolean(element.parentElement?.querySelector('.network-edge-taper')),
+    }));
+    return {
+      ribbons,
+      edges,
+      nodes: Object.fromEntries([...document.querySelectorAll('.network-node')].map((el) => [el.getAttribute('data-node'), posOf(el.getAttribute('data-node'))])),
+    };
+  });
+  /** 画布上这条边对应哪条放缩登记（按无序端点对匹配；被合并的边按保留下来的那条算）。 */
+  const factsByPair = new Map(scalingFacts.map((fact) => [fact.pair, fact]));
+  const drawnScaling = taper.edges
+    // 只认**画成放缩关系**的那些：同一对节点可能被更强的硬前置 / 定义性契约赢走，
+    // 那种边上没有放缩的粗细变化，也不该有。
+    .filter((edge) => edge.kind === 'scaling')
+    .map((edge) => ({ ...edge, fact: factsByPair.get([edge.from, edge.to].sort().join('~')) }))
+    .filter((edge) => edge.fact);
+
+  check('方向已核验的放缩边都画出了渐变带子，其余边一条都没多画',
+    drawnScaling.filter((edge) => edge.fact.verified).length >= 2
+      && drawnScaling.filter((edge) => edge.fact.verified).every((edge) => edge.hasRibbon)
+      && drawnScaling.filter((edge) => !edge.fact.verified).every((edge) => !edge.hasRibbon)
+      && taper.ribbons.length === drawnScaling.filter((edge) => edge.fact.verified).length,
+    JSON.stringify({ drawn: drawnScaling.map((edge) => [edge.edgeId, edge.kind, edge.fact.verified, edge.hasRibbon]), ribbons: taper.ribbons.length }));
+  check('带子的两端宽度就是它写出来的那两个数（几何与声明一致）',
+    taper.ribbons.every((item) => Math.abs(item.measuredStart - item.startWidth) < 0.1
+      && Math.abs(item.measuredEnd - item.endWidth) < 0.1 && item.points === 34),
+    JSON.stringify(taper.ribbons.map((item) => [item.measuredStart, item.startWidth, item.measuredEnd, item.endWidth, item.points])));
+  /*
+   * 「粗的那端在泛化端」怎么判：**比对端点身份 + 量带子自己的几何**，不靠卡片位置。
+   *
+   * 一开始用「带子两端的中点离泛化卡片谁近」，结果在一张两边卡片几乎贴在一起的图上判反了
+   * （两张卡中心只差十几像素，两个端点到泛化端的距离只差 2px）。现在两条判据都不依赖布局：
+   * ① 带子的起点中点必须落在主路径的 (x1,y1) 上、终点中点落在 (x2,y2) 上（同一段几何）；
+   * ② 起点对应 `data-from`，而 `data-general` 说明哪个节点是泛化端——比 id 就知道粗端对不对。
+   */
+  check('带子与那条线走的是同两个锚点（起点对 x1,y1，终点对 x2,y2）',
+    taper.ribbons.every((item) => Math.hypot(item.startMid.x - item.anchorStart.x, item.startMid.y - item.anchorStart.y) < 2
+      && Math.hypot(item.endMid.x - item.anchorEnd.x, item.endMid.y - item.anchorEnd.y) < 2),
+    JSON.stringify(taper.ribbons.map((item) => [item.edgeId, item.startMid, item.anchorStart, item.endMid, item.anchorEnd])));
+  check('一般端粗、特殊端细，而且**粗的那端真的落在泛化端**（两种读法都对）',
+    taper.ribbons.every((item) => (item.startWidth > item.endWidth) === (item.general === item.from)),
+    JSON.stringify(taper.ribbons.map((item) => ({
+      edge: item.edgeId, from: item.from, to: item.to, general: item.general, special: item.special,
+      startWidth: item.startWidth, endWidth: item.endWidth,
+    }))));
+  check('带子的颜色就是这条关系的颜色',
+    taper.ribbons.every((item) => item.fill && /^#[0-9a-f]{6}$/.test(item.fill)),
+    JSON.stringify(taper.ribbons.map((item) => item.fill)));
+  /*
+   * **两端看得见的宽度**必须真的差得出来（2026-10-11 补，用户报「还是两头一样粗」）。
+   *
+   * 第一版只验了「带子的几何两端宽度」（8.0 vs 3.0）就以为做完了——但箭头是固定像素的，
+   * 它的横向宽度 10.1px **比粗端还宽**，于是肉眼看到的两端一样粗。这条把箭头也算进去：
+   * 细端的可见宽度 = max(细端线宽, 该边箭头的横向宽度)，要求粗端至少是它的两倍。
+   */
+  const visible = taper.ribbons.map((item) => {
+    const thin = Math.min(item.startWidth, item.endWidth);
+    const thick = Math.max(item.startWidth, item.endWidth);
+    return { edge: item.edgeId, thick, thin, arrow: item.arrowCross, thinVisible: Math.max(thin, item.arrowCross ?? 0), markerId: item.markerId };
+  });
+  /** 带子边（供下面两处断言共用）：它们的描边被藏起来，属性必须照旧。 */
+  const tapered = taper.edges.filter((edge) => edge.hasRibbon);
+  check('两端**看得见的**宽度至少差两倍（把箭头也算进去）',
+    visible.length > 0 && visible.every((item) => item.thick / item.thinVisible >= 2),
+    JSON.stringify(visible.map((item) => ({ ...item, ratio: +(item.thick / item.thinVisible).toFixed(2) }))));
+  check('细端配的是放缩边专用的小箭头（不是档位那个 13px 的大箭头）',
+    visible.every((item) => item.markerId.endsWith('-taper') && (item.arrow ?? 99) < 6),
+    JSON.stringify(visible.map((item) => [item.markerId, item.arrow])));
+  check('带子边把描边藏起来，但线的属性照旧（颜色、线宽、箭头都在）',
+    tapered.length >= 2 && tapered.every((edge) => edge.strokeOpacity === '0'
+      && edge.stroke !== '' && edge.stroke !== 'none' && edge.strokeWidth > 0 && Boolean(edge.marker)),
+    JSON.stringify(tapered));
+  check('方向未核验的旧放缩记录不画带子（不假装知道哪端是泛化端）',
+    drawnScaling.some((edge) => !edge.fact.verified) && drawnScaling.filter((edge) => !edge.fact.verified).every((edge) => !edge.hasRibbon),
+    JSON.stringify(drawnScaling.filter((edge) => !edge.fact.verified)));
 
   check('弧线策略没有控制台错误', consoleErrors.length === 0, consoleErrors.join(' | '));
 } finally {

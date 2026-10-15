@@ -50,6 +50,7 @@ export function certificatePath(record, repoRoot = REPO_ROOT) {
 }
 
 export async function replayCertificate(record, { repoRoot = REPO_ROOT, timeoutMs = 30000, python = process.env.MCS_WEB_PYTHON || 'python' } = {}) {
+  if (record.backend === 'lean4') throw new McsError(CODES.EVIDENCE_UNSUPPORTED, 'Lean 证据请通过 /lean/jobs 异步重放。', 422);
   const certificate = certificatePath(record, repoRoot);
   const kernel = resolve(repoRoot, KERNEL);
   if (!existsSync(certificate)) throw new McsError(CODES.UNKNOWN_EVIDENCE, `证书文件不存在：${record.certificate}`, 404);
@@ -115,6 +116,8 @@ export function evidenceView(record) {
   return {
     id: record.id,
     kind: record.kind,
+    backend: record.backend ?? (record.kind === 'machine-certificate' ? 'mcs-nd-subset' : null),
+    leanRegistration: record.leanRegistration ?? null,
     status: record.status,
     checkStatus: record.checkStatus,
     title: record.title,
@@ -126,7 +129,7 @@ export function evidenceView(record) {
     openAssumptions: record.openAssumptions ?? [],
     obligations: record.obligations ?? [],
     reference: record.reference ?? null,
-    note: '正文证明、证书检查与个人掌握分开呈现；checkStatus 只说明这一份有限证书的检查结果。',
+    note: '正文证明、具体证据检查与个人掌握分开呈现；机器检查只覆盖所登记的断言和假设。',
   };
 }
 

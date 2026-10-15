@@ -174,7 +174,7 @@ before(async () => {
     node: DRAFT_NODE_A,
     title: '证书交接：阿贝尔细化',
     spec: conceptSpecFor(DRAFT_NODE_A),
-    kinds: ['hardGeneralization'],
+    kinds: ['scaling'],
   });
   cycleB = await makeHarness('publication-cycle-b');
   await runDiscovery(cycleB, {
@@ -413,7 +413,7 @@ test('M.1 概念锚点：预览里进「不可入库」并写明原因、整批�
     const anchor = {
       ...JSON.parse(JSON.stringify(publishable)),
       id: 'cand:cycle-anchor-demo',
-      kind: 'hardGeneralization',
+      kind: 'scaling',
       from: { node: 'concept:group:abelian', version: '1' },
       to: { node: 'ext:publication-cycle-anchor-node', version: '1' },
       direction: { general: 'concept:group:abelian', special: 'ext:publication-cycle-anchor-node' },
@@ -586,7 +586,7 @@ test('M.2 跨盘 extensionsDir：发布走完六步、包能回读（P2）', asy
     const certOutcome = await discoverRelations({
       ontology: harness.source.base, registry: harness.registry, draft,
       nodeRef: { node: certHarnessNode, version: '1' }, background: 'bg:group/1',
-      repoRoot: REPO_ROOT, kinds: ['hardGeneralization'], budget: { ...DISCOVERY_BUDGET, maxCandidates: 6 },
+      repoRoot: REPO_ROOT, kinds: ['scaling'], budget: { ...DISCOVERY_BUDGET, maxCandidates: 6 },
     });
     harness.authoring.saveCandidates(certRun.id, certOutcome.candidates);
     harness.authoring.updateRun(certRun.id, { status: 'completed', stats: { ...certOutcome.stats, runVersion: 'mcs-discovery-run/1' } });

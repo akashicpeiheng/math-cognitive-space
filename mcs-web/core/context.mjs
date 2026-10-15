@@ -11,12 +11,19 @@ import { evidenceView } from './evidence.mjs';
  * 分档不是拍脑袋，是量出来的（232 个节点，见 VALIDATION 第五十六轮）：
  * 中位 3036、p95 16705、最大 22543；≤8000 的 202 个、8001–16000 的 15 个、>16000 的 15 个。
  * 因此三档的**预算上限**就取这三个观测边界：
- * `compact 8000 / standard 16000 / extended 24000`（24000 留出 22543 之上的余量）。
+ * `compact 8000 / standard 16000 / extended 28000`。
+ *
+ * **24000 → 28000（2026-10-12，讨论班笔记那批进站）**：同一套量法重测 248 个节点——
+ * 中位 3184、p95 17259、**最大 26482**（新节点 `gt:geodesic`），超过 24000 的有 2 个
+ * （`gt:geodesic` 26482、`gt:sigma-algebra` 26428）。那批笔记是模板化之后的完整世代
+ * （前置知识三层 / 动机 / 形式 / 条件即反例 / 证明 / 应用 / 推广 / 误解 / 启发 / 总结 / 回看提问），
+ * 正文自然比旧世代长。**上限仍按「最大观测值 + 余量」定**（26482 → 28000），不另加第四档：
+ * 只多出 2 个节点，加一档会让「档位」这件事从三个可记住的边界变成四个。
  */
 export const CONTEXT_TIERS = {
   compact: { ceiling: 8000, note: '短节点：材料一屏放得下' },
   standard: { ceiling: 16000, note: '中等节点：需要保留完整证据与关系' },
-  extended: { ceiling: 24000, note: '长节点（主要为微分几何）：证据多、段落多' },
+  extended: { ceiling: 28000, note: '长节点（微分几何与讨论班笔记）：证据多、段落多' },
 };
 
 /** 这个节点**实际需要**多少字符（不截断地构建一次，量 JSON 长度）。 */
@@ -29,8 +36,8 @@ export function contextBudget(ontology, nodeId) {
     nodeId,
     requiredChars,
     tier,
-    /** 建议预算：本档的上限（够用且可预期，不按节点长度逐点变化）。 */
-    budgetChars: CONTEXT_TIERS[tier].ceiling,
+    /** 既有三档保留；超长正文按 4000 字符递增，避免新内容超过最高档后给出不足的建议。 */
+    budgetChars: Math.max(CONTEXT_TIERS[tier].ceiling, Math.ceil(requiredChars / 4000) * 4000),
     // 截断情况也要如实带上：requiredChars 是「不截断」的口径，两者一起看才知道有没有丢材料。
     omittedSections: context.omitted_sections?.length ?? 0,
   };

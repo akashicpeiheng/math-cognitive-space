@@ -2,6 +2,7 @@ import { parentPort, workerData } from 'node:worker_threads';
 import { McsError, CODES } from '../shared/errors.mjs';
 import { createOntologySource } from './snapshot.mjs';
 import { makePlanner } from '../core/planner.mjs';
+import { buildLearningPlan, personalizePlanResult } from '../core/learning-plan.mjs';
 
 /*
  * 规划工作线程。
@@ -47,9 +48,15 @@ try {
    * 结果里带 integrity 摘要，调用方据此判断这条规划覆盖了哪一层知识。
    */
   const planner = makePlanner(ontology);
-  const planned = workerData.kind === 'review'
+  let planned = workerData.kind === 'learning'
+    ? buildLearningPlan(ontology, workerData.request.preferences, workerData.request.background)
+    : workerData.kind === 'review'
     ? planner.withReview(planner.plan(workerData.request.plan), workerData.request.review)
     : planner.plan(workerData.request);
+  const planRequest = workerData.kind === 'review' ? workerData.request.plan : workerData.request;
+  if (workerData.kind !== 'learning' && planRequest.learningPreferences) {
+    planned = personalizePlanResult(ontology, planned, planRequest.learningPreferences, planRequest.background);
+  }
   parentPort.postMessage({
     ok: true,
     result: {

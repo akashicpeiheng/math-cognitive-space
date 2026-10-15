@@ -117,7 +117,15 @@ const graph = {
   evidence: [],
 };
 
-const liangIds = ontology.raw.nodes.filter((node) => node.case === 'liang').map((node) => node.id);
+/*
+ * 压力场景的样本取自**案例线**：按登记归属（`cases`）取节点，而不是按节点归属（`case`）。
+ * 2026-10 的节点合并把同一对象的若干处登记收口到别的案例的规范节点上（见 `data/merges.mjs`），
+ * 只按 `case` 取会让「梁灿彬整案」从 63 个点掉到 54 个——而网络视图里按案例筛出来的
+ * 仍然是 63 个点（`/ontology/graph?case=liang` 与界面用同一个口径）。样本必须与界面一致。
+ */
+const liangIds = ontology.raw.nodes
+  .filter((node) => (node.cases ?? [node.case]).includes('liang'))
+  .map((node) => node.id);
 const allIds = ontology.raw.nodes.map((node) => node.id);
 const scenarios = [measure(graph, liangIds, 'liang 整案'), measure(graph, allIds, '全库')];
 

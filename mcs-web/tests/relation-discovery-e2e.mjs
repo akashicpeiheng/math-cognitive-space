@@ -37,7 +37,7 @@ const CASES = ['group', 'limit', 'manifold', 'tensor'];
 
 /** 非纯文本引用关系：必须拿出证书或有限模型，不能只是"我引用了它"。 */
 const NON_TEXTUAL = new Set([
-  'hardGeneralization', 'equivalentTo', 'conditionalDerivation', 'instanceOf', 'counterexampleTo',
+  'scaling', 'equivalentTo', 'conditionalDerivation', 'instanceOf', 'counterexampleTo',
 ]);
 
 function kernelHash() {
@@ -347,7 +347,7 @@ test('四案例端到端：新节点输入 → 发现 → 独立重放 → 入�
       counterexample: null, replay: null, generatorVersion: 'e2e', inputHash: 'sha256:e2e',
     };
     const undecidedCandidate = { ...verifiedCandidate, id: 'cand:e2e:undecided', math: { status: 'undecided', reason: '预算内未找到证明。', scope: '' }, review: 'pending' };
-    const refutedCandidate = { ...verifiedCandidate, id: 'cand:e2e:refuted', kind: 'hardGeneralization', math: { status: 'refuted', reason: '有限反模型。', scope: '有限对象上' }, review: 'pending' };
+    const refutedCandidate = { ...verifiedCandidate, id: 'cand:e2e:refuted', kind: 'scaling', math: { status: 'refuted', reason: '有限反模型。', scope: '有限对象上' }, review: 'pending' };
     store.saveCandidates(run.id, [verifiedCandidate, undecidedCandidate, refutedCandidate]);
     store.updateRun(run.id, { status: 'completed' });
 

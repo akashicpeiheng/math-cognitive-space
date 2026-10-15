@@ -1,0 +1,203 @@
+{
+  "schema": "mcs-lean-report/1",
+  "backend": "lean4",
+  "status": "passed",
+  "evidenceId": "ev-lean-closure-8-8",
+  "registrationId": "lean-closure-8-8",
+  "inputSha256": "7edcd56250b14f0fc36f8afa0719bdc2b90664252b9fa68ab3051f0d33192a36",
+  "sourceHashes": {
+    "lean-toolchain": "d5edba4e4b8faad9c1baeadb265716d20d03be4d1a2647dc5e35b0c0325bea7b",
+    "lakefile.toml": "85c9a263e6757e06d968d377f4f5a9d9c744a0ab1b29cbc7eca63895b18fcaf1",
+    "lake-manifest.json": "b9017892816d4f2ab68e8a09f1430484669f69fea504798c32af66fa5d367d93",
+    "registrations.json": "ccbe4c63cf1ad6e4d10a25f968f22d480be9783955cbfc95ff360e75cf614911",
+    "README.md": "824569f415a23ba9d7d09025554f72659d8d863f33ce43968f0556bfb4992aa8",
+    "MCS.lean": "42cc286844434b22e65e01c3927ed4d21cf291bd57eb7658a72c89ef34f5e7e8",
+    "MCS/Definitions.lean": "490740f999c14ce84b8a3ca984dc6b925fcb3d9a1b627432e1f09dd8e3ff5c19",
+    "MCS/Expected.lean": "f4632a46f23655f927dc7837183e4813607226efde613a2fd0cc31e81dfe9d42",
+    "MCS/Proofs/Group.lean": "a1c0628cf8c433cea4488c14523a351de61dc4342148c820e3a41dde0a7d8c7b",
+    "MCS/Proofs/Closure.lean": "956dfab9f0ee4567ad70ea98e3c7e75b67b46fb72311087b509701919e0389e7",
+    "MCS/Verified.lean": "f4f68be1897116ea90d89db574d8e9064d9c2748d83a1024710f07e4c7d88b2b",
+    "MCS/Audit.lean": "64186b0b1cd5d406fb89d363f3e74279748eb5a8437a79aead46e2781d294ed2"
+  },
+  "originalHashes": {
+    "mcs-foundations/08-关系代数与结构.md": "b0d630101f192de91dfb086b502d67fa87cfee782571448a7e32df8f60bc2b98"
+  },
+  "policyVersion": "mcs-lean-check/2",
+  "checkerSourceSha256": "6152ee106c8f42372d0b30f61a7bcf3a2b063f83dc2014f74050b209ea45623b",
+  "toolchainHashes": {
+    "lean": "fcc4a10077d5fdd575592cea5f2981c91cbd77c490c80bc74407908e57e8b87b",
+    "lake": "9780a6abfb6d751c7958f2fd7f696154bdda8b46c0de9755c4080ffb8a8788e6",
+    "checker": "1f18d5f13e24519bc7e21217500b45be36bc6bfde70229556c857e6ad066811f",
+    "checkerModule": "d6829015630328e3c70909a4cba004a7933f6d52cad3721488a2efaa14c1bbbe"
+  },
+  "checker": "lean-4.34.1/LeanChecker.replayFromImports",
+  "checkerVerified": false,
+  "kernelReplayed": true,
+  "replayMode": "project-modules-sequential-single-process",
+  "leanVersion": "4.34.1",
+  "mathlibRevision": "d13f23b723b8a846827a245b89c10fc7d3f11612",
+  "ranAt": "2026-10-13T15:01:18.393Z",
+  "durationMs": 64460,
+  "logsSha256": "a5fd0184e4e32079196f9cfc06ab33c853da69172cdce40bcc36d3853e964022",
+  "logs": [
+    {
+      "stage": "build",
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": "",
+      "commands": [
+        "lake env <node> (capture Lean environment)",
+        "lean -j 1 MCS/Definitions.lean -o <verification-workspace>/.lake/build/lib/lean/MCS/Definitions.olean",
+        "lean -j 1 MCS/Expected.lean -o <verification-workspace>/.lake/build/lib/lean/MCS/Expected.olean",
+        "lean -j 1 MCS/Proofs/Group.lean -o <verification-workspace>/.lake/build/lib/lean/MCS/Proofs/Group.olean",
+        "lean -j 1 MCS/Proofs/Closure.lean -o <verification-workspace>/.lake/build/lib/lean/MCS/Proofs/Closure.olean",
+        "lean -j 1 MCS/Verified.lean -o <verification-workspace>/.lake/build/lib/lean/MCS/Verified.olean",
+        "lean -j 1 MCS.lean -o <verification-workspace>/.lake/build/lib/lean/MCS.olean"
+      ]
+    },
+    {
+      "stage": "kernel_replay",
+      "exitCode": 0,
+      "stdout": "MCS_KERNEL_REPLAY:MCS.Definitions\nMCS_KERNEL_REPLAY:MCS.Expected\nMCS_KERNEL_REPLAY:MCS.Proofs.Group\nMCS_KERNEL_REPLAY:MCS.Proofs.Closure\nMCS_KERNEL_REPLAY:MCS.Verified\n",
+      "stderr": "",
+      "commands": [
+        "lean -j 1 MCSReplayRunner.lean (LeanChecker.replayFromImports, sequential)"
+      ]
+    },
+    {
+      "stage": "target_audit",
+      "exitCode": 0,
+      "stdout": "MCS_AUDIT_JSON:{\"schema\":\"mcs-lean-audit/1\",\"targets\":[{\"axioms\":[],\"declaration\":\"MCS.Verified.rightUnitInjective\",\"expected\":\"MCS.Expected.rightUnitInjective\",\"kind\":\"theorem\",\"targetMatched\":true},{\"axioms\":[\"propext\"],\"declaration\":\"MCS.Verified.groupSpecialization\",\"expected\":\"MCS.Expected.groupSpecialization\",\"kind\":\"theorem\",\"targetMatched\":true},{\"axioms\":[],\"declaration\":\"MCS.Verified.missingRightUnit\",\"expected\":\"MCS.Expected.missingRightUnit\",\"kind\":\"theorem\",\"targetMatched\":true},{\"axioms\":[],\"declaration\":\"MCS.Verified.missingEquality\",\"expected\":\"MCS.Expected.missingEquality\",\"kind\":\"theorem\",\"targetMatched\":true},{\"axioms\":[\"propext\",\"Classical.choice\",\"Quot.sound\"],\"declaration\":\"MCS.Verified.extensive\",\"expected\":\"MCS.Expected.extensive\",\"kind\":\"theorem\",\"targetMatched\":true},{\"axioms\":[\"propext\",\"Classical.choice\",\"Quot.sound\"],\"declaration\":\"MCS.Verified.monotone\",\"expected\":\"MCS.Expected.monotone\",\"kind\":\"theorem\",\"targetMatched\":true},{\"axioms\":[\"propext\",\"Classical.choice\",\"Quot.sound\"],\"declaration\":\"MCS.Verified.idempotent\",\"expected\":\"MCS.Expected.idempotent\",\"kind\":\"theorem\",\"targetMatched\":true},{\"axioms\":[\"propext\",\"Classical.choice\",\"Quot.sound\"],\"declaration\":\"MCS.Verified.finitary\",\"expected\":\"MCS.Expected.finitary\",\"kind\":\"theorem\",\"targetMatched\":true}]}\n",
+      "stderr": "",
+      "commands": [
+        "lean -j 1 MCS/Audit.lean"
+      ]
+    }
+  ],
+  "audit": {
+    "schema": "mcs-lean-audit/1",
+    "targets": [
+      {
+        "axioms": [],
+        "declaration": "MCS.Verified.rightUnitInjective",
+        "expected": "MCS.Expected.rightUnitInjective",
+        "kind": "theorem",
+        "targetMatched": true
+      },
+      {
+        "axioms": [
+          "propext"
+        ],
+        "declaration": "MCS.Verified.groupSpecialization",
+        "expected": "MCS.Expected.groupSpecialization",
+        "kind": "theorem",
+        "targetMatched": true
+      },
+      {
+        "axioms": [],
+        "declaration": "MCS.Verified.missingRightUnit",
+        "expected": "MCS.Expected.missingRightUnit",
+        "kind": "theorem",
+        "targetMatched": true
+      },
+      {
+        "axioms": [],
+        "declaration": "MCS.Verified.missingEquality",
+        "expected": "MCS.Expected.missingEquality",
+        "kind": "theorem",
+        "targetMatched": true
+      },
+      {
+        "axioms": [
+          "propext",
+          "Classical.choice",
+          "Quot.sound"
+        ],
+        "declaration": "MCS.Verified.extensive",
+        "expected": "MCS.Expected.extensive",
+        "kind": "theorem",
+        "targetMatched": true
+      },
+      {
+        "axioms": [
+          "propext",
+          "Classical.choice",
+          "Quot.sound"
+        ],
+        "declaration": "MCS.Verified.monotone",
+        "expected": "MCS.Expected.monotone",
+        "kind": "theorem",
+        "targetMatched": true
+      },
+      {
+        "axioms": [
+          "propext",
+          "Classical.choice",
+          "Quot.sound"
+        ],
+        "declaration": "MCS.Verified.idempotent",
+        "expected": "MCS.Expected.idempotent",
+        "kind": "theorem",
+        "targetMatched": true
+      },
+      {
+        "axioms": [
+          "propext",
+          "Classical.choice",
+          "Quot.sound"
+        ],
+        "declaration": "MCS.Verified.finitary",
+        "expected": "MCS.Expected.finitary",
+        "kind": "theorem",
+        "targetMatched": true
+      }
+    ]
+  },
+  "targets": [
+    {
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "declaration": "MCS.Verified.extensive",
+      "expected": "MCS.Expected.extensive",
+      "kind": "theorem",
+      "targetMatched": true
+    },
+    {
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "declaration": "MCS.Verified.monotone",
+      "expected": "MCS.Expected.monotone",
+      "kind": "theorem",
+      "targetMatched": true
+    },
+    {
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "declaration": "MCS.Verified.idempotent",
+      "expected": "MCS.Expected.idempotent",
+      "kind": "theorem",
+      "targetMatched": true
+    },
+    {
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "declaration": "MCS.Verified.finitary",
+      "expected": "MCS.Expected.finitary",
+      "kind": "theorem",
+      "targetMatched": true
+    }
+  ],
+  "receiptSha256": "f84c346d457fc12f1a803e81f7aa4ae59b05aa23d0bb00b310caff7d7c3986d0"
+}

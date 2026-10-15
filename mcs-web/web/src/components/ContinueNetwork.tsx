@@ -3,6 +3,7 @@ import { useI18n, useLabels } from '../i18n';
 import { THEME } from '../theme';
 import { RELATION_COLOR, plainMathText } from '../labels';
 import { edgeVisual } from '../relation-visual';
+import { ConnectionPairNotes } from './ConnectionPairNotes';
 import { edgeFamilyLabel, type NetworkGraph } from '../network';
 import {
   BASIS_RANK, CONTINUE_CENTER, CONTINUE_NODE_H, CONTINUE_NODE_W,
@@ -220,6 +221,7 @@ export function ContinueNetwork({
                   : item.basis === 'sharedInput' ? text.family(text.familyPrefix.sharedInput, edgeFamilyLabel('sharedInput', locale))
                     : text.family(text.familyPrefix.topic, edgeFamilyLabel('topic', locale))}
             </span>
+            <ConnectionPairNotes connections={item.connections} />
           </li>
         ))}
       </ul>

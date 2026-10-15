@@ -51,7 +51,16 @@ import {
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO = resolve(HERE, '..');
+/** 四案例本体：登记表的**来源**案例，覆盖率门槛按它算。 */
 const CASES = ['limit', 'manifold', 'tensor', 'group'];
+/*
+ * 收口后规范节点可能落在别的案例里（2026-10 的节点合并，见 `data/merges.mjs`）：
+ * `manifold:chart-atlas → top:atlas`、`manifold:smooth-atlas → dg:smooth-atlas`、
+ * `tensor:multilinear → dg:tensor`。这三条 spec 仍然属于四案例登记表——
+ * 它们登记的对象没变，只是对象现在收口在别的案例的规范节点上。
+ */
+const MERGED_SPEC_CASES = ['top', 'dg'];
+const SPEC_CASES = [...CASES, ...MERGED_SPEC_CASES];
 const SPEC_FIELD_NAMES = [
   'specVersion', 'node', 'nodeVersion', 'background', 'theoryVersion',
   'declarations', 'definitions', 'assumptions', 'statement', 'claims',
@@ -313,7 +322,7 @@ test('每条 spec 对应本体里真实存在的节点，版本也对得上', ()
     const node = NODE_BY_ID.get(spec.node);
     assert.ok(node, `formal:${spec.node} 指向的节点不在本体里`);
     assert.equal(spec.nodeVersion, node.version, `formal:${spec.node} 的节点版本与本体不一致`);
-    assert.ok(CASES.includes(node.case), `formal:${spec.node} 的节点应属于四案例之一`);
+    assert.ok(SPEC_CASES.includes(node.case), `formal:${spec.node} 的节点应属于四案例登记表（含合并后的规范案例）`);
   }
   assert.equal(new Set(specs.map((spec) => spec.node)).size, specs.length, '一个节点只允许一条 spec');
 });
@@ -604,10 +613,10 @@ test('六种关系都有登记，端点都是真实节点或已登记概念', ()
   for (const kind of RELATION_KINDS) assert.ok(registered.has(kind), `关系类型 ${kind} 没有登记任何一条`);
 });
 
-test('hardGeneralization 的方向与端点一致（一般 → 特殊）', () => {
+test('scaling 的方向与端点一致（一般 → 特殊）', () => {
   const general = [
-    ...RELATIONS.filter((relation) => relation.kind === 'hardGeneralization'),
-    ...CONCEPT_RELATIONS.filter((relation) => relation.kind === 'hardGeneralization'),
+    ...RELATIONS.filter((relation) => relation.kind === 'scaling'),
+    ...CONCEPT_RELATIONS.filter((relation) => relation.kind === 'scaling'),
   ];
   assert.ok(general.length >= 3, `至少三条一般/特殊对，实际 ${general.length}`);
   for (const relation of general) {
@@ -688,10 +697,10 @@ test('概念关系与概念 spec 互相闭合', () => {
  * 真 kernel 子进程判 `passed`。`certificate.kernelStatus === 'passed'` 这一条
  * **不允许**为了让端到端变绿而放宽。
  */
-test('hardGeneralization 的认证状态与证书证据一致（门槛不许放宽）', () => {
+test('scaling 的认证状态与证书证据一致（门槛不许放宽）', () => {
   const generalizations = [
-    ...RELATIONS.filter((relation) => relation.kind === 'hardGeneralization'),
-    ...CONCEPT_RELATIONS.filter((relation) => relation.kind === 'hardGeneralization'),
+    ...RELATIONS.filter((relation) => relation.kind === 'scaling'),
+    ...CONCEPT_RELATIONS.filter((relation) => relation.kind === 'scaling'),
   ];
   assert.ok(generalizations.length >= 4);
   const certified = generalizations.filter((relation) => relation.status === 'machine-certified');
@@ -1214,7 +1223,7 @@ test('formalTemplates 形状与 AuthoringDraft 对齐，construct 取值合法',
   const templates = formalTemplates();
   assert.equal(templates.length, specs.length);
   for (const template of templates) {
-    assert.ok(CASES.includes(template.case), `${template.id} 的 case 不对`);
+    assert.ok(SPEC_CASES.includes(template.case), `${template.id} 的 case 不对`);
     assert.ok(typeof template.title === 'string' && template.title.length > 0);
     assert.ok(ROLES.includes(template.draft.construct), `${template.id} 的 construct ${template.draft.construct} 不是合法 role`);
     for (const key of ['declarations', 'definitions', 'assumptions', 'statement', 'claims']) {
@@ -1381,7 +1390,7 @@ test('α 变体登记本身自洽（不依赖语言层）', () => {
  */
 test('RELATION_KINDS 与规格 §2.11 的六种逐字一致', () => {
   assert.deepEqual([...RELATION_KINDS], [
-    'definitionReference', 'hardGeneralization', 'equivalentTo',
+    'definitionReference', 'scaling', 'equivalentTo',
     'conditionalDerivation', 'instanceOf', 'counterexampleTo',
   ]);
 });

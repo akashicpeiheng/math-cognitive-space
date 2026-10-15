@@ -1,0 +1,155 @@
+{
+  "schema": "mcs-writing-engineering-validation/1",
+  "recordedAt": "2026-10-13T15:38:19.920Z",
+  "groupCount": 80,
+  "passedGroups": 80,
+  "singleUninterruptedRun": false,
+  "requiredRuntime": [
+    "Lean",
+    "Chrome",
+    "HTTPS"
+  ],
+  "defaultLeanTimeoutMs": 120000,
+  "runnerSha256": "89c25809becda61abf202bc5c60050b7497b416104f2261425f3d18587e243d3",
+  "frontendIndexSha256": "1f68e3ad17a4a450364d0f8331a975b90f1d7383d9e02ca249b9d7f1948be36c",
+  "segments": [
+    {
+      "log": "tmp/writing-followup-full-test.log",
+      "sha256": "099963bb55b8d21c5d117df958d3e6e32844b73c1de935056ba9651aa8b5581b",
+      "passedGroups": 4,
+      "firstGroup": 1,
+      "lastGroup": 4,
+      "completeRunSegment": false
+    },
+    {
+      "log": "tmp/writing-followup-resumed-test.log",
+      "sha256": "0a28f5d5cf18ebb11d66d30702e1facc9f0c73df024cf182e5585bef2b42fbeb",
+      "passedGroups": 28,
+      "firstGroup": 5,
+      "lastGroup": 32,
+      "completeRunSegment": false
+    },
+    {
+      "log": "tmp/writing-followup-https-and-rest-test.log",
+      "sha256": "13d320d1ae62b7e1724150bca82164a9028e781ff6711189e519f63e09d94092",
+      "passedGroups": 48,
+      "firstGroup": 33,
+      "lastGroup": 80,
+      "completeRunSegment": true
+    }
+  ],
+  "groups": [
+    "双模板与 Markdown 创作正文保全",
+    "笔记创作闭环（暂存、历史、冲突、复制与上传）",
+    "私人笔记库（Obsidian、修订、分块、双驱动与恢复）",
+    "私人笔记库浏览器（导入、附件、关联、刷新与上传）",
+    "Lean 登记、真实证明、持久化任务与进程树取消",
+    "Lean 中英双语浏览器：查看断言 → 重放 → 下载报告",
+    "连接条件与个人备注（身份、原子修订、撤销、双驱动与备份）",
+    "连接备注交互（右键、合并线、缩放与跨页面）",
+    "Sites 接入：GitHub 回到原浏览器、一次性凭证与账号隔离",
+    "维护命令（异步存储、演示去重与备份恢复）",
+    "公开导出边界（缓存、凭据、必需文件与目录联接）",
+    "形式语言层（语法、类型、α 规范、证书桥）",
+    "放缩关系合并（方向、原证据、旧记录兼容与逆命题）",
+    "定义引用的可信性（局部变量不得生成跨节点依赖）",
+    "独立有限语义（模 5 单位群 / S₃，不导入检查器）",
+    "四案例形式表达登记",
+    "发现引擎（合一、有界搜索、证书装配、目标核对）",
+    "自动关联：存储、发布事务与回滚",
+    "新节点闭环：草稿 → 任务 → 后台结算（P1-3/4/5）",
+    "证书交接与发布：采纳一条真实关系（P1-6）",
+    "快照完整性：失败即拒绝生效（P1-2/7）",
+    "四案例端到端：输入 → 发现 → 重放 → 入库 → 撤出",
+    "自动关联页（六步、窄屏、键盘、节点页入口）",
+    "领域内核与理论边界",
+    "从零走一遍范例路径（真接口：七程规划 + 档案确认 + 走通记录）",
+    "中英双语：语言覆盖与接口语种",
+    "中英双语：结构对等与覆盖率",
+    "中英双语：正文块公式逐字核对",
+    "本机 API 与数据库",
+    "部署边界（公网模式缺账号体系必须拒绝启动、Host 白名单、写来源、安全头）",
+    "账号与权限（公网模式：登录、越权 404、管理员 403、CSRF、任务配额）",
+    "账号入口（本机模式不加登录墙：登录页说明、页头无入口、档案列表照常加载）",
+    "公网 HTTPS 端到端（自签证书 + 真浏览器：Secure Cookie、CSRF、退出、http 走不通）",
+    "PostgreSQL 存储层（去重、乐观锁、分页、导出完整、备份恢复、事务隔离）",
+    "浏览器交互与响应式",
+    "动效覆盖面（prefers-reduced-motion 全站核对）",
+    "性能观测（227 节点视图的耗时与长任务）",
+    "首页六幕叙事（主题 → 愿景）",
+    "开始学习页（各角度入口）",
+    "数学对象列表页（可达性与学习状态）",
+    "分面选项（不许有筛不出东西的选项）",
+    "单元 / 话题分层与本质领域分类",
+    "知识网络：左键按住取强关联节点（含高亮视觉）",
+    "知识网络：移动端双指缩放（触屏手势与窄屏坐标系）",
+    "方法库（带简介的栏目与细致解析）",
+    "用户手册（入口、章节锚点、双语与响应式）",
+    "重要节点的形式表达（LaTeX 与记号）",
+    "知识网络：新增节点的自动摆位",
+    "知识网络：摆位模式的两条规则（分层 / 分圈、让位与确定性）",
+    "知识网络：摆位模式的界面（切换、选锚点、手动优先、刷新记得）",
+    "知识网络：边的颜色与遮挡关系",
+    "知识网络：加节点后相机平滑居中",
+    "知识网络：保存 / 载入视图（写 E，不改本体）",
+    "知识网络：视图搜索、排序、同名提示与快照边界",
+    "知识网络：右键节点菜单（一键加入全部硬前置）",
+    "知识网络：画布占满工作区（桌面不滚动 / 窄屏仍是卡片）",
+    "知识网络：回到网络视图的来路上下文（该存的存、该退的退、语种跟着走）",
+    "知识网络：从节点页回到同一张图（真浏览器）",
+    "知识网络：本次学习的暂存（存储边界、坏数据、键与边源表一致）",
+    "知识网络：切页回来自动恢复同一张图（真浏览器）",
+    "检索：相关性排序与两处实现一致（命中字段 / 完整度 / 位置 / 连续性）",
+    "检索：「全部节点」面板的次序与命中理由（真浏览器）",
+    "本体：硬前置关系（覆盖各案例核心的定义依赖与证明依赖）",
+    "本体：硬前置闭包（传递、方向、确定性、成环与上限）",
+    "本体：同一对象的多处登记合并（身份、内容与改写）",
+    "本体：点集拓扑案例（12 项点名单 → 节点）",
+    "本体：强关联圈的候选判据（长按节点摊开哪些邻居）",
+    "起始节点与档案模板（前置已确认的判据）",
+    "学习方向与并行节点排序（可用集合、排序判据与分档）",
+    "学习方案（AND/OR、硬前置、兴趣排序与有效调整）",
+    "学习方案保存（SQLite / PostgreSQL、冲突与备份往返）",
+    "辅导页：DeepTutor 提示、介绍与三步引导",
+    "学习引导（双入口 → 方案 → 阅读，跨设备与双语）",
+    "十二学科导读：数据、API 与纯函数网络",
+    "十二学科导读：浏览、兴趣与目标，双语和响应布局",
+    "学习引导：搜索截断与英文未译标注",
+    "开始学习页：方向派生（次级学科、已有目标与兴趣排序）",
+    "开始学习页：方向派生（自足夹具，不依赖语料）",
+    "中英双语：英文站与切换按键（真浏览器）",
+    "研究台（前沿研究）与网站维护（专稿 / arXiv 梳理）"
+  ],
+  "checks": [
+    {
+      "log": "tmp/writing-followup-final-build.log",
+      "sha256": "430f8b72d207430da4795b896112cfdc97b883d5458ec85f1f393a07e1125bce"
+    },
+    {
+      "log": "tmp/writing-followup-final-check.log",
+      "sha256": "ecb8d2eb5a6409d1a0a342c4e63039f62a84f800a2739f1ee1fb58df96d10a0a"
+    },
+    {
+      "log": "tmp/writing-followup-template-check.log",
+      "sha256": "966f342be40854f6203cb9b6a85867d1779ba3ad5c46a89c439b8364ef5fe6bb"
+    },
+    {
+      "log": "tmp/writing-local-service-browser.log",
+      "sha256": "e8f65805ccf3c6dc319a89e84d3afbf8be29d855666a4649b33e40e43a615e4f"
+    },
+    {
+      "log": "tmp/writing-local-service-data-check.log",
+      "sha256": "74b7b449f90575e413890e5087adecafd61e2329bd9bdd7b70a9b60262febc6e"
+    },
+    {
+      "log": "tmp/writing-local-service-final-data-check.log",
+      "sha256": "74b7b449f90575e413890e5087adecafd61e2329bd9bdd7b70a9b60262febc6e"
+    }
+  ],
+  "localService": {
+    "origin": "http://127.0.0.1:3784",
+    "policy": "mcs-lean-check/2",
+    "learnerAndAuthoringTablesUnchanged": true
+  },
+  "scope": "Engineering scenarios only; mathematical, historical and teaching-effect review remain separate. Earlier failed stages are retained in segment logs."
+}

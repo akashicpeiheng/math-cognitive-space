@@ -15,6 +15,7 @@
  *    不是数学结论）；只有检查器真的跑了并给出判定，才返回 status。
  */
 import { execFile } from 'node:child_process';
+import { parentPort, workerData } from 'node:worker_threads';
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { join, resolve } from 'node:path';
@@ -42,9 +43,14 @@ function checkerPath(repoRoot) {
 
 function run(python, args, { cwd, timeoutMs }) {
   return new Promise((resolvePromise) => {
-    execFile(python, args, { cwd, timeout: timeoutMs, windowsHide: true, maxBuffer: 8 * 1024 * 1024 }, (error, stdout, stderr) => {
+    const tracked = workerData?.kind === 'network-check';
+    const child = execFile(python, args, { cwd, timeout: timeoutMs, windowsHide: true, detached: tracked && process.platform !== 'win32', maxBuffer: 8 * 1024 * 1024 }, (error, stdout, stderr) => {
       resolvePromise({ error, stdout, stderr });
     });
+    if (tracked && child.pid) {
+      parentPort?.postMessage({ networkChild: 'started', pid: child.pid });
+      child.once('close', () => parentPort?.postMessage({ networkChild: 'closed', pid: child.pid }));
+    }
   });
 }
 

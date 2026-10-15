@@ -4,6 +4,7 @@ import { SecurityStore } from './security-store.mjs';
 import { SupabaseProvider } from './auth-provider.mjs';
 import { checkWriteOrigin } from './deployment.mjs';
 import { McsError } from '../shared/errors.mjs';
+import { validateSitesBridge, isSitesProxy, startSitesLogin, handleSitesLogin, finishSitesLogin } from './sites-bridge.mjs';
 
 const random = () => randomBytes(32).toString('base64url');
 const digest = value => createHash('sha256').update(value).digest('hex');
@@ -12,6 +13,7 @@ const WRITE = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 const fail = (code, message, status) => { throw new McsError(code, message, status); };
 
 export function validateAuthConfig(config) {
+  validateSitesBridge(config);
   if (config.auth?.mode !== 'supabase') return;
   const a = config.auth;
   let url;
@@ -79,6 +81,13 @@ export class AuthService {
     const expected = nonce ? createHmac('sha256', this.key).update('csrf:' + nonce).digest('base64url') : '';
     if (!expected || !same(req.headers['x-mcs-csrf'], expected)) fail('CSRF_REJECTED', '页面验证已失效，请刷新后重试。', 403);
     checkWriteOrigin(req, this.config);
+  }
+  planningOwner(req, identity) {
+    if (!this.enabled) return null;
+    if (identity?.user) return `user:${identity.user.id}`;
+    const nonce = this.cookies(req)[this.prefix + 'csrf'];
+    if (!nonce || !/^[\w-]{43}$/.test(nonce)) fail('CSRF_REJECTED', '请刷新页面后开始规划。', 403);
+    return 'guest:' + createHmac('sha256', this.key).update('planning:' + nonce).digest('hex');
   }
   rate(req, group, limit = 10) {
     const now = Date.now();
@@ -159,13 +168,16 @@ export class AuthService {
         try { identity = await this.identify(req); } catch (error) { if (error.status !== 401) throw error; this.cookie(res, 'session', '', 0); identity = { user: null }; }
         send({ mode: 'supabase', user: identity.user, csrfToken: this.csrf(req, res), emailEnabled: this.config.auth.emailEnabled !== false }); return true;
       }
+      if (await handleSitesLogin(this, req, res, url, random)) return true;
       if (action === 'callback' && req.method === 'GET') {
         const state = url.searchParams.get('state'), nonce = this.cookies(req)[this.prefix + 'oauth'];
         if (!state || !same(state, nonce) || !url.searchParams.get('code')) fail('AUTH_REJECTED', '登录回调无效，请重新登录。', 401);
         const flow = await this.store.consume('oauth', digest(state));
         this.cookie(res, 'oauth', '', 0);
         if (!flow) fail('AUTH_REJECTED', '登录请求已过期或已使用。', 401);
-        await this.establish(req, res, await this.provider.oauthFinish(url.searchParams.get('code'), this.unseal(flow.storage)));
+        const data = await this.provider.oauthFinish(url.searchParams.get('code'), this.unseal(flow.storage));
+        if (await finishSitesLogin(this, res, flow, data, random)) return true;
+        await this.establish(req, res, data);
         res.writeHead(303, { Location: '/profile', 'Cache-Control': 'no-store' }); res.end(); return true;
       }
       if (!WRITE.has(req.method) || req.method !== 'POST') fail('NOT_FOUND', '认证接口不存在。', 404);
@@ -174,6 +186,9 @@ export class AuthService {
       const body = await this.body(req);
       let result;
       if (action === 'github') {
+        if (isSitesProxy(req, this.config)) {
+          send(await startSitesLogin(this, req, res, random)); return true;
+        }
         const state = random();
         const flow = await this.provider.oauthStart(`${this.config.publicOrigin}/api/v2/auth/callback?state=${state}`);
         const dest = new URL(flow.url);

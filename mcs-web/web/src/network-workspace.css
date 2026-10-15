@@ -1,0 +1,50 @@
+.network-card-body, .network-dot-body { transition: opacity 160ms ease; }
+.network-dot { filter: drop-shadow(0 1px 2px #0002); }
+.network-dot.selected, .network-node:hover .network-dot { stroke: var(--accent-strong); filter: drop-shadow(0 0 4px var(--accent)); }
+/*
+ * 圆点正下方的节点名称（2026-10-15 加：缩到 55% 以下卡片变成圆点，圆点下方仍要读得出是谁）。
+ *
+ * 三条都是必须的：
+ * 1. `pointer-events: none`：圆点的命中圈半径是 22px，而标签从 11px 处起笔、正好压在命中圈上，
+ *    不设这一条就会挡住圆点自己的悬停与拖动（文字比圆点先接到指针）。
+ * 2. `paint-order: stroke` + 一道画布底色的描边：标签要能压在关系线上读。
+ *    用描边而不是半透明底块：底块会盖住它下面的连线，而这里只需要把字托出来。
+ * 3. 字号与位置由渲染处按屏幕像素给定（反缩放的坐标组），CSS 不再设 font-size——
+ *    写死在这里会和 `dot-labels.ts` 的宽度估算悄悄对不上。
+ */
+.network-dot-label { pointer-events: none; }
+.network-dot-label-text {
+  fill: var(--ink);
+  font-family: var(--sans);
+  font-weight: 600;
+  paint-order: stroke;
+  stroke: var(--canvas);
+  stroke-width: 3px;
+  stroke-linejoin: round;
+}
+/* 选中的那个：标签跟着变成主色，与详情面板标题对得上。 */
+.network-node.focused .network-dot-label-text { fill: var(--accent-strong); }
+.network-edge { transition: opacity 160ms ease; }
+.network-hover-info { position: absolute; z-index: 30; width: min(328px, calc(100% - 16px)); max-height: min(410px, calc(100% - 16px)); overflow: auto; padding: 16px; border: 1px solid var(--line); border-radius: 12px; background: var(--paper, #fff); color: var(--ink); box-shadow: 0 8px 24px #0002; }
+.network-node-info p { margin: .5rem 0; font-size: .88rem; }
+.network-node-info h4 { margin: .9rem 0 .3rem; }
+.network-node-info small { color: var(--ink-faint); }
+.network-meaning { white-space: pre-line; }
+.network-node-info textarea { width: 100%; min-height: 90px; }
+.network-sources { border-bottom: 1px solid var(--line); padding: .5rem 0 .9rem; margin-bottom: .7rem; }
+.network-sources > summary { cursor: pointer; font-weight: 650; }
+.network-source-choice { display: flex; gap: .5rem; align-items: center; margin: .5rem 0; }
+.network-sources select { width: 100%; }
+.network-relation-dialog { width: min(720px, calc(100vw - 24px)); max-height: calc(100dvh - 32px); overflow: auto; padding: 22px; border: 1px solid var(--line); border-radius: 16px; background: var(--paper, #fff); color: var(--ink); }
+.network-relation-dialog::backdrop { background: #0005; }
+.network-editor-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.network-relation-dialog fieldset { border: 0; padding: 0; }
+.network-relation-dialog label { display: block; margin: .7rem 0; }
+.network-relation-dialog textarea, .network-relation-dialog input:not([type=checkbox]), .network-relation-dialog label select { display: block; width: 100%; margin-top: .3rem; }
+.network-relation-dialog textarea { min-height: 72px; }
+.network-relation-dialog .network-spec-input { min-height: 180px; font-family: var(--mono); }
+.network-binding, .network-submission-preview, .network-check-result { padding: 12px; border: 1px solid var(--line); border-radius: 10px; margin: 12px 0; }
+.network-relation-dialog pre { white-space: pre-wrap; overflow-wrap: anywhere; font-size: .8rem; }
+@media (prefers-reduced-motion: reduce) {
+  .network-card-body, .network-dot-body, .network-edge { transition: none; }
+}

@@ -16,7 +16,7 @@ function check(name, condition, detail = '') {
  * 这一套是**批判性复核之后立的规矩**：每一条都对应一处实测出来的缺陷，
  * 断言写在这里是为了不让它们悄悄回来。
  *
- * 1. 可达性：接口默认只返回 200 条而本体有 232 个节点，页面必须能翻到全部；
+ * 1. 可达性：接口默认只返回 200 条而本体节点数远超它，页面必须能翻到全部；
  * 2. 首屏：登记顺序开头是九张「0 行动 0 证据」的背景脚手架卡，默认排序必须让有正文的先出现；
  * 3. 诚实：正文待写的节点要在卡片上标出来，不能装成能读；
  * 4. 学习状态：列表要读 E（已确认/已读/还不懂/现在可学），否则页面等于不认识学习者；
@@ -87,7 +87,7 @@ try {
   check('列表读到了学习状态', shape.states.length >= 2, JSON.stringify(shape.states.slice(0, 6)));
   check('首屏就是分页的，可继续加载', shape.cards === 60 && shape.hasLoadMore, JSON.stringify({ cards: shape.cards, more: shape.hasLoadMore }));
 
-  // 可达性：一路点「显示更多」，直到全部 232 个节点都能看见。
+  // 可达性：一路点「显示更多」，直到全部节点（2026-10 加第八个案例后为 266）都能看见。
   let guard = 0;
   while ((await page.locator('.load-more button').count()) > 0 && guard < 12) {
     await page.locator('.load-more button').click();

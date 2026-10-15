@@ -1090,7 +1090,7 @@ test('判定器：定义引用靠「引入登记」核对——真引用成立�
 });
 
 test('判定器索引：六类齐全，缺引擎时如实报 unsupported 而不是伪造判定', async () => {
-  assert.deepEqual([...RELATION_KINDS], ['definitionReference', 'hardGeneralization', 'equivalentTo', 'conditionalDerivation', 'instanceOf', 'counterexampleTo']);
+  assert.deepEqual([...RELATION_KINDS], ['definitionReference', 'scaling', 'equivalentTo', 'conditionalDerivation', 'instanceOf', 'counterexampleTo']);
   const listed = listJudges({});
   assert.equal(listed.length, 6);
   for (const entry of listed) assert.ok(entry.hasCandidates && entry.hasConfirm);
@@ -1108,8 +1108,8 @@ test('判定器索引：六类齐全，缺引擎时如实报 unsupported 而不�
   const shapes = collected.candidates;
   assert.ok(shapes.length > 0);
 
-  const generalization = makeJudge('hardGeneralization', {});
-  const pair = shapes.find((item) => item.kind === 'hardGeneralization');
+  const generalization = makeJudge('scaling', {});
+  const pair = shapes.find((item) => item.kind === 'scaling');
   if (pair) {
     const verdict = await generalization.confirm(pair, { registry: { specs: [] } });
     assert.equal(verdict.status, 'unsupported');

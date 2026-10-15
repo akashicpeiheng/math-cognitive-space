@@ -23,16 +23,45 @@ import {
   EDGE_FAMILIES,
 } from '../shared/contracts.mjs';
 import { makePlanner, explainPlanner } from '../core/planner.mjs';
+import { normalizeLearningPlan } from '../shared/learning-plan.mjs';
+import { personalizePlanResult } from '../core/learning-plan.mjs';
 import { makeLocalizer, explainLocalizationFamilies } from '../core/localization.mjs';
 import { DEFAULT_LOCALE, normalizeLocale } from '../shared/locales.mjs';
+import { fieldGuidesFor } from '../data/field-guides/index.mjs';
+/*
+ * 放缩关系（`scaling`）的**已验证方向**：图接口要把「一般端 / 特殊端」下发给前端，
+ * 网络视图才能画出「一般端粗、特殊端细」的渐变箭头（2026-10-11）。
+ *
+ * 为什么由服务端解析而不是把 `direction` 原样发过去：`from`/`to` 与
+ * `direction.reading`（`contract` = 一般→特殊、`expand` = 特殊→一般）的对应关系是一条**判据**
+ * （见 `shared/scaling.mjs` 的 `scalingEndpoints`）。前端不引 `shared/*.mjs`，
+ * 两边各写一份迟早会漂——这里直接发解析结果：**能对上就是一对端点，对不上就是 null**
+ * （11 条旧记录没有明确方向，渲染因此不做粗细变化，不假装知道谁是「泛化」那一端）。
+ */
+import { scalingEndpoints } from '../shared/scaling.mjs';
+import { relationConnectionKey, connectionExists } from '../shared/connection-keys.mjs';
+/*
+ * 节点检索的相关性排序（2026-10-12 加）：命中集合与排序规则都在这一处，
+ * 前端「全部节点」面板用等价实现（`web/src/search-rank.ts`），由 parity 测试钉住两处一致。
+ */
+import { matchesQuery, rankNodes } from '../shared/search-rank.mjs';
 import { checkFormation, checkOntologyLegality, roleSummary } from '../core/formation.mjs';
 import { querySupport, supportSummary } from '../core/support.mjs';
 import { relationSummary, composeRelations } from '../core/relations.mjs';
 import { maintenanceSources } from './maintenance.mjs';
 import { checkWriteOrigin } from './deployment.mjs';
 import { replayCertificate, evidenceSummary, evidenceView } from '../core/evidence.mjs';
+import { leanCapabilities, leanRegistrationView, captureLeanSnapshot } from '../core/lean.mjs';
 import { adaptWithOntology, adapt, deriveExternalState } from '../core/adaptation.mjs';
 import { claimsIndex, obligationsIndex, notationIndex, researchSummary } from '../core/research.mjs';
+import {
+  PROFILE_TEMPLATES, PROFILE_TEMPLATE_IDS, DEFAULT_PROFILE_TEMPLATE_ID,
+  profileTemplate,
+} from '../data/profile-templates.mjs';
+import { applyProfileTemplate } from './profile-templates.mjs';
+import { registerVaultApi } from './vault-api.mjs';
+import { registerNetworkApi, checkNetworkRefs } from './network-api.mjs';
+import { normalizeNetworkExtras, decodeNoteKey, nodeRefKey } from '../shared/network-workspace.mjs';
 
 const MAX_BODY = 2 * 1024 * 1024;
 
@@ -85,6 +114,15 @@ function compactNode(ontology, node) {
      * 列表接口如实下发，由前端决定默认显示哪些；服务端不替调用方做取舍。
      */
     granularity: node.granularity ?? 'unit',
+    /*
+     * 合并口径（2026-10 加，见 `data/merges.mjs`）：
+     * - `cases` 是「自身案例 + 各被合并登记的案例」，界面按它筛案例、按它显示「同时属于哪几条线」；
+     * - `mergeCount` 是被收口进来的登记数（0 = 没有合并），列表用它挂一枚「含 N 处登记」的徽标；
+     * - `alsoKnownAs` 是那些登记的标题（别名），检索也认它们——合并后仍搜得到「坐标图」「连通集」。
+     */
+    cases: node.cases ?? [node.case],
+    mergeCount: (node.registrations ?? []).length,
+    alsoKnownAs: node.alsoKnownAs ?? [],
     actionCount: ontology.actionsFor(node.id).length,
     relationCount: ontology.relationsFor(node.id).length,
     evidenceCount: ontology.evidenceFor(node.id).length,
@@ -139,7 +177,7 @@ async function tryModule(specifier) {
   try { return await optionalModule(specifier); } catch { return null; }
 }
 
-export function createApi({ getOntology, ontology: ontologyRef, db, jobs, tutor, config, ontologySource = null, auth = null }) {
+export function createApi({ getOntology, ontology: ontologyRef, db, jobs, leanJobs, tutor, config, ontologySource = null, auth = null }) {
   /*
    * 本体快照：请求**进入时**取一次，整个请求用同一个实例。
    *
@@ -304,6 +342,11 @@ export function createApi({ getOntology, ontology: ontologyRef, db, jobs, tutor,
    * 顺序即优先级：先匹配到的规则生效，所以具体路径写在通配路径前面。
    */
   const POLICY = [
+    { method: 'GET', pattern: /^\/api\/v2\/lean\/(capabilities|registrations\/[^/]+)$/, access: 'public' },
+    { method: 'POST', pattern: /^\/api\/v2\/lean\/jobs$/, access: 'user' },
+    { method: ['GET', 'DELETE'], pattern: /^\/api\/v2\/lean\/jobs\/[^/]+$/, access: 'user' },
+    { method: 'POST', pattern: /^\/api\/v2\/learning-plan-preview$/, access: 'public' },
+    { method: ['GET', 'DELETE'], pattern: /^\/api\/v2\/learning-plan-preview\/[^/]+$/, access: 'public' },
     // —— 公共只读：本体、证据、研究索引、形式化目录、健康检查
     { method: 'GET', pattern: /^\/api\/v2\/(health|ontology|ontology\/[a-z]+|evidence|research\/[a-z]+|localizations|formal\/catalog)$/, access: 'public' },
     { method: 'GET', pattern: /^\/api\/v2\/ontology\/nodes\/[^/]+$/, access: 'public' },
@@ -312,13 +355,22 @@ export function createApi({ getOntology, ontology: ontologyRef, db, jobs, tutor,
     // —— 证书重放会拉起子进程，是资源入口：要登录
     { method: 'POST', pattern: /^\/api\/v2\/evidence\/replay$/, access: 'user' },
     // —— 规划任务：要登录，且只能看自己的任务
-    { method: 'POST', pattern: /^\/api\/v2\/plans$/, access: 'user' },
-    { method: ['GET', 'DELETE'], pattern: /^\/api\/v2\/plans\/[^/]+$/, access: 'user' },
+    { method: 'POST', pattern: /^\/api\/v2\/plans$/, access: 'public' },
+    { method: ['GET', 'DELETE'], pattern: /^\/api\/v2\/plans\/[^/]+$/, access: 'public' },
     // —— 个人数据：档案及其全部子资源（事件、笔记、网络视图、导出）
+    /*
+     * 档案模板是**公共只读**的登记表（不含任何学习者数据），因此放在 profiles 的通配规则之前，
+     * 走 public。它必须显式登记：权限表未登记的路由按 admin 处理。
+     */
+    { method: 'GET', pattern: /^\/api\/v2\/(profile-templates|field-guides)$/, access: 'public' },
     { method: 'GET', pattern: /^\/api\/v2\/profiles$/, access: 'user' },
     { method: 'POST', pattern: /^\/api\/v2\/profiles$/, access: 'user' },
     { method: '*', pattern: /^\/api\/v2\/profiles\/[^/]+(\/.*)?$/, access: 'user' },
     { method: 'POST', pattern: /^\/api\/v2\/import$/, access: 'user' },
+    { method: ['GET', 'PUT', 'DELETE'], pattern: /^\/api\/v2\/me\/connection-notes(\/[^/]+)?$/, access: 'user' },
+    { method: 'GET', pattern: /^\/api\/v2\/vault-capabilities$/, access: 'public' },
+    { method: '*', pattern: /^\/api\/v2\/(me\/(network-relations|relation-submissions)|network-relation-checks)(\/.*)?$/, access: 'user' },
+    { method: '*', pattern: /^\/api\/v2\/me\/vaults(\/.*)?$/, access: 'user' },
     // —— 辅导会话：要登录，会话按账号归属
     { method: 'POST', pattern: /^\/api\/v2\/tutor\/sessions$/, access: 'user' },
     { method: ['GET', 'POST'], pattern: /^\/api\/v2\/tutor\/(sessions|turns)\/[^/]+(\/turns)?$/, access: 'user' },
@@ -371,10 +423,11 @@ export function createApi({ getOntology, ontology: ontologyRef, db, jobs, tutor,
   }
 
   /** 规划任务归属：任务表在内存里，归属直接记在任务上；不是自己的任务报 404。 */
-  function requireJob(identity, id) {
+  const planningOwner = (req, identity) => AUTHENTICATED ? auth.planningOwner(req, identity) : null;
+  function requireJob(identity, id, req) {
     const job = jobs.get(id);
     if (!AUTHENTICATED) return job;
-    if (!identity?.user || (job.owner && job.owner !== identity.user.id)) {
+    if (!['plan', 'review'].includes(job.kind) || job.owner !== planningOwner(req, identity)) {
       throw new McsError(CODES.NOT_FOUND, `无法解析规划任务：${id}`, 404, { job_id: id });
     }
     return job;
@@ -429,6 +482,9 @@ export function createApi({ getOntology, ontology: ontologyRef, db, jobs, tutor,
     runtime: { node: process.version, platform: process.platform, pid: process.pid, uptime: Math.round(process.uptime()) },
   }));
 
+  route('GET', /^\/api\/v2\/field-guides$/, async ({ query, req, ontology }) =>
+    fieldGuidesFor(normalizeLocale(query.get('locale') ?? req.headers['x-mcs-locale'], DEFAULT_LOCALE), ontology.version));
+
   route('GET', /^\/api\/v2\/ontology$/, async ({ ontology }) => {
     const legality = checkOntologyLegality(ontology.raw);
     return {
@@ -465,12 +521,30 @@ export function createApi({ getOntology, ontology: ontologyRef, db, jobs, tutor,
 
   route('GET', /^\/api\/v2\/ontology\/graph$/, async ({ query, ontology }) => {
     const caseId = query.get('case');
-    const nodes = ontology.raw.nodes.filter((node) => !caseId || node.case === caseId);
+    /*
+     * 案例筛选按 `cases`（合并后的登记归属）而不是 `case`（节点归属）：
+     * 一个规范节点可能登记在多个案例里，按登记筛才不会让某条案例线凭空少几个点。
+     */
+    const nodes = ontology.raw.nodes.filter((node) => !caseId || (node.cases ?? [node.case]).includes(caseId));
     const ids = new Set(nodes.map((node) => node.id));
     return {
       version: ontology.version,
       nodes: nodes.map((node) => compactNode(ontology, node)),
-      relations: ontology.raw.relationDescriptions.map((relation) => ({ id: relation.id, kind: relation.kind, from: relation.from, to: relation.to, witness: relation.witness, scope: relation.scope ?? null })),
+      relations: ontology.raw.relationDescriptions.map((relation) => {
+        /*
+         * `scaling`：放缩关系的**已验证**一般端 / 特殊端（见文件顶部那段 import 说明）。
+         * 其余种类不带这个字段——「谁是泛化那一端」只对放缩关系有定义。
+         */
+        const direction = relation.kind === 'scaling' ? scalingEndpoints(relation) : null;
+        return {
+          id: relation.id, kind: relation.kind, from: relation.from, to: relation.to,
+          witness: relation.witness, scope: relation.scope ?? null,
+          scaling: direction ? { general: direction.general, special: direction.special } : null,
+          scalingMode: relation.scalingMode,
+          scalingExplanation: relation.scalingExplanation ?? null,
+          connectionKey: relationConnectionKey(relation),
+        };
+      }),
       actions: ontology.raw.actions.map(compactAction),
       aggregates: ontology.raw.aggregates.map((aggregate) => ({ id: aggregate.id, kind: aggregate.kind, title: aggregate.title, blocks: aggregate.blocks, note: aggregate.note ?? null })),
       patterns: ontology.raw.patterns,
@@ -505,15 +579,29 @@ export function createApi({ getOntology, ontology: ontologyRef, db, jobs, tutor,
     const role = query.get('role');
     const caseId = query.get('case');
     const limit = Math.min(Number(query.get('limit') ?? 200) || 200, 500);
-    const nodes = ontology.raw.nodes.filter((node) => {
+    const matched = ontology.raw.nodes.filter((node) => {
       if (granularity !== 'all' && (node.granularity ?? 'unit') !== granularity) return false;
       if (discipline && node.discipline !== discipline) return false;
       if (construct && node.construct !== construct) return false;
       if (role && !node.roles.includes(role)) return false;
-      if (caseId && node.case !== caseId) return false;
-      if (q && !`${node.id} ${node.title} ${node.summary}`.toLowerCase().includes(q)) return false;
+      // 案例按**登记归属**筛（`cases`）：合并进来的登记也要在它自己的案例里看得见。
+      if (caseId && !(node.cases ?? [node.case]).includes(caseId)) return false;
+      // 检索也认别名标题：合并后「坐标图」「连通集」这些旧名字仍然搜得到。
+      if (!matchesQuery(node, q)) return false;
       return true;
-    }).slice(0, limit).map((node) => compactNode(ontology, node));
+    });
+    /*
+     * 检索**排序**（2026-10-12 加）：命中之后按相关性排，不再按 id 字典序。
+     *
+     * 用户报的：搜「紧」时「广义 Stokes 定理」（摘要里讲紧支撑）排在标题就叫
+     * 「连续性与紧致性」的节点前面。规则与依据见 `shared/search-rank.mjs`。
+     * 排序**只改次序、不改集合**——所以先筛后排，`total` / `returned` 两个数字不受影响。
+     *
+     * 排序在 `slice(0, limit)` **之前**：截断的是「相关性最低的那些」，
+     * 而不是「id 最靠后的那些」（这一步以前是反的，搜出来的东西会缺）。
+     */
+    const ordered = q ? rankNodes(matched, q) : matched;
+    const nodes = ordered.slice(0, limit).map((node) => compactNode(ontology, node));
     /*
      * 三种层级各自的条数一起下发：前端要靠它说明「默认没显示什么」，
      * 而不是让用户以为本库就这么多节点（不藏数据）。
@@ -534,15 +622,24 @@ export function createApi({ getOntology, ontology: ontologyRef, db, jobs, tutor,
   });
 
   route('GET', /^\/api\/v2\/ontology\/nodes\/([^/]+)$/, async ({ params, ontology }) => {
-    const node = ontology.node(decodeURIComponent(params[0]));
+    const requested = decodeURIComponent(params[0]);
+    const node = ontology.node(requested);
     const claims = ontology.raw.claims.filter((claim) => claim.node === node.id).map((claim) => ({ ...claim, evidence: claim.evidence.map((id) => evidenceView(ontology.evidence(id))) }));
+    /*
+     * 合并说明（见 `data/merges.mjs`）：这一组为什么是同一个对象、各处登记的差别是什么。
+     * `requestedId` 与 `node.id` 不同时表示这条链接命中了别名（旧链接重定向），
+     * 界面据此如实说明，而不是让读者以为 URL 被悄悄改掉了。
+     */
+    const merge = (ontology.raw.merges?.groups ?? []).find((group) => group.canonical === node.id) ?? null;
     return {
       version: ontology.version,
+      requestedId: requested,
       node,
+      merge,
       formation: checkFormation(node),
       roles: roleSummary(node),
       actions: ontology.actionsFor(node.id).map(compactAction),
-      relations: ontology.relationsFor(node.id),
+      relations: ontology.relationsFor(node.id).map(relation => ({ ...relation, connectionKey: relationConnectionKey(relation) })),
       evidence: ontology.evidenceFor(node.id).map(evidenceView),
       support: ['expression', 'proof', 'route'].map((use) => ({ use, ...querySupport(ontology, node.id, use) })),
       claims,
@@ -553,7 +650,7 @@ export function createApi({ getOntology, ontology: ontologyRef, db, jobs, tutor,
   });
 
   route('GET', /^\/api\/v2\/ontology\/actions$/, async ({ ontology }) => ({ version: ontology.version, actions: ontology.raw.actions.map(compactAction) }));
-  route('GET', /^\/api\/v2\/ontology\/relations$/, async ({ ontology }) => ({ version: ontology.version, relations: ontology.raw.relationDescriptions, summary: relationSummary(ontology) }));
+  route('GET', /^\/api\/v2\/ontology\/relations$/, async ({ ontology }) => ({ version: ontology.version, relations: ontology.raw.relationDescriptions.map(relation => ({ ...relation, connectionKey: relationConnectionKey(relation) })), summary: relationSummary(ontology) }));
   route('POST', /^\/api\/v2\/relations\/compose$/, async ({ body, ontology }) => {
     checkVersion(body, undefined, ontology);
     const pick = (ids) => (Array.isArray(ids) ? ids : []).map((id) => {
@@ -578,6 +675,24 @@ export function createApi({ getOntology, ontology: ontologyRef, db, jobs, tutor,
   route('GET', /^\/api\/v2\/ontology\/patterns$/, async ({ ontology }) => ({ version: ontology.version, patterns: ontology.raw.patterns }));
 
   route('GET', /^\/api\/v2\/evidence$/, async ({ ontology }) => ({ version: ontology.version, summary: evidenceSummary(ontology), evidence: ontology.raw.evidence.map(evidenceView) }));
+  route('GET', /^\/api\/v2\/lean\/capabilities$/, async () => ({ ...(await leanCapabilities(config.repoRoot, config.lean ?? {})), queue: leanJobs.stats() }));
+  route('GET', /^\/api\/v2\/lean\/registrations\/([^/]+)$/, async ({ params, query, ontology }) => {
+    const id = decodeURIComponent(params[0]);
+    const [view, snapshot] = await Promise.all([leanRegistrationView(config.repoRoot, id, query.get('locale')), captureLeanSnapshot(config.repoRoot, id)]);
+    if (view.inputSha256 !== snapshot.inputSha256) throw new McsError(CODES.VERSION_CONFLICT, 'Lean 材料正在修订，请重新读取。', 409);
+    return { ...view, ontologyVersion: ontology.version, correspondenceDocument: { file: 'README.md', sha256: snapshot.hashes['README.md'], content: snapshot.files['README.md'] } };
+  });
+  route('POST', /^\/api\/v2\/lean\/jobs$/, async ({ body, ontology, identity }) => {
+    if (!body || typeof body !== 'object' || Array.isArray(body)) throw new McsError(CODES.BAD_REQUEST, 'Lean 请求必须是登记对象。', 400);
+    const keys = Object.keys(body ?? {});
+    if (keys.some(key => !['evidenceId', 'ontologyVersion'].includes(key)) || typeof body.evidenceId !== 'string' || typeof body.ontologyVersion !== 'string') throw new McsError(CODES.BAD_REQUEST, 'Lean 请求只接受 evidenceId 和 ontologyVersion。', 400);
+    checkVersion(body, undefined, ontology);
+    const record = ontology.evidence(body.evidenceId);
+    if (record.backend !== 'lean4') throw new McsError(CODES.EVIDENCE_UNSUPPORTED, '该证据没有登记 Lean 证明。', 422);
+    return leanJobs.run({ evidenceId: record.id, ontologyVersion: ontology.version, owner: identity?.user?.id ?? 'local' });
+  });
+  route('GET', /^\/api\/v2\/lean\/jobs\/([^/]+)$/, async ({ params, identity }) => leanJobs.get(params[0], identity?.user?.id ?? 'local'));
+  route('DELETE', /^\/api\/v2\/lean\/jobs\/([^/]+)$/, async ({ params, identity }) => leanJobs.cancel(params[0], identity?.user?.id ?? 'local'));
   route('POST', /^\/api\/v2\/evidence\/replay$/, async ({ body, ontology }) => {
     checkVersion(body, undefined, ontology);
     const record = ontology.evidence(body.evidenceId);
@@ -599,20 +714,58 @@ export function createApi({ getOntology, ontology: ontologyRef, db, jobs, tutor,
     return derivedFor(ontology).localizer.compute(params[0], { params: request.params, profile, goalId: request.goalId, budget: request.budget });
   });
 
-  route('POST', /^\/api\/v2\/plans$/, async ({ body, query, ontology, identity }) => {
+  const checkedLearningPlan = (raw, ontology) => {
+    const draft = normalizeLearningPlan(raw);
+    for (const id of [draft.primaryGoal, ...draft.branches].filter(Boolean)) {
+      const node = ontology.node(id);
+      assert((node.granularity ?? 'unit') === 'unit', CODES.BAD_REQUEST, '学习目标必须是可独立学习的节点');
+    }
+    const disciplines = new Set(ontology.raw.nodes.map(node => node.discipline));
+    assert(draft.interests.every(id => disciplines.has(id)), CODES.BAD_REQUEST, '学习兴趣含有未登记学科');
+    return draft;
+  };
+  route('POST', /^\/api\/v2\/learning-plan-preview$/, async ({ body, ontology, identity, req }) => {
+    checkVersion(body, undefined, ontology);
+    const preferences = checkedLearningPlan(body.preferences ?? {}, ontology);
+    let background = [];
+    if (body.profileId) {
+      const state = await profileState(body.profileId);
+      background = adaptWithOntology(ontology, state, { goalId: preferences.primaryGoal }).background;
+    }
+    // Anonymous previews contain no profile data. All calculations use the bounded worker queue.
+    const job = jobs.run({ preferences, background }, { kind: 'learning', owner: planningOwner(req, identity) });
+    return { job, statusUrl: `/api/v2/learning-plan-preview/${job.id}` };
+  });
+  const learningJob = (identity, id, req) => {
+    const job = jobs.get(id);
+    if (job.kind !== 'learning' || (AUTHENTICATED && job.owner !== planningOwner(req, identity))) {
+      throw new McsError(CODES.NOT_FOUND, '无法解析学习方案任务', 404);
+    }
+    const { owner: _owner, ...view } = job;
+    return view;
+  };
+  route('GET', /^\/api\/v2\/learning-plan-preview\/([^/]+)$/, async ({ params, identity, req }) => ({ job: learningJob(identity, params[0], req) }));
+  route('DELETE', /^\/api\/v2\/learning-plan-preview\/([^/]+)$/, async ({ params, identity, req }) => {
+    learningJob(identity, params[0], req); return jobs.cancel(params[0]);
+  });
+
+  route('POST', /^\/api\/v2\/plans$/, async ({ body, query, ontology, identity, req }) => {
     checkVersion(body, query, ontology);
     const raw = { ...body };
+    if (body.profileId) raw.learningPreferences = await db.getLearningPlan(body.profileId);
     if (body.profileId && !(Array.isArray(body.background) && body.background.length)) {
       const state = await profileState(body.profileId);
       const { background } = adaptWithOntology(ontology, state, { goalId: body.goalId ?? body.goalIds?.[0] ?? null, budget: body.budget ?? null, strategy: body.strategy ?? {} });
       raw.background = background;
     }
     if (query.get('sync') === '1' || body.sync === true) {
+      if (AUTHENTICATED && !identity?.user) throw new McsError(CODES.BAD_REQUEST, '游客规划请使用异步任务。', 400);
       normalizePlanRequest(raw);
       // 同步规划走**本请求那一份本体**建出来的规划器（按版本缓存，纯函数索引）。
       const planner = derivedFor(ontology).planner;
       let result = planner.plan(raw);
       if (body.review) result = planner.withReview(result, body.review);
+      if (raw.learningPreferences) result = personalizePlanResult(ontology, result, raw.learningPreferences, raw.background);
       return result;
     }
     const payload = body.review ? { plan: raw, review: body.review } : raw;
@@ -620,15 +773,16 @@ export function createApi({ getOntology, ontology: ontologyRef, db, jobs, tutor,
      * 异步任务记**归属**：公网模式下任务表是全站共用的，不记归属就等于
      * 「知道 job id 就能读别人的规划结果、还能取消它」。
      */
-    const job = jobs.run(payload, { kind: body.review ? 'review' : 'plan', owner: identity?.user?.id ?? null });
+    normalizePlanRequest(body.review ? payload.plan : payload);
+    const job = jobs.run(payload, { kind: body.review ? 'review' : 'plan', owner: planningOwner(req, identity) });
     return { job, statusUrl: `/api/v2/plans/${job.id}` };
   });
-  route('GET', /^\/api\/v2\/plans\/([^/]+)$/, async ({ params, identity }) => {
-    const job = requireJob(identity, params[0]);
+  route('GET', /^\/api\/v2\/plans\/([^/]+)$/, async ({ params, identity, req }) => {
+    const job = requireJob(identity, params[0], req);
     return { job: { id: job.id, kind: job.kind, status: job.status, createdAt: job.createdAt, finishedAt: job.finishedAt, queuePosition: job.queuePosition ?? 0 }, result: job.result, error: job.error };
   });
-  route('DELETE', /^\/api\/v2\/plans\/([^/]+)$/, async ({ params, identity }) => {
-    requireJob(identity, params[0]);
+  route('DELETE', /^\/api\/v2\/plans\/([^/]+)$/, async ({ params, identity, req }) => {
+    requireJob(identity, params[0], req);
     return jobs.cancel(params[0]);
   });
 
@@ -644,10 +798,88 @@ export function createApi({ getOntology, ontology: ontologyRef, db, jobs, tutor,
     const owned = await auth.store.ownedIds('profile', identity.user.id);
     return { profiles: profiles.filter((profile) => owned.has(profile.id)) };
   });
-  route('POST', /^\/api\/v2\/profiles$/, async ({ body, identity }) => {
+
+  route('GET', /^\/api\/v2\/me\/connection-notes$/, async ({ identity }) => ({ ownerId: identity.user.id, notes: await db.listConnectionNotes(identity.user.id) }));
+  route('PUT', /^\/api\/v2\/me\/connection-notes\/([^/]+)$/, async ({ params, body, identity, ontology }) => {
+    const key = decodeURIComponent(params[0]);
+    if (key.length > 4096 || !connectionExists(ontology.raw, key)) throw new McsError(CODES.NOT_FOUND, '该连接未在当前本体登记', 404);
+    return { note: await db.putConnectionNote(identity.user.id, key, body) };
+  });
+  route('DELETE', /^\/api\/v2\/me\/connection-notes\/([^/]+)$/, async ({ params, body, identity }) =>
+    db.deleteConnectionNote(identity.user.id, decodeURIComponent(params[0]), body.baseRevision));
+  /*
+   * 档案模板清单（2026-10 加，公共只读）。
+   *
+   * 文案按**成对**下发（zh / en），由界面按当前语种取：模板的说明文字是资料性文案，
+   * 不是本体内容，因此不跟着 `?locale=` 换一套本体；而每个声明条目里的**节点标题**是本体内容，
+   * 用这一请求语种的那一份本体（`ontology` 已经是该语种的视图）。
+   *
+   * 这一条不能省：模板是「建档案时选什么」的唯一来源，界面不许自己抄一份节点清单
+   * （抄一份就会漂——加一个背景接口、改一条依据，界面上的清单还是旧的）。
+   */
+  route('GET', /^\/api\/v2\/profile-templates$/, async ({ ontology }) => ({
+    version: ontology.version,
+    defaultTemplateId: DEFAULT_PROFILE_TEMPLATE_ID,
+    templates: PROFILE_TEMPLATES.map((template) => ({
+      id: template.id,
+      name: template.name,
+      stage: template.stage,
+      summary: template.summary,
+      note: template.note,
+      declares: template.declares.map((entry) => ({
+        node: entry.node,
+        // 模板只声明背景接口（`validateProfileTemplates` 强制），因此必定能在本体里解析；
+        // 仍用 maybeNode 兜底：一个坏数据不该变成 500。
+        title: ontology.maybeNode(entry.node)?.title ?? entry.node,
+        case: ontology.maybeNode(entry.node)?.case ?? null,
+        basis: entry.basis,
+      })),
+    })),
+    note: '模板只声明背景接口节点（case=background）：那是本站对环境边界的显式声明，语义上正是「学习者应当已经具备的前提」。案例节点是本站要教的内容，模板不替学习者声明已经学过。',
+  }));
+  /*
+   * 新建档案：可选带一个**档案模板**（2026-10 加）。
+   *
+   * 模板是 E 的初值：它把「这个阶段通常已经学过什么」写成一串 confirmation 事件
+   * （`source.kind = 'system'`、`payload.declared = true`、`payload.template = <id>`），
+   * 于是这份档案的 θ.known 一开始不是空的，「起始节点」（前置已确认的节点）由此扩大。
+   *
+   * 四条写在代码里的纪律：
+   * 1. **模板不写进 profiles 行**：档案表只有名字与类型；「这份档案从哪个模板开的」由事件的
+   *    `source.ref` 追。导出、备份、迁移都带着事件走，跟着行反而会在某条路径上漂掉。
+   * 2. **未知模板当场拒绝**，不静默回落成空白：回落会让「我选了高一」变成「其实什么都没声明」，
+   *    而界面上看不出区别。
+   * 3. **模板只声明背景接口节点**（由 `validateProfileTemplates` 在 `npm run check` 里强制）。
+   * 4. **部分失败如实回报**：逐条写入，失败的那几条进 `failed` 并带原因，已写入的照常保留；
+   *    不假装「要么全成要么全不成」——本机 SQLite 下这本来就是多次 append。
+   */
+  route('POST', /^\/api\/v2\/profiles$/, async ({ body, identity, ontology }) => {
+    const requested = body?.template;
+    assert(requested === undefined || requested === null || typeof requested === 'string',
+      CODES.BAD_REQUEST, 'template 必须是档案模板 id 字符串');
+    const templateId = requested ? requested : DEFAULT_PROFILE_TEMPLATE_ID;
+    const template = profileTemplate(templateId);
+    if (!template) {
+      throw new McsError(CODES.BAD_REQUEST, `未知的档案模板：${templateId}`, 400, { templateIds: PROFILE_TEMPLATE_IDS });
+    }
     const profile = await db.createProfile(body);
     await claimOwnership(identity, 'profile', profile.id);
-    return { profile };
+
+    /*
+     * 事件的造法与写入走 `server/profile-templates.mjs` 一处：建默认档案的脚本
+     * （`scripts/seed-default-profiles.mjs`）用的是同一个 `applyProfileTemplate`，
+     * 两处各写一遍事件形状迟早会漂——而事件是这套东西唯一的审计依据。
+     */
+    const { declared, failed } = await applyProfileTemplate({ db, ontology, profileId: profile.id, templateId });
+    return {
+      profile: await db.getProfile(profile.id),
+      template: { id: template.id, name: template.name, stage: template.stage, summary: template.summary, note: template.note },
+      declared,
+      failed,
+      note: declared.length > 0
+        ? `模板声明了 ${declared.length} 个背景节点（source=system、payload.declared=true）：这是阶段性的常见覆盖，不是本站的测评结论，可在「我的学习 → 高级设置」里逐条改。`
+        : '这份档案没有预设任何已确认节点。',
+    };
   });
   route('GET', /^\/api\/v2\/profiles\/([^/]+)$/, async ({ params, ontology }) => {
     const profile = await profileState(params[0]);
@@ -723,9 +955,12 @@ export function createApi({ getOntology, ontology: ontologyRef, db, jobs, tutor,
    * **节点与边源是否真在本体里**在这里核对——视图引用了不存在的节点，宁可拒绝也不静默丢弃，
    * 否则「下次直接用」会变成「下次少两个节点却没人告诉你」。
    */
-  const checkViewPayload = (body, ontology) => {
+  const checkViewPayload = async (body, ontology, identity) => {
     const payload = body?.payload ?? {};
-    const unknownNodes = (payload.added ?? []).filter((id) => !ontology.maybeNode(id));
+    const extras = normalizeNetworkExtras(payload);
+    await checkNetworkRefs(extras.refs ?? [], identity.user.id, ontology, db);
+    const refKeys = new Set((extras.refs ?? []).map(nodeRefKey));
+    const unknownNodes = (payload.added ?? []).filter((id) => !ontology.maybeNode(id) && !(decodeNoteKey(id) && refKeys.has(id)));
     if (unknownNodes.length > 0) throw new McsError(CODES.BAD_REQUEST, `视图里有 ${unknownNodes.length} 个节点不在本体里：${unknownNodes.slice(0, 3).join('、')}…`, 400, { unknownNodes });
     const knownFamilies = new Set(EDGE_FAMILIES);
     const unknownFamilies = (payload.families ?? []).filter((id) => !knownFamilies.has(id));
@@ -738,15 +973,101 @@ export function createApi({ getOntology, ontology: ontologyRef, db, jobs, tutor,
     // 本体版本一起下发：视图是「相对某一版本体」的快照，下次载入时能看出本体有没有变。
     ontologyVersion: ontology.version,
   }));
-  route('POST', /^\/api\/v2\/profiles\/([^/]+)\/network-views$/, async ({ params, body, ontology }) => {
-    const checked = checkViewPayload(body, ontology);
+  route('POST', /^\/api\/v2\/profiles\/([^/]+)\/network-views$/, async ({ params, body, ontology, identity }) => {
+    const checked = await checkViewPayload(body, ontology, identity);
     return { view: await db.createNetworkView(params[0], body), profile: await db.getProfile(params[0]), checked, ontologyVersion: ontology.version };
   });
-  route('PATCH', /^\/api\/v2\/profiles\/([^/]+)\/network-views\/([^/]+)$/, async ({ params, body, ontology }) => {
-    const checked = checkViewPayload(body, ontology);
+  route('PATCH', /^\/api\/v2\/profiles\/([^/]+)\/network-views\/([^/]+)$/, async ({ params, body, ontology, identity }) => {
+    const checked = await checkViewPayload(body, ontology, identity);
     return { view: await db.updateNetworkView(params[0], params[1], body), profile: await db.getProfile(params[0]), checked, ontologyVersion: ontology.version };
   });
   route('DELETE', /^\/api\/v2\/profiles\/([^/]+)\/network-views\/([^/]+)$/, async ({ params }) => await db.deleteNetworkView(params[0], params[1]));
+  /*
+   * 学习方向（2026-10 加）：学习者显式声明的「我现在要去哪」。
+   *
+   * 三条接口的分工：GET 列出（界面按第一个当当前方向）、POST 声明（幂等）、DELETE 撤回。
+   * 与网络视图同一套边界：**未知节点当场 400**，不静默丢弃——
+   * 存下一个指向不存在节点的方向，只会让「下一步」永远算不出来而没人知道为什么。
+   */
+  const checkDirectionPayload = (body, ontology) => {
+    const nodeId = body?.nodeId;
+    if (typeof nodeId !== 'string' || !nodeId.trim()) {
+      throw new McsError(CODES.BAD_REQUEST, '方向需要一个目标节点（nodeId）。', 400);
+    }
+    if (!ontology.maybeNode(nodeId) && !ontology.boundaryRefs.has(nodeId)) {
+      throw new McsError(CODES.UNKNOWN_NODE, `方向指向了未知节点：${nodeId}`, 404, { node: nodeId });
+    }
+    const node = ontology.maybeNode(nodeId);
+    /*
+     * 话题级条目当下方向：登记层给「【线索】」这样的标记与说明，交出去由界面如实标注。
+     * 这里**不拒绝**它，只是把事实（它是话题而非可独立认知的单元）一并下发。
+     */
+    return { nodeId, granularity: node?.granularity ?? 'unit', isThread: (node?.granularity ?? 'unit') === 'topic' };
+  };
+  route('GET', /^\/api\/v2\/profiles\/([^/]+)\/learning-plan$/, async ({ params, ontology }) => {
+    const plan = await db.getLearningPlan(params[0]);
+    if (plan.revision === 0) {
+      const directions = await db.listDirections(params[0]);
+      plan.primaryGoal = directions.find(item => (ontology.maybeNode(item.nodeId)?.granularity ?? 'unit') === 'unit' && ontology.maybeNode(item.nodeId))?.nodeId ?? null;
+    }
+    return { plan, ontologyVersion: ontology.version };
+  });
+  route('PUT', /^\/api\/v2\/profiles\/([^/]+)\/learning-plan$/, async ({ params, body, ontology }) => {
+    checkVersion(body, undefined, ontology);
+    const draft = checkedLearningPlan(body, ontology);
+    const plan = await db.driver.transaction(async () => {
+      const saved = await db.putLearningPlan(params[0], { ...draft, baseRevision: body.baseRevision });
+      if (draft.primaryGoal) {
+        const result = await db.createDirection(params[0], { nodeId: draft.primaryGoal, sourceRef: 'ui' });
+        if (result.created) await db.appendEvent(params[0], normalizeEvent({
+          eventId: `direction-${result.direction.directionId}`, kind: 'goal', nodeId: draft.primaryGoal,
+          source: { kind: 'browser', ref: 'ui' }, evidenceRefs: [],
+          payload: { intent: 'direction', directionId: result.direction.directionId }, baseRevision: null,
+        }, { profileId: params[0], ontologyVersion: ontology.version }), { merge: true });
+      }
+      return saved;
+    });
+    return { plan, profile: await db.getProfile(params[0]), ontologyVersion: ontology.version };
+  });
+  route('GET', /^\/api\/v2\/profiles\/([^/]+)\/directions$/, async ({ params, ontology }) => ({
+    directions: await db.listDirections(params[0]),
+    ontologyVersion: ontology.version,
+  }));
+  route('POST', /^\/api\/v2\/profiles\/([^/]+)\/directions$/, async ({ params, body, ontology }) => {
+    const checked = checkDirectionPayload(body, ontology);
+    const result = await db.createDirection(params[0], { ...body, sourceRef: 'ui' });
+    /*
+     * 事件与镜像**一起**写：镜像（`learning_directions`）是界面每次渲染都要读的快查表，
+     * 事件是导出与审计的事实来源。
+     *
+     * 顺序是先镜像、后事件，而不是反过来：事件 id 需要引用镜像的 id，反过来会绕成环。
+     * 事件写失败时把刚建的镜像删掉——宁可失败得干净，也不留下一个说不出出处的方向
+     * （`deleteDirection` 会顺带清掉那条事件吗？不会，所以这里只在**镜像刚建成功**时回滚，
+     * 而事件没写进去，不会留下孤儿事件）。
+     *
+     * `kind: 'goal'` 是既有事件类型（`shared/contracts.mjs` 的 EVENT_KINDS），不扩类型；
+     * 事件的 eventId 由这里生成（`normalizeEvent` 要求必填），而不是让存储层去猜。
+     */
+    if (result.created) {
+      try {
+        const event = normalizeEvent({
+          eventId: `direction-${result.direction.directionId}`,
+          kind: 'goal',
+          nodeId: checked.nodeId,
+          source: { kind: 'browser', ref: 'ui' },
+          evidenceRefs: [],
+          payload: { intent: 'direction', directionId: result.direction.directionId },
+          baseRevision: null,
+        }, { profileId: params[0], ontologyVersion: ontology.version });
+        await db.appendEvent(params[0], event, { merge: true });
+      } catch (error) {
+        await db.deleteDirection(params[0], result.direction.directionId).catch(() => {});
+        throw error;
+      }
+    }
+    return { direction: result.direction, created: result.created, checked, profile: await db.getProfile(params[0]) };
+  });
+  route('DELETE', /^\/api\/v2\/profiles\/([^/]+)\/directions\/([^/]+)$/, async ({ params }) => await db.deleteDirection(params[0], params[1]));
   route('GET', /^\/api\/v2\/profiles\/([^/]+)\/export$/, async ({ params, ontology }) => await db.exportProfile(params[0], { ontologyVersion: ontology.version }));
   route('POST', /^\/api\/v2\/import$/, async ({ body, identity }) => {
     const bundle = validateImportBundle(body.bundle ?? body);
@@ -1193,7 +1514,9 @@ export function createApi({ getOntology, ontology: ontologyRef, db, jobs, tutor,
     return result;
   });
 
-  return async function handle(req, res) {
+  registerVaultApi({ route, db, config });
+  registerNetworkApi({ route, db, jobs, config, authoring, getOntology: resolveOntology });
+  const handle = async function handle(req, res) {
     const url = new URL(req.url, `http://${req.headers.host ?? '127.0.0.1'}`);
     if (!url.pathname.startsWith('/api/v2/')) return false;
     const ontology = requestOntology();
@@ -1215,7 +1538,7 @@ export function createApi({ getOntology, ontology: ontologyRef, db, jobs, tutor,
         if (entry.method !== req.method) continue;
         const match = url.pathname.match(entry.pattern);
         if (!match) continue;
-        const body = ['POST', 'PATCH', 'PUT'].includes(req.method) ? await readJson(req) : {};
+        const body = ['POST', 'PATCH', 'PUT', 'DELETE'].includes(req.method) ? await readJson(req) : {};
         /*
          * 授权在**处理体之前**：权限与归属不通过时不进入业务逻辑，
          * 免得「先写了一半再报 403」。顺序也要紧：先判身份，再判写请求令牌——
@@ -1247,15 +1570,18 @@ export function createApi({ getOntology, ontology: ontologyRef, db, jobs, tutor,
          * 在两种语言下逐字相同，所以版本核对与发布流程不受语言影响。
          */
         const data = await entry.handler({ params: match.slice(1), query: url.searchParams, body, req, res, ontology: localized, identity });
-        sendJson(res, 200, envelope(localized.version, data));
+        if (!res.headersSent) sendJson(res, 200, envelope(localized.version, data));
         return true;
       }
       sendJson(res, 404, errorEnvelope(new McsError(CODES.NOT_FOUND, `未知接口：${req.method} ${url.pathname}`, 404)));
       return true;
     } catch (error) {
       if (!isMcsError(error)) console.error('[mcs-web]', error);
+      if (res.headersSent) { res.destroy(); return true; }
       sendJson(res, error.status ?? 500, errorEnvelope(error));
       return true;
     }
   };
+  handle.close = () => { for (const controller of activeSettles.values()) controller.abort(); authoringHandle?.close(); authoringHandle = null; };
+  return handle;
 }

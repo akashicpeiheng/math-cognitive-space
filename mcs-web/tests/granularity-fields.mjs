@@ -35,15 +35,23 @@ function check(name, condition, detail = '') {
  */
 const ontology = await loadOntology();
 const nodes = ontology.raw.nodes;
+/*
+ * 合并登记（2026-10，见 `data/merges.mjs`）也是粒度判定的对象：被收口的登记保留自己的
+ * `granularity`（话题级登记仍是话题级），节点页按它显示。因此这张表既查节点，也查登记。
+ */
+const registrationById = new Map();
+for (const node of nodes) for (const record of node.registrations ?? []) registrationById.set(record.id, record);
+const judgedEntry = (id) => nodes.find((node) => node.id === id) ?? registrationById.get(id);
+const mergedIds = new Set(Object.keys(ontology.raw.merges?.aliases ?? {}));
 
 // ---- 数据层：粒度判定的完备性 ----
 const topics = nodes.filter((node) => node.granularity === 'topic');
 const units = nodes.filter((node) => (node.granularity ?? 'unit') === 'unit');
-const gapProblems = granularityGaps(nodes);
+const gapProblems = granularityGaps(nodes, { mergedIds });
 check('粒度只有 unit / topic 两个值', nodes.every((node) => GRANULARITY_VALUES.includes(node.granularity ?? 'unit')));
-check('话题清单里的节点在原数据里都真的是 topic',
-  Object.keys(TOPIC_REASONS).every((id) => nodes.find((node) => node.id === id)?.granularity === 'topic'),
-  Object.keys(TOPIC_REASONS).filter((id) => nodes.find((node) => node.id === id)?.granularity !== 'topic').join('、'));
+check('话题清单里的条目（节点或合并登记）都真的是 topic',
+  Object.keys(TOPIC_REASONS).every((id) => judgedEntry(id)?.granularity === 'topic'),
+  Object.keys(TOPIC_REASONS).filter((id) => judgedEntry(id)?.granularity !== 'topic').join('、'));
 check('标题命中并列词的条目全部判过（话题清单或「判为单元」的例外）', gapProblems.length === 0, gapProblems.join('；'));
 const unjudged = nodes.filter((node) => isTopicTitle(node.title)
   && !TOPIC_REASONS[node.id] && !UNIT_REASONS[node.id]
@@ -158,11 +166,17 @@ try {
     JSON.stringify(defaultView.labels));
 
   // ---- 页面层：切到话题档 ----
+  /*
+   * 被点名的条目用一个**仍然是节点**的话题级条目：`liang:continuous-map`（「连续映射与同胚」）
+   * 在 2026-10 被收口到 `top:continuous-map`，它不再单独出一张卡，正文与判定理由照旧显示在
+   * 那个节点的「合并前的其它登记」里。这里改用 `liang:christoffel`（同为 liang 的话题级条目，
+   * 没有被合并），判据本身不变：切到话题档就该看到被点名的条目。
+   */
   await page.goto(server.origin + '/nodes?case=liang&show=topics', { waitUntil: 'networkidle' });
   await page.waitForTimeout(900);
   const topicView = await page.evaluate(() => ({
     cards: document.querySelectorAll('.node-card').length,
-    hasTopic: document.body.textContent.includes('连续映射与同胚'),
+    hasTopic: document.body.textContent.includes('与度规适配的导数算符与克氏符'),
     hasUnit: document.body.textContent.includes('切矢量'),
     countLine: document.querySelector('.result-count')?.textContent?.replace(/\s+/g, ' ').trim() ?? '',
   }));
@@ -179,7 +193,12 @@ try {
     cards: document.querySelectorAll('.node-card').length,
     hasJudged: document.body.textContent.includes('有限集、可数集与不可数集'),
   }));
-  const rudinTopicCount = topics.filter((node) => node.case === 'rudin').length;
+  /*
+   * 期望值按**登记归属**算（`cases`）：页面与接口的案例筛选都走这条口径（见 `data/merges.mjs`），
+   * 因此 rudin 档的话题数是 12（11 个 case 为 rudin 的话题节点 + 1 个登记在 rudin 里的规范节点），
+   * 而不是「case === 'rudin' 的话题节点数」。两处口径必须一致，否则页面与断言各说各话。
+   */
+  const rudinTopicCount = topics.filter((node) => (node.cases ?? [node.case]).includes('rudin')).length;
   check('本轮补判的话题（rudin）在话题档里能看到',
     rudinTopics.hasJudged && rudinTopics.cards === rudinTopicCount,
     JSON.stringify({ cards: rudinTopics.cards, expected: rudinTopicCount }));

@@ -7,22 +7,8 @@ import { Markdown } from '../components/Markdown';
 import { ProgressBar } from '../components/ProgressBar';
 import { StatusBadge } from '../components/StatusBadge';
 import { ContinueNetwork } from '../components/ContinueNetwork';
-import {
-  EMPTY_PREFERENCES,
-  ENTRY_OPTIONS,
-  GOAL_OPTIONS,
-  PACE_OPTIONS,
-  StartChooser,
-  type StartPreferences,
-} from '../components/StartChooser';
-import {
-  consumeFirstVisit,
-  isGuideCollapsed,
-  readPreferences,
-  writeGuideCollapsed,
-  writePreferences,
-} from '../start-preferences';
 import { CaseThumbnail } from '../components/CaseThumbnail';
+import { LearningGuide } from '../components/LearningGuide';
 import { CASE_SECTION_TITLES, describeCase, groupByDiscipline, type CaseMeta } from '../case-catalog';
 import { CASE_MATH, mathify, plainMathText } from '../labels';
 import { useI18n } from '../i18n';
@@ -32,6 +18,7 @@ import type { EventView, NodeSummary } from '../types';
 
 /** 成对文案：中文是源语言（**逐字不变**），英文是译文。取用走 `useI18n().pick`。 */
 interface Pair<T = string> { zh: T; en: T }
+
 
 /**
  * 「开始学习」页：首页（六幕动画）之后的第一个落脚点。
@@ -82,19 +69,19 @@ const CASES: Array<{ id: string; entry: string; goal: string; copy: Pair<CaseCop
   },
   {
     id: 'manifold',
-    entry: 'manifold:top-manifold',
+    entry: 'top:topological-manifold',
     goal: 'manifold:claim-max',
     copy: {
       zh: {
         title: 'C^k 与光滑流形',
         question: '什么样的空间才能在上面做微积分？',
-        note: '局部坐标、过渡映射与两种泛化方向；C¹ 非 C² 的反例守住边界。',
+        note: '局部坐标、过渡映射与放缩关系的两个方向；C¹ 非 C² 的反例守住边界。',
         embryo: '球面上没有全局坐标，可是每个小片看起来都像平面。',
       },
       en: {
         title: 'C^k and smooth manifolds',
         question: 'What kind of space allows calculus on it?',
-        note: 'Local coordinates, transition maps and two directions of generalization; a C¹-but-not-C² counterexample guards the boundary.',
+        note: 'Local coordinates, transition maps and the two readings of scaling relations; a C¹-but-not-C² counterexample guards the boundary.',
         embryo: 'A sphere has no global coordinates, yet every small patch looks like a plane.',
       },
     },
@@ -139,7 +126,7 @@ const CASES: Array<{ id: string; entry: string; goal: string; copy: Pair<CaseCop
   },
   {
     id: 'dg',
-    entry: 'dg:smooth-manifold',
+    entry: 'top:differentiable-manifold',
     goal: 'dg:generalized-stokes-theorem',
     copy: {
       zh: {
@@ -153,6 +140,30 @@ const CASES: Array<{ id: string; entry: string; goal: string; copy: Pair<CaseCop
         question: 'How can calculus be done on a curved space?',
         note: '30 core nodes from the open-set axioms to Stokes’ theorem; tangent vectors have two equivalent definitions, via curves and via derivations.',
         embryo: 'On a curved surface, “direction” and “area” both lose their flat-plane intuition.',
+      },
+    },
+  },
+  {
+    /*
+     * 第八个案例：点集拓扑。入口是「拓扑空间」（本案例自足的单元级定义），
+     * 目标是「图册」——12 项点名单的收尾，也是通往本站 dg 与 manifold 两个案例的接口。
+     * 起点声明只需要 bg:set:function 与 bg:real:metric（本案例的硬前置只用到这两个背景节点）。
+     */
+    id: 'top',
+    entry: 'top:space',
+    goal: 'top:atlas',
+    copy: {
+      zh: {
+        title: '点集拓扑',
+        question: '不靠距离，「附近」这件事该怎么谈？',
+        note: '从开集公理到坐标卡与图册的 12 项主线；紧、仿紧、σ-紧与四条可数条款各配一个只缺那一条的反例空间。',
+        embryo: '把「开区间」的性质一条条抽出来之后，剩下的三条规定真的够用吗？',
+      },
+      en: {
+        title: 'Point-set topology',
+        question: 'Without a distance, how can “nearby” be talked about at all?',
+        note: 'Twelve main threads from the open-set axioms to coordinate charts and atlases; compactness, paracompactness, σ-compactness and the four countability clauses each come with a space that fails exactly that one clause.',
+        embryo: 'Once the properties of open intervals are peeled away one by one, are the three that remain really enough?',
       },
     },
   },
@@ -196,12 +207,13 @@ const CONSTRUCT_NAMES: Record<string, string> = {
 const TEXT = {
   title: { zh: '开始学习', en: 'Start learning' },
   intro: {
-    zh: '首页讲的是为什么要有这个空间。这一页先不急着推内容：回答三个问题，让入口按你的处境排序； 定完方向，下面的材料按角度摊开，随时可以自己挑。',
-    en: 'The home page explains why this space exists. This page does not push content at you: answer three questions and the entries are ordered around your situation;  once the direction is set, the material below is laid out by angle and you can pick at any time.',
+    zh: '从感兴趣的学科或已有目标出发，找到想解决的问题，立即查看第一步和近期顺序。下面的材料按角度展开，帮助你继续探索。',
+    en: 'Start with a field that interests you or a goal you already have. Find a question to pursue and see your first step and upcoming sequence. Explore the material below from several angles.',
   },
   homeLink: { zh: '回看首页动画', en: 'Replay the home animation' },
   introLink: { zh: '这个网站是什么', en: 'What this site is' },
   methodLink: { zh: '学习方法论', en: 'Learning methodology' },
+  manualLink: { zh: '用户手册', en: 'User manual' },
   directHint: { zh: '下面是不经引导的全部入口——想自己挑就直接往下看。', en: 'Below are all the entries without the guide — if you prefer to pick for yourself, just scroll on.' },
 
   /* —— 接着上次 —— */
@@ -369,38 +381,24 @@ function countBy(nodes: NodeSummary[], pick: (node: NodeSummary) => string[]): A
 export function StartPage() {
   const { locale, pick, fmtDate, t, hrefFor, isPending } = useI18n();
   const labels = useLabels();
-  /**
-   * 偏好引导的答案：只存在本机（`localStorage`），**不写学习者档案 E**。
-   *
-   * 回访者直接看到上次的结论（`decided=true`，仍可「改一改」）；
-   * 第一次进来是空的，三问按渐进披露一次问一个。
-   *
-   * 2026-10（TODO A4-24 / A4-25）：读写搬到 `web/src/start-preferences.ts`，
-   * 与「收起标记」「来过标记」放在一起——`/plan` 也要读同一份偏好（A4-23），
-   * 逻辑留在页面里会让两处各写一遍。
-   */
-  const [preferences, setPreferences] = useState<StartPreferences>(() => readPreferences());
-  const [guideCollapsed, setGuideCollapsed] = useState<boolean>(() => isGuideCollapsed());
-  /**
-   * 首访 / 回访：**在挂载时消费一次**「来过」标记。
-   * 这一次渲染按「之前来过没有」决定默认起点，随后的渲染都按回访算——
-   * 不用 state 存「是不是首访」，避免刷新后同一份标记被读两次得到不同结论。
-   */
-  const [visitedBefore] = useState<boolean>(() => !consumeFirstVisit());
-  const preferencesDecided = preferences.goal !== null && preferences.entry !== null && preferences.pace !== null;
-  const savePreferences = (next: StartPreferences) => {
-    setPreferences(next);
-    writePreferences(next);
-  };
-  const resetPreferences = () => savePreferences(EMPTY_PREFERENCES);
-  /**
-   * 「先收起引导」与「重新显示引导」（TODO A4-24）：只动本机标记，**不动偏好**。
-   * 落盘与 React 状态是两件事，因此这里显式各写一次（顺序无所谓，但两个都要做）。
-   */
-  const collapseGuide = () => { writeGuideCollapsed(true); setGuideCollapsed(true); };
-  const expandGuide = () => { writeGuideCollapsed(false); setGuideCollapsed(false); };
   const { profileId, profile, health } = useProfileContext();
-  const { progress, graph, events, loading: learningLoading, error: learningError } = useLearningData();
+  const learning = useLearningData();
+  const { progress, graph, events, loading: learningLoading, error: learningError } = learning;
+  /**
+   * 学科显示名：先查 `case-catalog.ts` 的分组名成对表（单一来源），
+   * 再查 `labels.ts` 的 `DISCIPLINE_LABELS`（只登记了 4 个键），最后**原样显示**——
+   * 绝不显示空标签。中文侧三处逐字相同。
+   *
+   * 位置在**用到它的两块之前**（第 5 问的 chip 与「六条已有方向」的次级学科分布）：
+   * 它是纯查表，不依赖任何后面才算出来的东西，早放不会引入新的耦合。
+   */
+  const disciplineName = (value: string) => (
+    CASE_SECTION_TITLES[value]?.[locale] ?? labels.tables.disciplines[value] ?? value
+  );
+  /** 卡片上构造类型的显示名：中文用页面的短写法，英文用词表译名。 */
+  const constructName = (value: string) => (
+    locale === 'en' ? (labels.tables.constructs[value] ?? value) : (CONSTRUCT_NAMES[value] ?? value)
+  );
   const titleOf = (nodeId: string) => graph?.nodes.find((node) => node.id === nodeId)?.title ?? nodeId;
   const firstReady = progress?.ready[0] ?? null;
   const nextReview = progress?.reviewQueue[0] ?? null;
@@ -441,14 +439,10 @@ export function StartPage() {
    * 学科显示名：先查 `case-catalog.ts` 的分组名成对表（单一来源），
    * 再查 `labels.ts` 的 `DISCIPLINE_LABELS`（只登记了 4 个键），最后**原样显示**——
    * 绝不显示空标签。中文侧三处逐字相同。
+   *
+   * 定义搬到了本函数**开头**（第 5 问与「六条已有方向」两块之前）：
+   * 它是纯查表，不依赖任何后面才算出来的东西，早放不会引入新的耦合。
    */
-  const disciplineName = (value: string) => (
-    CASE_SECTION_TITLES[value]?.[locale] ?? labels.tables.disciplines[value] ?? value
-  );
-  /** 卡片上构造类型的显示名：中文用页面的短写法，英文用词表译名。 */
-  const constructName = (value: string) => (
-    locale === 'en' ? (labels.tables.constructs[value] ?? value) : (CONSTRUCT_NAMES[value] ?? value)
-  );
   /** 各角度的筛选入口：领域、对象类型、角色、案例，全部由本体现场派生。 */
   /*
    * 角度入口的计数只算**单元**（2026-10 改）。
@@ -502,7 +496,7 @@ export function StartPage() {
         id: 'case',
         title: pick(TEXT.angleCaseTitle),
         lead: pick(TEXT.angleCaseLead),
-        items: countBy(nodes, (node) => [node.case]).map((item) => ({
+        items: countBy(nodes, (node) => node.cases ?? [node.case]).map((item) => ({
           key: item.key,
           // 纯文本上下文（不是 Markdown）：用 Unicode 上标，别把 C^k 原样显示成带脱字符的样子。
           label: plainMathText(labels.tables.cases[item.key] ?? item.key),
@@ -514,20 +508,17 @@ export function StartPage() {
   }, [graph, locale, labels]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const returning = Boolean(profileId && progress);
-  /**
-   * 「回访」对**默认起点**的口径（TODO A4-25）：本机来过，或者已经有学习记录。
-   *
-   * 为什么要两个条件：只看来过标记的话，换一台机器（或清过站点数据）的老学习者会拿到首访默认；
-   * 只看学习记录的话，一个还没建档案但已经翻过几遍的人又会被当成首访。
-   * 两个条件任一成立就按回访给默认——依据写在结论里，不藏。
-   */
-  const returningForPlan = visitedBefore || returning;
 
   const continueCard = (
     <section id="continue" className="card continue-card">
       <h2>{pick(TEXT.continueTitle)}</h2>
       {profileId && learningLoading && <p>{pick(TEXT.readingRecords)}</p>}
       {profileId && learningError && <p className="error">{learningError}</p>}
+      {/*
+        方向块：先把「下一步学什么」说清楚，再给「接着上次」与「待回看」。
+        没有选档案时整块不渲染（`DirectionPanel` 在 report 为空时返回 null）——
+        方向是 E 层的东西，没有档案就没有地方存它。
+      */}
       {profileId && progress && (
         <>
           <div className="continue-grid">
@@ -809,6 +800,8 @@ export function StartPage() {
           <Link to={hrefFor('/intro')}>{pick(TEXT.introLink)}</Link>
           <span className="muted"> · </span>
           <Link to={hrefFor('/method')}>{pick(TEXT.methodLink)}</Link>
+          <span className="muted"> · </span>
+          <Link to={hrefFor('/manual')}>{pick(TEXT.manualLink)}</Link>
         </p>
       </header>
 
@@ -816,16 +809,14 @@ export function StartPage() {
         偏好引导放在最前面：先定方向，再看材料。
         它是**排序**而不是门禁——下面的案例、四组角度入口、五条「按方式」入口一条都没有删。
       */}
-      <StartChooser
-        preferences={preferences}
-        onChange={savePreferences}
-        onReset={resetPreferences}
-        decided={preferencesDecided}
-        returning={returningForPlan}
-        collapsed={guideCollapsed}
-        onCollapse={collapseGuide}
-        onExpand={expandGuide}
-      />
+      <LearningGuide learning={learning} />
+
+      {/*
+        方向对比放在引导卡**之后、其余材料之前**（2026-10-11 加）。
+        位置是有讲究的：它是引导第 5 问的直接后果（换了兴趣，这里就换顺序），
+        而声明方向仍归下面「接着上次」里的方向块（那是写 E 的动作）。
+        没有档案时这一块照样渲染——数字只依赖本体，首访者正是最需要它的人。
+      */}
 
       <p className="start-direct-hint" id="direct">
         {pick(TEXT.directHint)}

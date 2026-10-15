@@ -1,3 +1,4 @@
+import type { NetworkExtras } from '../../shared/network-workspace.mjs';
 import { api } from './api';
 
 export const LOCAL_VIEWS_KEY = 'mcs-network-views-local-v1';
@@ -5,7 +6,7 @@ export const LOCAL_VIEWS_KEY = 'mcs-network-views-local-v1';
 export interface SavedNetworkView {
   viewId: string;
   name: string;
-  payload: {
+  payload: NetworkExtras & {
     added?: string[];
     families?: string[];
     positions?: Record<string, { x: number; y: number }>;
@@ -34,6 +35,7 @@ export function writeLocalViews(views: SavedNetworkView[]) {
 function snapshotKey(view: SavedNetworkView): string {
   const { added = [], families = [], positions = {}, camera = null } = view.payload;
   return JSON.stringify({
+    ...view.payload.schema ? { extras: { schema: view.payload.schema, refs: view.payload.refs, sources: view.payload.sources, filters: view.payload.filters, placements: view.payload.placements, layout: view.payload.layout } } : {},
     name: view.name.trim().slice(0, 80),
     added: [...new Set(added)].sort(),
     families: [...new Set(families)].sort(),
@@ -54,7 +56,7 @@ export async function migrateLocalViews(
   onProgress: (completed: number) => void,
 ) {
   const path = `/profiles/${encodeURIComponent(profileId)}`;
-  const source = readLocalViews();
+  const source = readLocalViews().filter(view => !(view.payload.refs ?? []).some(ref => ref.source === 'vault' && ref.storage === 'browser'));
   let completed = 0;
   for (const entry of source) {
     signal.throwIfAborted();

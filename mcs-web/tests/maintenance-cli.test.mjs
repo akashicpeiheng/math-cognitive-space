@@ -31,7 +31,7 @@ test('maintenance CLIs seed idempotently and back up / restore the configured SQ
   for (const name of ['backup', 'restore', 'seed-demo']) {
     cpSync(join(root, 'scripts', name + '.mjs'), join(web, 'scripts', name + '.mjs'));
   }
-  for (const name of ['config', 'db', 'sql-driver']) {
+  for (const name of ['config', 'db', 'sql-driver', 'vault-store', 'network-store']) {
     cpSync(join(root, 'server', name + '.mjs'), join(web, 'server', name + '.mjs'));
   }
   for (const name of ['core', 'shared', 'data']) cpSync(join(root, name), join(web, name), { recursive: true });
@@ -42,6 +42,10 @@ test('maintenance CLIs seed idempotently and back up / restore the configured SQ
   mkdirSync(join(dir, 'mcs-foundations', 'validation'), { recursive: true });
   cpSync(join(root, '..', 'mcs-foundations', 'validation', 'certification'),
     join(dir, 'mcs-foundations', 'validation', 'certification'), { recursive: true });
+  // The public evidence manifest now imports the independent Lean registration.
+  mkdirSync(join(dir, 'mcs-foundations', 'lean'), { recursive: true });
+  cpSync(join(root, '..', 'mcs-foundations', 'lean', 'registrations.json'),
+    join(dir, 'mcs-foundations', 'lean', 'registrations.json'));
   writeFileSync(join(web, 'config.local.json'), JSON.stringify({ dataDir: join(root, 'data') }));
   const env = Object.fromEntries(Object.entries(process.env)
     .filter(([key]) => !key.toUpperCase().startsWith('MCS_WEB_') && key.toUpperCase() !== 'DATABASE_URL'));

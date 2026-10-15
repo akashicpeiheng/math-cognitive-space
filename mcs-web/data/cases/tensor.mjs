@@ -211,9 +211,9 @@ export const tensorActions = [
 ];
 
 export const tensorRelations = [
-  relation('rel-tensor-generalization', 'hardGeneralization', 'tensor:multilinear', 'tensor:tensor-rs', { witness: { type: 'universal-property', status: 'REF', ref: 'case:03#product' }, scope: '多重线性函数空间与张量空间按通用性质对应。' }),
+  relation('rel-tensor-generalization', 'scaling', 'tensor:multilinear', 'tensor:tensor-rs', { direction: { general: 'tensor:multilinear', special: 'tensor:tensor-rs', reading: 'contract' }, scalingMode: 'cross-carrier', witness: { type: 'universal-property', status: 'REF', ref: 'case:03#product' }, scope: '多重线性函数空间与张量空间按通用性质对应。' }),
   // 反方向：张量空间按通用性质对应多重线性函数空间。与上面一条成对，依据同一处引用。
-  relation('rel-tensor-specialization', 'specialization', 'tensor:tensor-rs', 'tensor:multilinear', { witness: { type: 'inverse-of-declared-generalization', status: 'REF', ref: 'case:03#product' }, scope: '反方向同属一条通用性质；两条关系成对，不代表两个方向各自独立成立。' }),
+  relation('rel-tensor-specialization', 'scaling', 'tensor:tensor-rs', 'tensor:multilinear', { direction: { general: 'tensor:multilinear', special: 'tensor:tensor-rs', reading: 'expand' }, scalingMode: 'cross-carrier', witness: { type: 'inverse-of-declared-generalization', status: 'REF', ref: 'case:03#product' }, scope: '反方向同属一条通用性质；两条关系成对，不代表两个方向各自独立成立。' }),
   relation('rel-tensor-bridge', 'bridge', 'tensor:tensor-product', 'tensor:end-iso', { witness: { type: 'isomorphism-proof', status: 'PROOF', ref: 'ev-tensor-end-iso' }, scope: '有限维；基只用于证明。' }),
   relation('rel-tensor-application', 'application', 'tensor:tensor-rs', 'tensor:field', { witness: { type: 'application-description', status: 'PROOF', ref: 'ev-tensor-bundle' }, task: '从逐点张量到整体张量场。' }),
   // 对偶：V⊗V* ≅ End(V)。依据与 end-iso 同一处正文证明；「对偶」是这对空间的名称，不是新的数学断言。

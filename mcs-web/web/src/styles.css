@@ -41,10 +41,12 @@
  * - tutor-guide-breathe：循环装饰；辅导导览卡的呼吸描边
  * - network-node-enter：一次性入场；节点入场（终态即静止态）
  * - network-edge-draw：一次性入场；新边的画出动画
+ * - network-edge-draw-from-end：一次性入场；新边反向画出（从已在场的节点长向新节点）
  * - network-edge-fade：一次性入场；新边淡入
- * - stage-silk-in：一次性入场；舞台丝绸入场
- * - stage-silk-drift：循环装饰；丝绸缓慢漂移
- * - stage-silk-flow：循环装饰；丝绸流动
+ * - stage-arrow-in：一次性入场；路径箭头整组淡入
+ * - stage-arrow-grow：一次性入场；最新那一支从源头画出来（生长）
+ * - stage-arrow-head-in：一次性入场；箭镞在主干画到后落下
+ * - stage-arrow-flow：循环装饰；沿主干朝箭尖跑的短高光
  * - stage-target-pulse：循环装饰；目标节点的脉冲
  * - pick-source-breathe：循环装饰；长按拾取时源节点的呼吸
  * - pick-ring-march：循环装饰；悬停候选的虚线环行进
@@ -154,6 +156,52 @@ body {
 }
 
 ::selection { background: var(--accent-soft); color: var(--accent-deep); }
+
+/* Exploration converges on a concrete goal and a dependency-safe next segment. */
+.learning-guide { display: grid; gap: 1.2rem; margin-bottom: 1.5rem; }
+.learning-roadmap-canvas { max-width: 100%; overflow: auto; padding: .5rem 0; }
+.learning-roadmap-canvas svg { display: block; color: var(--accent); }
+.learning-roadmap-edge { stroke: var(--accent-line); stroke-width: 1.5; }
+.learning-roadmap-node rect { fill: var(--surface); stroke: var(--line-strong); }
+.learning-roadmap-node.highlighted rect, .learning-roadmap-node:hover rect { fill: var(--accent-wash); stroke: var(--accent); }
+.learning-roadmap-node text { fill: var(--ink); font-family: var(--sans); font-size: 13px; }
+.learning-roadmap-node .learning-roadmap-tag { fill: var(--accent-strong); font-size: 11px; }
+.learning-guide .card { margin-bottom: 0; }
+.learning-guide-return, .learning-plan-heading { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.learning-entry-grid, .learning-plan-summary, .learning-option-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+.learning-entry { padding: 1.35rem; border: 1px solid var(--line-strong); border-radius: 14px; background: var(--surface-2); color: var(--ink); text-align: left; font: inherit; font-weight: 650; cursor: pointer; }
+.learning-entry:hover, .learning-entry.selected, .learning-interest-list .selected { border-color: var(--accent); background: var(--accent-wash); color: var(--accent-strong); }
+.learning-interest-section, .learning-search { display: block; margin-top: 1.3rem; }
+.learning-interest-list, .learning-goal-fields { display: flex; flex-wrap: wrap; gap: .5rem; }
+.learning-goal-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; margin-top: 1.3rem; }
+.learning-goal-card { display: flex; flex-direction: column; align-items: flex-start; border: 1px solid var(--line); border-radius: 12px; padding: 1.15rem; min-width: 0; }
+.learning-goal-card .button { margin-top: auto; }
+.learning-goal-fields { margin-bottom: 1rem; }
+.learning-goal-card p { overflow-wrap: anywhere; }
+.learning-plan-summary > div { padding: 1rem; border-radius: 12px; background: var(--surface-2); }
+.learning-background { margin: 1.2rem 0; padding: 1rem; border-left: 3px solid var(--accent); background: var(--accent-wash); border-radius: 0 10px 10px 0; }
+.learning-step-list { list-style-position: inside; padding: 0; }
+.learning-step-list > li { border-top: 1px solid var(--line); padding: 1rem 0; }
+.learning-step-content { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; }
+.learning-step-content > a { font-weight: 650; }
+.learning-step-content > p { flex-basis: 100%; margin: .3rem 0; font-size: .85rem; }
+.learning-step-actions { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .5rem; }
+.learning-readiness { font-size: .8rem; color: var(--muted); }
+.learning-readiness.ready { color: var(--accent-strong); }
+.learning-branch-list { display: grid; gap: .65rem; margin-bottom: 1rem; }
+.learning-branch { display: flex; align-items: center; flex-wrap: wrap; gap: .5rem 1rem; border-top: 1px solid var(--line); padding-top: .7rem; }
+.learning-branch > .button { margin-left: auto; }
+.learning-option-grid { margin-top: 1rem; }
+.learning-option-grid label { display: grid; gap: .5rem; }
+.learning-plan-card details { margin-top: .8rem; }
+.learning-plan-card h3, .learning-step-content a { overflow-wrap: anywhere; }
+.node-aside .learning-plan-summary, .node-aside .learning-option-grid { grid-template-columns: 1fr; }
+.node-aside .learning-plan-card { padding: 1rem; }
+@media (max-width: 700px) {
+  .learning-entry-grid, .learning-goal-grid, .learning-plan-summary, .learning-option-grid { grid-template-columns: 1fr; }
+  .learning-entry { padding: 1rem; }
+  .learning-branch > .button { margin-left: 0; }
+}
 
 a { color: var(--accent); text-decoration: none; }
 a:hover { text-decoration: underline; }
@@ -507,6 +555,117 @@ li { margin-bottom: 0.25rem; }
   .start-option { width: 100%; }
 }
 
+/*
+ * 第 5 问：次级学科兴趣（2026-10-11 加）。
+ *
+ * 它是**多选**，且独立于 `.start-questions`（答完前四问后仍留在结论上方），
+ * 因此不能复用 `.start-question`（那一条的语义是「轮到哪一问」）：
+ * 这里没有「当前问题」的概念，只有「选了哪些」。
+ */
+.start-interest {
+  margin: 0.9rem 0 0;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid var(--line);
+  border-radius: 0.9rem;
+  background: rgba(255, 255, 255, 0.72);
+}
+.start-interest .start-option-hint { font-variant-numeric: tabular-nums; }
+.start-interest-note { margin: 0.6rem 0 0; font-size: 0.78rem; color: var(--ink-faint); line-height: 1.55; }
+
+/*
+ * ===== 开始学习页：六条已有方向的对比（2026-10-11 加）=====
+ *
+ * 前缀是 `direction-overview-*`，**故意不叫** `direction-preview-*`：
+ * `DirectionPanel.tsx` 里已经有一个 `.direction-preview`（那一块是「按推荐走的前几步」），
+ * 两者语义不同。共用前缀会让样式互相渗透，而这类错不会报错、只会「看起来有点怪」。
+ *
+ * 卡片用两列网格：六条方向的信息量不小（学科分布 + 数字 + 入口 + 预览），
+ * 单列会让「比较」这件事变成上下滚动找差异。
+ */
+.direction-overview { margin-top: 1.2rem; }
+.direction-overview-head h2 { margin: 0 0 0.25rem; }
+.direction-overview-head p { margin: 0; max-width: 52rem; }
+.direction-overview-order {
+  margin: 0.7rem 0 0.9rem;
+  padding: 0.5rem 0.7rem;
+  border-left: 3px solid var(--accent-line);
+  border-radius: 0.4rem;
+  background: rgba(109, 40, 217, 0.05);
+  font-size: 0.8rem;
+  line-height: 1.6;
+  color: var(--ink-soft);
+}
+.direction-overview-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(19rem, 1fr));
+  gap: 0.8rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.direction-overview-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid var(--line);
+  border-radius: 0.9rem;
+  background: var(--surface);
+}
+/* 与兴趣重合的那几条换成主题色边框：一眼看出「为什么它排前面」。 */
+.direction-overview-card:not([data-match='0']) { border-color: var(--accent-line); }
+.direction-overview-card-head { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: baseline; }
+.direction-overview-card-head h3 { margin: 0; font-size: 1rem; }
+.direction-overview-title { font-weight: 650; }
+.direction-overview-own {
+  padding: 0.05rem 0.45rem;
+  border: 1px solid var(--accent-line);
+  border-radius: 999px;
+  background: var(--accent-wash);
+  color: var(--accent-strong);
+  font-size: 0.74rem;
+}
+.direction-overview-match {
+  padding: 0.05rem 0.45rem;
+  border: 1px solid var(--green-line);
+  border-radius: 999px;
+  background: var(--green-soft);
+  color: var(--green);
+  font-size: 0.74rem;
+}
+.direction-overview-facts { display: flex; flex-wrap: wrap; gap: 0.3rem 1rem; margin: 0; font-size: 0.8rem; color: var(--ink-soft); }
+.direction-overview-fact { display: inline-flex; gap: 0.3rem; align-items: baseline; }
+.direction-overview-fact strong { font-variant-numeric: tabular-nums; color: var(--ink); }
+.direction-overview-slices { display: grid; gap: 0.3rem; margin: 0; padding: 0; list-style: none; }
+.direction-overview-slices li { display: flex; flex-wrap: wrap; gap: 0.45rem; align-items: center; font-size: 0.78rem; }
+.direction-overview-field { min-width: 7rem; color: var(--ink-soft); }
+/* 选过的次级学科加下划线：这是「兴趣参与了排序」在分布上的落点。 */
+.direction-overview-field.is-interest { color: var(--accent-strong); font-weight: 650; text-decoration: underline dotted var(--accent); text-underline-offset: 3px; }
+.direction-overview-bar { flex: 1 1 4rem; height: 6px; min-width: 3rem; background: var(--surface-2); border-radius: 3px; overflow: hidden; }
+.direction-overview-bar i { display: block; height: 100%; background: var(--accent); border-radius: 3px; }
+.direction-overview-count { min-width: 1.6rem; text-align: right; font-variant-numeric: tabular-nums; color: var(--ink); font-weight: 600; }
+.direction-overview-reached { font-size: 0.74rem; color: var(--green); }
+.direction-overview-interfaces { margin: 0; display: flex; flex-wrap: wrap; gap: 0.3rem 0.6rem; align-items: baseline; font-size: 0.76rem; }
+.direction-overview-interface-tag {
+  padding: 0.05rem 0.4rem;
+  border: 1px dashed var(--line-strong);
+  border-radius: 0.4rem;
+  color: var(--ink-faint);
+}
+.direction-overview-interfaces a { color: var(--ink-soft); }
+.direction-overview-entry { margin: 0; display: flex; flex-wrap: wrap; gap: 0.3rem 0.5rem; align-items: baseline; font-size: 0.8rem; }
+.direction-overview-entry-tag { color: var(--ink-faint); }
+.direction-overview-entry .muted { flex: 1 1 100%; font-size: 0.75rem; line-height: 1.5; }
+.direction-overview-steps summary { cursor: pointer; font-size: 0.8rem; color: var(--accent-strong); }
+.direction-overview-steps ol { margin: 0.35rem 0 0; padding-left: 1.2rem; display: grid; gap: 0.15rem; font-size: 0.78rem; }
+.direction-overview-declare, .direction-overview-totals { margin: 0; font-size: 0.74rem; line-height: 1.55; }
+.direction-overview-totals { margin-top: 0.8rem; }
+
+@media (max-width: 860px) {
+  .direction-overview-cards { grid-template-columns: 1fr; }
+  .direction-overview-field { min-width: 0; }
+}
+
 /* ===== 网站维护：来源清单 ===== */
 
 .source-groups {
@@ -772,6 +931,45 @@ li { margin-bottom: 0.25rem; }
  * （实测：内容到文档 5835，页面却撑到 5899）。别的页面照旧——那里正文与页脚之间需要这段留白。
  */
 .workspace.is-home { padding-bottom: 0; }
+/*
+ * ===== 知识网络页：画布占满「除边栏以外的全部空间」（2026-10-12） =====
+ *
+ * 用户报的：「网络视图外面还有一个上下滚动的空间，而除了视图外的信息只有作者和邮箱，
+ * 使得视图操作起来有点别扭」。成因是两件事叠在一起：
+ *   ① 画布高度写死成 `calc(100vh - 150px)`——那个 150 是魔法数，与实际可用空间对不上；
+ *   ② 页脚（只有作者与邮箱）与工作区的 4rem 下内边距把文档撑得比视口高，于是多出一条滚动。
+ *
+ * 现在改成**高度锁死、画布弹性撑满、四周不留框**：外壳正好一屏高，主列 `min-height: 0`
+ * （否则 flex 子项的最小内容高度会把它顶回去），工作区吃掉顶栏之外的全部高度，
+ * 画布 `flex: 1` 填满它。页面本身不再滚动，悬浮框各自滚（它们的 `max-height` 与 `overflow` 不变）。
+ * 页脚在这一页不渲染（见 `Layout.tsx`；与首页同一条理由：画布之外不该有内容）。
+ *
+ * ## 四周不留框（用户第二轮反馈：「还是有边框，把图中红色的边框去掉」）
+ *
+ * 三处线条被去掉，都是**画布之外**的装饰；去掉之后画布真的与顶栏、边栏贴在一起：
+ *   1. `.sidebar` 的右边框；2. `.topbar` 的下边框；3. `.network-stage` 自己的 1px 边框与圆角。
+ * **工作区的四周内边距同时归零**——留着它，画布与顶栏/边栏之间就会空出一条缝，
+ * 那条缝配上任意一条线看起来又像一个框。
+ *
+ * **悬浮框的边框一律不动**：它们浮在画布**上面**，是卡片（HUD、图例、节点列表、推荐加入、
+ * 节点详情、连接类型、可拖动浮窗），不是页面的边界。去掉它们会让人看不出哪些东西可以拖动。
+ *
+ * 只在桌面档生效：窄屏（≤860px）下画布本来就是 `46vh` 的普通卡片、悬浮框竖排、页面照常
+ * 滚动，那一档一行都不改（`@media (max-width: 860px)` 的规则在后面，优先级相同但顺序靠后）。
+ */
+.app-shell.is-network { height: 100vh; overflow: hidden; }
+.app-shell.is-network .main-column { min-height: 0; height: 100%; }
+.app-shell.is-network .topbar { position: static; border-bottom: none; }
+.app-shell.is-network .sidebar { border-right: none; }
+.workspace.is-network {
+  /* 四周内边距归零：画布与顶栏、边栏之间不留缝（缝隙 + 任意一条线看起来就是一个框）。 */
+  padding: 0;
+  /* 顶栏之外的剩余高度全给画布；`max-width: 1500px` 在窄于它的窗口里正好等于 100%，不碍事。 */
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
 .page { display: flex; flex-direction: column; gap: 1.2rem; }
 .section-heading h1 { margin-bottom: 0.3rem; }
 .section-heading p { color: var(--ink-soft); max-width: 70ch; }
@@ -1245,6 +1443,14 @@ label.checkbox { flex-direction: row; align-items: center; gap: 0.4rem; }
 .thumb-tangent-plane { fill: color-mix(in srgb, var(--thumb-secondary) 13%, transparent); stroke: color-mix(in srgb, var(--thumb-secondary) 72%, transparent); stroke-width: 1.3; stroke-dasharray: 5 4; }
 .thumb-dg-integral { font-size: 34px; fill: var(--thumb-secondary); }
 
+/* 点集拓扑：两个相交的开邻域与一个点，右侧网格片表示局部坐标（坐标卡）。 */
+.thumb-top-space { fill: none; stroke: color-mix(in srgb, var(--thumb-primary) 22%, transparent); stroke-width: 1.2; stroke-dasharray: 7 6; }
+.thumb-top-open { fill: color-mix(in srgb, var(--thumb-primary) 9%, transparent); stroke: color-mix(in srgb, var(--thumb-primary) 34%, transparent); stroke-width: 1.4; }
+.thumb-top-open-second { fill: color-mix(in srgb, var(--thumb-secondary) 9%, transparent); stroke: color-mix(in srgb, var(--thumb-secondary) 32%, transparent); }
+.thumb-top-basepoint { fill: none; stroke: color-mix(in srgb, var(--thumb-primary) 52%, transparent); stroke-width: 1.4; stroke-dasharray: 4 4; }
+.thumb-guided-arrow { fill: none; stroke: color-mix(in srgb, var(--thumb-primary) 46%, transparent); stroke-width: 1.6; }
+.thumb-guided-arrow-reverse { stroke: color-mix(in srgb, var(--thumb-secondary) 52%, transparent); }
+
 /* ---- 原型问题：按领域归类 + 卡片充实 ---- */
 .discipline-section { margin-top: 1.4rem; }
 .discipline-head {
@@ -1352,6 +1558,16 @@ label.checkbox { flex-direction: row; align-items: center; gap: 0.4rem; }
 .node-state.is-ready { background: var(--accent-soft); color: var(--accent-strong); border-color: var(--accent-line); }
 .node-state.is-unknown { background: var(--amber-soft); color: var(--amber); border-color: var(--amber-line); }
 .node-state.is-read { background: var(--blue-soft); color: var(--blue); border-color: var(--line); }
+/*
+ * 「含 N 处登记」徽标（2026-10 节点合并）：同一个对象曾在多个案例里各登记一遍，
+ * 合并收口成一个规范节点。徽标与 `.node-state` 同形但不着学习状态的颜色——
+ * 它是**本体结构**的事实，不是学习者的状态，两者不能看起来像同一类信息。
+ */
+.merge-badge {
+  padding: 0.12rem 0.5rem; border-radius: 999px;
+  font-size: 0.72rem; font-weight: 650;
+  background: var(--surface-2); color: var(--ink-soft); border: 1px dashed var(--line-strong);
+}
 .node-pending { color: var(--amber); }
 .node-card[data-state="confirmed"] { border-color: var(--green-line); }
 .node-card[data-state="ready"] { border-color: var(--accent-line); }
@@ -1481,11 +1697,21 @@ label.checkbox { flex-direction: row; align-items: center; gap: 0.4rem; }
 /* ---- 节点网络：整屏画布 + 可拖动悬浮框 ---- */
 .network-stage {
   position: relative;
-  /* 撑满工作区：视口高度减去顶栏与工作区内边距。 */
-  min-height: calc(100vh - 150px);
-  height: calc(100vh - 150px);
-  border: 1px solid var(--line);
-  border-radius: 14px;
+  /*
+   * 桌面端：高度由父级（`.workspace.is-network` 的 flex 列）分配，画布因此真的撑满
+   * 「除边栏以外的全部空间」。
+   *
+   * 为什么不再用 `calc(100vh - 150px)`：那是个魔法数——顶栏高度、工作区内边距、页脚
+   * 任何一处变化都会让它与实际可用空间对不上，多出来的部分就是用户看到的那条滚动。
+   *
+   * **没有边框、没有圆角**（2026-10-12 用户第二轮反馈「还是有边框」）：画布就是这一页的
+   * 边界本身，再描一圈 1px 的线就成了一道框。窄屏仍是 `46vh` 的普通卡片，那一档在
+   * `@media (max-width: 860px)` 里另给 `border: none`（那里本来也不要这个框）。
+   */
+  flex: 1 1 auto;
+  min-height: 0;
+  border: none;
+  border-radius: 0;
   background:
     radial-gradient(circle at 28% 18%, var(--bg-veil-a) 0%, transparent 55%),
     radial-gradient(circle at 78% 82%, var(--bg-veil-b) 0%, transparent 55%),
@@ -1522,6 +1748,16 @@ label.checkbox { flex-direction: row; align-items: center; gap: 0.4rem; }
 }
 .network-edge.growing { animation: network-edge-draw 620ms cubic-bezier(0.33, 0, 0.2, 1) both; }
 
+/* 反向生长（2026-10-15 加）：`<path>` 的起点是新节点时，从**另一端**揭示这条边。
+   dashoffset 从 −L 走到 0 = 先从终点那一头出现、再长回起点，
+   于是新边一律表现为「已经在场的节点长向新节点」，而不是新节点伸手去够。
+   负长度由渲染处写成 `--edge-len-neg`：`calc(-1 * var(--edge-len))` 在 SVG 长度上不如直接给值可靠。 */
+@keyframes network-edge-draw-from-end {
+  from { stroke-dasharray: var(--edge-len) var(--edge-len); stroke-dashoffset: var(--edge-len-neg); }
+  to { stroke-dasharray: var(--edge-len) var(--edge-len); stroke-dashoffset: 0; }
+}
+.network-edge.growing.from-end { animation-name: network-edge-draw-from-end; }
+
 /* 新节点淡入并轻微放大，与边的生长同步。
    注意：缩放必须放在**内层** <g> 上。CSS 的 transform 会覆盖 SVG 的 transform
    属性，若直接给带 translate 的那层加 scale，节点会掉到画布原点——
@@ -1540,7 +1776,7 @@ label.checkbox { flex-direction: row; align-items: center; gap: 0.4rem; }
   .app-shell, .sidebar, .case-card, .case-thumbnail-svg, .nav-label { transition: none; }
   .case-card:hover { transform: none; }
   .case-card:hover .case-thumbnail-svg { transform: none; }
-  .network-edge.growing { animation: none; }
+  .network-edge.growing, .network-edge.growing.from-end { animation: none; }
   .network-node-enter { animation: none; }
 }
 .network-edge.topic, .network-edge.sharedInput, .network-edge.pattern,
@@ -1560,6 +1796,41 @@ label.checkbox { flex-direction: row; align-items: center; gap: 0.4rem; }
   stroke-linejoin: round;
 }
 
+/* Personal annotations have their own hit regions and screen-size labels. */
+.network-edge-hit { pointer-events: stroke; cursor: context-menu; }
+.network-edge-hit:focus-visible { stroke: var(--accent); stroke-opacity: 0.22; outline: none; }
+.network-connection-annotation { pointer-events: none; }
+.network-annotation-leader { stroke: var(--ink-faint); stroke-width: 1; stroke-dasharray: 2 4; opacity: 0.5; }
+.network-connection-annotation foreignObject { overflow: visible; }
+.network-annotation-box { display: grid; gap: 5px; width: 236px; font-size: 12px; line-height: 1.45; }
+.network-scaling-summary { margin: 0; padding: 5px 8px; border-radius: 7px; color: var(--ink); background: var(--surface); border: 1px solid var(--line); box-shadow: 0 1px 5px rgb(0 0 0 / 8%); overflow-wrap: anywhere; }
+.network-note-summary { pointer-events: auto; text-align: left; display: grid; gap: 3px; padding: 6px 8px; width: 100%; min-height: 0; border: 1px solid var(--accent-line); border-radius: 7px; color: var(--ink); background: var(--surface); box-shadow: 0 1px 5px rgb(0 0 0 / 8%); font: inherit; }
+.network-note-summary strong { font-size: 11px; color: var(--accent-strong); }
+.network-note-summary span, .connection-note-summary { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; white-space: pre-wrap; overflow-wrap: anywhere; }
+.connection-menu { position: absolute; z-index: 90; width: min(316px, calc(100vw - 24px)); max-height: min(65vh, 560px); overflow: auto; padding: 12px; background: var(--surface); border: 1px solid var(--line-strong); border-radius: 12px; box-shadow: 0 8px 30px rgb(0 0 0 / 18%); }
+.connection-menu-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.connection-menu section { padding: 10px 0; border-top: 1px solid var(--line); margin-top: 8px; }
+.connection-menu-detail { margin: 4px 0; color: var(--ink-soft); font-size: 0.75rem; overflow-wrap: anywhere; }
+.connection-note { width: 100%; min-width: 0; margin-top: 6px; font-size: 0.82rem; }
+.connection-note summary { cursor: pointer; overflow-wrap: anywhere; }
+.connection-note-summary { margin-top: 4px; color: var(--ink-soft); }
+.connection-note-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.connection-note-actions button { font-size: 0.78rem; padding: 4px 8px; min-height: 28px; }
+.connection-note .markdown { font-size: inherit; }
+.connection-note-dialog { width: min(580px, calc(100vw - 32px)); max-height: calc(100dvh - 48px); overflow: auto; padding: 24px; color: var(--ink); background: var(--surface); border: 1px solid var(--line-strong); border-radius: 14px; box-sizing: border-box; }
+.connection-note-dialog::backdrop { background: rgb(0 0 0 / 30%); }
+.connection-note-dialog h2 { font-size: 1.15rem; margin-top: 0; }
+.connection-note-input { display: grid; gap: 8px; }
+.connection-note-input textarea { box-sizing: border-box; width: 100%; resize: vertical; }
+.connection-note-undo { position: fixed; z-index: 110; right: 24px; bottom: 24px; max-width: calc(100vw - 48px); padding: 12px 16px; background: var(--surface); color: var(--ink); border: 1px solid var(--accent-line); border-radius: 10px; box-shadow: 0 3px 16px rgb(0 0 0 / 15%); }
+.scaling-explanation { width: 100%; min-width: 0; font-size: 0.82rem; }
+.scaling-explanation p { margin: 6px 0; }
+.scaling-explanation table { width: 100%; table-layout: fixed; border-collapse: collapse; }
+.scaling-explanation th, .scaling-explanation td { padding: 5px; text-align: left; vertical-align: top; border: 1px solid var(--line); overflow-wrap: anywhere; }
+.connection-pair-notes { width: 100%; min-width: 0; }
+.pick-connection-notes { overflow: visible; pointer-events: none; }
+.pick-connection-notes .connection-note, .pick-connection-notes .scaling-explanation { padding: 4px 8px; box-sizing: border-box; background: var(--surface); border: 1px solid var(--line); border-radius: 7px; }
+
 /* 关系可视化条款面板 */
 .tier-list, .tier-kinds, .mode-kinds { list-style: none; padding: 0; margin: 0; }
 .tier-list li { border-bottom: 1px dashed var(--line); padding: 0.5rem 0.1rem; }
@@ -1575,8 +1846,42 @@ label.checkbox { flex-direction: row; align-items: center; gap: 0.4rem; }
 .tier-sample-legend { flex: none; overflow: visible; }
 
 /* 缩放控件 */
-.network-zoom { display: flex; align-items: center; gap: 0.3rem; }
+.network-zoom { display: flex; align-items: center; gap: 0.3rem; flex-wrap: wrap; }
 .network-zoom-value { font-family: var(--mono); font-size: 0.78rem; color: var(--ink-faint); min-width: 3.2em; text-align: center; }
+/*
+ * 摆位模式与锚点（2026-10-11 加）。
+ *
+ * 与「重新布局」并排：那个按钮按这里选的东西排卡片，两者不该隔开。
+ * 用原生下拉而不是按钮组：HUD 上已经有十来个控件，再摆两个三选一的按钮组会把顶栏挤到换行；
+ * 下拉的宽度由最长的选项决定，因此**必须给上限并允许省略**——节点标题可以很长，
+ * 一个长标题会把「保存视图」「清空」一起顶到第二行（窄屏更明显）。
+ */
+.network-layout-field { display: flex; align-items: center; gap: 0.25rem; min-width: 0; }
+.network-layout-caption { font-size: 0.78rem; color: var(--ink-faint); white-space: nowrap; }
+.network-layout-select {
+  max-width: 9.5rem;
+  min-width: 0;
+  font-size: 0.78rem;
+  padding: 0.15rem 0.3rem;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+}
+/* 锚点比模式更常需要看清名字：给它宽一点，但仍留上限。 */
+.network-layout-select.network-layout-anchor { max-width: 13rem; }
+.network-layout-select:disabled { opacity: 0.5; }
+/*
+ * 「保留手动摆放」勾选（2026-10-11 追加）：与「重新布局」同一排、紧挨着它。
+ * 只是一个小勾选框 + 六字说明，不加边框——它属于那一排按钮，不该看起来像一块面板。
+ */
+.network-layout-keep { cursor: pointer; }
+.network-layout-keep input { width: 14px; height: 14px; margin: 0; accent-color: var(--accent); }
+.network-layout-keep .network-layout-caption { color: var(--ink-soft); }
+@media (max-width: 860px) {
+  .network-layout-select { max-width: 8rem; }
+  .network-layout-select.network-layout-anchor { max-width: 10rem; }
+}
 .network-hud-sub { display: block; font-size: 0.76rem; color: var(--ink-faint); }
 .legend-hint { margin-left: auto; color: var(--ink-faint); }
 .legend-group { color: var(--ink); font-weight: 600; }
@@ -1589,6 +1894,18 @@ label.checkbox { flex-direction: row; align-items: center; gap: 0.4rem; }
   width: 12px; height: 12px; border-radius: 3px; flex: none;
   border: 1px dashed var(--line-strong); background: transparent;
 }
+/*
+ * 起始节点（2026-10 加）：与线索层同一种排版，但色标是**实心绿圈 + 绿点**——
+ * 它对应的画布标记是「外圈描边 + 实心徽标」，图例必须与画布长得像，
+ * 否则读图例的人认不出画布上那一圈是什么。
+ */
+.legend-starting { color: var(--ink-faint); }
+.legend-starting .starting-swatch {
+  width: 12px; height: 12px; border-radius: 50%; flex: none;
+  border: 2px solid var(--green); background: var(--green-soft);
+}
+/* 「画布上 / 本体里」两个数：后一个是弱化的分母，不抢前一个。 */
+.network-legend-bar .legend-count-total { margin-left: 0.15rem; opacity: 0.7; }
 /*
  * 同一对节点只画一条之后，被合并的条数标在边标签后面（「硬前置 +2」）与 HUD 里。
  * 用弱化的小字，不抢关系名本身的注意力。
@@ -1636,6 +1953,40 @@ label.checkbox { flex-direction: row; align-items: center; gap: 0.4rem; }
  */
 .network-node-thread { fill: none; stroke: var(--line-strong); stroke-width: 1; stroke-dasharray: 3 2.5; }
 .network-node-thread-label { fill: var(--ink-faint); font-family: var(--sans); letter-spacing: 0.02em; }
+/*
+ * 起始节点（2026-10 加）：卡片外一圈强调描边 + 右下角一枚实心徽标。
+ *
+ * 为什么是「外圈 + 徽标」而不是把卡片染色：卡片底色已经被**话题配色**占用
+ * （同话题同色，见 topicAssignment），再染一层会让「它属于哪个话题」读不出来。
+ * 外圈画在卡片轮廓之外 3px，因此与悬停、选中、手动摆放各自改的卡片描边互不覆盖——
+ * 三种状态可以同时成立，读者仍能一眼看出「它是起始节点」。
+ *
+ * 颜色用 --green（确认/可用的语义色），与推荐理由里「起始节点」徽标的 StatusBadge
+ * 同一档（`known`）：它说的就是「按你的确认记录，这里已经可以开始」。
+ */
+.network-node-start-ring {
+  fill: none;
+  stroke: var(--green);
+  stroke-width: 1.6;
+  stroke-opacity: 0.75;
+}
+.network-node.starting-node .network-card-body > rect:first-child { stroke: var(--green-line); }
+.network-node.starting-node .network-node-start-ring { stroke-opacity: 0.9; }
+.network-node-start { fill: var(--green); stroke: none; }
+.network-node-start-label { fill: var(--on-accent); font-family: var(--sans); font-weight: 600; letter-spacing: 0.02em; }
+/*
+ * 下面几条是**必须写的覆盖**：卡片上的通用规则（悬停改描边、选中加发光、手动摆放改虚线）
+ * 都是「`.network-node … rect`」这种选择器，会顺带命中起始节点那一圈，
+ * 于是只悬停一下，绿色的起始圈就变成了紫色实线——那一条标记就白加了。
+ * 覆盖的选择器都比通用规则多一层类，因此稳定压过它们（不靠 !important）。
+ */
+.network-node:hover .network-node-start-ring,
+.network-node.focused .network-node-start-ring {
+  stroke: var(--green);
+  stroke-width: 1.6;
+  filter: none;
+}
+.network-node.placed .network-node-start-ring { stroke-dasharray: none; }
 .network-node rect { transition: stroke 0.15s ease, filter 0.15s ease; }
 .network-node { cursor: pointer; }
 .network-node:hover rect { stroke: var(--accent); stroke-width: 2; }
@@ -1648,20 +1999,30 @@ label.checkbox { flex-direction: row; align-items: center; gap: 0.4rem; }
   from { opacity: 0; transform: scale(0.82); }
   to { opacity: 1; transform: scale(1); }
 }
-/* 箭头生成动画：新边的虚线偏移从「整段未画出」推进到 0，箭头逐段指到新节点。 */
-.network-edge[data-new="true"] { animation: network-edge-draw 0.55s ease-out both; }
-@keyframes network-edge-draw {
-  from { stroke-dashoffset: 64; opacity: 0; }
-  to { stroke-dashoffset: 0; opacity: 0.6; }
-}
-/* 实线关系边没有 dasharray，用透明度表达同样的生成节奏。 */
-.network-edge.relation[data-new="true"] { animation: network-edge-fade 0.5s ease-out both; }
+/*
+ * 新边的生长动画统一走上面的 `.network-edge.growing`（2026-10-15 整理）。
+ *
+ * 这里原本还有第二条同名系统：`.network-edge[data-new="true"]` 跑一条**同名但不同内容**的
+ * `@keyframes network-edge-draw`（固定 dashoffset 64、并把不透明度动画到 0.6），
+ * 而 CSS 的同名 keyframes 是**后者覆盖前者**——于是那条按路径长度算的正经动画被悄悄顶掉，
+ * 「把线画出来」退化成一次淡入，走完还会把这一档本该有的不透明度（0.34–1）压成 0.6。
+ * 两组规则的条件本来就完全相同（`growing` 与 `data-new` 都由 `isNew` 决定），
+ * 因此删掉这一份：新边一律按长度、按方向生长。
+ *
+ * 放缩关系的**渐变带子**是唯一的例外：它是填充形状，没有描边可以走 dashoffset，
+ * 生长只能用透明度表达。终点取**这一条自己的**档位不透明度（渲染处写成 `--edge-opacity`），
+ * 而不是写死一个数：写死会把「环境档 0.34」的边在生长期间照成 1，动画一结束又暗回去。
+ * `pointer-events: none` 是必须的：带子比原来的线宽（一般端 1.6 倍），
+ * 不让它吃掉指针事件的话，卡片之间的空白会多出一片「点不动」的区域。
+ */
+.network-edge-taper { pointer-events: none; }
+.network-edge-taper[data-new="true"] { animation: network-edge-fade 0.5s ease-out both; }
 @keyframes network-edge-fade {
   from { opacity: 0; }
-  to { opacity: 0.85; }
+  to { opacity: var(--edge-opacity, 1); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .network-node.entering, .network-edge[data-new="true"], .network-edge.relation[data-new="true"] { animation: none; }
+  .network-node.entering, .network-edge-taper[data-new="true"] { animation: none; }
 }
 
 .network-hud {
@@ -1856,6 +2217,23 @@ label.checkbox { flex-direction: row; align-items: center; gap: 0.4rem; }
   padding: 0.6rem 0.9rem 0.7rem; z-index: 8;
 }
 .replay-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
+/*
+ * 「多程合一图」的程信息（2026-10-15 加）：标题下面一行写清「这一步属于哪一程」，
+ * 底部再列全这张视图里的各程（当前那一程高亮）。程名从范例数据查，查不到只说第几程。
+ */
+.replay-stage { margin: 0.15rem 0 0; display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; font-size: 0.78rem; }
+.replay-stage-chip {
+  padding: 0.05rem 0.45rem; border-radius: 999px;
+  background: var(--accent-soft); border: 1px solid var(--accent-line); color: var(--accent-deep);
+  font-weight: 600;
+}
+.replay-stage-list { margin: 0.35rem 0 0; display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap; font-size: 0.75rem; }
+.replay-stage-item {
+  display: inline-flex; align-items: center; gap: 0.3rem;
+  padding: 0.05rem 0.45rem; border-radius: 999px;
+  border: 1px solid var(--line); color: var(--ink-soft);
+}
+.replay-stage-item.is-current { border-color: var(--accent-line); background: var(--accent-wash); color: var(--accent-deep); font-weight: 600; }
 .replay-eyebrow { font-size: 0.72rem; color: var(--ink-faint); margin: 0; letter-spacing: 0.04em; }
 .replay-step-title { margin: 0.1rem 0 0; font-size: 0.94rem; line-height: 1.5; }
 .replay-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem; margin: 0.5rem 0 0.35rem; }
@@ -1904,15 +2282,61 @@ label.checkbox { flex-direction: row; align-items: center; gap: 0.4rem; }
 .recommend-group[data-group="method-global"] .recommend-group-head h3 { color: #6d28d9; }
 
 /* 移除提示：可撤销，不用弹窗打断 */
-.network-notice {
-  position: absolute; bottom: 3.2rem; left: 50%; transform: translateX(-50%);
+.network-notice {  position: absolute; bottom: 3.2rem; left: 50%; transform: translateX(-50%);
   background: var(--surface); border: 1px solid var(--line); border-radius: 10px;
   padding: 0.35rem 0.8rem; font-size: 0.82rem; color: var(--ink-soft);
   box-shadow: 0 4px 14px rgba(26, 19, 48, 0.08); z-index: 7;
   display: flex; align-items: center; gap: 0.5rem;
 }
-.detail-edges { list-style: none; padding: 0; margin: 0.4rem 0 0; font-size: 0.84rem; }
-.detail-edges li { display: flex; flex-wrap: wrap; gap: 0.35rem; align-items: baseline; border-bottom: 1px dashed var(--line); padding: 0.35rem 0; }
+.detail-edges { list-style: none; padding: 0; margin: 0.4rem 0 0; font-size: 0.84rem; }.detail-edges li { display: flex; flex-wrap: wrap; gap: 0.35rem; align-items: baseline; border-bottom: 1px dashed var(--line); padding: 0.35rem 0; }
+
+/*
+ * 「已恢复本次学习里的图」提示条（2026-10-13 加）。
+ *
+ * 与 `.network-notice` 同一套外观（同底色、同圆角、同阴影），但它要**长期可点**：
+ * 常驻到点「知道了」，因为旁边的「丢弃暂存，重新开始」是这一页唯一的「从新开始」入口——
+ * 放在会自动消失的提示条里，等于把出口藏起来。
+ *
+ * 位置：**贴底居中、比 `.network-notice` 高 1.8rem**（两条同时出现时叠成两层、错开看得清）。
+ * 第一版写的是「贴顶居中、落在 HUD 之下」，实测压在 HUD 的第三行上——那一行正是
+ * 「节点详情 / 连接类型 / 关系可视化条款」这几个复选框，**看得见点不到**；
+ * 移到底部只与底部图例条同域（z-index 7 压得住），不遮任何可操作控件。
+ */
+.network-draft-notice {
+  position: absolute; bottom: 5rem; left: 50%; transform: translateX(-50%);
+  max-width: min(46rem, 92vw); z-index: 7;
+  background: var(--surface); border: 1px solid var(--line-strong); border-radius: 10px;
+  padding: 0.45rem 0.8rem; font-size: 0.82rem; color: var(--ink-soft);
+  box-shadow: 0 6px 18px rgba(26, 19, 48, 0.14);
+  display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem;
+}
+.network-draft-notice button { flex: 0 0 auto; }
+
+/*
+ * 右键节点菜单（2026-10 加）：一键加入全部硬前置 / 从视图移出。
+ *
+ * 位置由 pointer 在 stage 内的坐标给（`left/top` 由组件写成 px），这里只负责外观。
+ * 它是 HTML 而不是 SVG：要能被 Tab 走、要被读屏念出来、要跟系统字号——SVG 里都得另写一遍。
+ */
+.node-menu {
+  position: absolute; z-index: 12; min-width: 15rem; max-width: 22rem;
+  background: var(--surface); border: 1px solid var(--line-strong); border-radius: 12px;
+  box-shadow: 0 16px 38px -12px rgba(26, 19, 48, 0.38);
+  padding: 0.45rem; display: flex; flex-direction: column; gap: 0.2rem;
+}
+.node-menu-head { display: flex; flex-direction: column; gap: 0.05rem; padding: 0.25rem 0.5rem 0.35rem; border-bottom: 1px dashed var(--line); }
+.node-menu-head strong { font-size: 0.9rem; }
+.node-menu-head .muted { font-size: 0.72rem; }
+.node-menu-item {
+  display: block; width: 100%; text-align: left; border: none; background: none; cursor: pointer;
+  padding: 0.45rem 0.5rem; border-radius: 8px; font-size: 0.86rem; color: var(--ink); font-family: inherit;
+}
+.node-menu-item:hover:not(:disabled), .node-menu-item:focus-visible { background: var(--surface-2); outline: none; }
+.node-menu-item:focus-visible { box-shadow: 0 0 0 2px var(--accent-line); }
+.node-menu-item:disabled { color: var(--ink-faint); cursor: not-allowed; }
+.node-menu-item .muted { font-size: 0.74rem; }
+.node-menu-note { margin: 0 0.5rem 0.25rem; font-size: 0.74rem; color: var(--ink-faint); line-height: 1.5; }
+.node-menu-foot { margin: 0.25rem 0.5rem 0.1rem; font-size: 0.72rem; color: var(--ink-faint); }
 
 .network-filters { display: grid; grid-template-columns: 1fr; gap: 0.4rem; margin-bottom: 0.5rem; }
 .network-node-list { list-style: none; padding: 0; margin: 0.3rem 0 0; }
@@ -1953,6 +2377,30 @@ label.checkbox { flex-direction: row; align-items: center; gap: 0.4rem; }
 .recommend-head { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: baseline; }
 .recommend-title { font-weight: 600; font-size: 0.92rem; }
 .rec-reason { margin: 0; color: var(--ink-soft); font-size: 0.83rem; }
+/*
+ * 起始节点的两条说明（2026-10 加）：
+ * - `.recommend-starting-note`：面板顶部那行口径与计数，比普通 hint 再弱一档；
+ * - `.detail-starting`：节点详情里写出的可读判据（徽标 + 一句话依据）。
+ * 两者都用左绿边标出，与画布上的绿色起始圈、图例里的绿圈同一套读法。
+ */
+.recommend-starting-note {
+  margin: 0.35rem 0 0.6rem;
+  padding-left: 0.55rem;
+  border-left: 3px solid var(--green-line);
+  color: var(--ink-soft);
+}
+.detail-starting {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: baseline;
+  margin: 0.45rem 0;
+  padding-left: 0.55rem;
+  border-left: 3px solid var(--green);
+  color: var(--ink-soft);
+  font-size: 0.85rem;
+  line-height: 1.55;
+}
 
 
 /* 首页案例卡问题行：Markdown 渲染出 h3，去掉默认外边距。 */.case-question .markdown, .case-card .markdown { max-width: none; }
@@ -2023,6 +2471,137 @@ details summary { cursor: pointer; color: var(--ink-faint); font-size: 0.84rem; 
 .profile-list li.selected { border-color: var(--accent); background: var(--accent-soft); }
 .inline-form { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
 .inline-form input, .inline-form select { min-width: 160px; }
+/*
+ * 档案模板（2026-10 加）。
+ *
+ * 模板不是「一个下拉框」：它声明了哪几个背景节点、每条凭什么，都要能就地读到。
+ * 因此预览块用左绿边（与起始节点的绿圈同一套读法——模板的效果就是让起始节点变多），
+ * 逐条依据放在可折叠的 <details> 里：默认不占版面，要核对时展开。
+ */
+.profile-template-picker { display: inline-flex; flex-direction: column; gap: 0.15rem; font-size: 0.8rem; color: var(--ink-soft); }
+.profile-template-preview {
+  margin: 0.7rem 0 0.4rem;
+  padding: 0.6rem 0.7rem;
+  border-left: 3px solid var(--green-line);
+  background: var(--surface-2);
+  border-radius: 0 10px 10px 0;
+}
+.profile-template-preview p { margin: 0.35rem 0; font-size: 0.86rem; line-height: 1.6; }
+.template-declares { list-style: none; padding: 0; margin: 0.3rem 0 0; }
+.template-declares li { display: flex; flex-direction: column; gap: 0.15rem; padding: 0.4rem 0; border-bottom: 1px dashed var(--line); font-size: 0.85rem; }
+.template-declares li:last-child { border-bottom: none; }
+.template-source { margin-top: 0.5rem; }
+/*
+ * 「学习概览」上的一键建档案（2026-10 加）。
+ *
+ * 两个默认模板各自是一张可点的卡片，而不是下拉里的一行字：
+ * 「高一」这三个字本身不说明任何事，卡片上同时给出阶段与声明条数。
+ */
+.no-profile-card { border-left: 3px solid var(--accent-line); }
+.template-quick-list { display: flex; flex-wrap: wrap; gap: 0.6rem; margin: 0.5rem 0 0.2rem; }
+.template-quick {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 0.15rem;
+  flex: 1 1 220px; min-width: 0; text-align: left;
+  padding: 0.6rem 0.75rem; border-radius: 12px;
+}
+.template-quick strong { font-size: 0.98rem; }
+.template-quick span { font-size: 0.8rem; color: var(--ink-soft); font-weight: 400; }
+.template-quick .muted { color: var(--ink-faint); }
+/*
+ * 起始节点列表（「我的学习」概览）：每条一个节点 + 徽标 + 一句话依据。
+ * 与档案模板预览同色，理由是同一件事的两端——模板声明背景，起始节点是它的结果。
+ */
+.starting-card .starting-list { list-style: none; padding: 0; margin: 0.3rem 0; }
+.starting-list li { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: baseline; border-bottom: 1px dashed var(--line); padding: 0.5rem 0; }
+.starting-list li:last-child { border-bottom: none; }
+.starting-list li .muted { flex: 1 1 240px; font-size: 0.83rem; }
+
+/*
+ * 学习方向（2026-10 加）：位置、下一步、完整选项表、路径与核心。
+ *
+ * 版式取舍：这一块是「现在该学什么」的主入口，因此**卡片内部分层**（位置 → 下一步 →
+ * 完整选项 → 路径 → 核心），每一层都有小标题；长列表（选项、路径、核心）用行内列表
+ * 而不是网格，窄屏下自然换行，不需要单独的窄屏规则。
+ */
+.direction-panel { display: flex; flex-direction: column; gap: 0.4rem; }
+.direction-panel h3 { margin-top: 0.9rem; }
+.direction-panel h4 { margin: 0.7rem 0 0.2rem; font-size: 0.95rem; color: var(--ink-soft); }
+.direction-picker { display: flex; flex-direction: column; gap: 0.3rem; }
+.direction-presets, .direction-search-results { list-style: none; padding: 0; display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.direction-presets li, .direction-search-results li { margin: 0; }
+.direction-search { display: flex; flex-direction: column; gap: 0.25rem; max-width: 460px; }
+.direction-search input { padding: 0.35rem 0.5rem; }
+.direction-search-results code, .direction-option-head code { font-size: 0.76rem; color: var(--ink-faint); }
+.direction-focus { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: baseline; margin: 0.4rem 0; }
+.direction-facts { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+.direction-options, .direction-preview, .direction-path, .direction-core, .direction-missing {
+  list-style: none; padding: 0; display: flex; flex-direction: column; gap: 0.5rem;
+}
+.direction-option {
+  border: 1px solid var(--line); border-radius: 10px; padding: 0.55rem 0.7rem;
+  background: var(--surface-2); display: flex; flex-direction: column; gap: 0.3rem;
+}
+/* 推荐那一条：左侧色带 + 更实的边框，与「已加入 / 当前选中」的强调 token 同源。 */
+.direction-option.recommended { border-color: var(--accent); box-shadow: var(--emphasis-glow, none); border-left: 3px solid var(--accent); }
+.direction-option-head { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: baseline; }
+.direction-option-tags { display: flex; flex-wrap: wrap; gap: 0.3rem; margin: 0; }
+.direction-basis { margin: 0; font-size: 0.85rem; color: var(--ink-soft); }
+.badge-core { background: var(--accent-soft); color: var(--accent-strong); border-color: var(--accent); }
+.badge-recommended { background: var(--green-soft); color: var(--green); border-color: var(--green-line); }
+.badge-unlock { background: var(--surface-2); color: var(--ink-soft); border-color: var(--line); }
+.direction-path li, .direction-preview li, .direction-missing li { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: baseline; }
+.direction-path li[data-status="stale"] { opacity: 0.75; }
+.direction-path li[data-status="stale"] .badge { background: var(--amber-soft); color: var(--amber); border-color: var(--amber-line); }
+.direction-path li[data-status="confirmed"] .badge { background: var(--green-soft); color: var(--green); border-color: var(--green-line); }
+.direction-core-level { font-size: 0.78rem; color: var(--ink-faint); min-width: 6.5rem; }
+.direction-core > li { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: baseline; border-top: 1px dashed var(--line); padding-top: 0.4rem; }
+.direction-preview li .muted, .direction-path li .muted { font-size: 0.8rem; }
+.direction-next-inline { display: flex; flex-direction: column; gap: 0.35rem; align-items: flex-start; }
+.direction-others { margin-top: 0.4rem; }
+.direction-others summary { cursor: pointer; font-size: 0.86rem; color: var(--ink-soft); }
+.plan-direction { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: baseline; }
+.node-direction-next { border-left: 3px solid var(--accent); padding-left: 0.7rem; }
+
+/*
+ * 节点页的「回到网络视图」（2026-10 加）：一行，按钮 + 一句说明。
+ * 说明文字在窄屏下换行，不做截断——它是「能不能回到同一张图」的依据，不能省。
+ */
+.node-return { display: flex; flex-wrap: wrap; gap: 0.5rem 0.8rem; align-items: center; margin: 0.2rem 0 0.6rem; }
+.node-return .muted { font-size: 0.82rem; flex: 1 1 320px; }
+
+/*
+ * 节点页的「AI 生成内容声明」（2026-10-13 加）：一行，标签 + 正文 + 撰写入口。
+ *
+ * 为什么用暖色一档（`--amber-*`）而不是 `.notice` 的主色：`.notice` 在这个项目里
+ * 表示**本次动作的结果**（「已记录一次回看」「载入失败」），会随交互出现又消失；
+ * 这一条是**内容来源与证据状态**的常驻说明，两者混用会让人以为它也是刚刚发生的事。
+ * 暖色在这一版里已经是「这里需要留意」的那一档（`.badge-mid`、`.node-state.is-unknown`、
+ * `.i18n-pending` 同族），语义一致。
+ *
+ * 窄屏换行、不做截断：声明读不全就等于没有。取值全部走既有令牌，深色主题自动跟随。
+ */
+.ai-declaration {
+  display: flex; flex-wrap: wrap; gap: 0.3rem 0.7rem; align-items: baseline;
+  margin: 0 0 0.7rem; padding: 0.55rem 0.85rem; border-radius: 10px;
+  background: var(--amber-soft); border: 1px solid var(--amber-line); color: var(--amber);
+  font-size: 0.86rem;
+}
+.ai-declaration strong { font-size: 0.78rem; letter-spacing: 0.02em; }
+.ai-declaration .link-button { color: var(--amber); text-decoration: underline; text-underline-offset: 2px; }
+
+/*
+ * 检索命中理由（2026-10-12 加）：「全部节点」面板里每条结果标出**命中的是哪个字段**。
+ * 命中摘要的条目必须说出来——它就是「看起来不相关却排在列表里」的那一类，
+ * 不给理由等于让用户猜（甚至以为筛选坏了）。样式与 `.construct` 徽标同一族，只改配色。
+ */
+.search-hit {
+  font-size: 0.72rem; padding: 0.1rem 0.45rem; border-radius: 999px;
+  border: 1px solid var(--line); background: var(--surface-2); color: var(--ink-soft);
+}
+.search-hit[data-hit="title"] { border-color: var(--accent-line); background: var(--accent-soft); color: var(--accent-strong); }
+.search-hit[data-hit="alias"] { border-color: var(--green-line); background: var(--green-soft); color: var(--green); }
+.search-hit[data-hit="id"] { border-color: var(--line); color: var(--ink-faint); }
+.search-hit[data-hit="summary"] { border-color: var(--amber-line); background: var(--amber-soft); color: var(--amber); }
 .notes-list article { border-bottom: 1px dashed var(--line); padding: 0.6rem 0; }
 .advanced-actions { margin: 0.6rem 0; }
 .event-payload { display: flex; flex-direction: column; gap: 0.3rem; font-size: 0.86rem; }
@@ -2086,10 +2665,37 @@ details summary { cursor: pointer; color: var(--ink-faint); font-size: 0.84rem; 
   .facts > div, .facts.compact > div, .formal-nested > div { grid-template-columns: minmax(0, 1fr); gap: 0.15rem; }
   .plan-form { grid-template-columns: 1fr; }
   /* 窄屏：拖动不适用，悬浮框改为纵向排列的普通卡片，画布缩到上方 46vh。 */
-  .network-stage { min-height: 0; height: auto; padding: 0 0 0.8rem; background: transparent; border: none; }
+  /*
+   * `flex: 0 0 auto` 必须与 `.network-stage` 写在**同一条规则里**（2026-10-12）。
+   *
+   * 基础规则是 `flex: 1 1 auto`（桌面端靠它撑满工作区）。窄屏下 `.workspace` 仍是 flex 列，
+   * 画布只要还在伸展，就会跟着整列最高的一行（悬浮框竖排后有 700+px）被拉到两千多像素高。
+   * 实测过两次教训：① 只写 `.app-shell.is-network .workspace .network-stage` 不够稳
+   * （那条与基础规则同优先级，谁生效取决于源码顺序）；② 画布被拉到 2287px、视口只有 844px，
+   * 整页高度全由它撑起来。因此这里写在同一条规则里，媒体块在文件后面，顺序上稳赢。
+   */
+  .network-stage {
+    min-height: 0; height: auto; flex: 0 0 auto;
+    padding: 0 0 0.8rem; background: transparent; border: none;
+  }
+  /*
+   * 窄屏下**撤掉整页锁高**（2026-10-12 加）。
+   *
+   * `.app-shell.is-network` 那三行是给桌面用的（画布吃掉顶栏之外的全部高度、页面不滚）。
+   * 窄屏是另一套版式：侧栏变成顶部整块、画布是 46vh 的卡片、悬浮框竖排成普通卡片、
+   * 页面**需要**滚动才能看完。
+   */
+  .app-shell.is-network { height: auto; overflow: visible; }
+  .app-shell.is-network .main-column { height: auto; min-height: 100vh; }
+  .app-shell.is-network .workspace { flex: 0 0 auto; min-height: 0; }
   .network-canvas-full { position: relative; inset: auto; height: 46vh; border: 1px solid var(--line); border-radius: 14px; }
-  .network-hud, .network-unresolved, .network-legend-bar { position: static; margin: 0.5rem 0; }
-  .floating-panel { position: static !important; width: 100%; max-height: none; margin-top: 0.7rem; }
+  /*
+   * 「已恢复」提示条也进这一档（2026-10-13 加）：窄屏的画布是 46vh 的卡片，
+   * 绝对定位的浮层会盖住卡片内容；与 HUD、未解析提示、图例同一条规则——回到文档流里当普通一行。
+   */
+  .network-hud, .network-unresolved, .network-legend-bar, .network-draft-notice { position: static; margin: 0.5rem 0; }
+  .network-draft-notice { max-width: none; transform: none; }
+  .floating-panel { position: static !important; width: 100%; max-height: none; height: fit-content; margin-top: 0.7rem; }
   .floating-panel-head { cursor: default; }
   .network-node-list, .recommend-list { max-height: 360px; overflow: auto; }
 }
@@ -2106,8 +2712,6 @@ details summary { cursor: pointer; color: var(--ink-faint); font-size: 0.84rem; 
  * 事实表沿用站点已有的 .facts 组件，不另造一套键值对样式。
  */
 .example-paths { display: flex; flex-direction: column; gap: 1rem; }
-.example-source { border-left: 3px solid var(--accent-line); }
-.example-source h3 { margin: 0 0 0.5rem; }
 .example-lead { margin: 0 0 0.7rem; color: var(--ink-soft); }
 /* 边界说明：字号与提示同级，但走 Markdown 渲染（里面有加粗与行内代码）。 */
 .example-note { font-size: 0.86rem; color: var(--ink-faint); }
@@ -2116,6 +2720,23 @@ details summary { cursor: pointer; color: var(--ink-faint); font-size: 0.84rem; 
 .example-card { display: flex; flex-direction: column; gap: 0.6rem; border-top: 3px solid var(--accent-line); }
 /* 已载入的那一张用主色描边，让人一眼看出表单里现在装的是哪一程。 */
 .example-card.loaded { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent-line); }
+/* 勾进「多程合一图」的那几张：左边一条主色导轨，与「已载入」区分开（那是两件不同的事）。 */
+.example-card.picked { border-left: 3px solid var(--accent); }
+.example-pick { display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.78rem; color: var(--ink-soft); cursor: pointer; }
+.example-pick input { accent-color: var(--accent); }
+/*
+ * 「多程合一图」那一行（2026-10-15 加）：勾选计数 + 全选/清空 + 送进网络视图的链接。
+ * 它排在每程卡片**之前**：先说要做什么，再逐张挑。
+ */
+.example-combine {
+  border: 1px solid var(--line); border-radius: 12px;
+  background: var(--surface-2); padding: 0.6rem 0.8rem; display: grid; gap: 0.35rem;
+}
+.example-combine-head { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+.example-combine-count { font-size: 0.82rem; font-weight: 650; color: var(--accent-deep); min-width: 5.5em; }
+.example-combine-go { margin-left: auto; }
+.example-combine-hint { margin: 0; font-size: 0.78rem; line-height: 1.6; }
+.example-combine-hint p { display: inline; margin: 0; }
 .example-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.45rem; font-size: 0.78rem; color: var(--ink-faint); }
 .example-ordinal {
   font-weight: 700; color: var(--accent-strong);
@@ -2123,7 +2744,8 @@ details summary { cursor: pointer; color: var(--ink-faint); font-size: 0.84rem; 
 }
 .example-chapters { color: var(--ink-soft); }
 .example-pages { margin-left: auto; }
-.example-card h3 { margin: 0; font-size: 1.05rem; line-height: 1.35; }
+/* 卡片标题是 h5：h2 范例路径 → h3 学科 → h4 教材 → h5 这一程（层级与分组一致）。 */
+.example-card h5 { margin: 0; font-size: 1.05rem; line-height: 1.35; font-weight: 600; }
 .example-feature { font-size: 0.92rem; color: var(--ink-soft); }
 .example-feature p { margin: 0; }
 .example-facts { margin: 0; }
@@ -2148,64 +2770,101 @@ details summary { cursor: pointer; color: var(--ink-faint); font-size: 0.84rem; 
 @media (max-width: 860px) {
   /* 窄屏下卡片变单列，元信息不再抢一行：页码换到下一行左对齐。 */
   .example-pages { margin-left: 0; }
+  /*
+   * 窄屏的范例路径（2026-10-13 第二版）。
+   *
+   * 这一栏**排在规划表单之后**（见 `PlanPage` 的 `useMediaQuery`）：手机上第一动作是填目标。
+   * 窄屏没有「悬浮」，因此：学科标题换到按钮上方、简介卡改成整宽（键盘聚焦仍能看到它），
+   * 而真正要看简介的人点开书名即可——展开态里有出处与边界说明。
+   */
+  .example-hub-lead { display: none; }
+  .example-discipline { grid-template-columns: 1fr; }
+  .example-book-intro { width: min(24rem, 92vw); }
+  /* 窄屏的简介卡回到单列（两栏会把每行压得太短）。 */
+  .example-book-intro .example-plan-notes { grid-template-columns: 1fr; }
 }
 
-/* ---- 回放动画的丝质箭头：从刚立住的卡片，绵延到下一阶段的目标 ----
+/* ---- 回放动画的路径箭头：一步一支细线，全部留在画布上 ----
  *
- * 形状不再是一块四边形 + 一个三角，而是一组**渐细的丝带**：根部压在源卡片底下、
- * 中段互相交叠、末端收成箭镞。三条视觉约定：
+ * 2026-10-15 改版：原来的**五股渐细的丝带 + 凹边大箭镞**换成一条细线。
+ * 用户的要求是「把大的飘带状的紫色箭头改成很细的外形」——原因量得出来：
+ * 丝带中段最宽 30 世界单位、箭镞长 26–62，在 54% 的回放比例下实测摊开成
+ * 100–225 × 98–273 屏幕像素的一大团，盖住的正是它本该指出的结构。
  *
- * 1. **浓淡靠渐变，不靠纯色**。填充引用 `#stage-silk-sheen`（页面里按当前帧的
- *    根部/尖端生成的 userSpaceOnUse 渐变），根部近透明、中段最浓、临近箭镞再淡下去；
- *    每股丝的 `fill-opacity` 再按它离主轴的距离递减，交叠处自然叠出深浅——
- *    那就是丝绸的光泽，而不是一块平的紫色。
- * 2. **边缘要软**。整组加一点点模糊，丝带之间才不会像剪纸。
- * 3. **方向靠流动的中央丝线**。虚实相间的短线沿主轴朝箭镞跑，
- *    「往那边去」这件事因此自己动起来，不必再加文字。
+ * 四条视觉约定：
  *
- * 文字不挂在丝带上：实测它总会压到某张卡片。目的地由预告卡片承担，
- * 卡片自带「下一步」徽标与节点名，文字与图形因此永远在一起。
+ * 1. **细，而且屏幕上恒定**。主干 1.6px、箭镞 12px（几何按 `1 / scale` 换算成世界单位），
+ *    因此缩放到任何比例都是同样粗细的一条线，不会细成看不见的头发丝。
+ * 2. **浓淡按新旧排**。走过的步骤留成暗一号的线，最新的一支用主色 + 一层极淡的外发光。
+ *    顺序因此不用读数字就能看出来：「越亮越新」。
+ * 3. **生长**。最新的一支从源头往外**画出来**（`stroke-dashoffset` 由整段长度走到 0），
+ *    同时一道短高光沿主干跑向箭尖（`.stage-arrow-flow`），接上「延伸」的手感；
+ *    箭镞在主线画到之后才落下去，读起来是「线先长过去，箭头才立住」。
+ * 4. **步号徽标**。每一步的线中点挂一枚小圆牌，写明这是第几步；
+ *    它在屏幕上恒定大小（几何那边已经按比例换算），缩小时不会变成一块牌子。
  *
- * 为什么颜色写 var() 而不是 THEME：这些规则由 CSS 选择器命中，
- * 走的是样式表；SVG 的 `fill=` / `stroke=` 属性不接受 var()。
+ * 颜色写 var() 而不是 THEME：这些规则由 CSS 选择器命中，走的是样式表；
+ * SVG 的 `fill=` / `stroke=` 属性不接受 var()。
  */
-.stage-silk {
-  pointer-events: none;
-  /* 边缘柔化 + 一层极淡的外发光，让丝在密集的连线里也能被一眼拣出来。 */
-  filter: blur(0.35px) drop-shadow(0 0 5px var(--accent-glow));
-  animation: stage-silk-in 460ms ease-out both;
-}
-.stage-silk-strand {
-  fill: url(#stage-silk-sheen);
-  stroke: var(--accent);
-  stroke-opacity: 0.14;
-  stroke-width: 0.7;
-  animation: stage-silk-drift 4200ms ease-in-out infinite;
-}
-/* 相邻两股反向缓慢起伏：静态时是丝的层次，动起来是丝在飘。 */
-.stage-silk-strand:nth-child(even) { animation-delay: -2100ms; }
-.stage-silk-flow {
+.stage-arrow-trail { pointer-events: none; }
+.stage-arrow { animation: stage-arrow-in 320ms ease-out both; }
+.stage-arrow-line {
   fill: none;
   stroke: var(--accent);
-  stroke-opacity: 0.62;
-  stroke-width: 2.6;
+  /* 走过的步骤暗一号：顺序靠浓淡读出来，不必逐个读数字。 */
+  stroke-opacity: 0.42;
   stroke-linecap: round;
-  /* 虚实相间的短线沿主轴跑：dashoffset 递减 = 花纹朝箭镞去。 */
-  stroke-dasharray: 9 13;
-  animation: stage-silk-flow 900ms linear infinite;
 }
-.stage-silk-head {
+.stage-arrow-head {
   fill: var(--accent);
-  fill-opacity: 0.62;
-  stroke: var(--accent);
-  stroke-opacity: 0.75;
-  stroke-width: 1.2;
-  stroke-linejoin: round;
+  fill-opacity: 0.42;
 }
+/* 正在生长的那一支：主色、更实，并带一层极淡的外发光，从一串暗线里拣得出来。 */
+.stage-arrow.is-current .stage-arrow-line {
+  stroke-opacity: 0.95;
+  filter: drop-shadow(0 0 4px var(--accent-glow));
+  animation: stage-arrow-grow 720ms cubic-bezier(0.33, 0, 0.2, 1) both;
+}
+.stage-arrow.is-current .stage-arrow-head {
+  fill-opacity: 0.95;
+  animation: stage-arrow-head-in 240ms cubic-bezier(0.2, 0.9, 0.25, 1) 460ms both;
+}
+/* 预告的那一支（目标还没出现）：虚线，与「已经走过的实线」一眼分开。 */
+.stage-arrow.is-preview .stage-arrow-line {
+  stroke-dasharray: 7 5;
+  stroke-opacity: 0.75;
+}
+/*
+ * 流动高光：短虚线沿主干朝箭尖跑。
+ * 位移用 dashoffset 而不是 transform——后者会被相机分组的变换叠加，缩放后流速忽快忽慢。
+ */
+.stage-arrow-flow {
+  fill: none;
+  stroke: var(--on-accent);
+  stroke-opacity: 0.9;
+  stroke-linecap: round;
+  stroke-dasharray: 6 40;
+  animation: stage-arrow-flow 1200ms linear infinite;
+}
+.stage-arrow-badge { pointer-events: auto; }
+.stage-arrow-badge circle {
+  fill: var(--accent);
+  fill-opacity: 0.92;
+  stroke: var(--on-accent);
+  stroke-opacity: 0.85;
+  stroke-width: 1;
+}
+.stage-arrow-badge text { fill: var(--on-accent); font-family: var(--sans); font-weight: 650; }
+.stage-arrow.is-preview .stage-arrow-badge circle { fill: var(--accent); fill-opacity: 0.62; }
+/*
+ * 多程合一图：每一程的**第一支**箭头，在中点画一圈环，一眼看得出程是从哪儿断开的
+ * （步号本身只说明顺序，不说明「换了一程」）。它不挂在徽标里——徽标会被碰撞消隐。
+ */
+.stage-arrow-stage-mark circle { fill: none; stroke: var(--accent); stroke-opacity: 0.5; stroke-width: 1.4; }
 
 /* 目的地预告卡片：与真卡片同样的底与字号，外加一枚「下一步」徽标。
    第一版做成淡虚线小卡，实测看的人读不出那是谁。 */
-.network-stage-target { pointer-events: none; animation: stage-silk-in 460ms ease-out both; }
+.network-stage-target { pointer-events: none; animation: stage-arrow-in 460ms ease-out both; }
 .network-stage-target > rect {
   fill: var(--canvas);
   fill-opacity: 0.94;
@@ -2219,22 +2878,16 @@ details summary { cursor: pointer; color: var(--ink-faint); font-size: 0.84rem; 
 .network-stage-target-badge text { fill: var(--on-accent); font-weight: 600; letter-spacing: 0.06em; }
 .network-stage-target-title { fill: var(--ink); font-weight: 600; }
 
-/* 丝带根部的那张源卡片：一圈主色高亮，让「箭头从哪儿来」一眼可见。 */
-.network-node.silk-source > rect {
+/* 当前这一支箭头的源头卡片：一圈主色高亮，让「这一步从哪儿来」一眼可见。 */
+.network-node.path-source .network-card-body > rect {
   stroke: var(--accent);
   stroke-width: 2.2;
   filter: drop-shadow(0 0 5px var(--accent-glow));
 }
 
-@keyframes stage-silk-in {
+@keyframes stage-arrow-in {
   from { opacity: 0; }
   to { opacity: 1; }
-}
-
-/* 极缓慢的浓淡起伏：不改变几何，只让丝看起来是「活的」。 */
-@keyframes stage-silk-drift {
-  0%, 100% { fill-opacity: 1; }
-  50% { fill-opacity: 0.72; }
 }
 
 @keyframes stage-target-pulse {
@@ -2242,15 +2895,29 @@ details summary { cursor: pointer; color: var(--ink-faint); font-size: 0.84rem; 
   50% { stroke-opacity: 0.42; }
 }
 
+/* 生长：整条主干从「一段都没画出来」走到全画出来。 */
+@keyframes stage-arrow-grow {
+  from { stroke-dasharray: var(--arrow-len) var(--arrow-len); stroke-dashoffset: var(--arrow-len); }
+  to { stroke-dasharray: var(--arrow-len) var(--arrow-len); stroke-dashoffset: 0; }
+}
+
+/* 箭镞比主干晚一步落下：线先长过去，箭头才立住。 */
+@keyframes stage-arrow-head-in {
+  from { opacity: 0; transform: scale(0.4); }
+  to { opacity: 1; transform: scale(1); }
+}
+.stage-arrow.is-current .stage-arrow-head { transform-box: fill-box; transform-origin: center; }
+
 /* 位移用 dashoffset 而不是 transform：后者会被相机分组的变换叠加，缩放后流速忽快忽慢。 */
-@keyframes stage-silk-flow {
-  from { stroke-dashoffset: 22; }
+@keyframes stage-arrow-flow {
+  from { stroke-dashoffset: 46; }
   to { stroke-dashoffset: 0; }
 }
 
-/* 尊重系统设置：关掉动效时保留丝带本身，只停掉流动、飘动、呼吸与淡入。 */
+/* 尊重系统设置：关掉动效时保留箭头本身，只停掉生长、流动、呼吸与淡入。 */
 @media (prefers-reduced-motion: reduce) {
-  .stage-silk, .stage-silk-strand, .stage-silk-flow, .network-stage-target, .network-stage-target > rect {
+  .stage-arrow, .stage-arrow.is-current .stage-arrow-line, .stage-arrow.is-current .stage-arrow-head,
+  .stage-arrow-flow, .network-stage-target, .network-stage-target > rect {
     animation: none;
   }
 }
@@ -2349,8 +3016,203 @@ button, .button { min-height: 40px; }
   padding: 0.55rem 0.75rem; margin: 0 0 0.3rem; background: var(--accent-soft); border-radius: 10px;
 }
 .chosen-goal code { background: rgba(255, 255, 255, 0.7); }
-.example-picker { margin-top: 1.1rem; }
-.example-picker > summary { cursor: pointer; font-weight: 600; color: var(--accent-strong); }
+/*
+ * 范例路径（2026-10-13 第二版：压缩态 → 悬浮简介 → 点击展开）。
+ *
+ * 用户的要求是「这一栏太臃肿，改成压缩态、按学科选书、悬浮看简介、点击展开具体路径」。
+ * 因此这里的结构是**一栏三层**，默认只占几行：
+ * - `.example-hub`：整栏（左边一条主色竖带），头部只有徽标 + 标题 + 规模 + 两行说明；
+ * - `.example-book-groups`：按学科分组（`.example-discipline`），每组一行书名按钮（`.example-book`）；
+ * - `.example-book-intro`：**悬浮或键盘聚焦**才出现的路径简介（绝对定位、`pointer-events: none`）；
+ * - `.example-book-paths`：点开的那一本，就地展开七程卡片（复用既有的 `.example-grid` / `.example-card`）。
+ */
+.example-hub { border-left: 4px solid var(--accent); scroll-margin-top: 5rem; }
+.example-hub-head { display: flex; flex-direction: column; gap: 0.3rem; }
+/* 徽标、标题、规模排成一行，压缩态下不各占一行。 */
+.example-hub-title { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.5rem 0.6rem; }
+.example-hub-title h2 { margin: 0; }
+.example-hub-badge {
+  margin: 0; align-self: center;
+  font-size: 0.74rem; font-weight: 700; letter-spacing: 0.03em;
+  color: var(--accent-strong); background: var(--accent-soft);
+  border-radius: 999px; padding: 0.1rem 0.55rem;
+}
+.example-hub-meta { margin: 0; font-size: 0.86rem; color: var(--accent-strong); font-weight: 600; }
+.example-hub-lead { margin: 0; color: var(--ink-soft); font-size: 0.95rem; }
+.example-hub-note { margin: 0; font-size: 0.82rem; color: var(--ink-faint); }
+.example-hub-loading { margin: 0; }
+
+/* 学科分组：组标题一行，组内一行书名按钮。 */
+.example-book-groups { display: flex; flex-direction: column; gap: 0.7rem; margin-top: 0.9rem; }
+.example-discipline {
+  display: grid; grid-template-columns: minmax(7rem, max-content) 1fr; align-items: baseline;
+  gap: 0.3rem 0.9rem; padding-top: 0.6rem; border-top: 1px solid var(--line);
+}
+.example-discipline-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.35rem 0.6rem; margin: 0; font-size: 1rem; }
+.example-discipline-head::before {
+  content: ''; display: inline-block; width: 0.5rem; height: 0.5rem;
+  margin-right: 0.15rem; border-radius: 2px; background: var(--accent);
+}
+.example-discipline-meta { font-size: 0.78rem; color: var(--ink-faint); font-weight: 400; }
+
+/* 选书行：书名按钮（展开七程）+ 「整条路径」（一键导入，不用先展开）。 */
+.example-book-row { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+/* 悬浮卡锚在这一行上：鼠标进到任一个按钮或卡片里，简介都不闪断。 */
+.example-book-wrap { position: relative; display: flex; align-items: stretch; gap: 0.35rem; }
+.example-book {
+  display: flex; flex-direction: column; gap: 0.1rem; align-items: flex-start;
+  font: inherit; text-align: left; cursor: pointer; color: inherit;
+  border: 1px solid var(--line); background: var(--surface-2);
+  border-radius: 0.6rem; padding: 0.4rem 0.75rem;
+  transition: border-color 120ms ease, background 120ms ease;
+}
+/* 形态上与书名按钮分开：虚线框 + 浅底，一眼看出它是「导入」而不是「展开」。 */
+.example-book-import {
+  font: inherit; font-size: 0.8rem; cursor: pointer; color: var(--accent-strong);
+  border: 1px dashed var(--accent-line); background: var(--accent-wash);
+  border-radius: 0.55rem; padding: 0.3rem 0.6rem; white-space: nowrap;
+  transition: border-color 120ms ease, background 120ms ease;
+}
+.example-book-import:hover, .example-book-import:focus-visible {
+  border-style: solid; border-color: var(--accent); background: var(--accent-soft);
+}
+.example-book:hover, .example-book:focus-visible { border-color: var(--accent-line); background: var(--accent-soft); }
+.example-book[aria-expanded='true'] { border-color: var(--accent); background: var(--accent-soft); }
+.example-book-name { font-weight: 700; color: var(--ink); }
+.example-book-meta { font-size: 0.78rem; color: var(--ink-faint); }
+.example-book-action { font-size: 0.78rem; color: var(--accent-strong); }
+.example-book-wrap.open .example-book-action { color: var(--ink-faint); }
+
+/*
+ * 路径简介 + 「这条路径的取舍」：**悬浮书名或键盘聚焦**时出现。
+ *
+ * 五条讲究（前四条是 2026-10-13 第二版，第五条是加「利弊」之后补的）：
+ * 1. 绝对定位在按钮下方、限宽限高，窄屏不撑破页面；
+ * 2. `z-index` 抬到卡片之上，但不遮住按钮本身（从按钮下方 100% 处开始）；
+ * 3. `pointer-events: none`——**它绝不能吃掉点击**：卡片比一行书高得多，会盖住下面那几本；
+ *    若让它接指针，鼠标想点下面那本书时会先落在卡片上，卡片不关、书也点不着
+ *    （真浏览器验收里就是这么红的：`intercepts pointer events`）。
+ * 4. 因此内容必须**压紧**：正文字号 0.82rem、行距紧凑、卡片放宽到 44rem，
+ *    并把「特色 / 优点」排成两栏、「代价与局限」整行（见下面的网格）——
+ *    九条利弊 + 导语实测 ≈ 480px，在 800px 高的窗口里整块显示（限高 80vh）。
+ *    窄屏回到单列、限宽 92vw（见下面 860px 那一段）。
+ * 5. 键盘用户走 `:focus-within`，看到的是同一张卡。
+ */
+.example-book-intro {
+  display: none;
+  position: absolute; top: calc(100% + 0.35rem); left: 0; z-index: 6;
+  width: min(44rem, 82vw); max-height: 80vh; overflow: hidden;
+  pointer-events: none;
+  padding: 0.65rem 0.8rem;
+  background: var(--surface); border: 1px solid var(--accent-line); border-radius: 0.7rem;
+  box-shadow: 0 12px 30px rgba(20, 16, 40, 0.16);
+  font-size: 0.84rem; color: var(--ink-soft);
+}
+.example-book-wrap:hover .example-book-intro,
+.example-book-wrap:focus-within .example-book-intro { display: block; }
+.example-book-intro-title { margin: 0 0 0.35rem; font-weight: 700; color: var(--ink); }
+/*
+ * 悬浮卡里的导语**限三行**：完整导语在展开态里给（触屏用户本来就只有展开态）。
+ * 这样卡片总高实测 ≈ 560px，700px 高的窗口也能整块显示。
+ */
+.example-book-intro-lead {
+  margin: 0 0 0.4rem;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.example-book-intro-tally { margin: 0 0 0.3rem; font-size: 0.8rem; color: var(--ink-faint); }
+.example-book-intro-scale { margin: 0; font-size: 0.8rem; color: var(--ink-soft); }
+.example-book-intro-hint { margin: 0.4rem 0 0; font-size: 0.76rem; color: var(--ink-faint); }
+
+/*
+ * 「这样规划的利弊」：特色 / 优点 / 代价（2026-10-13 加）。
+ *
+ * 悬浮卡与展开态共用同一块，因此样式跟着内容走、不跟容器走：三条各占一个小节，
+ * 左侧一条色带区分性质（特色=主色、优点=teal、代价=amber）。
+ * 每条要走 Markdown（文案里有 `**强调**`），所以 `li > p` 要收成行内、不留段间距。
+ */
+.example-plan-notes { display: flex; flex-direction: column; gap: 0.3rem; margin-top: 0.35rem; }
+.example-plan-notes-lead { margin: 0; font-size: 0.76rem; color: var(--ink-faint); }
+.example-plan-note {
+  border-left: 3px solid var(--accent-line); padding-left: 0.5rem;
+}
+.example-plan-note-signature { border-left-color: var(--accent); }
+.example-plan-note-merits { border-left-color: var(--teal); }
+.example-plan-note-limits { border-left-color: var(--amber); }
+.example-plan-note-title { margin: 0; font-size: 0.78rem; font-weight: 700; color: var(--ink); }
+.example-plan-note-signature .example-plan-note-title { color: var(--accent-strong); }
+.example-plan-note-merits .example-plan-note-title { color: var(--teal); }
+.example-plan-note-limits .example-plan-note-title { color: var(--amber); }
+.example-plan-note ul { margin: 0.1rem 0 0; padding-left: 0.95rem; display: flex; flex-direction: column; gap: 0.1rem; }
+.example-plan-note li { font-size: 0.82rem; line-height: 1.4; color: var(--ink-soft); }
+/* Markdown 渲染会在 li 里套一层 <p>：收成行内，否则每条都多出一段行距。 */
+.example-plan-note li > p { margin: 0; display: inline; }
+.example-plan-card { margin: 0; }
+/*
+ * 悬浮卡里「特色 / 优点」并排、「代价与局限」整行：这一块默认要压在 80vh 以内，
+ * 三块竖排会顶到 710px（实测），两栏之后约 480px。展开态里保持单列，读起来更顺。
+ */
+.example-book-intro .example-plan-notes { display: grid; grid-template-columns: 1fr 1fr; gap: 0.3rem 0.7rem; }
+.example-book-intro .example-plan-notes-lead { grid-column: 1 / -1; }
+.example-book-intro .example-plan-note-limits { grid-column: 1 / -1; }
+
+/* 点开的那一本：标题行 + 七程卡片。 */
+.example-book-paths { margin-top: 0.9rem; padding-top: 0.8rem; border-top: 2px solid var(--accent-line); display: flex; flex-direction: column; gap: 0.8rem; }
+.example-book-paths-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 0.5rem; }
+.example-book-paths-head h3 { margin: 0; font-size: 1.05rem; }
+.example-book-paths-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem; }
+.example-book-paths-hint { margin: -0.4rem 0 0; font-size: 0.82rem; }
+
+/*
+ * 「整条路径」进度轨（2026-10-13 加）：一键导入之后挂在规划表单下面。
+ * 三态一眼分得开：当前（主色）、本次已载入（描边）、未开始（灰）。
+ */
+.example-walk { border-left: 4px solid var(--accent); }
+.example-walk-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 0.5rem; }
+.example-walk-head h2 { margin: 0; }
+.example-walk-stages { list-style: none; margin: 0.6rem 0 0; padding: 0; display: flex; flex-direction: column; gap: 0.3rem; }
+.example-walk-stage {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: baseline; gap: 0.3rem 0.8rem;
+  padding: 0.35rem 0.55rem; border: 1px solid var(--line); border-radius: 0.5rem; background: var(--surface-2);
+}
+.example-walk-stage.current { border-color: var(--accent); background: var(--accent-soft); }
+.example-walk-stage.visited { border-color: var(--accent-line); }
+.example-walk-stage.todo { opacity: 0.72; }
+.example-walk-stage .link-button { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.45rem; text-align: left; }
+.example-walk-ordinal { font-weight: 700; color: var(--accent-strong); }
+.example-walk-title { color: var(--ink); }
+.example-walk-meta { font-size: 0.78rem; color: var(--ink-faint); }
+.example-walk-state { font-size: 0.76rem; color: var(--ink-faint); white-space: nowrap; }
+.example-walk-state.current { color: var(--accent-strong); font-weight: 700; }
+.example-walk-state.visited { color: var(--ink-soft); }
+.example-walk-done { font-size: 0.86rem; color: var(--teal); font-weight: 600; }
+
+@media (max-width: 860px) {
+  /* 窄屏：进度轨的元信息换行到标题下面，三列收成一列。 */
+  .example-walk-stage { grid-template-columns: 1fr; }
+}
+.example-source { border-left: 3px solid var(--accent-line); }
+.example-source h4 { margin: 0 0 0.5rem; }
+/*
+ * 无目标模式的结果：可学前沿（2026-10-13）。
+ *
+ * 它取代了「③ 比较路线」的位置：没有目标就没有路线可比，页面如实换一张卡，
+ * 而不是硬给一个空目标的 400。列表与方向面板同源（`deriveDirection` 的选项表），
+ * 因此沿用 `.badge-recommended` / `.badge-unlock` 两个既有徽标。
+ */
+.plan-frontier { border-left: 4px solid var(--accent); }
+.plan-goal-optional { margin: 0.2rem 0 0; font-size: 0.86rem; }
+.frontier-options { list-style: none; margin: 0.6rem 0 0; padding: 0; display: flex; flex-direction: column; gap: 0.5rem; }
+.frontier-option { border: 1px solid var(--line); border-radius: 0.6rem; padding: 0.5rem 0.7rem; background: var(--surface-2); }
+.frontier-option.recommended { border-color: var(--accent); border-left: 3px solid var(--accent); background: var(--accent-wash); }
+.frontier-option-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.45rem; }
+.frontier-option-head a { font-weight: 700; }
+.frontier-option-head code { font-size: 0.78rem; color: var(--ink-faint); background: transparent; }
+.frontier-basis { margin: 0.3rem 0 0; font-size: 0.84rem; color: var(--ink-soft); }
+.frontier-option .card-actions { margin-top: 0.45rem; }
+
+/* 规划路径的步骤条：第 1 步是可选的了。 */
+.step-rail li.optional span { background: var(--surface); border: 1px dashed var(--accent-line); color: var(--accent-strong); }
+
 .empty-state { border-left: 3px solid var(--amber); }
 .empty-state ul { margin: 0.4rem 0 0; }
 .empty-state li { margin-bottom: 0.4rem; }
@@ -4536,6 +5398,23 @@ select, input, textarea { max-width: 100%; }
 .i18n-pending { background: var(--amber-soft); border-radius: 4px; box-shadow: 0 0 0 2px var(--amber-soft); }
 .i18n-pending-note { display: block; color: var(--amber); font-size: 0.76rem; font-style: normal; margin-top: 0.15rem; }
 
+/* ── 合并登记（同一对象的其它登记，2026-10）──────────────────────────────── */
+.merged-redirect { margin-bottom: 0.6rem; }
+.merged-registrations .merged-rationale { margin: 0.2rem 0 0.6rem; line-height: 1.7; }
+.merged-differences { margin: 0 0 0.9rem; padding: 0.6rem 0.85rem; border-left: 3px solid var(--accent-line); background: var(--surface-2); border-radius: 0 10px 10px 0; }
+.merged-differences h3 { margin: 0 0 0.35rem; font-size: 0.92rem; }
+.merged-differences ul { margin: 0; padding-left: 1.1rem; }
+.merged-differences li { margin: 0.25rem 0; line-height: 1.7; }
+.merged-list { display: flex; flex-direction: column; gap: 0.6rem; }
+.merged-registration { border: 1px solid var(--line); border-radius: 12px; padding: 0.5rem 0.85rem; background: var(--surface); }
+.merged-registration > summary { cursor: pointer; display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: baseline; }
+.merged-registration-title { font-weight: 650; }
+.merged-registration-meta { color: var(--ink-faint); font-size: 0.78rem; }
+.merged-registration-id { font-size: 0.78rem; margin: 0.4rem 0; }
+.merged-registration-id code { font-size: 0.78rem; }
+.merged-boundary { margin: 0.3rem 0 0.6rem; padding-left: 1.1rem; color: var(--ink-soft); font-size: 0.86rem; }
+.merged-boundary li { margin: 0.2rem 0; }
+
 /* ---- 登录页 / 验证页 ---- */
 /* 表单是阅读型内容：不给它铺满 1500px，否则一行字要横跨整个屏幕。 */
 .auth-page .section-heading, .auth-page .card { max-width: 44rem; }
@@ -4558,6 +5437,101 @@ select, input, textarea { max-width: 100%; }
   .topbar-side { gap: 0.4rem; }
   .auth-email { max-width: 12ch; }
 }
+
+/* ==========================================================================
+ * 用户手册（2026-10 加）
+ *
+ * 形状跟着内容走：桌面是「正文 + 右侧吸附目录」，窄屏换成顶部可展开目录
+ * （同一个 `.manual-toc`，由两个容器中的一个显示，见 ManualPage.tsx）。
+ * 章节定位靠 `scroll-margin-top`：吸顶栏高约 4.6rem，留一点呼吸空间——刷新带
+ * `#锚点` 的地址、点目录、切换语言后的定位都落在这里，标题不会被顶栏压住。
+ * 行线用 `--line`（`--line-soft` 在本文件里从未定义过，用了会出现无边框：
+ * 表格与列表的区分全靠它，因此这里不跟那处旧写法）。
+ * ========================================================================== */
+.manual-page { max-width: 66rem; }
+
+.manual-flow { display: flex; flex-wrap: wrap; gap: 0.55rem 0.7rem; list-style: none; margin: 0.45rem 0 0.1rem; padding: 0; }
+.manual-flow li {
+  display: flex; align-items: center; gap: 0.45rem; margin: 0; padding: 0.3rem 0.78rem 0.3rem 0.4rem; font-size: 0.88rem;
+  border: 1px solid var(--accent-line); border-radius: 999px; background: var(--surface-2);
+}
+.manual-flow-index {
+  display: inline-flex; align-items: center; justify-content: center; width: 1.35rem; height: 1.35rem;
+  border-radius: 50%; background: var(--accent-soft); color: var(--accent-strong);
+  font-size: 0.76rem; font-weight: 650;
+}
+
+.manual-functions ul { list-style: none; margin: 0.3rem 0 0; padding: 0; }
+.manual-functions li { padding: 0.42rem 0; border-bottom: 1px solid var(--line); }
+.manual-functions a { font-weight: 620; }
+.manual-function-note { display: block; margin-top: 0.12rem; font-size: 0.82rem; color: var(--ink-faint); line-height: 1.6; }
+
+.manual-layout { display: grid; grid-template-columns: minmax(0, 1fr) 15.5rem; gap: 1.5rem; align-items: start; }
+.manual-main { min-width: 0; display: flex; flex-direction: column; gap: 1.1rem; }
+.manual-aside { position: sticky; top: 5rem; }
+.manual-toc ul { list-style: none; margin: 0.2rem 0 0; padding: 0; }
+.manual-toc li { margin: 0; }
+.manual-toc a {
+  display: block; padding: 0.16rem 0.45rem; border-left: 2px solid transparent;
+  color: var(--ink-soft); font-size: 0.85rem; line-height: 1.5;
+}
+.manual-toc a:hover { color: var(--accent-strong); border-left-color: var(--accent-line); text-decoration: none; }
+.manual-toc-title { margin: 0; font-size: 0.78rem; letter-spacing: 0.06em; color: var(--ink-faint); }
+.manual-toc-details { display: none; }
+.manual-toc-details > summary { cursor: pointer; font-weight: 620; }
+.manual-toc-details .manual-toc { margin-top: 0.5rem; }
+
+@media (max-width: 1000px) {
+  .manual-layout { grid-template-columns: minmax(0, 1fr); }
+  .manual-aside { display: none; }
+  .manual-toc-details { display: block; }
+}
+
+.manual-section { scroll-margin-top: 5.2rem; }
+.manual-label { margin: 0.9rem 0 0.15rem; font-size: 0.76rem; letter-spacing: 0.06em; color: var(--ink-faint); font-weight: 650; }
+.manual-section h2 + .manual-label { margin-top: 0.5rem; }
+.manual-steps { margin: 0.2rem 0; padding-left: 1.3rem; }
+.manual-steps li { line-height: 1.8; margin-bottom: 0.45rem; }
+.manual-steps .button { margin-left: 0.3rem; }
+.manual-links { display: flex; flex-wrap: wrap; gap: 0.45rem; margin: 0.5rem 0 0.2rem; }
+.manual-result { border-left: 3px solid var(--accent); padding-left: 0.7rem; }
+.manual-misreads { margin: 0.25rem 0 0.2rem; padding-left: 1.15rem; }
+.manual-misreads li { line-height: 1.75; margin-bottom: 0.3rem; }
+
+.manual-table-block { margin-top: 0.5rem; }
+.manual-table-wrap { overflow-x: auto; margin-top: 0.35rem; }
+.manual-table { width: 100%; border-collapse: collapse; font-size: 0.86rem; }
+.manual-table th, .manual-table td {
+  text-align: left; vertical-align: top; padding: 0.45rem 0.6rem;
+  border-bottom: 1px solid var(--line); line-height: 1.65;
+}
+.manual-table thead th { font-size: 0.78rem; color: var(--ink-faint); letter-spacing: 0.04em; }
+.manual-table tbody th { font-weight: 620; white-space: nowrap; }
+.manual-gestures td { min-width: 8rem; }
+.manual-evidence td { color: var(--ink-soft); }
+
+.manual-entry-kinds { display: grid; gap: 0.4rem; margin: 0.35rem 0 0; }
+.manual-entry-kinds > div {
+  display: grid; grid-template-columns: 12rem minmax(0, 1fr); gap: 0.6rem;
+  padding-bottom: 0.35rem; border-bottom: 1px solid var(--line);
+}
+.manual-entry-kinds dt { font-weight: 620; }
+.manual-entry-kinds dd { margin: 0; color: var(--ink-soft); line-height: 1.7; }
+@media (max-width: 640px) {
+  .manual-entry-kinds > div { grid-template-columns: minmax(0, 1fr); gap: 0.15rem; }
+}
+
+.manual-advanced-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); gap: 0.7rem; margin-top: 0.5rem; }
+.manual-advanced-card { border: 1px solid var(--line); border-radius: 12px; padding: 0.85rem; }
+.manual-advanced-card h3 { margin: 0 0 0.35rem; font-size: 1rem; }
+.manual-advanced-card p { margin: 0 0 0.4rem; font-size: 0.9rem; line-height: 1.7; }
+.manual-advanced-condition { color: var(--ink-faint); font-size: 0.8rem; }
+.manual-advanced-card .manual-links { margin: 0; }
+
+.manual-faq { display: grid; gap: 0.5rem; margin-top: 0.5rem; }
+.manual-faq-item { border: 1px solid var(--line); border-radius: 12px; padding: 0.65rem 0.9rem; background: var(--surface); }
+.manual-faq-item summary { cursor: pointer; font-weight: 620; }
+.manual-faq-item p { margin: 0.55rem 0 0.15rem; color: var(--ink-soft); line-height: 1.8; }
 
 /* ==========================================================================
  * 触屏设备的滚动降级（2026-10-05，文件末尾：**必须排在 `.topbar` / `.node-toc`
@@ -4617,4 +5591,84 @@ select, input, textarea { max-width: 100%; }
   .home-story-signal-field i { box-shadow: 0 0 5px color-mix(in srgb, var(--act-color) 70%, transparent); }
   .home-story-orbit { box-shadow: none; }
 }
+
+
+
+/* Lean verification: scope first, source code available on demand. */
+.lean-evidence-card { border: 1px solid var(--line, #777); border-radius: 12px; padding: 1rem; margin: 1rem 0; min-width: 0; }
+.lean-evidence-card dl { display: grid; grid-template-columns: minmax(5rem, auto) minmax(0, 1fr); gap: .35rem .8rem; }
+.lean-evidence-card dt { font-weight: 600; }
+.lean-evidence-card dd { margin: 0; overflow-wrap: anywhere; }
+.lean-evidence-card pre { max-height: 24rem; max-width: 100%; overflow: auto; white-space: pre; padding: .75rem; }
+.lean-actions { display: flex; flex-wrap: wrap; gap: .5rem; }
+.lean-hash { overflow-wrap: anywhere; font-family: monospace; }
+.lean-evidence-card summary { cursor: pointer; overflow-wrap: anywhere; }
+@media (max-width: 480px) { .lean-evidence-card dl { grid-template-columns: 1fr; } .lean-evidence-card dd { margin-bottom: .5rem; } }
+
+.lean-correspondence { min-width: 0; }
+.lean-correspondence .markdown { overflow-x: auto; }
+.lean-correspondence code { overflow-wrap: anywhere; }
+/* Field exploration keeps browsing in D and interest/goal changes explicit in E. */
+.field-guide-explorer { margin-top: 1.4rem; }
+.field-guide { margin-top: 1.5rem; }
+.field-guide-columns { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 2rem; align-items: start; }
+.field-guide-prose, .field-guide-network { min-width: 0; }
+.field-guide-prose h4, .field-guide-network > h4 { margin: 1.2rem 0 .5rem; font-size: 1rem; }
+.field-guide-prose .markdown { line-height: 1.85; }
+.field-guide-questions { padding-left: 1.3rem; }
+.field-guide-questions li { margin: .85rem 0; }
+.field-guide-questions .link-button { text-align: left; font-weight: 650; white-space: normal; }
+.field-guide-questions .selected { text-decoration: underline; text-underline-offset: .3em; }
+.field-guide-canvas { display: block; width: 100%; height: auto; min-height: 260px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); }
+.field-guide-node { cursor: pointer; }
+.field-guide-node rect { fill: var(--surface, #fff); stroke: #9989af; stroke-width: 1.5; }
+.field-guide-node.selected rect { stroke: #6d28d9; stroke-width: 3; }
+.field-guide-node.highlighted rect { fill: #fef3c7; stroke: #a16207; stroke-width: 3; }
+.field-guide-node:focus rect { stroke: #2563eb; stroke-width: 4; }
+.field-guide-svg-label { height: 100%; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 16px; line-height: 1.2; color: var(--ink); overflow-wrap: anywhere; }
+.field-guide-node-list { display: flex; flex-wrap: wrap; gap: .4rem; margin: .8rem 0; }
+.field-guide-node-list .highlighted { background: #fef3c7; color: #713f12; border-color: #a16207; }
+.field-guide-selection { padding: 1rem; border: 1px solid var(--line); border-radius: 14px; margin: 1rem 0; }
+.field-guide-selection h4 { margin: 0 0 .5rem; }
+.field-guide-selection .badge { margin-right: .4rem; }
+.field-guide-actions { display: flex; flex-wrap: wrap; gap: .6rem; }
+.field-guide-full-network { margin-bottom: .8rem; }
+.field-guide-evidence li { margin-bottom: 1rem; overflow-wrap: anywhere; }
+.field-guide-evidence p { margin: .3rem 0; }
+.field-guide-back { margin: 1rem 0; }
+@media (max-width: 900px) {
+  .field-guide-columns { grid-template-columns: minmax(0, 1fr); gap: 1rem; }
+  .field-guide-canvas { max-height: 560px; }
+}
+
+/* Private Obsidian libraries */
+.library-toolbar .button { margin: .25rem .4rem .25rem 0; }
+.library-workspace { display: grid; grid-template-columns: minmax(220px, 300px) minmax(0, 1fr); gap: 1rem; align-items: start; }
+.library-index, .library-reader { min-width: 0; }
+.library-index h2 { font-size: 1rem; margin-top: 1.2rem; }
+.library-vault-button, .library-note-button { display: block; width: 100%; text-align: left; background: transparent; color: inherit; border: 1px solid transparent; padding: .65rem; border-radius: .5rem; overflow-wrap: anywhere; cursor: pointer; }
+.library-vault-button small, .library-note-button small { display: block; opacity: .7; font-size: .75rem; }
+.library-vault-button.selected, .library-note-button.selected { background: var(--surface-raised, rgba(100, 140, 200, .12)); border-color: var(--accent, #618aca); }
+.library-note-tree { max-height: 65vh; overflow: auto; margin-top: .7rem; }
+.library-folder > summary { cursor: pointer; padding: .4rem 0; overflow-wrap: anywhere; }
+.library-folder > div { padding-left: .55rem; border-left: 1px solid var(--border, #8885); }
+.library-related li { display: flex; flex-wrap: wrap; align-items: baseline; gap: .65rem; margin: .35rem 0; }
+.library-search { display: block; margin-top: 1rem; }
+.library-search input, .library-related input { display: block; width: 100%; box-sizing: border-box; }
+.library-reader header { border-bottom: 1px solid var(--border, #8885); padding-bottom: 1rem; margin-bottom: 1rem; }
+.library-reader select { margin: .5rem; max-width: 100%; }
+.library-import-files { max-height: 40vh; overflow: auto; border: 1px solid var(--border, #8885); padding: .75rem; margin-bottom: 1rem; }
+.library-file-choice { display: block; margin: .3rem 0 .3rem 1rem; overflow-wrap: anywhere; }
+.library-import summary { padding: .4rem 0; }
+.library-import-files input { margin-right: .35rem; }
+.library-diff, .library-removal { padding: .8rem; border: 1px solid var(--border, #8885); margin: .8rem 0; border-radius: .5rem; }
+.library-related { border-top: 1px solid var(--border, #8885); margin-top: 1.5rem; padding-top: .5rem; }
+.vault-attachment { display: inline-block; max-width: 100%; margin: .5rem 0; }
+.vault-attachment img, .vault-attachment video { display: block; max-width: 100%; max-height: 65vh; }
+.vault-attachment audio { display: block; max-width: 100%; }
+.vault-embed { border-left: 3px solid var(--accent, #618aca); padding: .8rem; margin: 1rem 0; }
+.vault-missing { opacity: .75; text-decoration: underline dotted; }
+.vault-ambiguous .link-button { margin: .25rem; }
+.related-vault-notes .muted { font-size: .85rem; }
+@media (max-width: 800px) { .library-workspace { grid-template-columns: 1fr; } .library-note-tree { max-height: 30vh; } .library-reader .card-actions { flex-wrap: wrap; } }
 

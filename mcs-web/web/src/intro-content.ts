@@ -82,8 +82,7 @@ export const SITE_INTRO_SECTIONS: IntroSection[] = [
     ],
     facts: [
       { label: '硬前置 hardPrereq', value: '权重 1.00', note: '不用它就推不下去' },
-      { label: '硬泛化 hardGeneralization', value: '权重 0.95', note: '一方是另一方的特例；见证多为 PROOF' },
-      { label: '特化 specialization', value: '权重 0.90', note: '硬泛化的反方向，成对登记，不算两条独立断言' },
+      { label: '放缩 scaling', value: '权重 0.95', note: '放与缩共用一个关系族；方向、适用范围与原见证逐条保留' },
       { label: '应用 application', value: '权重 0.72', note: '概念被用到具体对象上' },
       { label: '跨域 crossDomain', value: '权重 0.68', note: '两条理论线之间的接口' },
       { label: '对偶 duality', value: '权重 0.62', note: '两个空间按配对互相确定' },
@@ -161,7 +160,7 @@ export const INTRO_COUNT_LABELS: Record<string, string> = {
 };
 
 export const INTRO_ENTRIES = [
-  { to: '/nodes', label: '按对象读：数学对象', note: '112 个节点，可按案例、学科、构造类型筛' },
+  { to: '/nodes', label: '按对象读：数学对象', note: '可按案例、学科、构造类型筛（节点数见下方规模栏）' },
   { to: '/network', label: '按结构读：组建网络', note: '力导向图，关系按硬度加权；右键可移出节点' },
   { to: '/plan', label: '按路线读：学习路线', note: '给出候选路线与它用的假设' },
   { to: '/lab', label: '按证据读：研究台', note: '覆盖清单、局部化算子与证据重放；给复核用' },
@@ -361,8 +360,7 @@ export const SITE_INTRO_SECTIONS_EN: IntroSection[] = [
     ],
     facts: [
       { label: 'Hard prerequisite hardPrereq', value: 'weight 1.00', note: 'without it the deduction cannot proceed' },
-      { label: 'Hard generalization hardGeneralization', value: 'weight 0.95', note: 'one side is a special case of the other; the witness is usually PROOF' },
-      { label: 'Specialization specialization', value: 'weight 0.90', note: 'the reverse direction of a hard generalization, registered in pairs, not counted as two independent claims' },
+      { label: 'Scaling scaling', value: 'weight 0.95', note: 'expansion and contraction share one relation family; direction, scope and the original witness are retained' },
       { label: 'Application application', value: 'weight 0.72', note: 'a concept is applied to a concrete object' },
       { label: 'Cross-domain crossDomain', value: 'weight 0.68', note: 'an interface between two theoretical lines' },
       { label: 'Duality duality', value: 'weight 0.62', note: 'two spaces determine each other by pairing' },

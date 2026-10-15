@@ -18,12 +18,93 @@ import {
   concept, claim, patternNode, method,
   action, input, output, relation, evidence, support, claimRecord, selfCheck,
 } from '../authoring.mjs';
+import { SEMINAR_NOTES } from '../seminar-notes.mjs';
+/*
+ * 讨论班笔记的硬前置关系：**每个批次一个文件**，在这里汇总。
+ *
+ * 为什么不都写在下面那个 `dgRelations` 数组里：这批要多人分头读源笔记，
+ * 写进同一个数组必然互相覆盖（各批的关系是彼此独立的，没有任何理由共享一个文件）。
+ * 汇总在这里只做一件事——把各批的数组按顺序接起来。
+ */
+import { relations as seminarRiemannian } from '../relations/seminar-riemannian.mjs';
+import { relations as seminarCurvature } from '../relations/seminar-curvature.mjs';
+import { relations as seminarTopologyTheorems } from '../relations/seminar-topology-theorems.mjs';
+import { relations as seminarFoundations } from '../relations/seminar-foundations.mjs';
+import { relations as seminarTopologyCore } from '../relations/seminar-topology-core.mjs';
+import { relations as seminarMapsAndManifolds } from '../relations/seminar-maps-and-manifolds.mjs';
+/* lead 补写的那四条（两个批次交接时各留了一半，见该文件头）。 */
+import { relations as seminarLead } from '../relations/seminar-lead.mjs';
 
 const provenanceNote = '正文为 G:/DifferentialGeometry/object 的只读快照，见 data/dg/；本次只做格式归一化与链接重写，未改动数学内容。';
 const source = (path) => `G:/DifferentialGeometry/object/${path}`;
+/*
+ * 讨论班笔记那批的来源与说明（2026-10-12 修正，踩过）。
+ *
+ * 起初只改了正文（`contentRef`）而没改来源，于是节点页与证据卡上写着
+ * **「G:/DifferentialGeometry/object/def/测地线.md」而正文实际来自 H 盘**——
+ * 站点的来源声明与实际内容不一致，这正是「来源与证据状态要如实」这条纪律要防的事。
+ * 现在按批次分别给出来源与说明：`spec_.seminar` 为真时走 H 盘那条。
+ */
+const seminarProvenanceNote = '正文为 H:/微分几何讨论班/vault/Geometry&Topology 的只读快照，见 data/dg/；本次只做格式归一化与链接重写，未改动数学内容。';
+const seminarSource = (path) => `H:/微分几何讨论班/vault/Geometry&Topology/${path}`;
 
-/** 30 个节点的形成字段。predicate 逐条取自各源文件的定义句。 */
-const spec = [
+/**
+ * 把 `data/seminar-notes.mjs` 的登记表转成 `spec` 能吃的形状。
+ *
+ * 三条规则，缺一条都会在装配期炸掉，因此写在这里而不是留给调用者：
+ * 1. `status: 'skip'` 不成节点（登记表里必须带 `reason`，不是这里静默丢的）；
+ * 2. 缺数学字段的条目暂时跳过（`predicate` 是概念节点的定义句，`formula` 是断言节点的结论）——
+ *    队友边读源笔记边填，任何一刻 `npm run check` 都能跑；
+ * 四类条目在这里分流，**每一类都有明确去向，不静默丢弃**：
+ *
+ * 1. `status: 'skip'`——不成节点（登记表里必须带 `reason`）；
+ * 2. `refreshOnly: true`——**刷新对**：它的 id 就是旧世代那条节点的 id，本批只负责把正文块
+ *    换成新世代（见下面的 `contentRefOverrides`），因此**不进 spec、不新建节点**；
+ * 3. 还缺数学字段的条目——暂时跳过，让队友边读源笔记边填，任何一刻 `npm run check` 都能跑；
+ * 4. 其余——正常登记成 `gt:` 节点。
+ */
+const seminarSpec = SEMINAR_NOTES
+  .filter((note) => note.status !== 'skip' && !note.refreshOnly && note.id && note.contentRef)
+  .filter((note) => Boolean(note.predicate))
+  .map((note) => ({
+    id: note.id,
+    title: note.title,
+    discipline: note.discipline,
+    source: note.source,
+    contentRef: note.contentRef,
+    construct: note.claim ? 'Claim' : undefined,
+    role: note.claim ? 'Theorem' : undefined,
+    objectType: note.objectType,
+    parameters: note.parameters,
+    predicate: note.predicate,
+    boundary: note.boundary ?? [],
+    prereq: note.prereq ?? [],
+    seminar: true,
+  }));
+
+/**
+ * 刷新对：`旧世代节点 id → 新世代正文块名`。
+ *
+ * 用户对这一批的要求是「**并入 dg 案例、正文用 H 版**」，因此做法是**就地把已有节点的内容引用换掉**，
+ * 而不是新建一条登记：节点 id 不变、既有关系与证据不动、站点上也不会出现两个同样的点。
+ * 旧世代的正文块（`data/cases/05-differential-geometry.md` 里那些）**留在仓库里不动**——
+ * 它是这一批的来源记录，删掉就说不清「当前正文是哪一代」。
+ */
+export const contentRefOverrides = new Map(
+  SEMINAR_NOTES
+    .filter((note) => note.refreshOnly && note.id && note.contentRef)
+    .map((note) => [note.id, note.contentRef]),
+);
+
+/** 该批笔记的装配进度，供 doctor / 报告如实显示（不假装全做完）。 */
+export const dgSeminarProgress = {
+  registered: SEMINAR_NOTES.filter((note) => note.status !== 'skip').length,
+  nodes: seminarSpec.length,
+  refreshes: contentRefOverrides.size,
+  skipped: SEMINAR_NOTES.filter((note) => note.status === 'skip').map((note) => note.source),
+};
+
+const baseSpec = [
   {
     id: 'dg:topological-space', title: '拓扑空间', discipline: '拓扑', source: 'def/拓扑空间.md',
     objectType: '集合与开集族', parameters: ['X', 'T'],
@@ -208,7 +289,39 @@ const spec = [
     predicate: '在可缩开集 U 上，若 dω = 0 则存在 η 使 ω = dη',
     boundary: ['只对可缩区域成立；一般的闭形式未必恰当，障碍由 de Rham 上同调度量。'],
   },
-  // 误区模式是独立的 MisconceptionPattern 对象，不混进概念节点的 30 人名单。
+  /*
+   * —— 讨论班笔记（2026-10-12 加）——
+   *
+   * 来源：`H:/微分几何讨论班/vault/Geometry&Topology`（只读快照，见 `data/dg/`）。
+   * 这批笔记与上面 30 个节点来自**同一批源笔记的两代版本**：上面那批取自
+   * `G:/DifferentialGeometry/object`（该盘现已不存在，正文只能继续用当时留下的快照）；
+   * 这一批是模板化之后的更新版，正文更完整（前置知识三层 / 动机 / 形式 / 条件即反例 /
+   * 证明 / 应用 / 推广 / 误解 / 启发 / 总结 / 回看）。
+   *
+   * ## DATA-CONTRACT：这批节点的内容登记在哪
+   *
+   * **不在这个文件里**。27 篇源笔记的 id / 标题 / 来源 / 正文块名 / 学科 / 数学谓词
+   * 登记在 `data/seminar-notes.mjs`（下面 `seminarSpec` 把它并进 `spec`）。
+   * 分开的理由是协作面：这批要多人分头读源笔记，写在一个数组里必然互相覆盖。
+   *
+   * 合并规则（**故意是「宽容 + 显式」而不是「静默丢弃」**）：
+   * a. `status === 'skip'` 的条目（同一主题的第二份笔记、来源无法核实的 AI 生成稿）不成节点；
+   * b. 还没读完的条目（缺 `predicate`、或 Claim 型缺 `formula`）**暂时跳过**——
+   *    这样队友边填边装配，`npm run check` 在任何一刻都能跑；
+   * c. 每个新节点都带一条**硬前置**（`prereq` 字段），来源是源笔记「前置知识 → 必备知识」里
+   *    语料自己引用的概念。这同时让节点不会变成 doctor 摘要里的「完全孤立（缺陷）」。
+   *
+   * ## 与已有登记重合的概念
+   *
+   * 不在这里重复登记会造出两个同样的点。重合的走 `data/merges.mjs` 收成一个规范节点，
+   * 或在 `KEPT_SEPARATE` 里写明为什么不合并——判定依据是**构造类型与粒度是否相同**，
+   * 不是标题像不像。逐条判定见 `SEMINAR_NOTES` 每条的 `keptSeparateFrom` 与 `data/seminar-notes.mjs` 的文件头。
+   *
+   * **新节点不写在这个数组里**：它由下面的 `spec` 合并进来（`[...baseSpec, ...seminarSpec]`）。
+   * 早先把 `...seminarSpec` 直接写在这里，等于同一批节点被并了两次（72 = 34 + 19×2），
+   * 而重复 id 会被装配期的证据检查抓到。
+   */
+  // 误区模式是独立的 MisconceptionPattern 对象，不混进概念节点的名单。
   {
     id: 'dg:pattern-manifold-is-surface', title: '把光滑流形等同于嵌入在 R^N 中的曲面',
     discipline: '微分几何', source: 'def/光滑流形.md', construct: 'MisconceptionPattern',
@@ -248,6 +361,23 @@ const spec = [
 ];
 
 /**
+ * 装配用的 `spec` = 旧世代 30 条（`baseSpec`）+ 讨论班新节点（`seminarSpec`），
+ * 再把**刷新对**的正文引用就地换掉（见 `contentRefOverrides` 的说明）。
+ *
+ * 顺序不能颠倒：先合并两份 spec，再统一改内容引用——否则刷新对会漏掉。
+ */
+const spec = [...baseSpec, ...seminarSpec].map((item) => (
+  contentRefOverrides.has(item.id) ? { ...item, contentRef: contentRefOverrides.get(item.id) } : item
+));
+
+/** 刷新对真的生效了吗：装配后的正文引用与登记表的一致性，供 doctor 如实报告。 */
+export const dgRefreshAudit = [...contentRefOverrides.entries()].map(([id, contentRef]) => ({
+  id,
+  contentRef,
+  applied: spec.some((item) => item.id === id && item.contentRef === contentRef),
+}));
+
+/**
  * 概念节点用 concept()，定理节点用 claim()（形成检查要求 Claim 构造带公式），
  * 误区模式用 patternNode()。三者共用同一份 provenance 与环境边界。
  */
@@ -258,7 +388,10 @@ function buildNode(spec_) {
     summary: spec_.objectType + '：' + spec_.predicate + '。',
     formal: { assumptions: [], boundary: spec_.boundary },
     representations: [],
-    provenance: { sources: [source(spec_.source)], note: provenanceNote },
+    /* 来源按批次给：讨论班那批来自 H 盘，旧世代来自已不存在的 G 盘（见两个常数的说明）。 */
+    provenance: spec_.seminar
+      ? { sources: [seminarSource(spec_.source)], note: seminarProvenanceNote }
+      : { sources: [source(spec_.source)], note: provenanceNote },
   };
 
   if (spec_.construct === 'MisconceptionPattern') {
@@ -290,6 +423,14 @@ function buildNode(spec_) {
   // 不合成 motivation：源笔记正文自带完整的「动机 → 引入动机 / 构造动机」一节，
   // 再放一个指向它的占位条目只会形成重复的噪声。
 
+  /*
+   * 正文块名：默认与节点 id 同名（`dg:foo` → `dg-foo`，早先的 30 个节点都是这么来的）。
+   * 讨论班那批笔记的正文块单独命名（`dg-riemannian-metric` 这样的可读名），
+   * 因此可以逐条用 `spec_.contentRef` 覆盖——**不按 id 改名**：
+   * 改 30 个老节点的正文块名会牵动快照文件名、i18n 覆盖与正文核对，收益为零。
+   */
+  const contentRef = spec_.contentRef ?? spec_.id;
+
   if (spec_.construct === 'Claim') {
     return claim(spec_.id, spec_.title, {
       ...shared,
@@ -298,7 +439,7 @@ function buildNode(spec_) {
       formal: { assumptions: [], boundary: spec_.boundary },
       teaching,
       // 定理节点的正文块与节点 id 同名；显式声明以通过形成检查。
-      contentRef: spec_.id,
+      contentRef,
     });
   }
 
@@ -308,6 +449,7 @@ function buildNode(spec_) {
     parameters: spec_.parameters,
     predicate: spec_.predicate,
     teaching,
+    contentRef,
   });
 }
 
@@ -489,8 +631,8 @@ export const dgMethodActions = [
 
 /** 关系：只登记语料明确断言的包含与特化方向。 */
 export const dgRelations = [
-  relation('rel-dg-manifold-specialization', 'specialization', 'dg:topological-manifold', 'dg:manifold', { witness: { type: 'inverse-of-declared-generalization', status: 'DEF', ref: source('def/流形.md') }, scope: '流形的定义即为「Hausdorff + 局部欧氏」，与拓扑流形在该表述下重合。' }),
-  relation('rel-dg-smooth-manifold-generalization', 'hardGeneralization', 'dg:topological-manifold', 'dg:smooth-manifold', { witness: { type: 'same-carrier-implication', status: 'DEF', ref: source('def/光滑流形.md') }, scope: '光滑流形是拓扑流形再加光滑图册；反过来不成立（同一拓扑流形可以有不兼容的光滑结构）。' }),
+  relation('rel-dg-manifold-specialization', 'scaling', 'dg:topological-manifold', 'dg:manifold', { direction: { general: 'dg:manifold', special: 'dg:topological-manifold', reading: 'expand' }, scalingMode: 'same-carrier', witness: { type: 'inverse-of-declared-generalization', status: 'DEF', ref: source('def/流形.md') }, scope: '流形的定义即为「Hausdorff + 局部欧氏」，与拓扑流形在该表述下重合。' }),
+  relation('rel-dg-smooth-manifold-generalization', 'scaling', 'dg:topological-manifold', 'dg:smooth-manifold', { direction: { general: 'dg:topological-manifold', special: 'dg:smooth-manifold', reading: 'contract' }, scalingMode: 'cross-carrier', witness: { type: 'same-carrier-implication', status: 'DEF', ref: source('def/光滑流形.md') }, scope: '光滑流形是拓扑流形再加光滑图册；反过来不成立（同一拓扑流形可以有不兼容的光滑结构）。' }),
   relation('rel-dg-chart-application', 'application', 'dg:smooth-atlas', 'dg:coordinate-chart', { witness: { type: 'application-description', status: 'DEF', ref: source('def/光滑图册.md') }, task: '图册由坐标图构成，坐标图是图册的成员单位。' }),
   relation('rel-dg-tangent-basis-application', 'application', 'dg:tangent-coordinate-basis', 'dg:tangent-bundle', { witness: { type: 'application-description', status: 'DEF', ref: source('def/切丛.md') }, task: '切丛的局部平凡化用坐标基给出纤维的线性坐标。' }),
   relation('rel-dg-form-application', 'application', 'dg:form-wedge-product', 'dg:differential-form', { witness: { type: 'application-description', status: 'DEF', ref: source('def/微分形式的外积.md') }, task: '外积是微分形式代数上的基本运算。' }),
@@ -510,7 +652,7 @@ export const dgRelations = [
    *
    * 见证一律 `DEF` + `definitional-dependency`：依据是目标节点的定义文本本身，
    * 不冒充证明（这些是定义材料的依赖，不是定理）。scope 写明它出现在定义的哪一处。
-   * 与既有 `specialization` / `hardGeneralization` / `application` 关系**并存**：
+   * 与既有 `scaling` / `application` 关系**并存**：
    * 那几类说「谁更一般」「怎么用」，这里说的是「没有它连定义都写不出来」——两回事。
    */
   relation('rel-dg-pre-top-homeo', 'hardPrereq', 'dg:topological-space', 'dg:homeomorphism', {
@@ -645,6 +787,26 @@ export const dgRelations = [
     witness: { type: 'definitional-dependency', status: 'DEF', scope: '单位分解是 M 上的光滑函数族，且每个 supp g_i 含于某个坐标域 U_α。' },
     scope: '「光滑函数」「坐标域」「紧支集」三个词都要先有光滑流形。',
   }),
+  /*
+   * 讨论班笔记那批的硬前置（2026-10-12 加）。
+   *
+   * 只登记**真的不用它就写不出定义**的那几条——与上面同一把尺子：
+   * 见证一律 `DEF` + `definitional-dependency`，scope 指明它出现在定义文本的哪一处，
+   * 不冒充证明。这一条同时让新节点不再是「完全孤立」（doctor 摘要里的缺陷项）。
+   */
+  relation('rel-dg-pre-smooth-riemannian-metric', 'hardPrereq', 'dg:smooth-manifold', 'gt:riemannian-metric', {
+    witness: { type: 'definitional-dependency', status: 'DEF', scope: '定义第一句就是「设 M 是一个光滑 n 维流形」；g 是 M 上的 (0,2) 型协变张量场，光滑性与切空间 T_pM 都由它给出。' },
+    scope: '没有光滑结构就谈不上「随点光滑变化的双线性型」，也谈不上切空间。',
+  }),
+
+  /* 各批讨论班笔记的硬前置：逐批一个文件，见文件头的 import 段。 */
+  ...seminarRiemannian,
+  ...seminarCurvature,
+  ...seminarTopologyTheorems,
+  ...seminarFoundations,
+  ...seminarTopologyCore,
+  ...seminarMapsAndManifolds,
+  ...seminarLead,
   relation('rel-dg-pre-compact-partition', 'hardPrereq', 'dg:compactness', 'dg:partition-of-unity', {
     witness: { type: 'definitional-dependency', status: 'DEF', scope: '定义要求支集紧致、族局部有限——「紧」与「局部有限」按覆盖的语言表述。' },
     scope: '存在性证明用的正是「紧致的开覆盖有有限子覆盖」这一步。',
@@ -668,7 +830,12 @@ export const dgRelations = [
   }),
 ];
 
-/** 证据：语料是笔记，因此全部为 prose-proof / DEF / REF，不签发机器认证。 */
+/**
+ * 证据：语料是笔记，因此全部为 prose-proof / PROOF / not_run，不签发机器认证。
+ *
+ * 来源同样按批次给（2026-10-12 修）：讨论班那批的证据必须指向 **H 盘**，
+ * 否则证据卡上会写着一个与正文实际来源不符的路径——那是「来源如实」这条纪律的硬伤。
+ */
 export const dgEvidence = [
   ...spec.map((item) => evidence(
     `ev-dg-${item.id.replace(/^dg:/, '')}`,
@@ -677,10 +844,10 @@ export const dgEvidence = [
     'not_run',
     `${item.title}：源笔记的正文证明与推导`,
     {
-      scope: `正文由 ${source(item.source)} 的只读快照提供；本证据只声明「存在正文级论证」，不声明机器核验。`,
+      scope: `正文由 ${item.seminar ? seminarSource(item.source) : source(item.source)} 的只读快照提供；本证据只声明「存在正文级论证」，不声明机器核验。`,
       nodes: [item.id],
       obligations: ['机器编码为第 02 章 ND 证书', '逐条核对定义与定理表述的等价性'],
-      reference: source(item.source),
+      reference: item.seminar ? seminarSource(item.source) : source(item.source),
     },
   )),
   /*

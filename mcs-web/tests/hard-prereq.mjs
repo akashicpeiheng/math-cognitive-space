@@ -19,6 +19,7 @@ const { RELATION_WEIGHT, witnessFactorOf, edgeVisual, assertHierarchyHolds } = a
  *
  * 2026-10 这一轮把两处都补上：
  * - 覆盖扩到 manifold / tensor / group / liang / rudin 五个案例（背景节点可以当前置的来源）；
+ *   2026-10-13 / 10-14 又加进 jiang / top / axler，下面那条循环因此覆盖**全部案例**；
  * - 引入 `witness.type = 'proof-dependency'`：见证状态必须**与所引用的证据一致**，
  *   且那条证据必须同时列出两端节点——「用到哪条定理」因此可核，而不是一句注释。
  *
@@ -39,7 +40,7 @@ test('硬前置关系不再是空的，且已覆盖到五个以上案例', () =>
   assert.ok(hard.length > PREVIOUS_HARD_PREREQ_COUNT, `hardPrereq 仍停在 ${hard.length} 条`);
   assert.ok(hard.length >= MIN_HARD_PREREQ_COUNT, `条数偏少（${hard.length}），核心链应当不止几条`);
   const cases = new Set(hard.map((relation) => relation.to.split(':')[0]));
-  for (const caseId of ['limit', 'dg', 'manifold', 'tensor', 'group', 'liang', 'rudin']) {
+  for (const caseId of ['limit', 'dg', 'manifold', 'tensor', 'group', 'liang', 'rudin', 'jiang', 'top', 'axler']) {
     assert.ok(cases.has(caseId), `${caseId} 案例一条硬前置都没有`);
   }
 });
@@ -52,12 +53,28 @@ test('硬前置的端点都在本体里，且不与自己成环', () => {
   }
 });
 
-test('硬前置只出现在案例内部或「背景 → 案例」之间（不跨案例写前置）', () => {
+test('硬前置只出现在共享登记的节点之间（不跨案例凭空写前置）', () => {
+  /*
+   * 判据（2026-10 随节点合并放宽过一次，理由写在这里）：
+   *
+   * 合并前，每个节点只属于一个案例，因此「同一个 `case` 前缀」就是「同一份课程」的判据。
+   * 合并后，一个规范节点可能同时**登记**在多个案例里（`node.cases`，见 `data/merges.mjs`：
+   * 例如 `top:space` 同时是 top 与 dg / liang 的登记对象）。此时正确的判据是
+   * 「两个端点**共享至少一个登记案例**」——它守住的仍然是原来那条纪律：
+   * 不许在两个互不相干的案例之间凭空长出一条前置。
+   */
+  const casesOf = (id) => {
+    const node = byId.get(id);
+    if (!node) return new Set([id.split(':')[0]]);
+    return new Set(node.cases ?? [node.case]);
+  };
   for (const relation of hard) {
-    const fromCase = relation.from.split(':')[0];
-    const toCase = relation.to.split(':')[0];
-    if (fromCase === 'bg') continue; // 背景节点是共享边界，按设计可以当前置的来源。
-    assert.equal(fromCase, toCase, `${relation.id} 跨案例：${relation.from} → ${relation.to}`);
+    if (relation.from.startsWith('bg:')) continue; // 背景节点是共享边界，按设计可以当前置的来源。
+    const fromCases = casesOf(relation.from);
+    const toCases = casesOf(relation.to);
+    const shared = [...fromCases].filter((caseId) => toCases.has(caseId));
+    assert.ok(shared.length > 0,
+      `${relation.id} 跨案例且没有共享登记：${relation.from}（${[...fromCases]}）→ ${relation.to}（${[...toCases]}）`);
   }
   // 背景只能当来源，不能当目标：目标必须是案例里可独立认知的对象。
   for (const relation of hard) {
@@ -130,7 +147,7 @@ test('证明依赖的 FINITE 见证仍在核心档（证书片段不该被画得
 
 test('见证折扣只对 hardPrereq + DEF 例外，其它种类照旧打折', () => {
   assert.equal(witnessFactorOf('hardPrereq', 'DEF'), 1);
-  assert.ok(witnessFactorOf('hardGeneralization', 'DEF') < 1, '硬泛化的 DEF 见证应当打折');
+  assert.ok(witnessFactorOf('scaling', 'DEF') < 1, '放缩的 DEF 见证应当打折');
   assert.ok(witnessFactorOf('hardPrereq', 'ILLUSTRATION') < 1, '硬前置只登记为示例时应当打折');
 });
 

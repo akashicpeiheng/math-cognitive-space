@@ -15,6 +15,7 @@
  */
 
 import type { PlanEventView, PlanPackageView } from './types';
+import { parseStageSpans, stepStageIndex, type StageSpan } from './example-combined.ts';
 
 /** 路线里的一个事件，翻成动画的一步。 */
 export interface RouteStep {
@@ -31,6 +32,13 @@ export interface RouteStep {
   uses: string[];
   /** 是否为复习事件（复习不是新动作，界面上要区分）。 */
   review: boolean;
+  /**
+   * 合成了好几程时，这一步属于哪一程（`ExampleSet.paths` 的下标）。
+   *
+   * 只有「把好几程放进一张视图」那种链接才带这个信息（见 `web/src/example-combined.ts`）：
+   * 单程回放与规划器路线都没有程的概念，保持 `undefined`。
+   */
+  stageIndex?: number;
 }
 
 export interface RoutePlan {
@@ -46,6 +54,11 @@ export interface RoutePlan {
   all: string[];
   /** 事件 id → 步骤下标（从 0 起），供界面反查。 */
   stepOfEvent: Map<string, number>;
+  /**
+   * 程边界（`stages=2:5,3:4` 解析出来的）：只有「多程合一图」的链接才有。
+   * 界面据此在控制台标出「这一步属于哪一程」，并在路径箭头上标出程的起点。
+   */
+  stageSpans: StageSpan[];
 }
 
 /**
@@ -127,7 +140,7 @@ export function planRoute(
     void position;
   });
 
-  return { routeId: route.id, goal: route.goals?.[0] ?? '', entry: [...(route.entry ?? [])].length > 0 ? [...route.entry] : all.slice(0, 1), steps, all, stepOfEvent };
+  return { routeId: route.id, goal: route.goals?.[0] ?? '', entry: [...(route.entry ?? [])].length > 0 ? [...route.entry] : all.slice(0, 1), steps, all, stepOfEvent, stageSpans: [] };
 }
 
 /** 动画状态：第 `step` 步（0 = 只有起点）。 */
@@ -175,6 +188,8 @@ export interface RouteSearchState {
   goal: string;
   /** 路线 id，仅用于显示。 */
   routeId: string;
+  /** 程边界：`stages=2:5,3:4`（程下标:该程步数），只有「多程合一图」的链接才带。 */
+  stages: StageSpan[];
 }
 
 export function serializeRouteSearch(plan: RoutePlan): string {
@@ -184,6 +199,11 @@ export function serializeRouteSearch(plan: RoutePlan): string {
   params.set('path', plan.steps.flatMap((step) => step.added).join(','));
   if (plan.goal) params.set('goal', plan.goal);
   if (plan.routeId) params.set('route', plan.routeId);
+  /*
+   * 程边界只在**真的有多程**时写：规划器出来的单条路线没有程的概念，
+   * 写一个空的 `stages=` 只会让链接更难读。
+   */
+  if (plan.stageSpans.length > 1) params.set('stages', plan.stageSpans.map((span) => `${span.index}:${span.count}`).join(','));
   return params.toString();
 }
 
@@ -193,7 +213,13 @@ export function parseRouteSearch(params: URLSearchParams): RouteSearchState | nu
   const entry = split(params.get('entry'));
   const path = split(params.get('path'));
   if (entry.length === 0 && path.length === 0) return null;
-  return { entry, path, goal: params.get('goal') ?? '', routeId: params.get('route') ?? '' };
+  return {
+    entry,
+    path,
+    goal: params.get('goal') ?? '',
+    routeId: params.get('route') ?? '',
+    stages: parseStageSpans(params.get('stages')),
+  };
 }
 
 /**
@@ -202,8 +228,12 @@ export function parseRouteSearch(params: URLSearchParams): RouteSearchState | nu
  * URL 只记「节点按什么顺序出现」，没记每一步属于哪个事件——事件信息不入 URL，
  * 因为它是路线包的内部细节，分享出去的链接不该依赖某次规划的结果。
  * 因此这里退化成「每个节点一步」，同时保留 routeId 供界面提示这是回放。
+ *
+ * `stages`（多程合一图）另外给出「第几步属于哪一程」：界面据此在控制台标出程名、
+ * 并在路径箭头上标出每一程的第一支（见 `web/src/example-combined.ts`）。
  */
 export function planFromSearch(state: RouteSearchState): RoutePlan {
+  const stageOfStep = stepStageIndex(state.stages);
   const steps: RouteStep[] = state.path.map((node, index) => ({
     index: index + 1,
     eventId: `replay:${index + 1}`,
@@ -213,7 +243,10 @@ export function planFromSearch(state: RouteSearchState): RoutePlan {
     added: [node],
     uses: [],
     review: false,
+    stageIndex: stageOfStep[index],
   }));
+  /* 步数与程边界对不上时以**步数**为准：`stages` 只是标注，不能决定要放几个节点。 */
+  const stageSpans = state.stages.map((span) => ({ ...span }));
   return {
     routeId: state.routeId,
     goal: state.goal,
@@ -221,6 +254,7 @@ export function planFromSearch(state: RouteSearchState): RoutePlan {
     steps,
     all: [...state.entry, ...state.path],
     stepOfEvent: new Map(),
+    stageSpans,
   };
 }
 

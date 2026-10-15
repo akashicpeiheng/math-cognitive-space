@@ -27,6 +27,9 @@ const js = source
   .replace(/: boolean/g, '')
   .replace(/: string/g, '')
   .replace(/: EdgeVisual/g, '')
+  /* 放缩关系的粗细变化（2026-10-11）：只用到 `as const` 与一个内联的返回类型。 */
+  .replace(/ as const/g, '')
+  .replace(/: \{ startWidth; endWidth \}/g, '')
   .replace(/\bexport interface EdgeVisual \{[\s\S]*?\n\}/, '')
   .replace(/\bexport type RelationTier =[^;]+;/g, '')
   .replace(/\bexport type EdgeFamily =[^;]+;/g, '')
@@ -37,7 +40,7 @@ const spec = await import(moduleUrl);
 
 test('关系可视化条款：权重表完整且取值合法', () => {
   const kinds = Object.keys(spec.RELATION_WEIGHT);
-  assert.ok(kinds.length >= 8, `关系种类应覆盖本体里的 8 种，实际 ${kinds.length}`);
+  assert.equal(kinds.length, 7, `合并放缩后应覆盖本体里的 7 种关系，实际 ${kinds.length}`);
   for (const [kind, weight] of Object.entries(spec.RELATION_WEIGHT)) {
     assert.ok(weight > 0 && weight <= 1, `${kind} 的权重 ${weight} 必须落在 (0, 1]`);
   }
@@ -48,11 +51,60 @@ test('关系可视化条款：权重表完整且取值合法', () => {
 
 test('关系可视化条款：硬关系权重排序符合数学强度', () => {
   const { RELATION_WEIGHT: W } = spec;
-  assert.ok(W.hardPrereq > W.hardGeneralization, '硬前置应重于硬泛化');
-  assert.ok(W.hardGeneralization > W.specialization, '硬泛化应重于它的反方向特化');
-  assert.ok(W.specialization > W.application, '特化应重于应用');
+  assert.ok(W.hardPrereq > W.scaling, '硬前置应重于放缩');
+  assert.ok(W.scaling > W.application, '放缩应重于应用，两个方向使用同一权重');
   assert.ok(W.application > W.bridge, '应用应重于桥接');
   assert.ok(W.bridge > W.analogy, '桥接应重于类比（类比在 ILLUSTRATION 下登记，明确不构成同构）');
+});
+
+test('放缩关系的粗细变化：一般端更粗、特殊端更细，且倍数不改变档位强弱', () => {
+  const { SCALING_TAPER, scalingTaperWidths, scalingTaperArrowWidth, edgeVisual } = spec;
+  assert.ok(SCALING_TAPER.general > 1, '一般端要比本档线宽更粗');
+  assert.ok(SCALING_TAPER.special < 1, '特殊端要比本档线宽更细');
+  assert.ok(SCALING_TAPER.general / SCALING_TAPER.special >= 4, '两端线宽比至少要 4:1，否则看不出「一头粗一头细」');
+
+  // 方向不按 from/to 猜：两种朝向都要画对（本体里 contract / expand 各占一半）。
+  const fromGeneral = scalingTaperWidths(5, true);
+  const toGeneral = scalingTaperWidths(5, false);
+  assert.ok(fromGeneral.startWidth > fromGeneral.endWidth, '一般端在 from 时：起点粗、终点细');
+  assert.ok(toGeneral.endWidth > toGeneral.startWidth, '一般端在 to 时：终点粗、起点细');
+  assert.equal(fromGeneral.startWidth, toGeneral.endWidth, '两种朝向只是把两端调个个儿');
+  assert.equal(fromGeneral.endWidth, toGeneral.startWidth);
+  assert.ok(fromGeneral.startWidth < 5 * 2.4, '一般端的加粗不超过本档线宽的 2.4 倍（不抢最硬层级的注意力）');
+
+  /*
+   * 箭头尺寸（2026-10-11 修，用户报「还是两头一样粗」）：细端必须换一个**更细长**的小箭头。
+   * 判据是**两端的可见宽度**：粗端 = 一般端线宽；细端 = max(细端线宽, 箭头横向宽度)。
+   * 第一版沿用档位箭头（横向 10.1px），细端的可见宽度反而超过粗端（8.0px），因此看不出变化。
+   */
+  const crossOf = (path, size) => {
+    const ys = [...path.matchAll(/[ML]\s*([\d.]+)\s+([\d.]+)/g)].map((match) => Number(match[2]));
+    return ((Math.max(...ys) - Math.min(...ys)) / 10) * size; // viewBox 是 0 0 10 10
+  };
+  assert.ok(crossOf(spec.TAPER_ARROW_PATH, 6) < crossOf(spec.ARROW_PATH, 6) * 0.6,
+    '细端箭头要比档位箭头细得多（否则它会把细端重新撑粗）');
+  const core = edgeVisual('relation', 'scaling', 'PROOF', '#8b5cf6');
+  const strong = edgeVisual('relation', 'scaling', 'DEF', '#8b5cf6');
+  for (const [name, visual] of [['core', core], ['strong', strong]]) {
+    const widths = scalingTaperWidths(visual.width, true);
+    const thin = Math.min(widths.startWidth, widths.endWidth);
+    const thick = Math.max(widths.startWidth, widths.endWidth);
+    const arrow = crossOf(spec.TAPER_ARROW_PATH, scalingTaperArrowWidth(thin));
+    assert.ok(scalingTaperArrowWidth(thin) <= 9, `${name} 档的细端箭头应当是小号的（≤9px）`);
+    assert.ok(thick / Math.max(thin, arrow) >= 2,
+      `${name} 档两端**看得见的**宽度至少差两倍（粗 ${thick.toFixed(2)} vs 细 ${Math.max(thin, arrow).toFixed(2)}）`);
+  }
+  assert.ok(scalingTaperArrowWidth(0.2) >= 6, '箭头下有下界：再细的线也要配一个认得出的箭头');
+  assert.ok(scalingTaperArrowWidth(20) <= 9, '箭头上有上界：不能超过 strong 档的一般端太多');
+
+  /*
+   * 倍数作用在**本档线宽**上，因此「越硬越重」这条第一层信息不被粗细变化覆盖：
+   * core 档（有 PROOF 见证的放缩）两端都仍然粗于 strong 档（只有定义/引用见证）。
+   */
+  const coreThin = scalingTaperWidths(core.width, true).endWidth;
+  const strongThick = scalingTaperWidths(strong.width, true).startWidth;
+  assert.ok(core.width > strong.width, '前提：core 档的线宽本来就大于 strong 档');
+  assert.ok(strongThick > coreThin, 'strong 档的一般端仍应粗于 core 档的特殊端（档位差没被吃掉）');
 });
 
 test('关系可视化条款：任何语义关系都强于任何结构关联', () => {
@@ -107,7 +159,7 @@ test('关系可视化条款：edgeVisual 对每条关系都给出可渲染参数
  * 行动契约按 mode 分档。
  *
  * 用户的原话：「知识网络里流形和同胚的关联怎么可能这么差！好好想想他们的关系！」
- * 数据侧的真相：`a-dg:manifold` 的 inputs 里有 `dg:homeomorphism`、mode 是 **definition**
+ * 数据侧的真相：`a-top:topological-manifold` 的 inputs 里有 `top:homeomorphism`、mode 是 **definition**
  * ——不用同胚就定义不出流形；而旧规则把**所有**契约压到 0.18（1.1px、0.34 不透明、细虚线、不标名称），
  * 比 `crossDomain`（接口关系，0.68）还轻。这几条断言把新读法钉住。
  */
@@ -242,7 +294,7 @@ test('颜色明度落在浅底画布上读得出来的区间', () => {
 
 test('饱和度分层：语义关系 ≥ 语义契约 ≥ 结构骨架', () => {
   const base = '#7c3aed';
-  const relation = hexToHsl(spec.edgeVisual('relation', 'hardGeneralization', 'PROOF', base).color).s;
+  const relation = hexToHsl(spec.edgeVisual('relation', 'scaling', 'PROOF', base).color).s;
   const contract = hexToHsl(spec.edgeVisual('contract', null, null, base, 'definition').color).s;
   const structural = hexToHsl(spec.edgeVisual('contract', null, null, base, 'task').color).s;
   assert.ok(relation >= contract, '语义关系饱和度 ' + relation + ' 应不低于语义契约 ' + contract);

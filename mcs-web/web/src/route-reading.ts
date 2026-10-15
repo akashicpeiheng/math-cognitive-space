@@ -80,6 +80,17 @@ export function buildReadingSteps(
   return steps;
 }
 
+/** The reading flow uses the same validated order shown on the plan page. */
+export function readingOrder(route: PlanPackageView): string[] {
+  const schedule = route.learningSchedule;
+  if (schedule) {
+    const eventByKey = new Map(schedule.steps.map(step => [step.key, step.eventId]));
+    const order = schedule.order.map(key => eventByKey.get(key)).filter((id): id is string => Boolean(id));
+    if (order.length === route.events.length && new Set(order).size === route.events.length) return order;
+  }
+  return route.linearExtensions[0] ?? route.events.map(event => event.id);
+}
+
 export function saveReadingRoute(route: Omit<ReadingRoute, 'id' | 'createdAt'>): ReadingRoute {
   const id = `r${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
   const saved: ReadingRoute = { ...route, id, createdAt: new Date().toISOString() };

@@ -1,0 +1,72 @@
+{
+  "date": "2026-10-13",
+  "method": "prepend entry only; original bytes remain an exact suffix",
+  "records": [
+    {
+      "path": "MCS_vault/MCS/template/Mathematical_Note_Template_for_Specific_Objects.md",
+      "originalSha256": "0447d99a37f5c1ea64d670fb516eeeb979415191755ad012f12af7af946bcb5b",
+      "bannerBytes": 333,
+      "currentSha256": "e8203519427a1d538dd3815600a215cb53380e0a5f2b69a27607bc8f27dcf52f"
+    },
+    {
+      "path": "MCS_vault/MCS/template/局部技巧模板.md",
+      "originalSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bannerBytes": 333,
+      "currentSha256": "c07e0aecf4e4085bb559d600b1226064b301b01aabb4420798beaa43b18aa803"
+    },
+    {
+      "path": "MCS_vault/MCS/template/核心问题模板.md",
+      "originalSha256": "6ebdf429ffa3e21e35071a11b11184a404e232dc21ee56265c917b3e457c40da",
+      "bannerBytes": 333,
+      "currentSha256": "f86f369933fc6a1975dc93d86c6a6b0056a76839ce7b0e52e4953d2c36eef25f"
+    },
+    {
+      "path": "MCS_vault/MCS/template/节点类型模版/T0-统一骨架.md",
+      "originalSha256": "f5fb9871333706a93419852a5df2bf3699d1aaa26f72786a30146f77e704fd3b",
+      "bannerBytes": 339,
+      "currentSha256": "a24689fd4d99d489c19f77097f956f4d9acc6b07b61b917bbe1d241aa7d5062d"
+    },
+    {
+      "path": "MCS_vault/MCS/template/节点类型模版/T1-定义类节点模版.md",
+      "originalSha256": "6c47e0e1e1921bf36fad3f9c0d3c1fcf845711c27d07e1b45557ad18c50ecbf0",
+      "bannerBytes": 339,
+      "currentSha256": "f8f39ebb66b20944d03308dc63292b17939c47b500da4919695c9293329e8ab3"
+    },
+    {
+      "path": "MCS_vault/MCS/template/节点类型模版/T2-定理类节点模版.md",
+      "originalSha256": "663707e5dd3ced3145a48fc2fc6fe77894a2d542c5fd4afaf2af48f78282787e",
+      "bannerBytes": 339,
+      "currentSha256": "dcf2f93a44041c8f649f902b225e4ff8fdb2a398dba416fb28808ff54ddb3118"
+    },
+    {
+      "path": "MCS_vault/MCS/template/节点类型模版/T3-公理类节点模版.md",
+      "originalSha256": "46a489c065a65949be33f20bf9c7b5adeb40a8d344a2052a70da22bc269753db",
+      "bannerBytes": 339,
+      "currentSha256": "85103cec44568d049d7eca71839ce82cc72cebaa4b26dba3a512e7de11c18949"
+    },
+    {
+      "path": "MCS_vault/MCS/template/节点类型模版/T4-性质类节点模版.md",
+      "originalSha256": "64946accb8c732f7854f1fe459c1bac2774ff69888a9cc204977ef570a09a4ff",
+      "bannerBytes": 339,
+      "currentSha256": "ad3df57aa780754460984bfa1fbf20deb7ea31d6fa6645638891612d3069ecc3"
+    },
+    {
+      "path": "MCS_vault/MCS/template/节点类型模版/T5-推论类节点模版.md",
+      "originalSha256": "8cd21712fab6100781c594817cdac538cd2e2c68881ea2814d3e336ef5eabfce",
+      "bannerBytes": 339,
+      "currentSha256": "e8dfa904f4ab3bdb20874c7439c71325708f0df170ba661c33c11190f00ceda7"
+    },
+    {
+      "path": "MCS_vault/MCS/template/节点类型模版/T6-习题与技巧类节点模版.md",
+      "originalSha256": "683c7665af25fabacadde128c4a31fe36aefc507ecd2920f2f4edc609d23a704",
+      "bannerBytes": 339,
+      "currentSha256": "628548584f85e111f664976a327f59f87a7825b8531866c98163a0d79c35e3e6"
+    },
+    {
+      "path": "MCS_vault/MCS/template/节点类型模版/T7-使用说明与工序.md",
+      "originalSha256": "0aa1cef71e943ec8ba09d4c8b82ba3379f813f618bb767708d8e933de6132125",
+      "bannerBytes": 339,
+      "currentSha256": "ee527528466c0adb0216c74a26ba40c5fec7930f8c9ad9eca3cc11a7f1e18a80"
+    }
+  ]
+}

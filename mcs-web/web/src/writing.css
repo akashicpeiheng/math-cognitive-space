@@ -1,0 +1,62 @@
+.writing-page { max-width: 1700px; }
+.writing-header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem; margin: 1rem 0; }
+.writing-header h1 { margin-bottom: .4rem; }
+.writing-header p { margin: 0; overflow-wrap: anywhere; }
+.writing-lead { max-width: 55rem; line-height: 1.8; }
+.writing-new-form { display: grid; gap: 1rem; max-width: 48rem; margin: 1.5rem 0; }
+.writing-page label { display: grid; gap: .45rem; }
+.writing-page input, .writing-page select, .writing-page textarea { width: 100%; min-width: 0; }
+.writing-page .card-actions { flex-wrap: wrap; }
+.writing-autosave { color: var(--ink-faint); font-size: .85rem; }
+.writing-workspace { display: grid; grid-template-columns: minmax(180px, 220px) minmax(0, 1fr) minmax(240px, 320px); gap: 1rem; align-items: start; margin-top: 1rem; }
+.writing-workspace > * { min-width: 0; }
+.writing-contents, .writing-guidance { position: sticky; top: 1rem; max-height: calc(100dvh - 2rem); overflow-y: auto; }
+.writing-contents nav { display: grid; gap: .25rem; margin-bottom: 1rem; }
+.writing-chapter-button { width: 100%; text-align: left; border: 1px solid transparent; background: transparent; border-radius: 8px; padding: .6rem; color: var(--ink); display: grid; gap: .3rem; cursor: pointer; }
+.writing-chapter-button small { color: var(--ink-faint); }
+.writing-chapter-button:hover, .writing-chapter-button.selected { background: var(--accent-soft); border-color: var(--accent-line); }
+.writing-chapter-button.selected { color: var(--accent-strong); }
+.writing-contents > small { display: block; margin-top: .7rem; overflow-wrap: anywhere; }
+.writing-mode-tabs { display: flex; flex-wrap: wrap; gap: .35rem; margin-bottom: 1rem; }
+.writing-text-label { margin-top: 1rem; }
+.writing-textarea { min-height: 58dvh; resize: vertical; font-family: ui-monospace, Consolas, monospace; line-height: 1.8; tab-size: 2; }
+.writing-guidance h2, .writing-contents h2 { font-size: 1.05rem; margin-top: 0; }
+.writing-guidance h3 { font-size: .9rem; margin: 1.2rem 0 .5rem; }
+.writing-guidance p, .writing-guidance li { line-height: 1.75; }
+.writing-guidance ul { padding-left: 1.25rem; }
+.writing-guidance details { margin: 1rem 0; }
+.writing-guidance pre, .writing-proposal pre { white-space: pre-wrap; overflow-wrap: anywhere; font-size: .85rem; }
+.writing-guidance summary, .writing-checks summary { cursor: pointer; color: var(--accent-strong); line-height: 1.6; }
+.writing-prompt-actions { display: grid; gap: .5rem; margin-top: 1.2rem; }
+.writing-checks { margin-top: 1.2rem; }
+.writing-checks ul { padding-left: 1rem; }
+.writing-checks li { margin: .5rem 0; }
+.writing-checks .link-button { text-align: left; white-space: normal; }
+.writing-prompt-preview, .writing-proposal { margin-top: 1rem; }
+.writing-prompt-preview textarea { font-family: ui-monospace, Consolas, monospace; resize: vertical; }
+.writing-mobile-tools { display: none; }
+.writing-role-choices, .writing-resources { margin: 1rem 0; }
+.writing-role-choices summary, .writing-resources summary { cursor: pointer; line-height: 1.6; }
+.writing-role-choices fieldset { border: 0; padding: .5rem 0; display: grid; gap: .5rem; min-width: 0; max-height: 18rem; overflow-y: auto; }
+.writing-role-choices legend { font-size: .8rem; color: var(--ink-faint); }
+.writing-role-choices label { display: flex; flex-direction: row; justify-content: flex-start; align-items: center; gap: .5rem; }
+.writing-role-choices input[type="checkbox"] { width: auto; flex-shrink: 0; }
+.writing-editor > label, .writing-editor > p { margin: .7rem 0; }
+.writing-scope-warning { line-height: 1.8; }
+@media (max-width: 1250px) {
+  .writing-workspace { grid-template-columns: 185px minmax(0, 1fr); }
+  .writing-guidance { position: static; grid-column: 2; max-height: none; }
+  .writing-editor { grid-column: 2; }
+  .writing-contents { grid-row: 1 / span 2; }
+}
+@media (max-width: 760px) {
+  .writing-mobile-tools { display: flex; gap: .6rem; flex-wrap: wrap; }
+  .writing-workspace { display: flex; flex-direction: column; }
+  .writing-workspace > * { width: 100%; }
+  .writing-contents, .writing-guidance { display: none; position: static; max-height: none; }
+  .writing-drawer-open { display: block; order: -1; }
+  .writing-header .card-actions { width: 100%; }
+  .writing-header .button { white-space: normal; }
+  .writing-textarea { min-height: 50dvh; }
+}
+

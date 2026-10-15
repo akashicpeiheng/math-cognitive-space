@@ -3,14 +3,22 @@ import type { ReactNode } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { api, formatError, useLocaleKey } from '../api';
 import { useProfileContext } from '../state';
+import { useAuth } from '../auth';
+import { readGuestPlan, saveGuestPlan } from '../guest-plan';
 import { StatusBadge } from '../components/StatusBadge';
 import { ExamplePaths } from '../components/ExamplePaths';
+import { EXAMPLE_SETS_BY_LOCALE, type ExampleSet } from '../example-paths';
+import { deriveDirection, optionBasis } from '../direction';
+import type { GraphRelation } from '../learning';
+import { useMediaQuery } from '../useMediaQuery';
 import { useI18n } from '../i18n';
 // `useLabels` 住在 `i18n/useLabels.tsx`：`labels.ts` 是纯数据表，不准 import React。
 import { useLabels } from '../i18n/useLabels';
 import { paceHorizon, preferenceSummary, readPreferences } from '../start-preferences';
 import { planRoute, serializeRouteSearch } from '../route-replay';
-import { buildReadingSteps, saveReadingRoute } from '../route-reading';
+import { buildReadingSteps, saveReadingRoute, readingOrder } from '../route-reading';
+import { useLearningData } from '../useLearningData';
+import { LearningGuide } from '../components/LearningGuide';
 import type { ExamplePath } from '../example-paths';
 import type { NodeSummary, PlanPackageView, PlanResultView } from '../types';
 
@@ -20,6 +28,11 @@ const MAX_HORIZON = 32;
 interface GraphData {
   nodes: NodeSummary[];
   actions: Array<{ id: string; title: string; mode: string; inputs: Array<{ node: string; accepts: string[] }>; outputs: Array<{ node: string; provides: string[] }> }>;
+  /**
+   * 关系边：规划表单不用它，但**无目标模式**（可学前沿）要——
+   * `deriveDirection` 的硬前置要读关系。接口本来就下发这一份（与网络页同一份图）。
+   */
+  relations: GraphRelation[];
 }
 
 /** 成对文案：中文是源语言（**逐字不变**），英文是译文。取用走 `useI18n().pick`。 */
@@ -37,7 +50,7 @@ const TEXT = {
     zh: '先选 AND/OR 方案与逐项来源，再合并策略次序并检查无环。结构可行不表示真实学习有效；没有成本模型时保持未知。',
     en: 'Choose the AND/OR plan and the source of each item first, then merge strategy order and check for cycles. Structurally feasible does not mean it works in real learning; without a cost model it stays unknown.',
   },
-  stepGoal: { zh: '确定目标', en: 'Set the goal' },
+  stepGoal: { zh: '确定目标（可选）', en: 'Set the goal (optional)' },
   stepBackground: { zh: '核对背景', en: 'Check the background' },
   stepRoutes: { zh: '比较路线', en: 'Compare routes' },
   headingGoal: { zh: '① 确定目标', en: '① Set the goal' },
@@ -45,6 +58,51 @@ const TEXT = {
   headingRoutes: { zh: '③ 比较路线', en: '③ Compare routes' },
   chosenGoalLead: { zh: '已选目标：', en: 'Selected goal: ' },
   goalNodeLabel: { zh: '目标节点', en: 'Goal node' },
+  /* —— 目标可选（2026-10-13）：留空时不比较路线，改列「现在能学什么」 —— */
+  goalOptionalOption: { zh: '（不选目标：只看现在能学什么）', en: '(no goal: just show what can start now)' },
+  goalOptionalHint: {
+    zh: '目标可以留空。不选目标时不会比较路线，而是列出从你声明的背景出发、本体里现在就能开始的节点'
+      + '（可学前沿，与「我的学习」里那张下一步表同源）；挑一个当目标，就回到正常的路线比较。',
+    en: 'The goal is optional. With no goal the page does not compare routes; it lists the nodes that can start right now '
+      + 'given the background you declared (the learning frontier, the same derivation as the next-step table under “My learning”). '
+      + 'Pick one as the goal and you are back to route comparison.',
+  },
+  frontierTitle: { zh: '现在能学什么（可学前沿）', en: 'What can start now (learning frontier)' },
+  frontierLead: {
+    zh: '没有选目标，所以这里不比较路线，只回答一个问题：按上面声明的背景，本体里哪些节点现在就能开始。',
+    en: 'No goal was chosen, so no routes are compared here; this answers one question: given the background declared above, which nodes can start right now.',
+  },
+  frontierStartable: { zh: '现在就能开始', en: 'Can start now' },
+  frontierReachable: { zh: '背景够得着', en: 'Within reach' },
+  frontierReachableValue: {
+    zh: (reachable: number, units: number) => `${reachable} / ${units} 个单元级节点`,
+    en: (reachable: number, units: number) => `${reachable} / ${units} unit-level nodes`,
+  },
+  frontierBackground: { zh: '这份背景声明', en: 'Background declared here' },
+  frontierBackgroundValue: { zh: (count: number) => `${count} 项`, en: (count: number) => `${count} item(s)` },
+  frontierThreadNote: {
+    zh: (count: number) => `另有 ${count} 个话题级条目被排除在可学集合外：它们是线索的名字，不是可学的单元。`,
+    en: (count: number) => `A further ${count} thread-level entries are excluded from the startable set: they name a line of study, they are not learnable units.`,
+  },
+  frontierPickLead: { zh: '挑一个当目标，就直接进入路线比较。', en: 'Pick one as the goal to go straight to route comparison.' },
+  frontierRecommended: { zh: '推荐先走这条', en: 'Recommended first' },
+  frontierUnlocks: { zh: (count: number) => `确认后解锁 ${count} 个`, en: (count: number) => `unlocks ${count} after confirmation` },
+  frontierUseAsGoal: { zh: '用它当目标', en: 'Use as the goal' },
+  frontierDeclare: { zh: '标记为已有', en: 'Mark as already had' },
+  frontierDeclareHint: {
+    zh: '没有行动能产出它，所以它当不了目标：把它标记为已有，立刻计入上面的背景声明，可学前沿会跟着重算。',
+    en: 'No action produces it, so it cannot be a goal: mark it as already had and it counts towards the background declared above at once, and the frontier is recomputed.',
+  },
+  frontierOpenNode: { zh: '看节点', en: 'Open node' },
+  frontierMore: { zh: (count: number) => `还有 ${count} 个可开始的节点未列出。`, en: (count: number) => `${count} more startable nodes are not listed.` },
+  frontierUseAsGoalHint: {
+    zh: '点「用它当目标」会把目标写进上面的下拉框并立刻规划一次。',
+    en: '“Use as the goal” writes it into the goal dropdown above and plans once right away.',
+  },
+  frontierEmpty: {
+    zh: '按这份背景，现在没有可开始的节点：所有单元都还缺前置。可以先到「从感兴趣的次级学科探索」声明方向，或回到背景里确认一些更基础的条目。',
+    en: 'With this background nothing can start yet: every unit is still missing a prerequisite. Declare a direction under “explore fields that interest me”, or confirm some more basic entries in the background.',
+  },
   /** 下拉里的线索标记：选项里带尾随空格，句子里的不带。 */
   topicMarkOption: { zh: '【线索】', en: '[thread] ' },
   idSuffix: { zh: (id: string) => `（${id}）`, en: (id: string) => ` (${id})` },
@@ -55,6 +113,13 @@ const TEXT = {
   },
   keepDropdownGoal: { zh: '只保留下拉框里的目标', en: 'Keep only the dropdown goal' },
   startPlanning: { zh: '开始规划', en: 'Start planning' },
+  /*
+   * 主按钮的两态（2026-10-14 用户要求「点完要有明确反馈」）：
+   * 任务在跑时显示「规划中…」，跑完（含跑失败）显示「重新规划」——点了之后按钮一定换字，
+   * 不必先scroll到下面才知道这一下点上了。
+   */
+  planning: { zh: '规划中…', en: 'Planning…' },
+  replan: { zh: '重新规划', en: 'Plan again' },
   cancelJob: { zh: '取消任务', en: 'Cancel job' },
   planWithReview: { zh: '规划并加入复习事件', en: 'Plan with a review event' },
   planWithReviewDisabled: {
@@ -159,11 +224,40 @@ const TEXT = {
   },
   onlyTopThree: { zh: '只比较前三条候选。', en: 'Only the top three candidates are compared.' },
   showRest: { zh: (count: number) => `展开其余 ${count} 条`, en: (count: number) => `Show the other ${count}` },
-  exampleSummary: { zh: '没有头绪？用现成范例试试', en: 'No idea where to start? Try a ready-made example' },
   strategyParseError: {
     zh: '策略 JSON 无法解析；未声明成本与次序时保持未知。',
     en: 'The strategy JSON cannot be parsed; without declared costs and order it stays unknown.',
   },
+  /* —— 「整条路径」进度轨（2026-10-13 加）：一键导入之后挂在表单下面 —— */
+  walkTitle: { zh: (book: string) => `整条路径：${book}`, en: (book: string) => `Whole path: ${book}` },
+  walkLead: {
+    zh: (count: number) => `按 ${count} 程依次走：每一程的起点 = 基础背景 + 前面各程的里程碑。载入写的是示范假设，不写进档案；`
+      + '进度轨只记「本次会话载入过哪几程」，不是学习进度。',
+    en: (count: number) => `Walk the ${count} routes in order: each route starts from the shared background plus the milestones of the previous ones. `
+      + 'Loading writes demonstration assumptions only, never your profile; the rail records which routes you loaded in this session — it is not learning progress.',
+  },
+  walkStageMeta: {
+    zh: (goals: number, entries: number, events: number) => `${goals} 个里程碑 · 起点 ${entries} 项 · 实测 ${events} 个事件`,
+    en: (goals: number, entries: number, events: number) => `${goals} milestones · ${entries} entries · ${events} events measured`,
+  },
+  walkCurrent: { zh: '当前', en: 'Current' },
+  walkVisited: { zh: '本次已载入', en: 'Loaded this session' },
+  walkTodo: { zh: '未开始', en: 'Not started' },
+  walkNext: {
+    zh: (ordinal: string, title: string) => `下一程：${ordinal}　${title}`,
+    en: (ordinal: string, title: string) => `Next route: ${ordinal} — ${title}`,
+  },
+  walkDone: {
+    zh: (count: number) => `全部 ${count} 程都在本次会话里载入过了。`,
+    en: (count: number) => `All ${count} routes have been loaded in this session.`,
+  },
+  walkExit: { zh: '结束整条路径', en: 'Leave the whole-path walk' },
+  /* —— 与学习方向的联动（2026-10 加）：只带一句上下文与一个「填进来」的按钮 —— */
+  directionLead: { zh: '当前学习方向：', en: 'Current learning direction: ' },
+  directionNone: { zh: '还没有声明学习方向。', en: 'No learning direction is declared yet.' },
+  directionUse: { zh: '把方向的目标填进目标组', en: 'Fill the direction goal into the goal list' },
+  directionFrom: { zh: '主目标、兴趣和有效的顺序调整与「开始学习」「我的学习」共用；下方可进一步比较具体行动方案。', en: 'The primary goal, interests and valid order edits are shared with Start learning and My learning. Compare detailed action plans below.' },
+  directionOpen: { zh: '去声明方向', en: 'Declare a direction' },
 };
 
 /**
@@ -279,22 +373,64 @@ const RICH = {
       </ul>
     ),
   },
-  examplePickerNote: {
-    zh: () => (
-      <>
-        范例会写入一组目标、事件界与<strong>示范假设</strong>，然后立刻规划一次。
-        示范假设不写进你的档案，规划结果只说明「如果这些已经会了，这条路会怎么走」。
-      </>
-    ),
-    en: () => (
-      <>
-        An example writes a set of goals, an event horizon and <strong>demonstration assumptions</strong>, then plans
-        immediately. Demonstration assumptions are not written to your profile; the result only says “if these were
-        already known, this is how the route would go”.
-      </>
-    ),
-  },
+  /*
+   * 范例路径的两条旧文案（`exampleSummary` / `examplePickerNote`）随第八十五轮的改版删掉了：
+   * 这一栏现在是「压缩态 → 悬浮简介 → 点击展开」，标题与那句「载入不写进档案」的说明
+   * 都由 `ExamplePaths` 自己成对给出，避免同一条说明在两个组件里各写一份。
+   */
 };
+
+/* ---------------------------------------------------------------------------
+ * 「整条路径」的会话状态（2026-10-13 加）
+ *
+ * 一键导入范例的**整条路径**之后，表单下面挂一条各程进度轨。它记的是
+ * 「**本次会话**载入过哪几程」，不是学习进度——载入范例写的是示范假设
+ * （`kind: 'assumption'`），既不改公共本体，也不产生任何 E 层事件。
+ *
+ * 因此存在 `sessionStorage` 而不是 `localStorage`：关掉标签页就该消失，
+ * 留在本地会让人误以为那是学习记录。读失败（隐私模式）只是「刷新后不记得走到哪」。
+ * ------------------------------------------------------------------------- */
+const EXAMPLE_WALK_KEY = 'mcs-example-walk-v1';
+
+/** 可学前沿里最多列多少条（其余如实报数，不静默丢弃）。 */
+const FRONTIER_LIMIT = 12;
+
+/**
+ * 下拉框里作为**常规目标**的构造类型。
+ *
+ * 符号（`Symbol`）这类节点不在这里：规划器只能靠**行动**产出节点，而符号类节点没有任何
+ * 产出行动，选它当目标必然「界内不可行」。但下拉框仍要为「当前目标」补一条——
+ * `?goal=` 深链或可学前沿都可能把这类节点带进来，那时**显示空值会让人以为没选上**
+ * （2026-10-13 实测踩到过）。
+ */
+const GOAL_CONSTRUCTS = ['Claim', 'Concept', 'Construction', 'Method', 'Problem', 'Example'];
+
+interface ExampleWalkState {
+  setId: string;
+  /** 本次会话载入过的程（`ExamplePath.id`）。 */
+  visited: string[];
+}
+
+function readExampleWalk(): ExampleWalkState | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = window.sessionStorage.getItem(EXAMPLE_WALK_KEY);
+    if (!raw) return null;
+    const parsed: unknown = JSON.parse(raw);
+    if (!parsed || typeof parsed !== 'object') return null;
+    const value = parsed as { setId?: unknown; visited?: unknown };
+    if (typeof value.setId !== 'string' || !Array.isArray(value.visited)) return null;
+    return { setId: value.setId, visited: value.visited.filter((id): id is string => typeof id === 'string') };
+  } catch { return null; }
+}
+
+function writeExampleWalk(state: ExampleWalkState | null): void {
+  if (typeof window === 'undefined') return;
+  try {
+    if (state) window.sessionStorage.setItem(EXAMPLE_WALK_KEY, JSON.stringify(state));
+    else window.sessionStorage.removeItem(EXAMPLE_WALK_KEY);
+  } catch { /* 隐私模式：只影响「刷新后还记不记得走到哪一程」 */ }
+}
 
 export function PlanPage() {
   const { locale, pick, isPending, hrefFor, t } = useI18n();
@@ -315,7 +451,15 @@ export function PlanPage() {
   );
   const [params] = useSearchParams();
   const navigate = useNavigate();
-  const { profileId } = useProfileContext();
+  const { profileId: currentProfileId } = useProfileContext();
+  const auth = useAuth();
+  const guest = auth.ready && auth.mode === 'supabase' && !auth.user;
+  const profileId = auth.ready && (auth.mode === 'local' || auth.user) ? currentProfileId : null;
+  const draftLoaded = useRef(false);
+  const requestGeneration = useRef(0);
+  const identityRef = useRef(auth.identityKey);
+  identityRef.current = auth.identityKey;
+  const learningData = useLearningData();
   const [graph, setGraph] = useState<GraphData | null>(null);
   /**
    * 目标是**一组**而不是一个：范例路径一程要拿下好几个里程碑，只给一个目标会得到
@@ -326,6 +470,16 @@ export function PlanPage() {
     return initial ? [initial] : ['limit:bridge'];
   });
   const goal = goals[0];
+  const initialGoal = useRef(goal);
+  /**
+   * 无目标模式（2026-10-13 用户要求「确定目标设置为可选项」）。
+   *
+   * 规划器本身**必须有目标**（`normalizePlanRequest` 里那条断言不是摆设：没有目标就没有
+   * 「要走到哪」）。所以「可选」不是把空目标塞给规划器，而是换一条**已有的**派生：
+   * 目标留空时列出**可学前沿**——按声明的背景，本体里现在就能开始的节点
+   * （与「我的学习」/开始页同一份 `deriveDirection`），再由用户一键把某个候选变成目标。
+   */
+  const [frontierOn, setFrontierOn] = useState(false);
   /**
    * 事件界默认值：先看开始页的节奏偏好（TODO A4-23）。
    *
@@ -349,27 +503,138 @@ export function PlanPage() {
   const [result, setResult] = useState<PlanResultView | null>(null);
   const [jobId, setJobId] = useState<string | null>(null);
   const [jobStatus, setJobStatus] = useState<string | null>(null);
+  /**
+   * 这次进页面之后**是否已经点过规划**（含不选目标的可学前沿那条路）。
+   *
+   * 它只决定主按钮叫什么：没点过是「开始规划」，点过就是「重新规划」。
+   * 判断依据是「点过」而不是「有结果」——请求失败时也要如实告诉用户这一下点上了、可以再点。
+   */
+  const [hasPlanned, setHasPlanned] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showAllRoutes, setShowAllRoutes] = useState(false);
   const [profileKnown, setProfileKnown] = useState<Set<string>>(new Set());
+  /** 主目标来自档案方案；显式 URL 目标和手动选择保留优先权。 */
+  const [directionNode, setDirectionNode] = useState<string | null>(null);
+  const previousPrimary = useRef<string | null>(null);
+  const paceProfile = useRef<string | null>(null);
   /** 上次规划是否走了 withReview 路径：决定要不要如实说明该路径的字段限制。 */
   const [lastWasReview, setLastWasReview] = useState(false);
   /** 当前载入的范例（若有）：用来显示入口清单与「清除范例入口」。 */
   const [loadedExample, setLoadedExample] = useState<ExamplePath | null>(null);
+  /**
+   * 「整条路径」的走法（2026-10-13 加）。
+   *
+   * 一键导入之后，表单下面挂一条各程进度轨：当前程 = 表单里载入的那一程，
+   * `visited` 记**本次会话**里载入过的程。它记的是「这次走过哪些程」，
+   * **不是学习进度**——载入写的是示范假设，不产生任何 E 层事件。
+   */
+  const [walk, setWalk] = useState<{ setId: string; visited: string[] } | null>(() => readExampleWalk());
+  const exampleSets = pick(EXAMPLE_SETS_BY_LOCALE);
+  /** 正在走的那一本（会话里记着 setId；本语种的样本数据可能换了，因此每次由 id 查回来）。 */
+  const walkSet = walk ? exampleSets.find((set) => set.id === walk.setId) ?? null : null;
+  /** 进度轨上的「当前」= 表单里载入的那一程；载入了别的书的某一程时是 -1。 */
+  const walkStageIndex = walkSet ? walkSet.paths.findIndex((path) => path.id === loadedExample?.id) : -1;
+  /** 「下一程」的落点：正常是当前程的下一程；当前不在这条路上时，落在第一个没走过的程。 */
+  const walkNextIndex = walkSet
+    ? (walkStageIndex >= 0
+      ? walkStageIndex + 1
+      : walkSet.paths.findIndex((path) => !(walk?.visited ?? []).includes(path.id)))
+    : -1;
+  /*
+   * 可学前沿（无目标模式的结果）。
+   *
+   * θ 取**本次表单里的背景声明**的键集，与交给服务端的 `background` 逐项同源——
+   * 「不选目标」时看到的可学集合，必须与「选了目标」时规划器认为可用的前置一致，
+   * 否则同一页面上会出现两套「什么算已会」。
+   *
+   * `steps: 0`：只要选项表与位置，不要那串预览路径（这里本来就不比较路线）。
+   */
+  const frontierReport = useMemo(() => {
+    if (!frontierOn || !graph) return null;
+    const known = Object.keys(entries).map((node) => ({ node }));
+    return deriveDirection({ nodes: graph.nodes, actions: graph.actions, relations: graph.relations, theta: { known }, steps: 0 });
+  }, [frontierOn, graph, entries]);
+  /** 目标一出现就离开无目标模式：两种结果是互斥的，不能让它们同时挂在页面上。 */
+  useEffect(() => { if (goals.length > 0) setFrontierOn(false); }, [goals]);
+  useEffect(() => {
+    requestGeneration.current++;
+    setJobId(null); setJobStatus(null); setResult(null); setError(null);
+    setEntries({}); setProfileKnown(new Set());
+    autoFilledRef.current = new Set();
+    draftLoaded.current = false;
+  }, [auth.identityKey]);
+  useEffect(() => {
+    if (!guest || draftLoaded.current) return;
+    const saved = readGuestPlan();
+    if (!params.get('goal') && saved.goals?.length) setGoals(saved.goals);
+    setEntries(saved.entries ?? {});
+    if (saved.horizon !== undefined) setHorizon(saved.horizon);
+    if (saved.maxCandidates !== undefined) setMaxCandidates(saved.maxCandidates);
+    if (saved.strategyText !== undefined) setStrategyText(saved.strategyText);
+    if (saved.budgetMax !== undefined) setBudgetMax(saved.budgetMax);
+    draftLoaded.current = true;
+  }, [guest, auth.identityKey, params]);
+  useEffect(() => {
+    if (guest && draftLoaded.current) saveGuestPlan({ goals, entries, horizon, maxCandidates, strategyText, budgetMax });
+  }, [guest, goals, entries, horizon, maxCandidates, strategyText, budgetMax]);
   const formRef = useRef<HTMLDivElement | null>(null);
   const resultRef = useRef<HTMLElement | null>(null);
-  /** 载入范例后结果会渲染在表单下面；把它滚进视野，免得用户以为「点了没反应」。 */
+  /**
+   * 「规划任务 … 运行中」那条提示的锚点。
+   *
+   * 结果要几秒才回来，这段时间页面下方什么都还没有；把提示本身当锚点，
+   * 「点了按钮 → 视线立刻落到正在发生的事上 → 结果一落地就地展开」才是连贯的一次反馈。
+   */
+  const pendingRef = useRef<HTMLParagraphElement | null>(null);
+  /**
+   * 载入范例或点「开始规划」之后，把**已经在的那一份**带进视野。
+   *
+   * 两个标记缺一不可（2026-10-14 修）：「进行中的提示」与「规划出来的结果」是**两次**滚动，
+   * 而它们发生在同一个意图里。先前只用一个标记，第一次滚动（跳到「规划任务 … 运行中」）
+   * 就把它消费掉了，结果落地时反而不再跳——用户看到的正是「点了没跳」。
+   * 现在 `resultScrollPending` 是**意图**，只在结果（或可学前沿）真的出现时才消费；
+   * `pendingNoticeScrolled` 只保证那条提示最多带一次视野。
+   */
   const resultScrollPending = useRef(false);
+  const pendingNoticeScrolled = useRef(false);
+  /** 平滑滚动到锚点：effect 与「重复点击」那条路共用一份，避免两处写法漂开。 */
+  const scrollToElement = (target: Element | null) => {
+    if (target && typeof target.scrollIntoView === 'function') target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
   useEffect(() => {
-    if (!result || !resultScrollPending.current) return;
-    resultScrollPending.current = false;
-    if (typeof resultRef.current?.scrollIntoView === 'function') resultRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }, [result]);
+    if (result || frontierReport) {
+      if (!resultScrollPending.current) return;
+      resultScrollPending.current = false;
+      pendingNoticeScrolled.current = false;
+      scrollToElement(resultRef.current);
+      return;
+    }
+    if (jobId && resultScrollPending.current && !pendingNoticeScrolled.current) {
+      pendingNoticeScrolled.current = true;
+      scrollToElement(pendingRef.current);
+    }
+  }, [result, frontierReport, jobId]);
 
   // 语种变化要重新取数：本体里的标题与说明由服务端按 `?locale=` 下发（`useApi` 已内置，这里直接调 `api()`，要自己带上）。
   useEffect(() => {
     api<GraphData>('/ontology/graph').then(setGraph).catch((reason) => setError(formatError(reason)));
   }, [localeKey]);
+
+  useEffect(() => {
+    if (!profileId) { setDirectionNode(null); return; }
+    if (learningData.loading || !learningData.learningPlan) return;
+    const primary = learningData.learningPlan.primaryGoal;
+    const previous = previousPrimary.current;
+    setDirectionNode(primary);
+    if (!params.get('goal') && primary) setGoals(current =>
+      current.length === 1 && (current[0] === previous || (previous === null && current[0] === initialGoal.current)) ? [primary] : current);
+    previousPrimary.current = primary;
+    if (paceProfile.current !== profileId) {
+      const setting = paceHorizon(learningData.learningPlan.pace, locale);
+      if (setting) { setHorizon(setting.horizon); setPaceApplied(true); }
+      paceProfile.current = profileId;
+    }
+  }, [profileId, learningData.learningPlan, learningData.loading, params, locale]);
 
   /** 上一次自动带入的节点集合：切换档案时要先撤掉旧档案带进来的项，再换成新档案的。 */
   const autoFilledRef = useRef<Set<string>>(new Set());
@@ -413,22 +678,24 @@ export function PlanPage() {
       })
       .catch(() => { if (active) setProfileKnown(new Set()); });
     return () => { active = false; };
-  }, [profileId, localeKey]);
+  }, [profileId, localeKey, auth.identityKey]);
 
   useEffect(() => {
     if (!jobId) return;
     let active = true;
+    const controller = new AbortController();
+    const identity = auth.identityKey;
     const timer = setInterval(async () => {
       try {
-        const poll = await api<{ job: { status: string }; result: PlanResultView | null; error: { message: string } | null }>(`/plans/${jobId}`);
-        if (!active) return;
+        const poll = await api<{ job: { status: string }; result: PlanResultView | null; error: { message: string } | null }>(`/plans/${jobId}`, { signal: controller.signal });
+        if (!active || identityRef.current !== identity) return;
         setJobStatus(poll.job.status);
         if (poll.job.status === 'done') { setResult(poll.result); setJobId(null); }
         else if (poll.job.status === 'error' || poll.job.status === 'cancelled') { setError(poll.error?.message ?? poll.job.status); setJobId(null); }
       } catch (reason) { if (active) { setError(formatError(reason)); setJobId(null); } }
     }, 600);
-    return () => { active = false; clearInterval(timer); };
-  }, [jobId]);
+    return () => { active = false; controller.abort(); clearInterval(timer); };
+  }, [jobId, auth.identityKey]);
 
   /**
    * 「可用背景」网格：只列**没有任何行动能产出**的单元节点。
@@ -473,10 +740,35 @@ export function PlanPage() {
   }, [backgroundNodes, entries]);
 
   async function runPlan(review = false, override?: { goals?: string[]; horizon?: number; entries?: Record<string, { kind: 'confirmed' | 'assumption' | 'unknown' }> }) {
+    if (!auth.ready) return;
+    const activeGoals = override?.goals ?? goals;
+    /*
+     * 没有目标：**不往规划器发请求**（契约里目标必填，硬塞一个空目标只会得到 400）。
+     * 改为当场算可学前沿——这一步是纯派生，不走网络、也不产生任何 E 层事件。
+     */
+    if (activeGoals.length === 0) {
+      setError(null); setResult(null); setJobId(null); setJobStatus(null);
+      setFrontierOn(true);
+      setHasPlanned(true);
+      resultScrollPending.current = true;
+      pendingNoticeScrolled.current = false;
+      /*
+       * 已经在无目标模式时再点一次：`frontierOn` 与 `hasPlanned` 都没有变化，
+       * React 不重渲染、上面那条 effect 也就不会重跑——这里直接把视线带回去，
+       * 否则「点了没反应」会在这个角落里原样复现。
+       */
+      if (resultRef.current) scrollToElement(resultRef.current);
+      return;
+    }
+    const generation = ++requestGeneration.current, identity = auth.identityKey;
     setError(null);
     setResult(null);
     setLastWasReview(review);
-    const activeGoals = override?.goals ?? goals;
+    /* 按钮当场换字：这一下点上没有，不必等结果回来才知道。 */
+    setHasPlanned(true);
+    /* 结果还没到，先把视线交给「规划任务 … 运行中」那条提示；结果落地后**再**交给路线栏目。 */
+    resultScrollPending.current = true;
+    pendingNoticeScrolled.current = false;
     const activeEntries = override?.entries ?? entries;
     const activeHorizon = override?.horizon ?? horizon;
     const background = Object.entries(activeEntries).map(([node, value]) => ({ entryId: 'ui:' + node, node, provides: ['statement', 'definition'], kind: value.kind }));
@@ -492,9 +784,10 @@ export function PlanPage() {
     if (review) body.review = { node: activeGoals[0] };
     try {
       const started = await api<{ job: { id: string; status: string } }>('/plans', { method: 'POST', body });
+      if (generation !== requestGeneration.current || identity !== identityRef.current) return;
       setJobId(started.job.id);
       setJobStatus(started.job.status);
-    } catch (reason) { setError(formatError(reason)); }
+    } catch (reason) { if (generation === requestGeneration.current && identity === identityRef.current) setError(formatError(reason)); }
   }
 
   /** 载入范例：写入目标组、事件界与起点声明，然后立刻规划一次。 */
@@ -524,6 +817,31 @@ export function PlanPage() {
     setEntries((current) => Object.fromEntries(Object.entries(current).filter(([id]) => listed.has(id))));
   }
 
+  /* —— 整条路径：一键导入、逐程走、结束（2026-10-13 加） —— */
+
+  /** 一键导入整条路径：载入第一程，并把「正在走这一本」记进本次会话。 */
+  function importWholePath(set: ExampleSet) {
+    const next = { setId: set.id, visited: [set.paths[0].id] };
+    setWalk(next);
+    writeExampleWalk(next);
+    loadExample(set.paths[0]);
+  }
+
+  /** 走进第 index 程：进度轨上点一程，或点「下一程」。 */
+  function loadWalkStage(index: number) {
+    const path = walkSet?.paths[index];
+    if (!walkSet || !path) return;
+    const next = { setId: walkSet.id, visited: [...new Set([...(walk?.visited ?? []), path.id])] };
+    setWalk(next);
+    writeExampleWalk(next);
+    loadExample(path);
+  }
+
+  function exitWalk() {
+    setWalk(null);
+    writeExampleWalk(null);
+  }
+
   async function cancel() {
     if (!jobId) return;
     try { await api(`/plans/${jobId}`, { method: 'DELETE' }); } catch { /* job may already be done */ }
@@ -534,11 +852,19 @@ export function PlanPage() {
   const actionById = useMemo(() => new Map((graph?.actions ?? []).map((action) => [action.id, action])), [graph]);
   const actionTitleById = useMemo(() => new Map((graph?.actions ?? []).map((action) => [action.id, action.title])), [graph]);
   const nodeById = useMemo(() => new Map((graph?.nodes ?? []).map((node) => [node.id, node])), [graph]);
+  /** 节点标题按 id 取：方向行、参与项与结果列表共用同一份映射。 */
+  const titleOf = (id: string) => nodeById.get(id)?.title ?? id;
   // withReview 会把 routes 折成单条；此时按 pareto 展示会拿到未含复习事件的陈旧结果包。
   const routes = result ? (lastWasReview || showAllRoutes ? result.routes : result.pareto.length ? result.pareto : result.routes) : [];
   /** 默认只比较前三条候选：其余折叠，避免第一屏变成一张功能清单。 */
   const visibleRoutes = showAllRoutes ? routes : routes.slice(0, 3);
   const hasGoalParam = Boolean(params.get('goal'));
+
+  /*
+   * 窄屏（≤860px，与 `styles.css` 的 `.example-pages` 断点同一档）把范例入口条排到表单之后：
+   * 手机上入口条排在最前会把规划表单推到 1500px 之下（实测），那是把主页功能埋掉。
+   */
+  const narrowPlanPage = useMediaQuery('(max-width: 860px)');
 
   /**
    * 沿路线阅读：把这条路线的事件顺序存进本次会话，然后从第一步的节点开始读。
@@ -547,7 +873,7 @@ export function PlanPage() {
    * 并反复写会话存储。点击时再存，语义也更清楚——只有真的要走这条路线才建立上下文。
    */
   function startReading(route: PlanPackageView) {
-    const order = route.linearExtensions[0] ?? route.events.map((event) => event.id);
+    const order = readingOrder(route);
     const steps = buildReadingSteps(route, order, actionTitleById);
     const firstNode = steps[0]?.node || result?.goals[0];
     if (!firstNode) return;
@@ -560,18 +886,48 @@ export function PlanPage() {
       <div className="section-heading">
         <h1>{pick(TEXT.title)}</h1>
         <p>{pick(TEXT.intro)}</p>
+        {guest && <p className="muted" data-testid="guest-plan-note">{pick({ zh: '游客也可规划：背景声明仅用于这次规划。目标与参数暂存在当前浏览器，登录后不会自动写入学习档案。', en: 'Guests can plan too. Background declarations apply only to this plan. Goals and settings stay in this browser and are not automatically saved to a profile after sign-in.' })}</p>}
       </div>
+
+      {/*
+        范例路径（2026-10-13 第二版：压缩态 → 悬浮简介 → 点击展开）。
+
+        默认只占几行：三个学科各一行书名按钮；鼠标悬浮（或键盘聚焦）书名才出现这套路径的
+        简介；点一下在同一栏里展开它的各程卡片。因此不再需要「入口条 + 页面底部详情」两处渲染，
+        也不会把规划表单压到十几屏之下。
+      */}
+      {!narrowPlanPage && <ExamplePaths nodes={graph?.nodes ?? []} loadedId={loadedExample?.id ?? null} onLoad={loadExample} onLoadPath={importWholePath} />}
+      <LearningGuide learning={learningData} compact />
 
       {/* 三步主线：先确定目标，再核对背景，最后才比较路线；范例移到最后作为可选的起步方式。 */}
       {/* a11y 文案走 `messages.ts` 的 `a11y.*` 段（全站统一入口）；中文「规划步骤」逐字不变。 */}
       <ol className="step-rail" aria-label={t('a11y.planSteps')}>
-        <li className="active"><span>1</span>{pick(TEXT.stepGoal)}</li>
+        <li className="active optional"><span>1</span>{pick(TEXT.stepGoal)}</li>
         <li><span>2</span>{pick(TEXT.stepBackground)}</li>
         <li><span>3</span>{pick(TEXT.stepRoutes)}</li>
       </ol>
 
-      <div className="card plan-form" ref={formRef}>
+      <div className="card plan-form" id="plan-form" ref={formRef}>
         <h2>{pick(TEXT.headingGoal)}</h2>
+        {/*
+          方向只作为**默认目标的来源**出现在这里：规划器仍然只吃「目标 + 背景 + 事件界」，
+          一行算法都没改。学习者改下拉框即覆盖它。
+        */}
+        <p className="plan-direction muted">
+          {pick(TEXT.directionLead)}
+          {directionNode ? (
+            <>
+              <strong className={isPending(titleOf(directionNode)) ? 'i18n-pending' : undefined} title={isPending(titleOf(directionNode)) ? t('i18n.pendingTitle') : undefined}>{titleOf(directionNode)}</strong>
+              <button className="link-button" onClick={() => { setGoals([directionNode]); setLoadedExample(null); }}>{pick(TEXT.directionUse)}</button>
+              <span className="muted"> · {pick(TEXT.directionFrom)}</span>
+            </>
+          ) : (
+            <>
+              {pick(TEXT.directionNone)}
+              <Link className="link-button" to={hrefFor('/start#direction')}>{pick(TEXT.directionOpen)}</Link>
+            </>
+          )}
+        </p>
         {hasGoalParam && (
           <p className="chosen-goal">
             {pick(TEXT.chosenGoalLead)}<strong>{nodeById.get(goal)?.title ?? goal}</strong>
@@ -579,8 +935,10 @@ export function PlanPage() {
           </p>
         )}
         <label>{pick(TEXT.goalNodeLabel)}
-          <select value={goal} onChange={(event) => { setGoals([event.target.value]); setLoadedExample(null); }}>
-            {(graph?.nodes ?? []).filter((node) => ['Claim', 'Concept', 'Construction', 'Method', 'Problem', 'Example'].includes(node.construct)).map((node) => (
+          <select value={goal ?? ''} onChange={(event) => { setGoals(event.target.value ? [event.target.value] : []); setLoadedExample(null); }}>
+            {/* 空选项：目标可选（2026-10-13）。选它会走可学前沿，而不是给规划器一个空目标。 */}
+            <option value="">{pick(TEXT.goalOptionalOption)}</option>
+            {(graph?.nodes ?? []).filter((node) => GOAL_CONSTRUCTS.includes(node.construct)).map((node) => (
               <option
                 key={node.id}
                 value={node.id}
@@ -591,8 +949,19 @@ export function PlanPage() {
                 {node.granularity === 'topic' ? pick(TEXT.topicMarkOption) : ''}{node.title}{pick(TEXT.idSuffix)(node.id)}
               </option>
             ))}
+            {/*
+              当前目标不在常规列表里（符号类节点、或 `?goal=` 带来的别的构造类型）时补一条，
+              否则 `value={goal}` 落不到任何选项上，浏览器会把下拉框显示成空——看起来像没选目标。
+            */}
+            {goal && !(graph?.nodes ?? []).some((node) => node.id === goal && GOAL_CONSTRUCTS.includes(node.construct)) && (
+              <option value={goal}>{titleOf(goal)}{pick(TEXT.idSuffix)(goal)}</option>
+            )}
           </select>
         </label>
+        {/* 目标可选这件事要写在表单上：否则「不选目标」看起来像还没填完。 */}
+        <p className="muted plan-goal-optional">
+          {pick(TEXT.goalOptionalHint)}
+        </p>
         {/*
          * 话题与单元在规划页的分工，写成一句能核的话：目标可以是线索，背景只能是单元。
          * 依据见 data/granularity.mjs（判据与登记表）与网络页的「线索层」。
@@ -613,10 +982,22 @@ export function PlanPage() {
           </p>
         )}
         <div className="plan-actions">
-          <button className="button primary" disabled={Boolean(jobId)} onClick={() => runPlan(false)}>{pick(TEXT.startPlanning)}</button>
+          {/*
+           * 主按钮的三态：没点过「开始规划」→ 任务在跑「规划中…」→ 跑完「重新规划」。
+           * `data-testid` 是给测试的稳定把手：按钮文案会变，按文案找第二次点击就会失手。
+           */}
+          <button
+            className="button primary"
+            data-testid="plan-submit"
+            aria-busy={Boolean(jobId)}
+            disabled={Boolean(jobId)}
+            onClick={() => runPlan(false)}
+          >
+            {pick(jobId ? TEXT.planning : hasPlanned ? TEXT.replan : TEXT.startPlanning)}
+          </button>
           {jobId && <button className="button" onClick={cancel}>{pick(TEXT.cancelJob)}</button>}
           {/* withReview 会把路线折成单条并只针对一个节点；多目标时这条路径不适用，直接禁用并说明。 */}
-          <button className="button ghost" disabled={Boolean(jobId) || goals.length > 1} title={goals.length > 1 ? pick(TEXT.planWithReviewDisabled) : undefined} onClick={() => runPlan(true)}>{pick(TEXT.planWithReview)}</button>
+          <button className="button ghost" disabled={Boolean(jobId) || goals.length !== 1} title={goals.length !== 1 ? pick(TEXT.planWithReviewDisabled) : undefined} onClick={() => runPlan(true)}>{pick(TEXT.planWithReview)}</button>
         </div>
         <details className="plan-advanced">
           <summary>{pick(TEXT.advancedSummary)}</summary>
@@ -677,6 +1058,56 @@ export function PlanPage() {
           )}
         </details>
       </div>
+
+      {/*
+        「整条路径」进度轨（2026-10-13 加）：一键导入范例的整条路径之后挂在这里。
+        它只记**本次会话**载入过哪几程（示范假设，不写档案），所以措辞一律是「载入」而不是「学会」。
+        当前程 = 表单里载入的那一程；点任意一程都能直接跳过去，「下一程」走正序。
+      */}
+      {walkSet && (
+        <section className="card example-walk" aria-label={pick(TEXT.walkTitle)(walkSet.shortTitle)}>
+          <div className="example-walk-head">
+            <h2>{pick(TEXT.walkTitle)(walkSet.shortTitle)}</h2>
+            <button type="button" className="link-button" onClick={exitWalk}>{pick(TEXT.walkExit)}</button>
+          </div>
+          <p className="muted">{pick(TEXT.walkLead)(walkSet.paths.length)}</p>
+          <ol className="example-walk-stages">
+            {walkSet.paths.map((path, index) => {
+              const state = index === walkStageIndex ? 'current' : (walk?.visited ?? []).includes(path.id) ? 'visited' : 'todo';
+              const label = state === 'current'
+                ? pick(TEXT.walkCurrent)
+                : state === 'visited' ? pick(TEXT.walkVisited) : pick(TEXT.walkTodo);
+              return (
+                <li key={path.id} className={`example-walk-stage ${state}`}>
+                  <button type="button" className="link-button" onClick={() => loadWalkStage(index)}>
+                    <span className="example-walk-ordinal">{path.ordinal}</span>
+                    <span className="example-walk-title">{path.title}</span>
+                  </button>
+                  <span className="example-walk-meta">{pick(TEXT.walkStageMeta)(path.goals.length, path.entries.length, path.events)}</span>
+                  <span className={`example-walk-state ${state}`}>{label}</span>
+                </li>
+              );
+            })}
+          </ol>
+          <div className="card-actions">
+            {walkNextIndex >= 0 && walkNextIndex < walkSet.paths.length ? (
+              <button type="button" className="button primary" onClick={() => loadWalkStage(walkNextIndex)}>
+                {pick(TEXT.walkNext)(walkSet.paths[walkNextIndex].ordinal, walkSet.paths[walkNextIndex].title)}
+              </button>
+            ) : (
+              <span className="example-walk-done">{pick(TEXT.walkDone)(walkSet.paths.length)}</span>
+            )}
+          </div>
+        </section>
+      )}
+
+      {/*
+        窄屏把范例路径放在表单之后（2026-10-13）：手机上的第一动作是填目标，
+        这一栏排在最前会把表单推到 1500px（实测），`tests/browser.mjs` 的
+        「窄屏规划页目标在首屏附近」守的正是这件事。桌面端仍在最前（见上面那一处）。
+        压缩态只有三行书名，所以窄屏这里也不占地方。
+      */}
+      {narrowPlanPage && <ExamplePaths nodes={graph?.nodes ?? []} loadedId={loadedExample?.id ?? null} onLoad={loadExample} onLoadPath={importWholePath} />}
 
       <section className="card">
         <h2>{pick(TEXT.headingBackground)}</h2>
@@ -748,8 +1179,99 @@ export function PlanPage() {
         )}
       </section>
 
-      {jobId && <p className="notice">{pick(TEXT.jobRunning)(jobId, jobStatus ?? '')}</p>}
+      {/* 进行中的提示既是滚动锚点，也是读屏软件的播报点（`role="status"` 即 aria-live=polite）。 */}
+      {jobId && <p className="notice" ref={pendingRef} role="status">{pick(TEXT.jobRunning)(jobId, jobStatus ?? '')}</p>}
       {error && <p className="error">{error}</p>}
+
+      {/*
+        无目标的结果（2026-10-13）：可学前沿。
+        它与路线比较**互斥**（目标一出现就自动退出这个模式），因此共用同一个滚动锚点。
+      */}
+      {frontierReport && (
+        <section className="card plan-frontier" ref={resultRef} aria-label={pick(TEXT.frontierTitle)}>
+          <h2>{pick(TEXT.frontierTitle)}</h2>
+          <p className="hint">{pick(TEXT.frontierLead)}</p>
+          <dl className="facts">
+            <div><dt>{pick(TEXT.frontierStartable)}</dt><dd>{frontierReport.options.length}</dd></div>
+            <div>
+              <dt>{pick(TEXT.frontierReachable)}</dt>
+              <dd>{pick(TEXT.frontierReachableValue)(frontierReport.position.reachable, frontierReport.position.units)}</dd>
+            </div>
+            <div><dt>{pick(TEXT.frontierBackground)}</dt><dd>{pick(TEXT.frontierBackgroundValue)(Object.keys(entries).length)}</dd></div>
+          </dl>
+          {frontierReport.threadExcluded > 0 && <p className="muted">{pick(TEXT.frontierThreadNote)(frontierReport.threadExcluded)}</p>}
+          {frontierReport.options.length === 0 ? (
+            <p className="notice">{pick(TEXT.frontierEmpty)}</p>
+          ) : (
+            <>
+              <p className="muted">{pick(TEXT.frontierPickLead)}</p>
+              <ul className="frontier-options">
+                {frontierReport.options.slice(0, FRONTIER_LIMIT).map((option) => (
+                  <li
+                    key={option.node}
+                    className={option.recommended ? 'frontier-option recommended' : 'frontier-option'}
+                    data-node={option.node}
+                  >
+                    <div className="frontier-option-head">
+                      <Link
+                        to={hrefFor(`/nodes/${encodeURIComponent(option.node)}`)}
+                        className={isPending(option.title) ? 'i18n-pending' : undefined}
+                        title={isPending(option.title) ? t('i18n.pendingTitle') : undefined}
+                      >
+                        {option.title}
+                      </Link>
+                      <code>{option.node}</code>
+                      {option.recommended && <span className="badge badge-recommended">{pick(TEXT.frontierRecommended)}</span>}
+                      {option.newlyUnlocked > 0 && <span className="badge badge-unlock">{pick(TEXT.frontierUnlocks)(option.newlyUnlocked)}</span>}
+                    </div>
+                    {/* 依据句直接来自 `direction.ts` 的 `optionBasis`：界面不自己写第二句（与方向面板同源）。 */}
+                    <p className="frontier-basis">{optionBasis(option, titleOf, locale)}</p>
+                    <div className="card-actions">
+                      {option.actionId ? (
+                        <button
+                          className="button small primary"
+                          onClick={() => {
+                            /*
+                             * 一键把候选变成目标：写进下拉框（表单上看得见）**并立刻规划一次**。
+                             * `goals` 一变成非空，无目标模式自己就退出了（见上面那条 effect）。
+                             */
+                            setGoals([option.node]);
+                            setLoadedExample(null);
+                            void runPlan(false, { goals: [option.node] });
+                          }}
+                        >
+                          {pick(TEXT.frontierUseAsGoal)}
+                        </button>
+                      ) : (
+                        /*
+                         * 没有产出行动的节点（本体的 `Symbol` 这类）**当不了目标**：
+                         * 规划器只能靠事件产出节点，没有行动的节点永远「界内不可行」。
+                         * 它唯一能做的事是「直接声明」——那就让它做这件事（并说明为什么不给目标按钮）。
+                         */
+                        <button
+                          className="button small primary"
+                          title={pick(TEXT.frontierDeclareHint)}
+                          onClick={() => {
+                            setEntries((current) => ({ ...current, [option.node]: { kind: 'confirmed' } }));
+                            setLoadedExample(null);
+                          }}
+                        >
+                          {pick(TEXT.frontierDeclare)}
+                        </button>
+                      )}
+                      <Link className="button small" to={hrefFor(`/nodes/${encodeURIComponent(option.node)}`)}>{pick(TEXT.frontierOpenNode)}</Link>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+              {frontierReport.options.length > FRONTIER_LIMIT && (
+                <p className="muted">{pick(TEXT.frontierMore)(frontierReport.options.length - FRONTIER_LIMIT)}</p>
+              )}
+              <p className="muted">{pick(TEXT.frontierUseAsGoalHint)}</p>
+            </>
+          )}
+        </section>
+      )}
 
       {result && (
         <>
@@ -796,7 +1318,7 @@ export function PlanPage() {
 
           <section className="route-list">
             {visibleRoutes.map((route) => {
-              const order = route.linearExtensions[0] ?? route.events.map((event) => event.id);
+              const order = readingOrder(route);
               const eventById = new Map(route.events.map((event) => [event.id, event]));
               /*
                * 回放计划算一次给按钮与说明共用。
@@ -879,17 +1401,6 @@ export function PlanPage() {
         </>
       )}
 
-      {/*
-        范例是「不知道怎么开始时」的出口，因此放在主线之后、默认折叠。
-        从节点带着目标进来的人第一眼看到的是自己的目标与背景，不必先穿过一整套广义相对论范例。
-      */}
-      <details className="card example-picker" open={!hasGoalParam && !profileId && !result}>
-        <summary>{pick(TEXT.exampleSummary)}</summary>
-        <p className="muted">
-          {rich('examplePickerNote')()}
-        </p>
-        <ExamplePaths nodes={graph?.nodes ?? []} loadedId={loadedExample?.id ?? null} onLoad={loadExample} />
-      </details>
     </div>
   );
 }

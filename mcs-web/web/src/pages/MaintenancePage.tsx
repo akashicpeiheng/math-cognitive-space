@@ -3,7 +3,9 @@ import { Link } from 'react-router-dom';
 import { api, formatError, useApi } from '../api';
 import { useI18n } from '../i18n';
 import { StatusBadge } from '../components/StatusBadge';
-import type { CoverageEntry, EvidenceRecord, LocalizationDefinition, LocalizationResultView } from '../types';
+import { ConnectionNote } from '../connection-notes';
+import { ScalingExplanationView } from '../components/ScalingExplanation';
+import type { CoverageEntry, EvidenceRecord, LocalizationDefinition, LocalizationResultView, NodeDetailResponse } from '../types';
 
 /**
  * 网站维护：站点自身的维护材料。
@@ -1130,7 +1132,7 @@ function LegalityTab() {
 }
 
 function RelationsTab() {
-  const relations = useApi<{ relations: Array<{ id: string; kind: string; from: string; to: string; witness: { status: string }; scope?: string }>; summary: { total: number; byKind: Record<string, number> } }>('/ontology/relations');
+  const relations = useApi<{ relations: NodeDetailResponse['relations']; summary: { total: number; byKind: Record<string, number> } }>('/ontology/relations');
   const [left, setLeft] = useState<string[]>([]);
   const [right, setRight] = useState<string[]>([]);
   const [composed, setComposed] = useState<Array<{ id: string; from: string; to: string }>>([]);
@@ -1159,7 +1161,8 @@ function RelationsTab() {
         <p className="muted">{tab.summary(relations.data?.summary.total ?? 0, kindText)}</p>
         <table className="data-table"><thead><tr><th>{tab.headers.relation}</th><th>{tab.headers.kind}</th><th>{tab.headers.ends}</th><th>{tab.headers.witness}</th></tr></thead><tbody>
           {relations.data?.relations.map((relation) => (
-            <tr key={relation.id}><td><code>{relation.id}</code></td><td>{relation.kind}</td><td><code>{relation.from} → {relation.to}</code></td><td><StatusBadge status={relation.witness.status} /></td></tr>
+            <tr key={relation.id}><td><code>{relation.id}</code><ScalingExplanationView relation={relation} compact />
+              <ConnectionNote target={{ key: relation.connectionKey, label: relation.id }} actions /></td><td>{relation.kind}</td><td><code>{relation.from} → {relation.to}</code></td><td><StatusBadge status={relation.witness.status} /></td></tr>
           ))}
         </tbody></table>
       </div>

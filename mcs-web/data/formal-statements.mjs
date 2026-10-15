@@ -208,6 +208,120 @@ const STATEMENTS = {
     label: 'DEF',
     note: '交换律**不在**公理里：交换群是额外一类。运算记号省略时写作 ab，但非交换群里 ab ≠ ba。',
   },
+
+  /* ---------------- 点集拓扑（2026-10 第八个案例） ---------------- */
+  'top:space': {
+    tex: String.raw`\tau \subseteq \mathcal{P}(X):\quad \emptyset \in \tau,\quad X \in \tau,\\[4pt] \{U_i\}_{i \in I} \subseteq \tau \Rightarrow \bigcup_{i \in I} U_i \in \tau,\\[4pt] U, V \in \tau \Rightarrow U \cap V \in \tau`,
+    reading: '拓扑是 X 的一族子集：含空集与全集、对任意并封闭、对有限交封闭；$\\tau$ 的成员叫开集，$(X, \\tau)$ 叫拓扑空间。',
+    notation: [
+      { symbol: 'X', means: '底集合；拓扑只约束它的子集族，不要求额外的距离或序' },
+      { symbol: 'τ', means: '被指定为「开」的子集族；换成闭集族是等价写法' },
+      { symbol: '任意并', means: '指标集 I 可以是不可数的；这一条不能弱化成有限并' },
+      { symbol: '有限交', means: '只对有限多个成员要求；换成任意交会排除 ℝ 上的通常拓扑' },
+    ],
+    label: 'DEF',
+    note: '本站另有背景接口 bg:top:space（把拓扑空间与局部欧氏性合成一个最低接口）与本案例的单元级登记 top:topological-manifold；三者是不同粒度的登记，不合并。',
+  },
+  'top:compactness': {
+    tex: String.raw`\forall \mathcal{U} \subseteq \tau:\ \bigcup \mathcal{U} = X\\[4pt] \Rightarrow\ \exists \mathcal{U}_0 \subseteq \mathcal{U}\ \text{finite}:\ \bigcup \mathcal{U}_0 = X`,
+    reading: 'X 紧：任意开覆盖都能抽出有限子覆盖。等价地，闭集族的任意有限子族交非空则全体交非空。',
+    notation: [
+      { symbol: '𝒰', means: 'X 的一个开覆盖：全由开集组成且并等于 X' },
+      { symbol: '𝒰₀ 有限', means: '有限子覆盖是结论的全部内容；「存在某个有限开覆盖」是恒真条件，不是紧性' },
+      { symbol: '量词次序', means: '∀ 覆盖 之后才 ∃ 有限子族；交换次序会得到恒真的伪条件' },
+    ],
+    label: 'DEF',
+    note: '序列刻画（每序列有收敛子序列）只在**度量空间**与紧性等价；一般空间要换成网。[0, ω₁] 的序拓扑紧而不序列紧。',
+  },
+  'top:paracompactness': {
+    tex: String.raw`\forall \mathcal{U} \subseteq \tau,\ \bigcup \mathcal{U} = X,\ \exists \mathcal{V} \subseteq \tau:\\[4pt] \bigcup \mathcal{V} = X,\quad \forall V \in \mathcal{V}\ \exists U \in \mathcal{U}:\ V \subseteq U,\\[4pt] \forall x \in X\ \exists N(x):\ \#\{V \in \mathcal{V} : V \cap N(x) \neq \emptyset\} < \infty`,
+    reading: 'X 仿紧：每个开覆盖都有局部有限的开加细。「局部有限」指每点有一个邻域只与有限多个加细成员相交。',
+    notation: [
+      { symbol: '𝒱 是加细', means: '每个 V 装进某个 U；加细的成员不必是原覆盖的成员' },
+      { symbol: '局部有限', means: '整体可以是无限族；只要每点附近只有有限多个成员在起作用' },
+      { symbol: '与紧性的差别', means: '紧性要求有限子覆盖（整体有限），仿紧只要求局部有限——所以 ℝⁿ 仿紧而不紧' },
+    ],
+    label: 'DEF',
+    note: '本站按「Hausdorff + 仿紧」使用它：正规性与单位分解都需要 Hausdorff，而「仿紧」一词本身不含分离性。',
+  },
+  'top:sigma-compact': {
+    tex: String.raw`X = \bigcup_{n \in \mathbb{N}} K_n,\qquad K_n \subseteq X\ \text{compact in the subspace topology}`,
+    reading: 'X 是 σ-紧的：可以写成可数多个紧子集之并。',
+    notation: [
+      { symbol: 'K_n', means: '紧子集；不要求开，也不要求闭（T2 时紧集自动闭）' },
+      { symbol: '可数并', means: '并必须可数；换成「任意并」则每个空间都满足，判据失去意义' },
+      { symbol: '子空间拓扑', means: 'K_n 的紧性按 X 诱导的子空间拓扑判定' },
+    ],
+    label: 'DEF',
+    note: '紧 ⇒ σ-紧（取 K₁ = X）；反向不成立。不可数离散空间**不是** σ-紧的，不能用来否定「σ-紧 + 局部紧 ⇒ 紧」。',
+  },
+  'top:connectedness': {
+    tex: String.raw`\nexists\, U, V \in \tau:\ U \neq \emptyset,\ V \neq \emptyset,\ U \cap V = \emptyset,\ U \cup V = X\\[4pt] \text{路径连通}:\quad \forall x, y\ \exists \gamma: [0,1] \to X\ \text{continuous},\ \gamma(0) = x,\ \gamma(1) = y`,
+    reading: 'X 连通：不能被写成两个非空不交开集之并。路径连通：任意两点可用 [0, 1] 的连续像连接。',
+    notation: [
+      { symbol: 'U, V', means: '要求相对 X 既开又闭地分开；只要求「不交子集」会得到恒真条件' },
+      { symbol: '[0,1]', means: '路径的参数区间必须是紧的；换成 (0,1] 或 ℝ 得到更弱的变体' },
+      { symbol: 'γ 连续', means: '路径连通 ⇒ 连通，反向不成立（拓扑学家的正弦曲线）' },
+    ],
+    label: 'DEF',
+    note: '连通子集在 ℝ 上恰好是区间，中值定理因此成为「连通空间的连续像连通」的推论。',
+  },
+  'top:topological-manifold': {
+    tex: String.raw`M\ \text{Hausdorff},\quad M\ \text{second countable},\\[4pt] \forall x \in M\ \exists U \ni x\ \text{open},\ \exists \varphi:\ U \to \mathbb{R}^n\ \text{homeomorphism},\\[4pt] \varphi(U) \subseteq \mathbb{R}^n\ \text{open}:\quad M\ \text{is an}\ n\text{-manifold}`,
+    reading: 'n 维拓扑流形：Hausdorff、第二可数，且每点有开邻域与 ℝⁿ 的开子集同胚。',
+    notation: [
+      { symbol: 'φ(U) 开', means: '局部坐标的像必须是开集；射到带边或闭子集不构成坐标卡' },
+      { symbol: '同胚', means: '双向连续，不只是连续双射' },
+      { symbol: 'Hausdorff', means: '排除「带两个原点的直线」这类局部欧氏而非 T2 的空间' },
+      { symbol: '第二可数', means: '排除长直线；本站与教材一致，流形要求第二可数' },
+    ],
+    label: 'DEF',
+    note: '本站对同一层概念有三处登记：本节点含第二可数，dg:topological-manifold 按「Hausdorff + 局部欧氏」（不含第二可数）登记，manifold:top-manifold 与本节点公理表相同但登记深度不同。差别如实保留，不合并。',
+  },
+  'top:coordinate-chart': {
+    tex: String.raw`U \subseteq M\ \text{open},\quad \varphi:\ U \to \varphi(U) \subseteq \mathbb{R}^n\\[4pt] \varphi\ \text{a homeomorphism},\quad \varphi(U)\ \text{open in}\ \mathbb{R}^n:\quad (U, \varphi)\ \text{is a chart}`,
+    reading: '坐标卡 (U, φ)：U 是 M 的开集，φ(U) 是 ℝⁿ 的开集，且 φ 是从 U 到 φ(U) 的同胚；φ 的分量函数就是局部坐标。',
+    notation: [
+      { symbol: 'U', means: '底空间的开集（局部参数的有效范围）' },
+      { symbol: 'φ(U) 开', means: '像必须开：射到带边或闭子集都不构成坐标卡' },
+      { symbol: '同胚', means: 'φ 与 φ⁻¹ 都连续；只要求连续双射不够' },
+      { symbol: 'ℝⁿ', means: '局部模型的维数 n；在连通流形上 n 唯一（需要维数不变性定理）' },
+    ],
+    label: 'DEF',
+    note: '坐标卡本身不含微分结构：C^r 条件加在图册的过渡映射上（见 top:atlas 与 top:differentiable-manifold）。',
+  },
+  'top:atlas': {    tex: String.raw`\mathcal{A} = \{(U_\alpha, \varphi_\alpha)\}:\quad \bigcup_{\alpha} U_\alpha = M,\\[4pt] \forall \alpha, \beta:\ \varphi_\beta \circ \varphi_\alpha^{-1}:\ \varphi_\alpha(U_\alpha \cap U_\beta) \to \varphi_\beta(U_\alpha \cap U_\beta)\ \text{compatible}`,
+    reading: '图册是覆盖 M 的一族坐标卡，并且每对卡的重叠域上两个方向的过渡映射都有定义且（按 C^r 层级）相容。',
+    notation: [
+      { symbol: '覆盖', means: '每点至少落在一张卡里；删掉这一条，未覆盖处没有坐标可言' },
+      { symbol: '过渡映射的定义域', means: 'φ_α(U_α ∩ U_β)，不是整个 ℝⁿ；在重叠域的像之外 φ_α⁻¹ 没有定义' },
+      { symbol: '全部有序卡对', means: '相容性不是只对相邻编号的卡检查；也不是单向检查' },
+    ],
+    label: 'DEF',
+    note: '「相容」按层级分：拓扑图册要求过渡映射是同胚，C^r 图册要求它与逆都 C^r。本节点登记拓扑层；C^r 层见 top:differentiable-manifold。',
+  },
+  'top:claim-compact-normal': {
+    tex: String.raw`\text{Compact}(X)\ \wedge\ T_2(X)\\[4pt] \Rightarrow\ \forall A, B\ \text{closed},\ A \cap B = \emptyset\ \exists U \supseteq A,\ V \supseteq B\ \text{open}:\ U \cap V = \emptyset`,
+    reading: '紧 Hausdorff 空间是正规空间：任意两个不交闭集都可用不交开集分离。',
+    notation: [
+      { symbol: 'T₂', means: 'Hausdorff：任意两点有不交开邻域；不可省，余有限拓扑是紧 T₁ 而非正规的反例' },
+      { symbol: '紧', means: '提供两处有限子覆盖，用来把「逐点分离」压成「闭集分离」' },
+      { symbol: 'A, B 闭', means: '正规性分离的是闭集；只分离点就是 T₂，条件会弱很多' },
+    ],
+    label: 'PROOF',
+    note: '证明分两步：先对每个 x ∈ A 用 T₂ 分离 x 与整个 B，再用 A、B 的紧性各取一次有限子覆盖。本站给出正文级论证，未编码为 ND 证书。',
+  },
+  'top:claim-connected-intermediate': {
+    tex: String.raw`\text{Connected}(X)\ \wedge\ f: X \to Y\ \text{continuous}:\quad \text{Connected}(f(X))\\[4pt] X = [a, b],\ Y = \mathbb{R}\ \Rightarrow\ f[a,b]\ \text{is an interval (Intermediate Value Theorem)}`,
+    reading: '连通空间的连续像是连通的；在 ℝ 上取 [a, b] 与实值连续函数，就得到中值定理。',
+    notation: [
+      { symbol: 'f(X)', means: '取 f(X) 上的子空间拓扑；连通性是对这个子空间说的' },
+      { symbol: '证明的两行', means: '若 f(X) = U ∪ V 为不交非空开集，则原像把 X 也分开，与 X 连通矛盾' },
+      { symbol: '连续', means: '唯一用到的性质是「开集的原像开」' },
+    ],
+    label: 'REF',
+    note: '本站按教材标准结论登记为引用（不声称机器核验）；rudin 案例的 rudin:continuity-connectedness 是它在 ℝ 上的分析版本，两处互不覆盖。',
+  },
 };
 
 /** 说明每一条为什么被挑中（测试与页面都会读它，避免挑选变成没有理由的清单）。 */

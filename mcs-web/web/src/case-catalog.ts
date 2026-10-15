@@ -72,8 +72,11 @@ export const CONSTRUCT_ORDER = ['Concept', 'Definition', 'Claim', 'Proof', 'Exam
  * 那次改动之后旧名单（几何与拓扑、代数与几何、代数、方法论）一个都不再匹配，
  * 分组界面于是退化成「分析 + 其他」两组（`tests/browser.mjs` 的「按领域分组」断言会红）。
  * 名单与 `data/fields.mjs` 的 FIELDS 一一对应。
+ *
+ * 2026-10-13：改成 `export`——路径规划页的「范例路径」要按学科分组并给出学科快捷条，
+ * 分组次序必须与案例页同一份名单，复制一份迟早漂开。
  */
-const SECTION_ORDER = [
+export const SECTION_ORDER = [
   '分析', '测度论', '微分几何', '拓扑',
   '群论', '线性代数', '多重线性与张量代数', '域与数系',
   '相对论与宇宙论', '逻辑与基础',
@@ -139,7 +142,13 @@ function primaryDisciplineOf(nodes: NodeSummary[]): string {
  * `locale` 只影响**本体里缺字段时**的兜底词（`未标注` / `Unlabeled`）与分组名；
  * 案例的标题、问题、胚子都在调用方（`StartPage` 的 `CASE_METAS`）里，按语种各给一份。 */
 export function describeCase(meta: CaseMeta, allNodes: NodeSummary[], locale: Locale = 'zh'): CaseDetail {
-  const nodes = allNodes.filter((node) => node.case === meta.id);
+  /*
+   * 按**登记归属**（`cases`）而不是节点归属（`case`）筛：2026-10 的节点合并把同一对象的
+   * 多处登记收成一个规范节点（见 `data/merges.mjs`），规范节点可能落在别的案例里。
+   * 按登记归属筛，案例卡片上的节点数、学科分布与反例清单与合并前逐字相同；
+   * 按节点归属筛会让「微分几何」这类卡片凭空瘦一圈。
+   */
+  const nodes = allNodes.filter((node) => (node.cases ?? [node.case]).includes(meta.id));
 
   const disciplineTally = new Map<string, number>();
   for (const node of nodes) disciplineTally.set(node.discipline, (disciplineTally.get(node.discipline) ?? 0) + 1);

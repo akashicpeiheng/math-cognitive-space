@@ -1,5 +1,6 @@
 import { CONTRACT_MODE_LABELS, CONTRACT_MODE_WEIGHT, RELATION_WEIGHT, WITNESS_FACTOR, contractModeLabel, relationKindLabel } from './relation-visual.ts';
-import type { NetworkGraph } from './network.ts';
+import type { NetworkEdge, NetworkGraph } from './network.ts';
+import { connectionsBetween } from './connection-display.ts';
 import type { Locale } from './i18n/locales.ts';
 
 /**
@@ -24,6 +25,8 @@ export interface RelatedCandidate {
   basis: 'relation' | 'produces' | 'consumes' | 'shared-input' | 'thread';
   /** 依据的可读说明：关系种类与见证、或这条契约的 mode 与行动标题。 */
   note: string;
+  /** All specific connections survive selecting one strongest reason. */
+  connections: NetworkEdge[];
   /** 该候选是话题级条目（线索层）时标出来：它不参与前置计算。 */
   thread?: boolean;
 }
@@ -86,11 +89,11 @@ export function relatedCandidates(
   const isThread = (id: string) => graph.nodes.find((node) => node.id === id)?.granularity === 'topic';
   const titleOf = (id: string) => graph.nodes.find((node) => node.id === id)?.title ?? id;
   /** 同一节点可能经多条路径关联：只保留最强的那条依据。 */
-  const best = new Map<string, RelatedCandidate>();
-  const consider = (candidate: RelatedCandidate) => {
+  const best = new Map<string, Omit<RelatedCandidate, 'connections'>>();
+  const consider = (candidate: Omit<RelatedCandidate, 'connections'>) => {
     if (candidate.node === nodeId || exclude.has(candidate.node)) return;
     // 候选是话题级条目：一律改标线索层，原依据附在后面（读法变了，数据没变）。
-    const final: RelatedCandidate = candidate.thread || !isThread(candidate.node)
+    const final: Omit<RelatedCandidate, 'connections'> = candidate.thread || !isThread(candidate.node)
       ? candidate
       : {
         ...candidate,
@@ -170,5 +173,6 @@ export function relatedCandidates(
 
   return [...best.values()]
     .sort((left, right) => right.strength - left.strength || left.title.localeCompare(right.title, 'zh-Hans-CN'))
-    .slice(0, limit);
+    .slice(0, limit)
+    .map(candidate => ({ ...candidate, connections: connectionsBetween(graph, nodeId, candidate.node) }));
 }

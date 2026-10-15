@@ -9,19 +9,48 @@ import { composeRelations, inverseRelation, restrictRelation, reachableNodes, su
 import { evidenceSummary, evidenceView, replayCertificate } from '../core/evidence.mjs';
 import { claimsIndex, obligationsIndex, notationIndex } from '../core/research.mjs';
 import { adapt, adaptWithOntology, deriveExternalState, stageOf } from '../core/adaptation.mjs';
+import { fieldEntry } from '../data/field-entry.mjs';
 
 test('公共本体装配、版本哈希与十二坐标', async () => {
   const ontology = await testOntology();
   const stats = ontology.stats();
   // 105 = 背景 9 + limit 16 + manifold 17 + tensor 17 + group 15（四个专稿案例，含方法节点）
-  // 7 = dg 概念 30 + 从语料提炼的断言 2 + 误区模式 4 + 方法论 2（第五个案例：微分几何）
-  // 注：dg 的误区模式计入 nodes 统计，故 dg 合计 38。
+  // 38 = dg 概念 30 + 从语料提炼的断言 2 + 误区模式 4 + 方法论 2（第五个案例：微分几何）
   // 63 = liang 概念 41 + 断言 16 + 方法 3 + 误区模式 3（第六个案例：教材上册凝练路径）
   // 57 = rudin 概念 42 + 断言 13 + 方法 2（第七个案例：Rudin《数学分析原理》；本轮只挂名字、正文留空）
-  assert.equal(stats.counts.nodes, 232);
+  // 34 → 36 = top 案例（第八个案例：点集拓扑）本轮把两个概念与 3 条契约写全
+  // 合计 269 处登记 → **231 个节点**：2026-10 的合并把同一对象的 38 处重复登记收口
+  //   （29 组，见 `data/merges.mjs`）。收口只减节点，不减内容：每一处登记都逐字留在
+  //   规范节点的 `registrations` 上（连正文块与形式陈述一起），节点页照旧显示。
+  //   按案例看「有多少处登记」才是合并前的口径：`node.cases` 会给出 9/16/17/17/15/35/63/57/37/51
+  //   （最后一档是 2026-10-13 的《简明高等代数》案例，见下）。
+  //
+  // 231 → **248**（2026-10-12）：讨论班笔记（`H:/微分几何讨论班/vault/Geometry&Topology`，27 篇）
+  //   的 19 个新对象进站，另有 7 篇是旧世代节点的**刷新对**（同一批笔记的更新世代，id 不变、
+  //   正文换成新世代，见 `data/seminar-notes.mjs` 的 `refreshOnly`），1 篇按登记表的决定不成节点。
+  //   合并组 29 → 31（李导数、黎曼曲率张量各收一处新登记——它们与 liang 案例的既有登记同对象）。
+  // 248 → **249**（2026-10-12）：第九个案例「笔记库」（`data/cases/vault.mjs`）导入一篇仓库内笔记
+  //   ——`MCS_vault/notes/Analysis/方向导数.md`（T0+T1 定义类节点模版写的定义节点）。正文由
+  //   `scripts/build-vault-case.mjs` 生成到 `data/cases/10-vault-analysis.md`，不进合并表（新增 0 组）。
+  // 学科导读新增 40 个独立对象；另补 12 个既有对象正文，保留原 ID。
+  // 249 → **300**（2026-10-13）：第十个案例《简明高等代数》（`data/cases/jiang.mjs`，
+  //   蒋剑剑、林秀清，本机共享版 PDF 见 reference/paths/）的 47 个里程碑 + 4 个方法节点；
+  //   按本轮要求这些节点**只挂名字、正文留空**（全部 contentRef: false），不进合并表（新增 0 组）。
+  // 300 → **365**（2026-10-14）：第十一个案例 Axler《Linear Algebra Done Right》第 4 版
+  //   （`data/cases/axler.mjs`）的 61 个里程碑 + 4 个方法节点；同样只挂名字、正文留空，
+  //   不进合并表（新增 0 组）。
+  assert.equal(stats.counts.nodes, 365 + fieldEntry.nodes.length);
+  assert.equal(stats.counts.merges.groups, 31);
+  assert.equal(stats.counts.merges.absorbed, 40);
   // 215 → 216：2026-10 给背景侧唯一「既无关系也无契约」的方法节点补了一条引入契约
   // （a-bg:counterexample-method），它是 data/relation-coverage.mjs 里「完全孤立」那一类清零的修法。
-  assert.equal(stats.counts.actions, 216);
+  // 216 → 249：第八个案例（点集拓扑）的 33 条行动契约；249 → 252：本轮补的 3 条。
+  // 合并**不改行动条数**（只把同一节点重复出现的输入输出并成一行）。
+  // 讨论班那批**不新增契约**（关系走 hardPrereq），因此仍是 252。
+  // 252 → **253**：笔记库案例的 1 条引入契约（a-vault:directional-derivative），输入取背景节点。
+  // 253 → **304**（2026-10-13）：《简明高等代数》案例的 51 条契约（47 个里程碑 + 4 个方法节点，一节点一条）。
+  // 304 → **369**（2026-10-14）：Axler 案例的 65 条契约（61 个里程碑 + 4 个方法节点，一节点一条）。
+  assert.equal(stats.counts.actions, 369 + fieldEntry.actions.length);
   assert.equal(stats.counts.localizations, 36);
   assert.equal(stats.counts.templates, 13);
   assert.match(stats.version, /^sha256:[0-9a-f]{64}$/);
@@ -40,42 +69,70 @@ test('方法节点：每一条都声明分类（LocalMethod / GlobalMethod）', 
     assert.ok(isLocal || isGlobal, `${node.id} 既不是 LocalMethod 也不是 GlobalMethod`);
     assert.ok(!(isLocal && isGlobal), `${node.id} 不能同时是局部技巧与全局方法`);
   }
-  // 七个案例都要有方法节点，否则「方法类区分」在某个案例里无从体现。
-  for (const caseId of ['limit', 'manifold', 'tensor', 'group', 'dg', 'liang', 'rudin']) {
+  // 十一个案例都要有方法节点，否则「方法类区分」在某个案例里无从体现。
+  for (const caseId of ['limit', 'manifold', 'tensor', 'group', 'dg', 'liang', 'rudin', 'jiang', 'top', 'axler']) {
     const count = methods.filter((node) => node.case === caseId).length;
     assert.ok(count >= 2, `${caseId} 案例的方法节点应 >= 2，实际 ${count}`);
   }
 });
 
-test('微分几何案例：30 个核心节点全部通过形成检查，且分类计数正确', async () => {
+test('微分几何案例：核心节点全部通过形成检查，且分类计数正确', async () => {
   const ontology = await testOntology();
   const dg = ontology.raw.nodes.filter((node) => node.case === 'dg');
-  assert.equal(dg.length, 38, 'dg 案例应为 30 个核心节点 + 2 个断言 + 4 个误区模式 + 2 个方法');
+  /*
+   * 38 → 28：2026-10 的节点合并把 dg 案例的 10 处登记收口到规范节点
+   * （拓扑空间/拓扑流形/流形/同胚/紧致性/坐标图/光滑流形/张量积/切向量等价/外微分平方为零，
+   * 见 `data/merges.mjs`）。这些登记仍属于 dg 案例：按 `node.cases` 计，dg 仍是 35 处登记。
+   *
+   * 28 → 45（2026-10-12）：讨论班笔记那批的 19 个新节点进 dg 案例
+   * （`gt:` 前缀，见 `data/seminar-notes.mjs`；另有 7 篇是刷新对，不新增节点）。
+   * 因此现在是 35 个旧世代核心 + 6 断言 + 4 误区 + 2 方法（其中若干被合并收口）加 19 个新节点。
+   */
+  assert.equal(dg.length, 45, 'dg 案例应为旧世代核心 + 断言 + 误区模式 + 方法，加讨论班笔记的 19 个新节点');
   const byConstruct = {};
   for (const node of dg) byConstruct[node.construct] = (byConstruct[node.construct] ?? 0) + 1;
   assert.equal(byConstruct.MisconceptionPattern, 4);
-  assert.equal(byConstruct.Claim, 6, '定理 4 个 + 从语料提炼的断言 2 个');
+  // 6 → 9（2026-10-12）：讨论班笔记新增三个 **Claim**（Sard 定理、嵌入定理、压缩映射原理）。
+  assert.equal(byConstruct.Claim, 9, '定理 4 个 + 从语料提炼的断言 2 个 + 讨论班笔记的 3 条定理');
   assert.equal(byConstruct.Method, 2, '两个从源文件推导步骤提炼的局部方法');
   for (const node of dg) {
-    assert.match(node.id, /^dg:[a-z0-9-]+$/, `${node.id} 必须是小写 ASCII 的 dg 前缀 id`);
+    /*
+     * 讨论班那批新节点的 id 是 `gt:` 前缀（`data/seminar-notes.mjs` 的文件头写了为什么）：
+     * `dg:` 会被旧世代的证据 id `ev-dg-<id>` 撞名，而且已进 `MERGES` 吸收名单的 id 会被当别名过滤掉。
+     * 因此这里接受两种前缀——断言的本意是「id 必须是小写 ASCII」，不是「必须叫 dg:」。
+     */
+    assert.match(node.id, /^(dg|gt):[a-z0-9-]+$/, `${node.id} 必须是小写 ASCII 的 dg: / gt: 前缀 id`);
     const formation = checkFormation(node);
     assert.equal(formation.status, 'well-formed', `${node.id}: ${formation.checks.filter((c) => c.status !== 'passed').map((c) => c.key).join('、')}`);
   }
   // 有源文件的节点必须有正文；误区模式与提炼断言显式声明无内容块。
   const withContent = dg.filter((node) => (node.contentMarkdown ?? '').length > 0);
-  assert.ok(withContent.length >= 32, `带正文的 dg 节点应 >= 32（含两个方法），实际 ${withContent.length}`);
+  assert.ok(withContent.length >= 22, `带正文的 dg 节点应 >= 22（含两个方法），实际 ${withContent.length}`);
+  /*
+   * 案例口径与节点口径分开钉：`case === 'dg'` 是**节点归属**（45），
+   * `cases.includes('dg')` 是**登记归属**——它比节点口径多，因为被合并收口的登记
+   * 仍把 dg 记在自己的 `cases` 里（35 = 28 + 7 处收口进来的登记；2026-10-12 讨论班那批
+   * 再 +19，于是 35 → 54）。
+   */
+  assert.equal(ontology.raw.nodes.filter((node) => (node.cases ?? [node.case]).includes('dg')).length, 54);
 });
 
 test('微分几何案例：正文里不残留 wiki 链接，链接都指向可解析的节点', async () => {
   const ontology = await testOntology();
   const dg = ontology.raw.nodes.filter((node) => node.case === 'dg' && (node.contentMarkdown ?? '').length > 0);
   const resolvable = new Set(ontology.raw.nodes.map((node) => node.id));
+  /*
+   * 旧链接要跟着合并走：正文里的 `/nodes/dg:topological-manifold` 这类链接仍然**可解析**——
+   * 它命中别名表并重定向到规范节点（`core/ontology.mjs` 的 `aliasOf`）。因此判据是
+   * 「节点表里有，或别名表里有」，而不是「节点表里有」。
+   */
+  const resolves = (id) => resolvable.has(id) || ontology.aliasOf.has(id);
   let checked = 0;
   for (const node of dg) {
     assert.ok(!node.contentMarkdown.includes('[['), `${node.id} 的正文仍含未转换的 [[wiki 链接]]`);
     for (const match of node.contentMarkdown.matchAll(/\]\(\/nodes\/([^)]+)\)/g)) {
       const id = decodeURIComponent(match[1]);
-      assert.ok(resolvable.has(id), `${node.id} 的正文链接指向未知节点：${id}`);
+      assert.ok(resolves(id), `${node.id} 的正文链接指向未知节点：${id}（别名表里也没有）`);
       checked += 1;
     }
   }
@@ -88,7 +145,8 @@ test('微分几何案例：证据不签发机器认证，全部为正文级记�
   // 30 个核心节点 + 4 个误区模式，各自一条正文级证据；外加 2 条方法证据。
   // 2026-10 再加 1 条：反函数 → 隐函数的**推导依赖**证据（ev-dg-inverse-implicit），
   // 它同时列出两端节点，是 `witness.type = 'proof-dependency'` 那种关系的可核依据。
-  assert.equal(dgEvidence.length, 37, '每个 dg 节点一条正文级证据，方法另计，推导依赖另加一条');
+  // 2026-10-12 再加 19 条：讨论班笔记那批的新节点各一条（刷新对不新增节点、因此也不新增证据）。
+  assert.equal(dgEvidence.length, 56, '每个 dg 节点一条正文级证据，方法另计，推导依赖另加一条');
   for (const record of dgEvidence) {
     assert.equal(record.kind, 'prose-proof');
     assert.equal(record.checkStatus, 'not_run', '语料没有机器证书，不得声称已核验');
@@ -194,7 +252,14 @@ test('关系代数：复合、逆、限制、闭包与包含见证', async () =>
   const reachable = reachableNodes(ontology, [{ node: 'bg:real:metric', provides: ['statement'] }, { node: 'bg:logic:quantifier', provides: ['statement'] }]);
   assert.ok(reachable.available.includes('limit:limit-ed'));
   const disabled = reachableNodes(ontology, [{ node: 'bg:real:metric', provides: ['statement'] }, { node: 'bg:logic:quantifier', provides: ['statement'] }], { disabledNodes: ['bg:logic:quantifier'] });
-  assert.ok(!disabled.available.includes('limit:limit-ed'));
+  /*
+   * 2026-10 的节点合并给 `limit:limit-ed` 添了第二条引入路径：`rudin:function-limit`
+   * 被收口到它上面，而那条契约的输入是 `dg:metric-space`——于是禁掉量词背景之后，
+   * 函数极限**仍然可达**（合并把同一对象的多条引入路径并成 OR，见 `data/merges.mjs`）。
+   * 这里改看只经由量词背景可达的两个节点，判据本身不变：禁用就要真的挡住。
+   */
+  assert.ok(!disabled.available.includes('limit:limit-seq'));
+  assert.ok(!disabled.available.includes('limit:bridge'));
   assert.equal(subrelationCheck({ witness: { type: 'declared', status: 'DEF' } }, {}).status, 'unverified');
   assert.equal(subrelationCheck({ witness: { type: 'inclusion', status: 'PROOF' } }, {}).status, 'certified');
 });
@@ -202,8 +267,8 @@ test('关系代数：复合、逆、限制、闭包与包含见证', async () =>
 test('证据索引：四份机器证书、检查状态与开放假设分开呈现', async () => {
   const ontology = await testOntology();
   const summary = evidenceSummary(ontology);
-  assert.equal(summary.machineCertificates.length, 4);
-  for (const record of ontology.raw.evidence.filter((item) => item.kind === 'machine-certificate')) {
+  assert.equal(summary.machineCertificates.length, 6);
+  for (const record of ontology.raw.evidence.filter((item) => item.kind === 'machine-certificate' && item.backend !== 'lean4')) {
     const view = evidenceView(record);
     assert.equal(view.checkerVerified, false);
     assert.ok(view.certificate.includes('mcs-foundations/validation/certification/certificates/'));

@@ -10,7 +10,7 @@ try {
   browser = await chromium.launch({ executablePath: CHROME_PATH ?? undefined, headless: true });
   const { payload: created } = await jsonCall(server.origin, '/api/v2/profiles', { method: 'POST', body: { name: '视图库验收' } });
   const profileId = created.data.profile.id;
-  const ids = ['dg:manifold', 'dg:homeomorphism', 'dg:smooth-manifold'];
+  const ids = ['top:topological-manifold', 'top:homeomorphism', 'top:differentiable-manifold'];
   const seeds = [
     ['Beta', 1], ['Alpha', 2], ['Alpha', 3], ['几何与拓扑', 2], ['几何'.repeat(40), 1],
   ];

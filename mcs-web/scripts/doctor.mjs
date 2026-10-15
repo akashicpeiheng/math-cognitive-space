@@ -5,6 +5,7 @@ import { loadConfig } from '../server/config.mjs';
 import { loadOntology } from '../core/ontology.mjs';
 import { checkFormation, checkOntologyLegality } from '../core/formation.mjs';
 import { replayCertificate, evidenceSummary } from '../core/evidence.mjs';
+import { leanCapabilities, leanRegistrationView } from '../core/lean.mjs';
 import { makeLocalizer } from '../core/localization.mjs';
 import { runAllLocalizations } from '../tests/localization-cases.mjs';
 import { createLearnerStore } from '../server/db.mjs';
@@ -12,6 +13,11 @@ import { relationCoverage, relationCoverageProblems, RELATIONLESS_CLASSES } from
 import { PAPER_ANCHORS, paperAnchorStats } from '../data/paper-anchors.mjs';
 import { coverage, formatCoverage, overlayFor } from '../data/i18n/index.mjs';
 import { localizeOntologyRaw } from '../data/i18n/overlay.mjs';
+import { validateFieldGuides } from '../data/field-guides/index.mjs';
+import { validateWritingTemplate } from '../shared/writing-template.mjs';
+import {
+  PROFILE_TEMPLATES, DEFAULT_PROFILE_TEMPLATE_ID, profileTemplate, validateProfileTemplates,
+} from '../data/profile-templates.mjs';
 
 const failures = [];
 const notes = [];
@@ -26,8 +32,11 @@ console.log('MCS Web doctor\n');
 const config = loadConfig();
 
 console.log('[1] 公共本体与形成检查');
+check('创作双语核心、可组合角色与展开资源', validateWritingTemplate().length === 0, validateWritingTemplate().join('；'));
 const ontology = await loadOntology({ dataDir: config.dataDir });
 const stats = ontology.stats();
+const guideProblems = validateFieldGuides(ontology.raw);
+check('十二学科双语导读与核心正文引用', guideProblems.length === 0, guideProblems.join('；'));
 check('本体版本哈希', /^sha256:[0-9a-f]{64}$/.test(stats.version), stats.version);
 check('节点数', stats.counts.nodes >= 60, String(stats.counts.nodes));
 const badFormation = ontology.raw.nodes.map((node) => ({ node, formation: checkFormation(node) })).filter((item) => item.formation.status !== 'well-formed');
@@ -39,7 +48,7 @@ check('局部化登记 36 项', stats.counts.localizations === 36, String(stats.
 check('十八类构造中已使用的类型均合法', ontology.raw.nodes.every((node) => stats.counts.constructs[node.construct] >= 0));
 
 console.log('\n[2] 机器证书重放（现有 ND 子集检查器）');
-const machine = ontology.raw.evidence.filter((record) => record.kind === 'machine-certificate');
+const machine = ontology.raw.evidence.filter((record) => record.kind === 'machine-certificate' && record.backend !== 'lean4');
 for (const record of machine) {
   if (!existsSync(resolve(config.repoRoot, record.certificate))) { check(record.id + ' 文件存在', false, record.certificate); continue; }
   const result = await replayCertificate(record, { repoRoot: config.repoRoot });
@@ -47,6 +56,14 @@ for (const record of machine) {
   check(record.id + ' 不声称检查器已形式验证', result.checkerVerified === false);
 }
 const evidence = evidenceSummary(ontology);
+const lean = await leanCapabilities(config.repoRoot, config.lean ?? {});
+check('Lean 登记存在', lean.registrations.length === 2);
+if (process.env.MCS_WEB_REQUIRE_LEAN === '1') check('真实 Lean 工具链就绪', lean.ready, lean.reason ?? '');
+if (!lean.ready) notes.push(`Lean 重放不可用（未声称通过）：${lean.reason}`);
+for (const registration of lean.registrations) {
+  const view = await leanRegistrationView(config.repoRoot, registration.id);
+  if (process.env.MCS_WEB_REQUIRE_LEAN === '1') check(registration.id + ' 已发布报告对应当前输入', view.freshness === 'current' && view.publishedReport?.status === 'passed');
+}
 notes.push(`证据：${evidence.total} 条（${Object.entries(evidence.byKind).map(([key, value]) => key + ' ' + value).join('，')}）`);
 
 console.log('\n[3] 36 个局部化算子可运行性');
@@ -155,6 +172,24 @@ if (!enOverlay) {
   const untranslated = report.missing.nodes?.length ?? 0;
   notes.push(`未译节点：${untranslated} 个（末尾 ${report.sections.nodes.translated}/${report.sections.nodes.total} 已译）`);
 }
+
+console.log('\n[9] 学习者档案模板与起始节点的口径');
+/*
+ * 模板是 E 的初值（不进 M、不改 contentHash），但它声明的东西必须真在本体里，
+ * 而且**只许是背景接口节点**——那九个节点是本站对环境边界的显式声明，
+ * 语义上正好是「学习者应当已经具备的前提」；案例节点是本站要教的内容，
+ * 模板一旦声明它们，「起始节点」就变成伪造的进度。这条纪律由 `validateProfileTemplates` 强制。
+ *
+ * 「起始节点」本身是 D 层的派生（`web/src/starting-nodes.ts`，前端一处实现），
+ * 因此这里只核模板登记表与本体的一致性；派生的判据由 `tests/starting-nodes.test.mjs` 逐条验证。
+ */
+const templateProblems = validateProfileTemplates(ontology.nodesById);
+check('档案模板与本体一致（节点存在、只声明背景接口、文案成对）', templateProblems.length === 0, templateProblems.slice(0, 3).join('；'));
+const backgroundIds = new Set(ontology.raw.nodes.filter((node) => node.case === 'background').map((node) => node.id));
+check('模板声明的每一个节点都是背景接口', PROFILE_TEMPLATES.every((template) => template.declares.every((entry) => backgroundIds.has(entry.node))));
+check('存在不声明任何节点的默认模板', profileTemplate(DEFAULT_PROFILE_TEMPLATE_ID).declares.length === 0);
+notes.push(`档案模板：${PROFILE_TEMPLATES.map((template) => `${template.name.zh} ${template.declares.length} 条声明`).join('，')}`
+  + '（声明只写 E：source=system、payload.declared=true）');
 
 console.log('\n摘要');
 for (const note of notes) console.log('  · ' + note);

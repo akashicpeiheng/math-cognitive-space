@@ -202,12 +202,12 @@ export const manifoldActions = [
 ];
 
 export const manifoldRelations = [
-  relation('rel-manifold-generalization', 'hardGeneralization', 'manifold:ck-atlas', 'manifold:smooth-atlas', { witness: { type: 'same-carrier-implication', status: 'PROOF', ref: 'ev-manifold-generalization' }, scope: '同一图册编码下的 P_∞ ⇒ P_k。' }),
+  relation('rel-manifold-generalization', 'scaling', 'manifold:ck-atlas', 'manifold:smooth-atlas', { direction: { general: 'manifold:ck-atlas', special: 'manifold:smooth-atlas', reading: 'contract' }, scalingMode: 'same-carrier', witness: { type: 'same-carrier-implication', status: 'PROOF', ref: 'ev-manifold-generalization' }, scope: '同一图册编码下的 P_∞ ⇒ P_k。' }),
   relation('rel-manifold-forget', 'bridge', 'manifold:smooth-atlas', 'manifold:ck-atlas', { witness: { type: 'forgetful-map', status: 'PROOF', ref: 'ev-manifold-generalization' }, scope: '跨载体遗忘映射；不宣称最大图册字面相等。' }),
-  relation('rel-manifold-compat', 'hardGeneralization', 'manifold:compatible-k', 'manifold:ck-atlas', { witness: { type: 'same-carrier-implication', status: 'DEF' }, scope: '兼容性依赖 C^k 定义。' }),
-  // specialization 是 hardGeneralization 的反方向：它相对已登记关系有定义，不是新的数学断言。
+  relation('rel-manifold-compat', 'scaling', 'manifold:compatible-k', 'manifold:ck-atlas', { direction: null, scalingMode: 'unresolved', witness: { type: 'same-carrier-implication', status: 'DEF' }, scope: '兼容性依赖 C^k 定义。' }),
+  // 放与缩归入同一个 scaling 关系族；反向读法保留原见证，不是新的数学断言。
   // ev-manifold-generalization 的 scope 已写明「不把蕴含换成同一」，反向由该证明本身界定。
-  relation('rel-manifold-specialization', 'specialization', 'manifold:smooth-atlas', 'manifold:ck-atlas', { witness: { type: 'inverse-of-declared-generalization', status: 'PROOF', ref: 'ev-manifold-generalization' }, scope: 'C^∞ 是 C^k 的特化（k 有限）；反向不成立，见硬泛化关系的范围说明。' }),
+  relation('rel-manifold-specialization', 'scaling', 'manifold:smooth-atlas', 'manifold:ck-atlas', { direction: { general: 'manifold:ck-atlas', special: 'manifold:smooth-atlas', reading: 'expand' }, scalingMode: 'same-carrier', witness: { type: 'inverse-of-declared-generalization', status: 'PROOF', ref: 'ev-manifold-generalization' }, scope: 'C^∞ 是 C^k 的特殊情形（k 有限），沿放方向关联；反向不成立，见放缩关系的范围说明。' }),
   relation('rel-manifold-application', 'application', 'manifold:chart-atlas', 'manifold:transition', { witness: { type: 'application-description', status: 'DEF', ref: 'm-trans' }, task: '图册给出过渡映射的定义域与像（φ(U∩V) 与 ψ(U∩V)）。' }),
   relation('rel-manifold-crossdomain', 'crossDomain', 'bg:linear:vector', 'manifold:chart-atlas', { witness: { type: 'background-provides-coordinate-space', status: 'DEF' }, scope: '图卡 φ:U→R^n 的像落在 R^n；线性结构是声明背景，不是本案例内导出的结论。', task: '从流形到线性结构的跨域接口。' }),
 

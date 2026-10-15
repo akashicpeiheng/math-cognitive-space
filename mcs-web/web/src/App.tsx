@@ -1,6 +1,10 @@
+import { lazy, Suspense } from 'react';
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { ProfileProvider } from './state';
 import { AuthProvider } from './auth';
+import { ConnectionNotesProvider } from './connection-notes';
+import { VaultProvider } from './vault-context';
+import { LibraryPage } from './pages/LibraryPage';
 import { I18nProvider, localeOfPath } from './i18n';
 import { Layout } from './components/Layout';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -21,6 +25,8 @@ import { ProfilePage } from './pages/ProfilePage';
 import { TutorPage } from './pages/TutorPage';
 import { LoginPage } from './pages/LoginPage';
 import { AuthConfirmPage } from './pages/AuthConfirmPage';
+import { ManualPage } from './pages/ManualPage';
+const WritingPage = lazy(() => import('./pages/WritingPage').then(module => ({ default: module.WritingPage })));
 
 /**
  * 路由树：**同一棵树在两种语种下各挂一次**。
@@ -42,6 +48,8 @@ function AppRoutes() {
         {/* 介绍与方法论：首页最显眼的两个入口落在这里。 */}
         <Route path="intro" element={<IntroPage />} />
         <Route path="method" element={<MethodPage />} />
+        {/* 用户手册：面向学习者的操作说明，游客可直接阅读。 */}
+        <Route path="manual" element={<ManualPage />} />
         {/* 方法库单条：带简介的栏目点进来是更细致的解析。 */}
         <Route path="method/:methodId" element={<MethodDetailPage />} />
         <Route path="nodes" element={<NodeListPage />} />
@@ -49,12 +57,13 @@ function AppRoutes() {
         {/* 旧的「探索结构」已并入「组建网络」：保留重定向，避免旧链接与书签失效。 */}
         <Route path="graph" element={<Navigate to="../network" replace />} />
         <Route path="network" element={<NetworkPage />} />
+        <Route path="library" element={<LibraryPage />} />
+        <Route path="library/write/new" element={<Suspense fallback={<div className="page" role="status">…</div>}><WritingPage /></Suspense>} />
+        <Route path="library/write/:draftId" element={<Suspense fallback={<div className="page" role="status">…</div>}><WritingPage /></Suspense>} />
         {/*
-          学习路线与我的学习是**纯个人**页面：内容全部来自账号下的学习档案。
-          公网模式未登录时由 AuthGuard 说明「请先登录」并给出入口；
-          本机模式（mode === 'local'）守卫直接放行原页面，行为与从前一致。
+          学习路线允许游客使用浏览器草稿；个人档案仍由 AuthGuard 保护。
         */}
-        <Route path="plan" element={<AuthGuard><PlanPage /></AuthGuard>} />
+        <Route path="plan" element={<PlanPage />} />
         {/* 复习已并入「我的学习」的待回看标签：旧链接与书签仍然可用。 */}
         <Route path="review" element={<Navigate to="../profile?tab=review" replace />} />
         {/* 研究台挂在 /lab；/research 保留为同一页面的别名，避免旧链接与既有书签失效。 */}
@@ -121,6 +130,8 @@ export function App() {
         */}
         <ErrorBoundary>
           <I18nProvider>
+            <ConnectionNotesProvider>
+            <VaultProvider>
             <Routes>
               {/* 中文的显式别名先于兜底匹配，避免被当成未知路径。 */}
               <Route path="/zh" element={<Navigate to="/" replace />} />
@@ -131,6 +142,8 @@ export function App() {
               */}
               <Route path="/*" element={<CurrentLocaleRoutes />} />
             </Routes>
+            </VaultProvider>
+            </ConnectionNotesProvider>
           </I18nProvider>
         </ErrorBoundary>
       </ProfileProvider>

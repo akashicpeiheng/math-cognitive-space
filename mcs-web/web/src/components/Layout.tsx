@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { NavLink, Link, Outlet, useLocation } from 'react-router-dom';
+import { NavLink, Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useProfileContext } from '../state';
 import { SITE } from '../site';
 import { PressFeedback } from './PressFeedback';
@@ -29,10 +29,13 @@ const NAV: Array<{ to: string; key: MessageKey; icon: string; also?: string[] }>
   { to: '/nodes', key: 'nav.nodes', icon: 'nodes' },
   { to: '/network', key: 'nav.network', icon: 'network' },
   { to: '/plan', key: 'nav.plan', icon: 'plan' },
+  { to: '/library', key: 'nav.library', icon: 'nodes' },
   { to: '/profile', key: 'nav.profile', icon: 'profile', also: ['/review'] },
 ];
 
 const NAV_SECONDARY: Array<{ to: string; key: MessageKey; icon: string; badge?: { text: string; titleKey: MessageKey } }> = [
+  /* 用户手册放「按需查阅」第一位：第一次来的人先看它，再按需要查别的。 */
+  { to: '/manual', key: 'nav.manual', icon: 'manual' },
   { to: '/intro', key: 'nav.intro', icon: 'intro' },
   { to: '/method', key: 'nav.method', icon: 'method' },
   {
@@ -68,9 +71,11 @@ function locationKey(pathname: string): MessageKey {
   if (pathname.startsWith('/start')) return 'nav.start';
   if (pathname.startsWith('/nodes')) return 'nav.nodes';
   if (pathname.startsWith('/plan')) return 'nav.plan';
+  if (pathname.startsWith('/library')) return 'nav.library';
   if (pathname.startsWith('/network') || pathname.startsWith('/graph')) return 'nav.network';
   if (pathname.startsWith('/profile') || pathname.startsWith('/review')) return 'nav.profile';
   if (pathname.startsWith('/intro')) return 'nav.intro';
+  if (pathname.startsWith('/manual')) return 'nav.manual';
   if (pathname.startsWith('/method')) return 'nav.method';
   if (pathname.startsWith('/tutor')) return 'nav.tutor';
   if (pathname.startsWith('/lab') || pathname.startsWith('/research')) return 'nav.lab';
@@ -96,6 +101,9 @@ function NavIcon({ name }: { name: string }) {
       return <svg {...common}><circle cx="12" cy="12" r="8.4" /><path d="M12 10.7v5.4M12 7.5h.01" /></svg>;
     case 'method':
       return <svg {...common}><circle cx="12" cy="12" r="8.3" /><path d="m14.9 9.1-1.5 4.3-4.3 1.5 1.5-4.3Z" /></svg>;
+    case 'manual':
+      // 一本摊开的手册：左页、右页与书脊。
+      return <svg {...common}><path d="M4 5.6c2.7-1.1 5.3-1.1 8 .6 2.7-1.7 5.3-1.7 8-.6v12.2c-2.7-1.1-5.3-1.1-8 .6-2.7-1.7-5.3-1.7-8-.6Z" /><path d="M12 6.2v12.8" /></svg>;
     case 'nodes':
       return <svg {...common}><circle cx="7" cy="7" r="2.5" /><rect x="14.5" y="4.5" width="5" height="5" rx="1.2" /><path d="M4.8 18.8 7 14.6l2.2 4.2ZM12 7h2.5M8.2 9l-1 5.4M16.7 9.5l-6.1 6.2" /></svg>;
     case 'network':
@@ -121,6 +129,7 @@ function NavIcon({ name }: { name: string }) {
 export function Layout() {
   const { profiles, profileId, setProfileId } = useProfileContext();
   const location = useLocation();
+  const navigate = useNavigate();
   const { t, locale, hrefFor } = useI18n();
   const [desktopCollapsed, setDesktopCollapsed] = useState(initialDesktopSidebarState);
   const [isNarrow, setIsNarrow] = useState(() => typeof window !== 'undefined' && window.matchMedia('(max-width: 860px)').matches);
@@ -154,12 +163,26 @@ export function Layout() {
    */
   const bare = stripLocale(location.pathname);
   const isHome = bare === '/';
+  /**
+   * 知识网络页占满工作区（2026-10-12，用户要求）。
+   *
+   * 用户的原话：「网络视图外面还有一个上下滚动的空间，而除了视图外的信息只有作者和邮箱，
+   * 使得视图操作起来有点别扭。直接让节点网络占满节点网络页面，除去边栏的所有空间。」
+   *
+   * 两件事一起做才有意义：
+   * 1. **不显示全站页脚**——这一页里页脚是画布之外唯一的内容（只有作者与邮箱），
+   *    它正是那条「多余滚动」的来源；与首页同一条理由（首页由末幕自己署名）；
+   * 2. **给外壳加一个类**，由 CSS 把这一页的高度锁成「视口 − 顶栏」，让画布弹性撑满，
+   *    并且页面本身不再滚动。类名而不是内联样式：高度约束还牵扯顶栏、工作区内边距
+   *    与窄屏的既有规则（窄屏下画布本来就改成 `46vh` 的普通卡片，那一档保持不变）。
+   */
+  const isNetwork = bare === '/network';
   const toggleLabel = isNarrow
     ? (mobileOpen ? t('topbar.collapseNav') : t('topbar.expandNav'))
     : (desktopCollapsed ? t('topbar.expandSidebar') : t('topbar.collapseSidebar'));
 
   return (
-    <div className={`app-shell${compact ? ' sidebar-collapsed' : ''}`}>
+    <div className={`app-shell${compact ? ' sidebar-collapsed' : ''}${isNetwork ? ' is-network' : ''}`}>
       {/*
         主要按键的按下反馈：只挂一个 pointerdown 监听，把落点写进 `--press-x/--press-y`
         （见 PressFeedback.tsx 与 styles.css 的同一处说明）。挂在这里是因为全部路由都经过本组件。
@@ -262,11 +285,40 @@ export function Layout() {
             <LanguageSwitch />
             <div className="profile-picker">
               <label htmlFor="profile-select">{t('profile.pickerLabel')}</label>
-              <select id="profile-select" value={profileId ?? ''} onChange={(event) => setProfileId(event.target.value || null)}>
+              <select
+                id="profile-select"
+                value={profileId ?? ''}
+                onChange={(event) => {
+                  /*
+                   * 「新建档案…」是这一档里的**动作**，不是一个可选档案。
+                   * 用 `__new__` 当一个哨兵值：选中它就跳到建档案的地方（模板选择在那里），
+                   * 选择器本身**不动**——把它当成档案 id 传给 setProfileId 会让下拉显示一个不存在的名字。
+                   *
+                   * 为什么要有这一条：模板选择原先只在「我的学习 → 高级设置」里，
+                   * 而用户找「学习者档案」时看的就是这个下拉（2026-10 用户反馈「没看见学习者档案」）。
+                   */
+                  if (event.target.value === '__new__') {
+                    navigate(hrefFor('/profile?tab=advanced'));
+                    return;
+                  }
+                  setProfileId(event.target.value || null);
+                }}
+              >
                 <option value="">{t('profile.none')}</option>
                 {profiles.map((profile) => (
-                  <option key={profile.id} value={profile.id} title={`${t('profile.revisionTitle')} ${profile.revision}`}>{profile.name}</option>
+                  /*
+                   * `data-i18n-keep`：档案名是**学习者自己的数据**（E 层），不是界面文案，
+                   * 因此英文站上不该被要求翻译、也进不了译文表——与笔记标题、自建视图名同类。
+                   * 标出来是为了让 `scripts/i18n-ui-scan.mjs` 不必把这几个中文名字报成「漏译的界面文案」。
+                   */
+                  <option
+                    key={profile.id}
+                    value={profile.id}
+                    data-i18n-keep
+                    title={`${t('profile.revisionTitle')} ${profile.revision}`}
+                  >{profile.name}</option>
                 ))}
+                <option value="__new__">{t('profile.newOption')}</option>
               </select>
             </div>
             {/*
@@ -281,16 +333,17 @@ export function Layout() {
             <AuthStatus />
           </div>
         </header>
-        <main className={`workspace${isHome ? ' is-home' : ''}`}>
+        <main className={`workspace${isHome ? ' is-home' : ''}${isNetwork ? ' is-network' : ''}`}>
           <Outlet />
         </main>
         {/*
-          首页不显示全站页脚：末幕的幕内署名已经写了同一份「作者 · 联系邮箱」，
-          底部再来一条整宽的同款署名是重复的，也是首页最后一屏里唯一与叙事无关的横条。
+          首页与知识网络页不显示全站页脚。
+          - 首页：末幕的幕内署名已经写了同一份「作者 · 联系邮箱」，底部再来一条是重复的（2026-10-04）；
+          - 知识网络页：页脚是**画布之外唯一的内容**，也是那条「多余滚动」的来源
+            ——用户要求画布占满除边栏以外的全部空间（2026-10-12）。
           其它页仍然保留——那里没有幕内署名，页脚是署名与联系方式的落点。
-          （窄屏收掉侧栏时，别的页面的页脚也仍然是署名与联系方式的落点。）
         */}
-        {!isHome && (
+        {!isHome && !isNetwork && (
           <footer className="site-footer">
             <span>{t('site.name')} · {t('site.author')} <strong>{SITE.author}</strong></span>
             <span className="site-contact">

@@ -220,7 +220,7 @@ export const limitActions = [
 
 export const limitRelations = [
   relation('rel-limit-bridge', 'bridge', 'limit:limit-ed', 'limit:limit-seq', { witness: { type: 'equivalence-proof', status: 'PROOF', ref: 'ev-limit-bridge-proof' }, scope: 'a 为聚点、f 定义在 D 上。' }),
-  relation('rel-limit-generalization', 'hardGeneralization', 'limit:limit-ed', 'limit:continuous', { witness: { type: 'same-carrier-implication', status: 'PROOF', ref: 'ev-limit-bridge-cont-proof' }, scope: '连续蕴含极限存在且等于函数值；反向需要 a 为聚点且 f(a)=L。' }),
+  relation('rel-limit-generalization', 'scaling', 'limit:limit-ed', 'limit:continuous', { direction: { general: 'limit:limit-ed', special: 'limit:continuous', reading: 'contract' }, scalingMode: 'same-carrier', witness: { type: 'same-carrier-implication', status: 'PROOF', ref: 'ev-limit-bridge-cont-proof' }, scope: '连续蕴含极限存在且等于函数值；反向需要 a 为聚点且 f(a)=L。' }),
   relation('rel-limit-analogy', 'analogy', 'limit:seq-conv', 'limit:limit-seq', { witness: { type: 'candidate-analogy', status: 'ILLUSTRATION' }, candidateNote: '两处都出现 ε 与最终条件；精确对应由 Bridge 证书给出，不把相似性当同构。' }),
   relation('rel-limit-application', 'application', 'limit:limit-ed', 'limit:continuous', { witness: { type: 'application-description', status: 'PROOF', ref: 'ev-limit-bridge-cont-proof' }, task: '把连续性问题化为极限计算。' }),
 

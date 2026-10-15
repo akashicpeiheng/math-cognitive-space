@@ -24,6 +24,7 @@
 import { McsError, CODES } from '../shared/errors.mjs';
 import { sha256 } from '../core/hash.mjs';
 import { loadOntology, createOntology } from '../core/ontology.mjs';
+import { normalizeScalingRecord } from '../shared/scaling.mjs';
 import { join, relative, sep } from 'node:path';
 import {
   extensionsRoot, readActivePointer, verifyPackage, listPackages, dirNameFor,
@@ -100,7 +101,7 @@ export function composePackageOntology(baseRaw, pkg, { repoRoot, extensionsDir =
   }
 
   raw.formalDefinitions = [...(raw.formalDefinitions ?? []), ...(pkg?.definitions ?? [])];
-  raw.relationDescriptions = [...(raw.relationDescriptions ?? []), ...(pkg?.relations ?? [])];
+  raw.relationDescriptions = [...(raw.relationDescriptions ?? []), ...(pkg?.relations ?? []).map(normalizeScalingRecord)];
   const revisionId = activeRevision ?? pkg?.revisionId ?? null;
   raw.evidence = [...(raw.evidence ?? []), ...(pkg?.evidence ?? []).map((record) => {
     /*

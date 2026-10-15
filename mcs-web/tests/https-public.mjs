@@ -29,6 +29,8 @@ import { randomBytes } from 'node:crypto';
 import { PGlite } from '@electric-sql/pglite';
 import { startServer } from '../server/index.mjs';
 import { REPO_ROOT } from '../core/ontology.mjs';
+import { exerciseVaultPage } from './vault-page-flow.mjs';
+import { TEST_LEAN_TIMEOUT_MS } from './lean-test-budget.mjs';
 import { McsError } from '../shared/errors.mjs';
 import { ensureCertificate, credentialsFor } from './tls-runtime.mjs';
 import { PLAYWRIGHT_SPECIFIER as PLAYWRIGHT, CHROME_PATH as CHROME } from './browser-runtime.mjs';
@@ -99,6 +101,7 @@ const origin = `https://127.0.0.1:${tlsPort}`;
 
 const provider = new StubProvider();
 provider.add('user-tls', 'tls@example.com');
+provider.add('user-notes-b', 'notes-b@example.com');
 const pg = new PGlite();
 const dataDir = mkdtempSync(join(tmpdir(), 'mcs-tls-run-'));
 
@@ -114,6 +117,7 @@ const config = {
   backupDir: join(dataDir, 'backups'),
   authFile: join(dataDir, 'auth.sqlite3'),
   repoRoot: REPO_ROOT,
+  lean: { timeoutMs: TEST_LEAN_TIMEOUT_MS },
   dev: false,
   publicMode: true,
   publicOrigin: origin,
@@ -174,6 +178,35 @@ try {
   check('会话接口在 https 下如实报告公网模式', session.mode === 'supabase', JSON.stringify(session).slice(0, 120));
   check('拿到了 CSRF 令牌（写请求要用）', typeof session.csrfToken === 'string' && session.csrfToken.length > 20);
 
+  const guestContext = await browser.newContext({ ignoreHTTPSErrors: true, viewport: { width: 1280, height: 900 } });
+  const guestPage = await guestContext.newPage();
+  await guestPage.goto(`${origin}/plan`, { waitUntil: 'networkidle' });
+  await guestPage.getByTestId('guest-plan-note').waitFor();
+  /*
+   * 范例路径现在是**压缩态**（2026-10-13 第二版）：先按学科选书、悬浮看简介、点书名展开七程，
+   * 展开之后才有「载入并规划这一程」这个按钮。因此这里先点开第一本书。
+   */
+  await guestPage.locator('.example-book').first().click();
+  await guestPage.getByRole('button', { name: '载入并规划这一程', exact: true }).first().click();
+  await guestPage.locator('.route-card').first().waitFor({ timeout: 60000 });
+  check('游客可完成范例多目标规划与比较', await guestPage.locator('.route-card').count() > 0);
+  const draft = await guestPage.evaluate(() => JSON.parse(localStorage.getItem('mcs-guest-path-plan-v1')));
+  await guestPage.reload({ waitUntil: 'networkidle' });
+  check('游客目标与背景在浏览器保留', await guestPage.evaluate(saved => JSON.stringify(JSON.parse(localStorage.getItem('mcs-guest-path-plan-v1'))) === JSON.stringify(saved), draft));
+  await guestPage.getByRole('button', { name: '开始规划', exact: true }).click();
+  await guestPage.locator('.route-card').first().waitFor({ timeout: 60000 });
+  const replay = await guestPage.getByRole('link', { name: '看结构回放', exact: true }).first().getAttribute('href');
+  await guestPage.getByRole('button', { name: '沿此路线阅读', exact: true }).first().click();
+  await guestPage.waitForURL('**/nodes/**');
+  // URL navigation finishes before the node API response has rendered its content.
+  await guestPage.locator('.node-header h1').waitFor({ state: 'visible' });
+  check('游客可沿路线阅读', (await guestPage.locator('main').innerText()).length > 100);
+  await guestPage.goto(origin + replay, { waitUntil: 'networkidle' });
+  check('游客可查看结构回放', await guestPage.locator('svg').count() > 0);
+  await exerciseVaultPage(guestPage, origin, dataDir);
+  check('HTTPS 游客可独立使用本地笔记库', await guestPage.locator('.library-reader').count() > 0);
+  await guestContext.close();
+
   // ---- 2) 真登录：这一步要通过浏览器对 Secure Cookie 的接受 -------------------
   await page.locator('#auth-email').fill('tls@example.com');
   await page.locator('#auth-password').fill('a-long-enough-password');
@@ -189,6 +222,24 @@ try {
 
   const signedIn = await page.evaluate(async () => (await (await fetch('/api/v2/auth/session')).json()).data);
   check('登录后会话接口给出邮箱与身份', signedIn.user?.email === 'tls@example.com', JSON.stringify(signedIn.user));
+
+  await exerciseVaultPage(page, origin, dataDir, { upload: true });
+  check('HTTPS 登录后可明确上传到私人账号', await page.locator('.library-reader').count() > 0);
+
+  // The Lean replay must use the same secure session and authenticated API client.
+  const leanCapabilities = await page.evaluate(async () => (await (await fetch('/api/v2/lean/capabilities')).json()).data);
+  if (leanCapabilities.ready) {
+    const learnerBefore = await handle.db.dumpAll(); const ontologyBefore = handle.getOntology().version;
+    await page.goto(`${origin}/en/nodes/${encodeURIComponent('group:claim-injective')}`, { waitUntil: 'networkidle' });
+    const leanCard = page.locator('[data-lean-registration="lean-group-injective"]'); await leanCard.waitFor();
+    await leanCard.getByRole('button', { name: 'Check again', exact: true }).click();
+    await page.waitForFunction(() => document.querySelector('[data-lean-registration="lean-group-injective"] .lean-job-status')?.textContent.includes('Check finished'), null, { timeout: TEST_LEAN_TIMEOUT_MS + 10000 });
+    check('公网 HTTPS 登录浏览器可实际重放 Lean', (await leanCard.locator('.lean-job-status').innerText()).includes('Passed'));
+    const learnerAfter = await handle.db.dumpAll();
+    check('公网 Lean 重放保持本体与全部学习状态不变', handle.getOntology().version === ontologyBefore && ['profiles', 'events', 'notes', 'networkViews', 'directions', 'learningPlans', 'connectionNotes'].every(key => JSON.stringify(learnerAfter[key]) === JSON.stringify(learnerBefore[key])));
+  } else {
+    check('真实 Lean 环境要求不会静默跳过', process.env.MCS_WEB_REQUIRE_LEAN !== '1', leanCapabilities.reason);
+  }
 
   // ---- 3) 写请求：Cookie + CSRF + Origin 三道关一起过 ------------------------
   /*
@@ -218,10 +269,10 @@ try {
     localStorage.setItem('mcs-web-selected-profile', id);
     localStorage.setItem('mcs-network-views-local-v1', JSON.stringify([{
       viewId: 'local-https', name: 'HTTPS 本机视图', local: true, updatedAt: new Date().toISOString(),
-      payload: { added: ['dg:manifold'], families: ['relation'], positions: {}, camera: null },
+      payload: { added: ['top:topological-manifold'], families: ['relation'], positions: {}, camera: null },
     }]));
   }, profileId);
-  await page.goto(`${origin}/network?nodes=dg%3Amanifold`, { waitUntil: 'networkidle' });
+  await page.goto(`${origin}/network?nodes=top%3Atopological-manifold`, { waitUntil: 'networkidle' });
   await page.getByLabel('显示保存的视图面板').check();
   const networkPanel = page.locator('.floating-panel[aria-label="保存的视图"]');
   const waitForWrite = (method) => page.waitForResponse((response) =>
@@ -249,6 +300,77 @@ try {
   check('公网迁移已回读并移除本机副本',
     await page.evaluate(() => JSON.parse(localStorage.getItem('mcs-network-views-local-v1')).length) === 0);
 
+  // User-wide notes must clear on account changes even when an old GET arrives late.
+  await page.goto(`${origin}/nodes/${encodeURIComponent('manifold:ck-atlas')}`, { waitUntil: 'networkidle' });
+  const noteKey = await page.evaluate(async () => {
+    const graph = (await (await fetch('/api/v2/ontology/graph')).json()).data;
+    return graph.relations.find(relation => relation.id === 'rel-manifold-generalization').connectionKey;
+  });
+  const noteRow = '.relation-list .connection-note[data-connection-key=' + JSON.stringify(noteKey) + ']';
+  await page.locator(noteRow).first().getByRole('button', { name: '添加备注', exact: true }).click();
+  await page.locator('.connection-note-dialog textarea').fill('账号 A 的私有关系备注');
+  const noteWrite = page.waitForResponse(response => response.url().includes('/me/connection-notes/') && response.request().method() === 'PUT');
+  await page.locator('.connection-note-dialog').getByRole('button', { name: '保存备注', exact: true }).click();
+  check('公网浏览器保存个人备注通过身份与 CSRF 校验', (await noteWrite).status() === 200);
+  await page.waitForSelector('.connection-note-dialog', { state: 'detached' });
+  let releaseRead, readSeen;
+  const heldRead = new Promise(resolve => { releaseRead = resolve; });
+  const oldReadSeen = new Promise(resolve => { readSeen = resolve; });
+  let holdOnce = true;
+  await page.route('**/api/v2/me/connection-notes*', async route => {
+    if (route.request().method() !== 'GET' || !holdOnce) return route.continue();
+    holdOnce = false;
+    const response = await route.fetch(); readSeen();
+    await heldRead;
+    try { await route.fulfill({ response }); } catch { /* Identity change aborts this request. */ }
+  });
+  try {
+    await page.evaluate(() => window.dispatchEvent(new Event('focus')));
+    await oldReadSeen;
+    await page.getByRole('button', { name: '退出', exact: true }).click();
+    await page.locator(noteRow).first().getByRole('link', { name: '登录后添加个人备注', exact: true }).waitFor();
+    check('退出立即清空旧账号备注', !((await page.locator('main').innerText()).includes('账号 A 的私有关系备注')));
+    await page.locator(noteRow).first().getByRole('link', { name: '登录后添加个人备注', exact: true }).click();
+    await page.locator('#auth-email').fill('notes-b@example.com');
+    await page.locator('#auth-password').fill('a-long-enough-password');
+    await page.locator('#auth-panel button[type="submit"]').click();
+    await page.locator(noteRow).first().getByRole('button', { name: '添加备注', exact: true }).waitFor();
+    await page.locator(noteRow).first().getByRole('button', { name: '添加备注', exact: true }).click();
+    await page.locator('.connection-note-dialog textarea').fill('账号 B 的独立关系备注');
+    await page.locator('.connection-note-dialog').getByRole('button', { name: '保存备注', exact: true }).click();
+    await page.waitForSelector('.connection-note-dialog', { state: 'detached' });
+    releaseRead(); await page.waitForTimeout(150);
+    const textAfterSwitch = await page.locator('main').innerText();
+    check('换账号后迟到的旧请求不会显示 A 的备注或覆盖 B 的备注', textAfterSwitch.includes('账号 B 的独立关系备注') && !textAfterSwitch.includes('账号 A 的私有关系备注'));
+    await page.getByRole('button', { name: '退出', exact: true }).click();
+    await page.locator(noteRow).first().getByRole('link', { name: '登录后添加个人备注', exact: true }).click();
+    await page.locator('#auth-email').fill('tls@example.com');
+    await page.locator('#auth-password').fill('a-long-enough-password');
+    await page.locator('#auth-panel button[type="submit"]').click();
+    await page.locator(noteRow).first().locator('summary').waitFor();
+    const textAfterReturn = await page.locator('main').innerText();
+    check('重新登录 A 恢复自己的备注，两个账号互不串入', textAfterReturn.includes('账号 A 的私有关系备注') && !textAfterReturn.includes('账号 B 的独立关系备注'));
+    const otherTab = await context.newPage();
+    try {
+      await otherTab.goto(`${origin}/nodes/${encodeURIComponent('manifold:ck-atlas')}`, { waitUntil: 'networkidle' });
+      await otherTab.getByRole('button', { name: '退出', exact: true }).click();
+      await otherTab.locator(noteRow).first().getByRole('link', { name: '登录后添加个人备注', exact: true }).click();
+      await otherTab.locator('#auth-email').fill('notes-b@example.com');
+      await otherTab.locator('#auth-password').fill('a-long-enough-password');
+      await otherTab.locator('#auth-panel button[type="submit"]').click();
+      await otherTab.locator(noteRow).first().locator('summary').waitFor();
+      await page.bringToFront(); await page.evaluate(() => window.dispatchEvent(new Event('focus')));
+      await page.locator(noteRow).first().locator('summary').filter({ hasText: '账号 B 的独立关系备注' }).waitFor();
+      check('另一页切换账号后，焦点刷新核对服务端归属并清空旧备注', !((await page.locator('main').innerText()).includes('账号 A 的私有关系备注')));
+      await page.getByRole('button', { name: '退出', exact: true }).click();
+      await page.locator(noteRow).first().getByRole('link', { name: '登录后添加个人备注', exact: true }).click();
+      await page.locator('#auth-email').fill('tls@example.com');
+      await page.locator('#auth-password').fill('a-long-enough-password');
+      await page.locator('#auth-panel button[type="submit"]').click();
+      await page.locator(noteRow).first().locator('summary').filter({ hasText: '账号 A 的私有关系备注' }).waitFor();
+    } finally { await otherTab.close(); }
+  } finally { releaseRead(); await page.unroute('**/api/v2/me/connection-notes*'); }
+
   // 不带令牌必须被拒：证明这道关不是摆设
   const noToken = await page.evaluate(async () => {
     const response = await fetch('/api/v2/profiles', {
@@ -268,6 +390,9 @@ try {
   check('退出接口成功', signedOut.status === 200 && signedOut.body?.data?.signedOut === true, JSON.stringify(signedOut).slice(0, 160));
   const afterLogout = await page.evaluate(async () => (await (await fetch('/api/v2/auth/session')).json()).data);
   check('退出后会话清空', afterLogout.user === null);
+
+  await page.goto(`${origin}/library`, { waitUntil: 'networkidle' });
+  check('退出清空账号库但保留主动导入的浏览器副本', await page.locator('.library-vault-button').count() === 1 && !(await page.locator('.library-reader').innerText()).includes('更新后的正文'));
 
   // ---- 5) 明文 http 下同一套必须走不通（这条是给部署看的） -------------------
   const plain = await fetch(`http://127.0.0.1:${appPort}/api/v2/auth/session`, { headers: { Origin: origin } });
@@ -294,6 +419,7 @@ try {
   if (browser) await browser.close();
   await new Promise((resolvePromise) => terminator.close(resolvePromise));
   try { handle.jobs.close(); } catch { /* 已关闭 */ }
+  await handle.leanJobs.close();
   try { await handle.db.close(); } catch { /* 已关闭 */ }
   try { await handle.auth.close(); } catch { /* 已关闭 */ }
   try { await pg.close(); } catch { /* 已关闭 */ }

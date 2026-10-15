@@ -10,7 +10,12 @@
  * 前缀只加**一次**：`withLocale('/en/nodes', 'en')` 不会再变成 `/en/en/nodes`。
  */
 
-import { DEFAULT_LOCALE, LOCALE_PREFIX, type Locale } from './locales';
+/*
+ * 带 `.ts` 后缀：`paths.ts` 现在会被纯 node 测试间接 import
+ * （`tests/network-return.test.mjs` → `network-return.ts` → 本文件），
+ * 而 node 的类型剥离不做扩展名补全。与 `network.ts` / `starting-nodes.ts` 同一条理由。
+ */
+import { DEFAULT_LOCALE, LOCALE_PREFIX, type Locale } from './locales.ts';
 
 /** 从路径里读语种。`/en`、`/en/…` 是英文，其余（含 `/`）是中文。 */
 export function localeOfPath(pathname: string): Locale {

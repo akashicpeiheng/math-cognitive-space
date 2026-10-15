@@ -107,6 +107,27 @@ try {
       && apiTitles.en !== apiTitles.zh,
     JSON.stringify({ page: titleEn.slice(0, 80), apiEn: apiTitles.en.slice(0, 80), apiZh: apiTitles.zh.slice(0, 60) }));
 
+  /*
+   * AI 生成内容声明（2026-10-13 加）在英文站上的两条：文案随语种换（`pick`），
+   * 撰写入口跟着语种前缀走。第二条是这一套一贯要抓的缺陷——英文页上掉回中文站的链接。
+   */
+  const aiDeclaration = await page.evaluate(() => {
+    const box = document.querySelector('[data-testid="ai-declaration"]');
+    if (!box) return null;
+    return {
+      text: (box.innerText ?? '').replace(/\s+/g, ' ').trim(),
+      href: box.querySelector('a')?.getAttribute('href') ?? '',
+    };
+  });
+  check('英文对象页的 AI 声明是英文（非空、无中文残留）',
+    Boolean(aiDeclaration)
+      && aiDeclaration.text.includes('AI-generated')
+      && !/[\u3400-\u4dbf\u4e00-\u9fff]/.test(aiDeclaration.text),
+    JSON.stringify(aiDeclaration));
+  check('AI 声明里的撰写入口带 /en 前缀（不会跳回中文站）',
+    Boolean(aiDeclaration?.href.startsWith('/en/authoring?node=')),
+    String(aiDeclaration?.href));
+
   /* ---- 2. 切换按键存在且当前项标注正确 ---- */
   const options = await page.locator('.locale-switch .locale-option').allInnerTexts();
   check('顶栏有「中文 / EN」两个选项', JSON.stringify(options.map((text) => text.trim())) === JSON.stringify(['中文', 'EN']), JSON.stringify(options));
@@ -117,7 +138,7 @@ try {
 
   /* ---- 3. 导航在英文下是相对链接（不会点回中文页） ---- */
   const navHrefs = await page.locator('.nav-primary .nav-item').evaluateAll((nodes) => nodes.map((node) => node.getAttribute('href')));
-  check('英文导航全部带 /en 前缀', navHrefs.length === 5 && navHrefs.every((href) => href && href.startsWith('/en')), JSON.stringify(navHrefs));
+  check('英文导航全部带 /en 前缀', navHrefs.length === 6 && navHrefs.every((href) => href && href.startsWith('/en')), JSON.stringify(navHrefs));
   const navLabels = await page.locator('.nav-primary .nav-label').allInnerTexts();
   check('英文导航是英文', navLabels.includes('Start learning') && navLabels.includes('Knowledge network'), JSON.stringify(navLabels));
   const crumb = await page.locator('.topbar-title').innerText();

@@ -3,12 +3,20 @@ import { limit } from './cases/limit.mjs';
 import { manifold } from './cases/manifold.mjs';
 import { tensor } from './cases/tensor.mjs';
 import { group } from './cases/group.mjs';
+import { leanEvidence } from './lean.mjs';
 import { dg } from './cases/dg.mjs';
 import { liang } from './cases/liang.mjs';
 import { rudin } from './cases/rudin.mjs';
+import { jiang } from './cases/jiang.mjs';
+import { axler } from './cases/axler.mjs';
+import { top } from './cases/top.mjs';
+import { vault } from './cases/vault.mjs';
 import { attachFormalStatements } from './formal-statements.mjs';
 import { applyGranularity } from './granularity.mjs';
+import { applyMerges } from './merges.mjs';
 import { ROLES } from '../shared/contracts.mjs';
+import { attachScalingExplanations } from './scaling-explanations.mjs';
+import { fieldEntry, attachEntryBodies, attachEntryActions, attachEntryEvidence } from './field-entry.mjs';
 
 const SHARED_TEMPLATE_FIELDS = [
   '身份与角色', '问题动机', '直觉与表征', '正式负载', '概念支持', '公开入口与输出',
@@ -117,7 +125,10 @@ const aggregates = [
   ...dg.aggregates,
   ...liang.aggregates,
   ...rudin.aggregates,
-  { id: 'agg-analysis', kind: 'discipline', title: '分析', blocks: [['limit:limit-ed', 'limit:seq-conv', 'limit:bridge', 'limit:continuous'], ['manifold:top-manifold', 'manifold:chart-atlas', 'manifold:ck-atlas'], ['dg:implicit-function-theorem', 'dg:inverse-function-theorem'], ['rudin:least-upper-bound', 'rudin:cauchy-sequence', 'rudin:continuous-function', 'rudin:derivative', 'rudin:uniform-convergence']], note: '学科聚合允许重叠与跨案例成员。' },
+  ...jiang.aggregates,
+  ...axler.aggregates,
+  ...top.aggregates,
+  { id: 'agg-analysis', kind: 'discipline', title: '分析', blocks: [['limit:limit-ed', 'limit:seq-conv', 'limit:bridge', 'limit:continuous'], ['manifold:top-manifold', 'manifold:chart-atlas', 'manifold:ck-atlas'], ['dg:implicit-function-theorem', 'dg:inverse-function-theorem'], ['rudin:least-upper-bound', 'rudin:cauchy-sequence', 'rudin:continuous-function', 'rudin:derivative', 'rudin:uniform-convergence'], ['vault:directional-derivative']], note: '学科聚合允许重叠与跨案例成员。' },
   { id: 'agg-algebra', kind: 'discipline', title: '代数', blocks: [['tensor:tensor-rs', 'tensor:end-iso', 'group:group-concept', 'group:cayley'], ['dg:tensor', 'dg:tensor-product-dg'], ['liang:tensor-field', 'liang:abstract-index'], ['rudin:complex-field', 'rudin:linear-transformation']], note: '学科聚合不把成员关系读成必修链。' },
   { id: 'agg-geometry', kind: 'discipline', title: '几何与拓扑', blocks: [['manifold:top-manifold', 'manifold:transition', 'tensor:bundle', 'tensor:field'], ['dg:smooth-manifold', 'dg:tangent-bundle', 'dg:smooth-embedding'], ['liang:manifold', 'liang:derivative-operator', 'liang:riemann-tensor'], ['rudin:differential-form', 'rudin:stokes-theorem']], note: '几何聚合保留跨领域接口。' },
   { id: 'agg-topology', kind: 'discipline', title: '拓扑', blocks: [['bg:top:space', 'dg:topological-space', 'dg:manifold', 'dg:topological-manifold', 'dg:homeomorphism', 'dg:compactness', 'dg:metric-space', 'dg:metric-completeness', 'dg:partition-of-unity'], ['liang:topological-space', 'liang:continuous-map', 'liang:compactness'], ['rudin:metric-space', 'rudin:compact-set', 'rudin:connected-set', 'rudin:countable-set']], note: '点集拓扑与流形的前置层；与几何聚合允许重叠成员。' },
@@ -125,20 +136,20 @@ const aggregates = [
   { id: 'agg-measure', kind: 'discipline', title: '测度论', blocks: [['rudin:set-function', 'rudin:lebesgue-measure', 'rudin:measurable-function', 'rudin:lebesgue-integral']], note: 'Rudin 案例第 11 章引入的分支；与「分析」聚合允许重叠成员。' },
 ];
 
-export default {
+export default applyMerges({
   schema: 'mcs-web-ontology/1',
   signature,
   theory,
   // 形式表达在装配时贴上去：登记表与案例数据分开维护，挑选清单集中在一处可见（见 formal-statements.mjs）。
   // 粒度同理：判据与逐条判定结果集中在 granularity.mjs，案例文件不各写一份（第五十二轮只在 liang 里判过）。
-  nodes: applyGranularity(attachFormalStatements([...backgroundNodes, ...limit.nodes, ...manifold.nodes, ...tensor.nodes, ...group.nodes, ...dg.nodes, ...liang.nodes, ...rudin.nodes])),
-  actions: [...backgroundActions, ...limit.actions, ...manifold.actions, ...tensor.actions, ...group.actions, ...dg.actions, ...liang.actions, ...rudin.actions],
-  relations: [...limit.relations, ...manifold.relations, ...tensor.relations, ...group.relations, ...dg.relations, ...liang.relations, ...rudin.relations],
-  evidence: [...limit.evidence, ...manifold.evidence, ...tensor.evidence, ...group.evidence, ...dg.evidence, ...liang.evidence, ...rudin.evidence],
-  support: [...limit.support, ...manifold.support, ...tensor.support, ...group.support, ...dg.support, ...liang.support, ...rudin.support],
-  claims: [...limit.claims, ...manifold.claims, ...tensor.claims, ...group.claims, ...dg.claims, ...liang.claims, ...rudin.claims],
-  patterns: [...limit.patterns, ...manifold.patterns, ...tensor.patterns, ...group.patterns, ...dg.patterns, ...liang.patterns, ...rudin.patterns],
-  aggregates,
+  nodes: applyGranularity(attachFormalStatements(attachEntryBodies([...backgroundNodes, ...limit.nodes, ...manifold.nodes, ...tensor.nodes, ...group.nodes, ...dg.nodes, ...liang.nodes, ...rudin.nodes, ...jiang.nodes, ...axler.nodes, ...top.nodes, ...vault.nodes, ...fieldEntry.nodes]))),
+  actions: attachEntryActions([...backgroundActions, ...limit.actions, ...manifold.actions, ...tensor.actions, ...group.actions, ...dg.actions, ...liang.actions, ...rudin.actions, ...jiang.actions, ...axler.actions, ...top.actions, ...vault.actions, ...fieldEntry.actions]),
+  relations: attachScalingExplanations([...limit.relations, ...manifold.relations, ...tensor.relations, ...group.relations, ...dg.relations, ...liang.relations, ...rudin.relations, ...jiang.relations, ...axler.relations, ...top.relations, ...vault.relations, ...fieldEntry.relations]),
+  evidence: attachEntryEvidence([...limit.evidence, ...manifold.evidence, ...tensor.evidence, ...group.evidence, ...dg.evidence, ...liang.evidence, ...rudin.evidence, ...jiang.evidence, ...axler.evidence, ...top.evidence, ...vault.evidence, ...leanEvidence, ...fieldEntry.evidence]),
+  support: [...limit.support, ...manifold.support, ...tensor.support, ...group.support, ...dg.support, ...liang.support, ...rudin.support, ...jiang.support, ...axler.support, ...top.support, ...vault.support],
+  claims: [...limit.claims, ...manifold.claims, ...tensor.claims, ...group.claims, ...dg.claims, ...liang.claims, ...rudin.claims, ...jiang.claims, ...axler.claims, ...top.claims, ...vault.claims],
+  patterns: [...limit.patterns, ...manifold.patterns, ...tensor.patterns, ...group.patterns, ...dg.patterns, ...liang.patterns, ...rudin.patterns, ...jiang.patterns, ...axler.patterns, ...top.patterns, ...vault.patterns],
+  aggregates: [...aggregates, ...vault.aggregates],
   templates,
   environmentBoundary,
-};
+});

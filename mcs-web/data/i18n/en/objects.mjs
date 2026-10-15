@@ -288,9 +288,19 @@ export default {
     '13': {
       module: 'The end-to-end cases',
       definitions: ['Cases 01–04'],
-      implementation: ['the four data sets limit, manifold, tensor and group under data/cases, with their teaching text'],
-      tests: ['doctor.mjs: evidence and action reference checks for the four cases', 'tests/browser.mjs: the four case pages can be entered'],
-      boundary: 'The four cases cover only the mathematical fragments selected by the monograph; the machine formalisation of the complete bridge is still missing.',
+      implementation: [
+        'the four data sets limit, manifold, tensor and group under data/cases, with their teaching text',
+        'the later cases dg, liang and rudin (the differential-geometry corpus, the condensed path through Liang & Zhou volume I, and the Rudin list; dg carries teaching text, liang carries condensed notes, rudin is names only)',
+        'data/cases/top.mjs and data/cases/08-topology.md: the point-set topology case (the 12 threads named by the requester: topological spaces, countability axioms, separation axioms, homeomorphism, compactness, paracompactness, σ-compactness, connectedness, topological manifolds, differentiable manifolds, coordinate charts, atlases)',
+        'data/cases/jiang.mjs: the condensed path through *A Concise Text on Advanced Algebra* (8 chapters in seven stages, 47 milestones + 4 methods; the first four stops and elimination method have been refined in 11-jiang-first-stage.md; later stops retain their drafts)',
+        'data/cases/axler.mjs: the condensed path through *Linear Algebra Done Right*, 4th ed. (9 chapters, one route per chapter, 61 milestones + 4 methods, names only, body left empty, contentRef: false)',
+      ],
+      tests: [
+        'doctor.mjs: evidence and action reference checks for the cases',
+        'tests/browser.mjs: the case pages can be entered',
+        'tests/topology-case.mjs: the 12 named threads correspond one-to-one with nodes',
+      ],
+      boundary: 'Each case covers only the mathematical fragment selected by the monograph or the corpus; the machine formalisation of the complete bridge is still missing. Every claim of the point-set topology case is registered as prose-level evidence (prose-proof / not_run); no machine certificate is issued.',
     },
     '14': {
       module: 'Counterexample and boundary audit',

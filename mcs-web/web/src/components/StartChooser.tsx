@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useI18n } from '../i18n';
 import type { Locale } from '../i18n/locales';
-import type { StartEntry, StartGoal, StartPace, StartPreferences } from '../start-preferences';
+import type { StartEntry, StartGoal, StartMood, StartPace, StartPreferences } from '../start-preferences';
 
 /**
  * 「开始学习」页开头的**偏好引导**：三问，然后给出一份属于你的起点。
@@ -37,7 +37,7 @@ import type { StartEntry, StartGoal, StartPace, StartPreferences } from '../star
  * （TODO A4-23），定义留在组件里会让规划页反向依赖一个组件模块。这里重新导出，
  * 既有的 `from '../components/StartChooser'` 引用不必改。
  */
-export type { StartEntry, StartGoal, StartPace, StartPreferences } from '../start-preferences';
+export type { StartEntry, StartGoal, StartMood, StartPace, StartPreferences } from '../start-preferences';
 export { EMPTY_PREFERENCES, PREF_KEY } from '../start-preferences';
 
 interface Pair { zh: string; en: string }
@@ -69,19 +69,62 @@ const PACE_SPEC: Array<OptionSpec<StartPace>> = [
   { id: 'free', label: { zh: '先不设节奏', en: 'No fixed pace' }, hint: { zh: '我自己看着办', en: 'I will decide as I go' } },
 ];
 
+/**
+ * 第四问（2026-10 加）：想以什么方式学。
+ *
+ * 它是**排序偏好**，作用在「学习方向」的选项表上：同在方向上、解锁数一样时，
+ * 先给你偏好的那一类对象。它压不过方向，也压不过「有没有东西可解锁」——
+ * 偏好是口味，那两条是事实。
+ */
+const MOOD_SPEC: Array<OptionSpec<StartMood>> = [
+  { id: 'base', label: { zh: '先把定义与条件理清', en: 'Get definitions and conditions straight first' }, hint: { zh: '先给概念、定义、理论', en: 'Concepts, definitions, theory first' } },
+  { id: 'example', label: { zh: '先看具体例子与反例', en: 'Concrete examples and counterexamples first' }, hint: { zh: '先给例子、反例、误区', en: 'Examples, counterexamples, misconceptions first' } },
+  { id: 'apply', label: { zh: '先把它用起来', en: 'Put it to use first' }, hint: { zh: '先给方法、问题、构造', en: 'Methods, problems, constructions first' } },
+  { id: 'any', label: { zh: '没什么偏好', en: 'No particular preference' }, hint: { zh: '不改动任何顺序', en: 'Changes no ordering' } },
+];
+
 function optionsFor<T extends string>(spec: Array<OptionSpec<T>>, locale: Locale): Array<StartOption<T>> {
   return spec.map((item) => ({ id: item.id, label: item.label[locale], hint: item.hint[locale] }));
 }
 
-/** 当前语种下的三问选项。 */
-export function startOptions(locale: Locale): { goal: Array<StartOption<StartGoal>>; entry: Array<StartOption<StartEntry>>; pace: Array<StartOption<StartPace>> } {
-  return { goal: optionsFor(GOAL_SPEC, locale), entry: optionsFor(ENTRY_SPEC, locale), pace: optionsFor(PACE_SPEC, locale) };
+/**
+ * 次级学科兴趣的选项（2026-10-11 加）。
+ *
+ * 与上面四问的**结构差别**（不是排版差别）：这四个选项表的取值是固定的枚举，
+ * 而次级学科来自本体（`data/fields.mjs` 的受控词表）。因此这里**没有** `INTEREST_SPEC`：
+ * 选项由调用方按本体实际存在的学科传入（`startDirection.ts` 的 `disciplineTotals`），
+ * 一处也不写死。理由与 `facets.ts` 的文件头同源——
+ * **一个筛选选项只要可能给出空结果，就已经在骗人了**。
+ */
+export interface InterestOption {
+  /** 次级学科 id（受控词表的值，不翻译）。 */
+  id: string;
+  /** 显示名（由 `labels.ts` / `case-catalog.ts` 的成对表给）。 */
+  label: string;
+  /** 本体里属于这一支的单元数。 */
+  count: number;
+}
+
+/** 当前语种下的四问选项。 */
+export function startOptions(locale: Locale): {
+  goal: Array<StartOption<StartGoal>>;
+  entry: Array<StartOption<StartEntry>>;
+  pace: Array<StartOption<StartPace>>;
+  mood: Array<StartOption<StartMood>>;
+} {
+  return {
+    goal: optionsFor(GOAL_SPEC, locale),
+    entry: optionsFor(ENTRY_SPEC, locale),
+    pace: optionsFor(PACE_SPEC, locale),
+    mood: optionsFor(MOOD_SPEC, locale),
+  };
 }
 
 /* 既有导出保持原样（中文），供还不知道语种的调用方使用；组件一律走 `startOptions(locale)`。 */
 export const GOAL_OPTIONS: Array<StartOption<StartGoal>> = optionsFor(GOAL_SPEC, 'zh');
 export const ENTRY_OPTIONS: Array<StartOption<StartEntry>> = optionsFor(ENTRY_SPEC, 'zh');
 export const PACE_OPTIONS: Array<StartOption<StartPace>> = optionsFor(PACE_SPEC, 'zh');
+export const MOOD_OPTIONS: Array<StartOption<StartMood>> = optionsFor(MOOD_SPEC, 'zh');
 
 export interface StartPlanItem {
   label: string;
@@ -240,17 +283,22 @@ export function buildStartPlan(
 const COPY = {
   zh: {
     heading: '先定方向，再看材料',
-    lead: '三个问题，决定这一页按什么顺序把入口排给你。答完就能看到属于你的起点；随时能改，也随时能跳过——下面所有入口一直都在。',
+    lead: '四个问题，决定这一页按什么顺序把入口排给你。答完就能看到属于你的起点；随时能改，也随时能跳过——下面所有入口一直都在。',
     collapse: '先收起引导',
     collapseTitle: '只收起这一块，不会清掉你已经选的答案',
     reset: '全部用默认',
     edit: '改一改',
     expand: '重新显示引导',
-    expandTitle: '把三问重新摊开；你已经选过的答案还在',
+    expandTitle: '把五问重新摊开；你已经选过的答案还在',
     questions: [
       { title: '你现在想解决什么？', why: '为什么问这个：目标不同，入口的顺序就该不同——补缺口和看全局不该拿到同一张清单。' },
       { title: '你更想从哪儿进？', why: '为什么问这个：同一个内容，从案例进、从方法进、从练习进，是三种不同的学法。' },
       { title: '你希望它怎么陪你？', why: '为什么问这个：节奏决定给你的入口是「十五分钟能走完的一步」还是「一整段路线」。' },
+      { title: '你想先以什么方式学？', why: '为什么问这个：学习方向里「现在能开始」的节点常常有好几条，顺序按你偏好的方式排——先看定义、先看例子、还是先用起来。它压不过目标，也压不过「学它之后能多开始几个」。' },
+      {
+        title: '你想在哪些次级学科上投入？',
+        why: '为什么问这个：数字是本体里属于这一支的单元数，选中的学科会把下面「六条已有方向」按与你的兴趣的重合度重排——你选「群论」，群这条方向就会排到前面。它只改顺序：六条方向一条都不会消失，站内入口也照旧。',
+      },
     ],
     planTitles: { complete: '你的起点', returning: '默认起点（回访）', firstVisit: '默认起点（首访）', plain: '默认起点' },
     whySeparator: '：',
@@ -267,17 +315,22 @@ const COPY = {
   },
   en: {
     heading: 'Set a direction first, then look at the material',
-    lead: 'Three questions decide the order in which this page arranges its entries for you. Answer them and you get a starting point of your own; you can change it or skip it at any time — every entry below stays where it is.',
+    lead: 'Four questions decide the order in which this page arranges its entries for you. Answer them and you get a starting point of your own; you can change it or skip it at any time — every entry below stays where it is.',
     collapse: 'Collapse the guide for now',
     collapseTitle: 'Collapses only this block; the answers you already chose stay',
     reset: 'Use all defaults',
     edit: 'Change my answers',
     expand: 'Show the guide again',
-    expandTitle: 'Reopens the three questions; the answers you already chose are still there',
+    expandTitle: 'Reopens the five questions; the answers you already chose are still there',
     questions: [
       { title: 'What do you want to solve right now?', why: 'Why we ask: different goals call for different orderings — filling a gap and getting the overview should not produce the same list.' },
       { title: 'Where would you rather enter from?', why: 'Why we ask: entering the same content through cases, methods or practice are three different ways of learning.' },
       { title: 'How should it accompany you?', why: 'Why we ask: pace decides whether you get “a step you can finish in fifteen minutes” or “a whole stretch of route”.' },
+      { title: 'How would you like to learn it first?', why: 'Why we ask: a direction often has several nodes you can start now; the order follows the way you prefer — definitions first, examples first, or put it to use first. This cannot override your goal, nor “how many new nodes it opens”.' },
+      {
+        title: 'Which secondary fields do you want to put work into?',
+        why: 'Why we ask: each number is the count of units in the ontology that belong to that field. The fields you pick re-rank the six existing directions below by how much they overlap with your interest — pick group theory and the group direction moves up. It only changes the order: none of the six disappears, and every entry on the site stays where it is.',
+      },
     ],
     planTitles: { complete: 'Your starting point', returning: 'Default start (returning)', firstVisit: 'Default start (first visit)', plain: 'Default start' },
     whySeparator: ': ',
@@ -295,6 +348,33 @@ const COPY = {
   },
 } as const;
 
+/**
+ * 第五问的句式文案（2026-10-11 加）。
+ *
+ * 为什么单独放而不进 `COPY`：`useI18n().pick()` 只认**纯字符串**的成对值
+ * （`{ zh: string, en: string }`），而这里三句都要带参数（计数与学科名）。
+ * 强行塞进 `COPY` 会让 `COPY[locale]` 的类型变成「字符串或函数」，
+ * 于是上面那些 `text.heading` 之类的取值全都要加断言——那是为了让一处好写而把十处弄坏。
+ * 因此按语种收成一组**带参数的函数**，用法是 `INTEREST_TEXT[locale].chosen(n)`。
+ * 与 `StartPage.tsx` 的 `TEXT.readyWhy` 是同一个做法。
+ */
+const INTEREST_TEXT = {
+  zh: {
+    /** 单个学科按钮的 title：计数来自本体，可核对。 */
+    count: (label: string, count: number) => `${label}：本体里 ${count} 个单元`,
+    /** 选完之后的一句话：写清它只改顺序。 */
+    chosen: (count: number) => `已选 ${count} 支：下面「六条已有方向」的顺序按与它们的重合度重排。它只改顺序——选或不选，六条方向一条都不会消失。`,
+    none: '不选也行：六条已有方向按「还有多少节点要学」从多到少排给你。',
+    clear: '清空兴趣',
+  },
+  en: {
+    count: (label: string, count: number) => `${label}: ${count} units in the ontology`,
+    chosen: (count: number) => `${count} field(s) chosen: the six directions below are re-ordered by how much they overlap with them. This only changes the order — none of the six disappears either way.`,
+    none: 'You can skip this: the six directions are ordered by how many nodes each one still needs, most first.',
+    clear: 'Clear the fields',
+  },
+} as const;
+
 interface StartChooserProps {
   preferences: StartPreferences;
   onChange: (next: StartPreferences) => void;
@@ -307,30 +387,64 @@ interface StartChooserProps {
   collapsed?: boolean;
   onCollapse?: () => void;
   onExpand?: () => void;
+  /**
+   * 次级学科选项（2026-10-11 加）。
+   *
+   * **由调用方按本体传入**，本组件不写死任何学科：选项必须来自
+   * `startDirection.ts` 的 `disciplineTotals(graph)`（只列本体里真有节点的学科），
+   * 否则会出现「选了一支永远筛不出东西的学科」——与 `facets.ts` 同一条纪律。
+   * 不传（或为空）时这一问**整块不渲染**，其余四问照旧。
+   */
+  interestOptions?: InterestOption[];
+  /** 选了次级学科之后的说明（由调用方按本体现场算出的方向顺序给）。 */
 }
 
 export function StartChooser({
   preferences, onChange, onReset, decided, returning = false, collapsed = false, onCollapse, onExpand,
+  interestOptions = [],
 }: StartChooserProps) {
   const { locale, hrefFor } = useI18n();
   const text = COPY[locale];
+  const interestText = INTEREST_TEXT[locale];
   const options = startOptions(locale);
   /**
    * 展开状态三处共同决定：
    * - 本机记着「已收起」→ 收起；
-   * - 三问都答完了 → 直接看结论（回访者不必重答）；
+   * - 四问都答完了 → 直接看结论（回访者不必重答）；
    * - **回访者**（本机来过标记）→ 也直接看结论，起点卡里写着默认起点，想答再点「改一改」（TODO A4-25）；
-   * - 其余（首访）→ 展开三问。
+   * - 其余（首访）→ 展开。
    * 「改一改」与「重新显示引导」都只是展开，不会清掉任何答案。
    */
   const [editing, setEditing] = useState(!decided && !collapsed && !returning);
+  /**
+   * 「刚答完前四问、正停在第五问」的状态（2026-10-11 加）。
+   *
+   * 为什么单独一个状态：四问答完就该收成结论（`complete`），但第五问（次级学科兴趣）
+   * 恰好是在**看到结论之后**才有意义的一问——它给的是「那六条方向先给我看哪条」。
+   * 若把第五问也算进 `complete`，就等于把一条可选的偏好变成必经的问卷；
+   * 若答完第四问直接收掉，第五问就永远不会出现。因此：答完第四问时
+   * 收起前四问（`editing = false`）但把第五问留在结论**上方**，选或不选都不影响结论。
+   */
+  const [refining, setRefining] = useState(false);
   const goal = preferences.goal;
   const entry = preferences.entry;
   const pace = preferences.pace;
+  const mood = preferences.mood;
+  const interests = preferences.interests;
+  const hasInterestOptions = interestOptions.length > 0;
   // 渐进披露：答完前一问才出现下一问；「改一改」时全部展开。
   const showEntry = editing && goal !== null;
   const showPace = showEntry && entry !== null;
-  const complete = goal !== null && entry !== null && pace !== null;
+  const showMood = showPace && pace !== null;
+  /*
+   * 第五问（次级学科兴趣）排在最后：它**不参与**「答完」的判据。
+   *
+   * 为什么不算进去：四问决定的是入口顺序，这一问只决定「六条已有方向给你排哪条在前」。
+   * 把它算进 `complete` 会让「答完了」这句话变成六问，而它本可以是空答案（不选也行）
+   * ——那会把一条可选的偏好变成必经的问卷。跳过它不影响任何后果。
+   */
+  const showInterest = (showMood || refining) && mood !== null && hasInterestOptions;
+  const complete = goal !== null && entry !== null && pace !== null && mood !== null;
   const { items, basis, isDefault } = buildStartPlan(preferences, { returning, locale });
 
   const answer = (patch: Partial<StartPreferences>) => onChange({ ...preferences, ...patch });
@@ -366,12 +480,12 @@ export function StartChooser({
             </>
           ) : (
             <>
-              <button type="button" className="button" onClick={() => { setEditing(true); onExpand?.(); }}>{text.edit}</button>
+              <button type="button" className="button" onClick={() => { setEditing(true); setRefining(false); onExpand?.(); }}>{text.edit}</button>
               {collapsed && (
                 <button
                   type="button"
                   className="link-button"
-                  onClick={() => { setEditing(true); onExpand?.(); }}
+                  onClick={() => { setEditing(true); setRefining(false); onExpand?.(); }}
                   title={text.expandTitle}
                 >
                   {text.expand}
@@ -450,7 +564,33 @@ export function StartChooser({
                     className={`start-option${pace === option.id ? ' is-chosen' : ''}`}
                     data-option={option.id}
                     aria-pressed={pace === option.id}
-                    onClick={() => { answer({ pace: option.id }); setEditing(false); }}
+                    onClick={() => { answer({ pace: option.id }); setEditing(true); }}
+                  >
+                    <span className="start-option-label">{option.label}</span>
+                    <span className="start-option-hint">{option.hint}</span>
+                  </button>
+                ))}
+              </div>
+            </li>
+          )}
+
+          {/* ④ 学法偏好（答完③才出现，2026-10 加）：答完这一问才收成结论。 */}
+          {showMood && (
+            <li className="start-question" data-question="mood" data-answered={mood ? 'true' : 'false'} data-current={mood === null ? 'true' : undefined}>
+              <div className="start-question-head">
+                <span className="start-question-index">{mood ? '✓' : '4'}</span>
+                <strong>{text.questions[3].title}</strong>
+                <small>{text.questions[3].why}</small>
+              </div>
+              <div className="start-options">
+                {options.mood.map((option) => (
+                  <button
+                    key={option.id}
+                    type="button"
+                    className={`start-option${mood === option.id ? ' is-chosen' : ''}`}
+                    data-option={option.id}
+                    aria-pressed={mood === option.id}
+                    onClick={() => { answer({ mood: option.id }); setEditing(false); setRefining(true); }}
                   >
                     <span className="start-option-label">{option.label}</span>
                     <span className="start-option-hint">{option.hint}</span>
@@ -460,6 +600,56 @@ export function StartChooser({
             </li>
           )}
         </ol>
+      )}
+
+      {/*
+        第五问：次级学科兴趣（2026-10-11 加）。
+        它排在结论**上方**并且独立于 `editing`：答完第四问就收起前四问，
+        但这一问留着——选它就改「六条已有方向给你排哪条」，不选也不影响任何结论。
+      */}
+      {showInterest && (
+        <div className="start-interest" data-question="interest">
+          <div className="start-question-head">
+            <span className="start-question-index">{interests.length > 0 ? '✓' : '5'}</span>
+            <strong>{text.questions[4].title}</strong>
+            <small>{text.questions[4].why}</small>
+          </div>
+          <div className="start-options">
+            {interestOptions.map((option) => {
+              const chosen = interests.includes(option.id);
+              return (
+                <button
+                  key={option.id}
+                  type="button"
+                  className={`start-option${chosen ? ' is-chosen' : ''}`}
+                  data-interest={option.id}
+                  aria-pressed={chosen}
+                  /* 多选：点一次加入，再点一次移除。计数由本体现场派生，写在 title 里可核对。 */
+                  onClick={() => answer({
+                    interests: chosen
+                      ? interests.filter((id) => id !== option.id)
+                      : [...interests, option.id],
+                  })}
+                  title={interestText.count(option.label, option.count)}
+                >
+                  <span className="start-option-label">{option.label}</span>
+                  <span className="start-option-hint">{option.count}</span>
+                </button>
+              );
+            })}
+          </div>
+          <p className="start-interest-note">
+            {interests.length > 0 ? interestText.chosen(interests.length) : interestText.none}
+            {interests.length > 0 && (
+              <>
+                {' '}
+                <button type="button" className="link-button" onClick={() => answer({ interests: [] })}>
+                  {interestText.clear}
+                </button>
+              </>
+            )}
+          </p>
+        </div>
       )}
 
       {/* 结论：选了就有后果，且写明依据与可撤销。 */}

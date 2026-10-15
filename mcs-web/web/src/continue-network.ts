@@ -16,7 +16,8 @@
  * 本模块是纯函数：不读时间、不读随机数、不写任何状态。同一输入必得同一布局。
  */
 
-import type { EdgeFamily, NetworkGraph } from './network';
+import type { EdgeFamily, NetworkEdge, NetworkGraph } from './network.ts';
+import { connectionsBetween } from './connection-display.ts';
 import type { Locale } from './i18n/locales.ts';
 
 export type ContinueDirection = 'up' | 'right' | 'down' | 'left';
@@ -99,6 +100,7 @@ export interface ContinueLink {
   /** 关系边才有种类与见证状态。 */
   kind: string | null;
   witnessStatus: string | null;
+  connections: NetworkEdge[];
 }
 
 export interface PlacedContinueNode {
@@ -108,6 +110,7 @@ export interface PlacedContinueNode {
   family: EdgeFamily;
   kind: string | null;
   witnessStatus: string | null;
+  connections: NetworkEdge[];
   direction: ContinueDirection;
   topicTitle: string;
   /** 从中心起的序号：0 表示离中心最近（关联最强）。 */
@@ -156,6 +159,10 @@ const CENTER_H = 52;
 /** 每根射线最多画几个节点；再多就用「还有 N 个」注明。 */
 const MAX_PER_DIRECTION = 3;
 const PADDING = 16;
+/** 分离重叠卡片时的最小间隙（与网络主视图的间距松弛同一个数量级）。 */
+const CARD_GAP = 12;
+/** 分离迭代上限：正常情况第一轮就无重叠；到顶也允许残留，不做无界推挤。 */
+const MAX_SPREAD_PASSES = 12;
 /** 第一圈半径与话题增加时的半径增量。 */
 const BASE_RADIUS_X = 196;
 const BASE_RADIUS_Y = 118;
@@ -207,7 +214,7 @@ export function strongLinks(
   const limit = options.limit ?? 14;
   const confirmed = options.confirmed ?? new Set<string>();
   const nodeById = new Map(graph.nodes.map((node) => [node.id, node]));
-  const best = new Map<string, ContinueLink>();
+  const best = new Map<string, Omit<ContinueLink, 'connections'>>();
 
   const consider = (id: string, basis: LinkBasis, note: string, family: EdgeFamily, kind: string | null = null, witnessStatus: string | null = null) => {
     if (id === center) return;
@@ -251,7 +258,8 @@ export function strongLinks(
   return [...best.values()]
     .sort((a, b) => BASIS_RANK[a.basis] - BASIS_RANK[b.basis]
       || a.node.localeCompare(b.node, 'en'))
-    .slice(0, limit);
+    .slice(0, limit)
+    .map(link => ({ ...link, connections: connectionsBetween(graph, center, link.node) }));
 }
 
 /**
@@ -338,6 +346,67 @@ function layoutAlongDirection(
 }
 
 /**
+ * 按真实包围盒把重叠的卡片推开（确定性、有限步）。
+ *
+ * 为什么需要这一步：`layoutAlongDirection` 只保证**同一方向内**的相邻卡片不重叠
+ * （径向步长 ≥ 卡高、切向步长 ≥ 卡宽）。当话题数超过 4 个、方向开始环形复用时，
+ * 不同半径环上的两组卡片可能落进同一块地方——实测（2026-10 加入第八个案例
+ * 「点集拓扑」的 4 个话题块之后）13 个邻居里有 3 对重叠。只靠调大 RING_STEP 也能绕开，
+ * 但那会把画布撑得很大，且不构成「任何输入都不重叠」的保证；这里改成与网络主视图
+ * 的 `relaxToSpacing` 同一思路：先摆位，再按包围盒把压在一起的卡片分开。
+ *
+ * 规则（可以照着核对）：
+ * - 对每一对重叠的卡片，沿两中心连线各推开一半的**穿透量**；完全同心时按 `(i, j)` 的
+ *   字典序定一个固定方向——纯函数不能读随机数，否则同一数据两次布局会不一样。
+ * - 每轮结束后重新检测；若一轮没有任何重叠就提前结束（正常情况下第一轮就收敛）。
+ * - 步数上限 `MAX_SPREAD_PASSES`，到顶也允许残留：宁可少推，也不要把卡片抛到很远。
+ *
+ * 返回新数组，输入不被修改（本模块是纯函数）。
+ */
+function spreadOverlaps(
+  items: PlacedContinueNode[],
+  gap = CARD_GAP,
+  maxPasses = MAX_SPREAD_PASSES,
+): PlacedContinueNode[] {
+  const placed = items.map((item) => ({ ...item }));
+  const halfW = CONTINUE_NODE_W / 2;
+  const halfH = CONTINUE_NODE_H / 2;
+  for (let pass = 0; pass < maxPasses; pass += 1) {
+    let moved = false;
+    for (let i = 0; i < placed.length; i += 1) {
+      for (let j = i + 1; j < placed.length; j += 1) {
+        const a = placed[i];
+        const b = placed[j];
+        const acx = a.x + halfW;
+        const acy = a.y + halfH;
+        const bcx = b.x + halfW;
+        const bcy = b.y + halfH;
+        const dx = bcx - acx;
+        const dy = bcy - acy;
+        // 需要的最小中心距：卡宽/卡高各加一个间隙。
+        const needX = CONTINUE_NODE_W + gap;
+        const needY = CONTINUE_NODE_H + gap;
+        if (Math.abs(dx) >= needX || Math.abs(dy) >= needY) continue;
+        const penX = needX - Math.abs(dx);
+        const penY = needY - Math.abs(dy);
+        // 沿穿透较小的那个轴分开——改动最小，也不会把扇形拉散。
+        if (penX <= penY) {
+          const push = (penX / 2 + 0.5) * (dx >= 0 ? 1 : -1);
+          a.x -= push; b.x += push;
+        } else {
+          const sign = dy !== 0 ? (dy >= 0 ? 1 : -1) : (i < j ? 1 : -1);
+          const push = (penY / 2 + 0.5) * sign;
+          a.y -= push; b.y += push;
+        }
+        moved = true;
+      }
+    }
+    if (!moved) break;
+  }
+  return placed;
+}
+
+/**
  * 组装完整布局。
  *
  * 方向分配规则（可核对）：
@@ -404,6 +473,7 @@ export function buildContinueNetwork(
         family: link.family,
         kind: link.kind,
         witnessStatus: link.witnessStatus,
+        connections: link.connections,
         direction,
         topicTitle: bucket.topic.title,
         order: spot.order,
@@ -428,9 +498,13 @@ export function buildContinueNetwork(
    * 估算版本会裁掉最外侧的卡片（实测「序列收敛」的 y 坐标算成 -15，
    * 卡片直接被画到画布上方外面）。先按估算值摆好，再用真实包围盒定画布，
    * 并把中心平移到包围盒正中——这样任何方向组合都不会被裁。
+   *
+   * 2026-10：摆好之后先做一次**重叠分离**（`spreadOverlaps`）。卡片的相对位置因此
+   * 可能被推开几个像素，但包围盒与平移都在这之后计算，所以「卡片不出画布」仍然成立。
    */
-  const allX = placed.map((item) => item.x);
-  const allY = placed.map((item) => item.y);
+  const spread = spreadOverlaps(placed);
+  const allX = spread.map((item) => item.x);
+  const allY = spread.map((item) => item.y);
   const minX = Math.min(cx - CONTINUE_CENTER.w / 2, ...allX);
   const maxX = Math.max(cx + CONTINUE_CENTER.w / 2, ...allX.map((value) => value + CONTINUE_NODE_W));
   const minY = Math.min(cy - CONTINUE_CENTER.h / 2, ...allY);
@@ -441,7 +515,7 @@ export function buildContinueNetwork(
   const finalHeight = maxY - minY + PADDING * 2;
   const finalCx = cx + shiftX;
   const finalCy = cy + shiftY;
-  const shifted = placed.map((item) => ({ ...item, x: item.x + shiftX, y: item.y + shiftY }));
+  const shifted = spread.map((item) => ({ ...item, x: item.x + shiftX, y: item.y + shiftY }));
 
   const bases = [...new Set(shifted.map((item) => item.basis))]
     .sort((a, b) => BASIS_RANK[a] - BASIS_RANK[b]);

@@ -135,7 +135,7 @@ export const CONSTRUCT_OPTIONS = ['Concept', 'Definition', 'Claim', 'Proof', 'Ex
 /** 关系种类：与 §2.11 的六种判定器一一对应。 */
 export const RELATION_KIND_LABEL: Record<string, string> = {
   definitionReference: '定义引用',
-  hardGeneralization: '硬推广',
+  scaling: '放缩',
   equivalentTo: '等价',
   conditionalDerivation: '条件推导',
   instanceOf: '实例',
@@ -151,7 +151,7 @@ export const RELATION_KIND_LABEL: Record<string, string> = {
  */
 export const RELATION_KIND_LABEL_EN: Record<string, string> = {
   definitionReference: 'Definition reference',
-  hardGeneralization: 'Hard generalization',
+  scaling: 'Scaling',
   equivalentTo: 'Equivalent',
   conditionalDerivation: 'Conditional derivation',
   instanceOf: 'Instance of',
@@ -1190,7 +1190,7 @@ export interface RunView extends Omit<DiscoveryRun, 'candidates'> {
 
 const MATH_JUDGMENTS: MathJudgment[] = ['verified', 'refuted', 'undecided'];
 const RUN_STATUSES: Array<DiscoveryRun['status']> = ['queued', 'running', 'completed', 'interrupted', 'cancelled', 'error'];
-const RELATION_KINDS: RelationKind[] = ['definitionReference', 'hardGeneralization', 'equivalentTo', 'conditionalDerivation', 'instanceOf', 'counterexampleTo'];
+const RELATION_KINDS: RelationKind[] = ['definitionReference', 'scaling', 'equivalentTo', 'conditionalDerivation', 'instanceOf', 'counterexampleTo'];
 const REVIEW_STATUSES: ReviewStatus[] = ['pending', 'accepted', 'dismissed', 'published', 'stale'];
 
 function normalizeCandidate(raw: unknown): CandidateView | null {
@@ -1212,7 +1212,8 @@ function normalizeCandidate(raw: unknown): CandidateView | null {
   if (rawMath && !MATH_JUDGMENTS.includes(rawMath as MathJudgment)) {
     problems.push(`数学判断「${rawMath}」不在 verified / refuted / undecided 之内，按未决处理（不升级为已验证）。`);
   }
-  const rawKind = asString(record.kind, '');
+  const storedKind = asString(record.kind, '');
+  const rawKind = storedKind === 'hardGeneralization' || storedKind === 'specialization' ? 'scaling' : storedKind;
   if (rawKind && !RELATION_KINDS.includes(rawKind as RelationKind)) {
     problems.push(`关系种类「${rawKind}」不在 §2.11 的六种里，按「定义引用」显示但未识别。`);
   }

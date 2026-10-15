@@ -32,8 +32,7 @@ export const GLOSSARY = Object.freeze({
   契约: 'contract',
   硬前置: 'hard prerequisite',
   硬前置关系: 'hard-prerequisite relation',
-  硬泛化: 'hard generalization',
-  特化: 'specialization',
+  放缩: 'scaling',
   桥接: 'bridge',
   类比: 'analogy',
   对偶: 'duality',
@@ -565,8 +564,8 @@ export const GLOSSARY = Object.freeze({
   种子邻域: 'seed neighbourhood',
   支持交汇: 'support intersection',
   支持差异: 'support difference',
-  泛化锥: 'generalization cone',
-  特化锥: 'specialization cone',
+  放向锥: 'expansion cone',
+  缩向锥: 'contraction cone',
   对偶对应: 'duality correspondence',
   目标回溯: 'goal regression',
   反例诊断: 'counterexample diagnosis',
@@ -708,6 +707,9 @@ export const CASE_TITLES_EN = Object.freeze({
   dg: 'Differential Geometry',
   liang: 'Liang & Zhou, *Introduction to Differential Geometry and General Relativity*, Vol. 1',
   rudin: 'Rudin, *Principles of Mathematical Analysis*, 3rd ed.',
+  jiang: 'Jiang & Lin, *A Concise Text on Advanced Algebra*',
+  axler: 'Axler, *Linear Algebra Done Right*, 4th ed.',
+  top: 'Point-set Topology',
 });
 
 /** 受控词表的英文写法（键值与 `shared/contracts.mjs` 同名同序）。 */
@@ -746,8 +748,7 @@ export const ROLES_EN = Object.freeze({
 
 export const RELATIONS_EN = Object.freeze({
   hardPrereq: 'Hard prerequisite',
-  hardGeneralization: 'Hard generalization',
-  specialization: 'Specialization',
+  scaling: 'Scaling',
   bridge: 'Bridge',
   application: 'Application',
   analogy: 'Analogy',

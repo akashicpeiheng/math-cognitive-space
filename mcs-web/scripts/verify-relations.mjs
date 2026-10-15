@@ -43,10 +43,10 @@ const { checkBundle } = await load('../core/formal/kernel.mjs');
 const tryAll = process.argv.includes('--all');
 const sha256 = (value) => createHash('sha256').update(value).digest('hex');
 
-/** 已登记的关系（节点级 + 概念级），只取 `hardGeneralization`。 */
+/** 已登记的关系（节点级 + 概念级），只取 `scaling`。 */
 function generalizationRelations() {
   const all = [...(registry.RELATIONS ?? []), ...(registry.CONCEPT_RELATIONS ?? [])];
-  return all.filter((relation) => relation.kind === 'hardGeneralization');
+  return all.filter((relation) => relation.kind === 'scaling');
 }
 
 /**
@@ -81,7 +81,7 @@ function compareCertificate(relation, check, steps) {
 }
 
 const cases = generalizationRelations();
-console.log(`登记表里 ${cases.length} 条 hardGeneralization（另加 definitionReference / equivalentTo / conditionalDerivation / instanceOf / counterexampleTo 不在本脚本范围）。\n`);
+console.log(`登记表里 ${cases.length} 条 scaling（另加 definitionReference / equivalentTo / conditionalDerivation / instanceOf / counterexampleTo 不在本脚本范围）。\n`);
 
 let failures = 0;
 let unreachable = 0;
@@ -203,7 +203,7 @@ for (const relation of cases) {
   for (const note of verdict.notes) console.log(`     · ${note}`);
 }
 
-console.log(`\n汇总：${cases.length} 条 hardGeneralization，${failures} 条失败/不一致，${unreachable} 条本轮没走到。`);
+console.log(`\n汇总：${cases.length} 条 scaling，${failures} 条失败/不一致，${unreachable} 条本轮没走到。`);
 if (failures) {
   console.log('失败项要**修登记或修引擎**，不允许改这份脚本让它们变绿。');
   process.exit(1);

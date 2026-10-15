@@ -37,17 +37,34 @@ const REGISTRY = {
     nodes: [
       './en/limit.mjs', './en/rudin.mjs', './en/dg.mjs', './en/liang.mjs',
       './en/manifold.mjs', './en/tensor.mjs', './en/group.mjs', './en/background.mjs',
+      './en/top.mjs', './en/field-entry.mjs',
     ].map((specifier) => ({ specifier, pick: (module) => module.default?.nodes })),
     representations: [
       './en/limit.mjs', './en/rudin.mjs', './en/dg.mjs', './en/liang.mjs',
       './en/manifold.mjs', './en/tensor.mjs', './en/group.mjs', './en/background.mjs',
+      './en/top.mjs',
     ].map((specifier) => ({ specifier, pick: (module) => module.default?.representations })),
-    actions: [{ specifier: './en/actions.mjs', pick: (module) => module.default }],
-    evidence: [{ specifier: './en/evidence.mjs', pick: (module) => module.default }],
-    relations: [{ specifier: './en/relations.mjs', pick: (module) => module.default }],
+    actions: [
+      { specifier: './en/field-entry.mjs', pick: (module) => module.default?.actions },
+      { specifier: './en/actions.mjs', pick: (module) => module.default },
+      // 第八个案例（点集拓扑）的 33 条行动标题与它的其它小节合并在一个文件里：
+      // 这一轮新增的全部小节都只属于这个案例，集中一处才能看出它们是一件事。
+      { specifier: './en/top.mjs', pick: (module) => module.default?.actions },
+    ],
+    evidence: [
+      { specifier: './en/field-entry.mjs', pick: (module) => module.default?.evidence },
+      { specifier: './en/evidence.mjs', pick: (module) => module.default },
+      { specifier: './en/lean.mjs', pick: (module) => module.default },
+      { specifier: './en/top.mjs', pick: (module) => module.default?.evidence },
+    ],
+    relations: [
+      { specifier: './en/field-entry.mjs', pick: (module) => module.default?.relations },
+      { specifier: './en/relations.mjs', pick: (module) => module.default },
+      { specifier: './en/top.mjs', pick: (module) => module.default?.relations },
+    ],
     localizations: [{ specifier: './en/localizations.mjs', pick: (module) => module.default }],
     meta: [{ specifier: './en/meta.mjs', pick: (module) => module.default }],
-    cases: ['./en/cases.mjs', './en/cases-dg.mjs', './en/cases-limit.mjs', './en/cases-liang.mjs'],
+    cases: ['./en/cases.mjs', './en/cases-dg.mjs', './en/cases-limit.mjs', './en/cases-liang.mjs', './en/cases-top.mjs', './en/cases-field-entry.mjs'],
     /*
      * 剩下六节没有按案例拆分的需要（它们本身就不是案例的字段，而是站点级的登记表）：
      * `patterns` 误区模式、`claims` 形式陈述、`support` 支持族、`aggregates` 话题聚合、
@@ -57,10 +74,22 @@ const REGISTRY = {
      * ——写进去等于白写（译者会看到文件存在、parity 却永远报 0/45）。这类「工具静默不接受」
      * 的缺口比译错更隐蔽，所以这里显式列全，并由 `scripts/i18n-parity.mjs` 逐节核对。
      */
-    patterns: [{ specifier: './en/objects.mjs', pick: (module) => module.default?.patterns }],
-    claims: [{ specifier: './en/objects.mjs', pick: (module) => module.default?.claims }],
-    support: [{ specifier: './en/objects.mjs', pick: (module) => module.default?.support }],
-    aggregates: [{ specifier: './en/objects.mjs', pick: (module) => module.default?.aggregates }],
+    patterns: [
+      { specifier: './en/objects.mjs', pick: (module) => module.default?.patterns },
+      { specifier: './en/top.mjs', pick: (module) => module.default?.patterns },
+    ],
+    claims: [
+      { specifier: './en/objects.mjs', pick: (module) => module.default?.claims },
+      { specifier: './en/top.mjs', pick: (module) => module.default?.claims },
+    ],
+    support: [
+      { specifier: './en/objects.mjs', pick: (module) => module.default?.support },
+      { specifier: './en/top.mjs', pick: (module) => module.default?.support },
+    ],
+    aggregates: [
+      { specifier: './en/objects.mjs', pick: (module) => module.default?.aggregates },
+      { specifier: './en/top.mjs', pick: (module) => module.default?.aggregates },
+    ],
     templates: [{ specifier: './en/objects.mjs', pick: (module) => module.default?.templates }],
     coverage: [{ specifier: './en/objects.mjs', pick: (module) => module.default?.coverage }],
   },

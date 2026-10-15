@@ -479,4 +479,5 @@ for (const [caseId, module] of Object.entries(MODULES)) {
 }
 for (const [id, entry] of Object.entries(remaining)) register(id, entry, 'evidence.mjs/remaining');
 
-export default evidence;
+import { supplementEvidenceText } from '../../field-entry.mjs';
+export default Object.fromEntries(Object.entries(evidence).map(([id,text])=>[id,supplementEvidenceText(id,text,'en')]));

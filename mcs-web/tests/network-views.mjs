@@ -56,7 +56,7 @@ try {
   }, profileId);
 
   // 打开网络页：加两个节点，打开视图面板
-  await page.goto(server.origin + '/network?nodes=' + encodeURIComponent('dg:manifold,dg:homeomorphism'), { waitUntil: 'networkidle' });
+  await page.goto(server.origin + '/network?nodes=' + encodeURIComponent('top:topological-manifold,top:homeomorphism'), { waitUntil: 'networkidle' });
   await page.waitForTimeout(1500);
   await page.getByLabel('显示保存的视图面板').check();
   await page.waitForTimeout(600);
@@ -84,6 +84,7 @@ try {
       nodes: view?.payload.added ?? [],
       families: view?.payload.families ?? [],
       hasCamera: Boolean(view?.payload.camera),
+      snapshot: view?.payload,
       ontologyVersion: listed.data.ontologyVersion,
       note: document.querySelector('.floating-panel[aria-label="保存的视图"] .muted')?.textContent ?? '',
       notice: document.body.innerText.includes('已保存视图「验收视图 A」'),
@@ -91,6 +92,10 @@ try {
   }, profileId);
   check('保存进了学习者档案（E）', afterSave.found && afterSave.count >= 1, JSON.stringify({ count: afterSave.count, found: afterSave.found }));
   check('保存的内容含节点与相机', afterSave.nodes.length === 2 && afterSave.hasCamera, JSON.stringify({ nodes: afterSave.nodes, camera: afterSave.hasCamera }));
+  check('公共节点也保存 v2 来源、逐节点坐标和排法', afterSave.snapshot?.schema === 'mcs-network/2'
+    && afterSave.snapshot.refs.length === 2 && afterSave.snapshot.refs.every(ref => ref.source === 'ontology')
+    && afterSave.nodes.every(id => Number.isFinite(afterSave.snapshot.placements?.[id]?.x) && Number.isFinite(afterSave.snapshot.placements?.[id]?.y))
+    && Boolean(afterSave.snapshot.layout?.mode), JSON.stringify(afterSave.snapshot));
   check('界面回执说明「存在档案（E）里」', afterSave.notice, afterSave.notice);
 
   const ontologyAfter = await page.evaluate(async () => {
@@ -136,7 +141,7 @@ try {
   }));
   check('载入把节点放回画布（并如实说明改了什么）',
     loaded.nodes > 0 && loaded.notice, JSON.stringify({ nodes: loaded.nodes, notice: loaded.notice }));
-  check('载入的是保存时的那两个节点', loaded.url.includes('dg%3Amanifold') || loaded.url.includes('dg:manifold') || loaded.noticeBody.includes('2 个节点'),
+  check('载入的是保存时的那两个节点', loaded.url.includes('dg%3Amanifold') || loaded.url.includes('top:topological-manifold') || loaded.noticeBody.includes('2 个节点'),
     JSON.stringify({ url: loaded.url, body: loaded.noticeBody }));
 
   // 重命名与删除
@@ -168,7 +173,7 @@ try {
   const anon = await context.newPage();
   await anon.goto(server.origin + '/', { waitUntil: 'networkidle' });
   await anon.evaluate(() => localStorage.removeItem('mcs-web-selected-profile'));
-  await anon.goto(server.origin + '/network?nodes=' + encodeURIComponent('dg:manifold'), { waitUntil: 'networkidle' });
+  await anon.goto(server.origin + '/network?nodes=' + encodeURIComponent('top:topological-manifold'), { waitUntil: 'networkidle' });
   await anon.waitForTimeout(1300);
   await anon.getByLabel('显示保存的视图面板').check();
   await anon.waitForTimeout(600);
@@ -194,8 +199,8 @@ try {
   const originals = await anon.evaluate(() => {
     const first = JSON.parse(localStorage.getItem('mcs-network-views-local-v1'))[0];
     const second = { ...first, viewId: 'local-retry', payload: {
-      added: ['dg:manifold', 'dg:homeomorphism'], families: ['relation'],
-      positions: { 'dg:manifold': { x: 120.126, y: 250.234 } },
+      added: ['top:topological-manifold', 'top:homeomorphism'], families: ['relation'],
+      positions: { 'top:topological-manifold': { x: 120.126, y: 250.234 } },
       camera: { x: 10, y: -20, scale: 1.25 },
     } };
     localStorage.setItem('mcs-network-views-local-v1', JSON.stringify([first, second]));
@@ -244,7 +249,7 @@ try {
   const restoredSecond = migrated.views.find((v) => v.payload.added.length === 2);
   check('迁移保留节点、边源、相机和按协议取两位小数的位置',
     restoredSecond?.payload.camera.scale === 1.25 && restoredSecond.payload.camera.y === -20
-    && restoredSecond.payload.positions['dg:manifold'].x === 120.13
+    && restoredSecond.payload.positions['top:topological-manifold'].x === 120.13
     && restoredSecond.payload.families.join() === 'relation');
   check('完成后本机待迁移列表清空，视图可随档案导出',
     migrated.local.length === 0 && JSON.stringify(migrated.bundle).includes(restoredSecond?.viewId));

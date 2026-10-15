@@ -275,10 +275,12 @@ export const relation = (id, kind, from, to, opts = {}) => ({
   kind,
   from,
   to,
+  ...(kind === 'scaling' ? { direction: opts.direction ?? null, scalingMode: opts.scalingMode ?? 'unresolved' } : {}),
   witness: opts.witness ?? { type: 'declared', status: 'DEF', ref: opts.ref, scope: opts.scope },
   scope: opts.scope,
   task: opts.task,
   candidateNote: opts.candidateNote,
+  ...(opts.scalingExplanation ? { scalingExplanation: opts.scalingExplanation } : {}),
 });
 
 export const evidence = (id, kind, status, checkStatus, title, opts = {}) => ({

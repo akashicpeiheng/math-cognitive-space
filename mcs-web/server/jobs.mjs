@@ -1,5 +1,6 @@
 import { Worker } from 'node:worker_threads';
 import { randomUUID } from 'node:crypto';
+import { killLeanProcessTree } from '../core/lean.mjs';
 import { McsError, CODES } from '../shared/errors.mjs';
 
 /**
@@ -70,9 +71,10 @@ export class JobManager {
     this.maxDurationMs = Math.max(1000, Number(maxDurationMs) || 60000);
     this.spawnWorker = typeof spawnWorker === 'function'
       ? spawnWorker
-      : (workerData) => new Worker(new URL('./plan-worker.mjs', import.meta.url), { workerData });
+      : (workerData) => new Worker(new URL(workerData.kind === 'network-check' ? './network-check-worker.mjs' : './plan-worker.mjs', import.meta.url), { workerData });
     this.jobs = new Map();
     this.queue = [];
+    this.completionListeners = new Map();
   }
 
   /** 发起任务那一刻的本体版本；没有快照源就返回 null（不猜）。 */
@@ -192,18 +194,28 @@ export class JobManager {
       job.worker = null;
       job.status = 'error';
       job.finishedAt = new Date().toISOString();
-      running?.terminate().catch(() => {});
+      this.stopChildren(job); running?.terminate().catch(() => {});
       this.settle();
     }, this.maxDurationMs);
     timer.unref?.();
     job.timer = timer;
 
     worker.on('message', (message) => {
+      if (job.kind === 'network-check' && message?.networkChild && Number.isInteger(message.pid) && message.pid > 0) {
+        job.children ??= new Set();
+        if (message.networkChild === 'closed') job.children.delete(message.pid);
+        else if (message.networkChild === 'started') {
+          job.children.add(message.pid);
+          if (job.status !== 'running') this.stopChildren(job);
+        }
+        return;
+      }
       if (job.status !== 'running') return;
       if (message?.ok) { job.status = 'done'; job.result = message.result; }
       else { job.status = 'error'; job.error = message?.error ?? { code: CODES.INTERNAL, message: '规划工作线程返回未知错误' }; }
       job.finishedAt = new Date().toISOString();
       job.worker = null;
+      this.stopChildren(job);
       worker.terminate().catch(() => {});
       this.settle();
     });
@@ -211,6 +223,7 @@ export class JobManager {
       if (job.status !== 'running') return;
       job.status = 'error';
       job.error = { code: CODES.INTERNAL, message: error.message };
+      this.stopChildren(job);
       job.finishedAt = new Date().toISOString();
       job.worker = null;
       this.settle();
@@ -219,6 +232,7 @@ export class JobManager {
       if (job.status !== 'running') return;
       job.status = job.cancelled ? 'cancelled' : 'error';
       if (!job.cancelled) job.error = { code: CODES.INTERNAL, message: `规划工作线程提前退出，代码 ${code}` };
+      this.stopChildren(job);
       job.finishedAt = new Date().toISOString();
       job.worker = null;
       this.settle();
@@ -227,8 +241,22 @@ export class JobManager {
 
   /** 任务结束时统一收尾：清定时器、整理历史、推进队列。 */
   settle() {
+    for (const [id, listeners] of this.completionListeners) {
+      const job = this.jobs.get(id);
+      if (job && !['queued', 'running'].includes(job.status)) {
+        this.completionListeners.delete(id);
+        for (const listener of listeners) listener(this.get(id));
+      }
+    }
     this.prune();
     this.pump();
+  }
+
+  onComplete(id, listener) {
+    const job = this.get(id);
+    if (!['queued', 'running'].includes(job.status)) { listener(job); return; }
+    const listeners = this.completionListeners.get(id) ?? [];
+    listeners.push(listener); this.completionListeners.set(id, listeners);
   }
 
   get(id) {
@@ -266,9 +294,14 @@ export class JobManager {
     job.finishedAt = new Date().toISOString();
     const worker = job.worker;
     job.worker = null;
-    worker?.terminate().catch(() => {});
+    this.stopChildren(job); worker?.terminate().catch(() => {});
     this.settle();
     return { id, status: 'cancelled', cancelled: true };
+  }
+
+  stopChildren(job) {
+    for (const pid of job.children ?? []) void killLeanProcessTree({ pid, kill: signal => { try { process.kill(pid, signal); } catch { /* already exited */ } } });
+    job.children?.clear();
   }
 
   prune() {
@@ -280,6 +313,7 @@ export class JobManager {
   close() {
     for (const job of this.jobs.values()) {
       if (job.timer) clearTimeout(job.timer);
+      this.stopChildren(job);
       job.worker?.terminate().catch(() => {});
     }
     this.jobs.clear();
