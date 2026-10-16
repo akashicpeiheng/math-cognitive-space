@@ -4,10 +4,13 @@
 
 这个仓库是 MCS 网站的公开版本：一个从零重建的数学学习与研究一体工作台。
 源码仓库：[akashicpeiheng/math-cognitive-space](https://github.com/akashicpeiheng/math-cognitive-space)。
-当前已公开源码，并完成本机自托管 + 临时 HTTPS 隧道的首次上线检查；
-固定地址、长期托管与完整双账号使用流程仍待验收，状态见 `mcs-web/RELEASE-READINESS.md`。
+网站入口：[mathcognitivespace.com](https://mathcognitivespace.com)，采用本机自托管与命名 HTTPS 隧道。
+部署、长期可用性与完整双账号使用流程的证据范围见 `mcs-web/RELEASE-READINESS.md`。
 它把研究专稿里的理论形式直接落在数据模型、算法与界面上——公共本体只读，
 学习者状态外置，视图与路线由两者派生。
+
+Obsidian 插件单独维护于 [mcs-obsidian](https://github.com/akashicpeiheng/mcs-obsidian)，
+提供数学网络、形式关系与学习路径；其源码、安装包和验收边界以插件仓库为准。
 
 ## 三层结构：M / E / D
 

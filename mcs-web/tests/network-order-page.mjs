@@ -1,6 +1,7 @@
 import { startTestServer, toggleInAnimatedPage } from './helpers.mjs';
 import { pathToFileURL } from 'node:url';
 import { resolve } from 'node:path';
+import { isDeepStrictEqual } from 'node:util';
 import { MCS_WEB_ROOT } from '../core/ontology.mjs';
 
 import { PLAYWRIGHT_SPECIFIER as PLAYWRIGHT, CHROME_PATH as CHROME } from './browser-runtime.mjs';
@@ -298,7 +299,8 @@ try {
     await page.waitForTimeout(200);
     const unchecked = await readState(page);
     check('取消勾选本身不动画布（要等点了「重新布局」才生效）',
-      uncheckedOk && unchecked.keepManual === false && Boolean(unchecked.overrides[draggable.id]),
+      uncheckedOk && unchecked.keepManual === false && Boolean(unchecked.overrides[draggable.id])
+        && isDeepStrictEqual(unchecked.overrides, relayout.overrides),
       JSON.stringify({ keepManual: unchecked.keepManual, overrides: Object.keys(unchecked.overrides), changed: uncheckedOk }));
 
     await page.click('.network-zoom button:has-text("重新布局")');
@@ -321,7 +323,9 @@ try {
     check('清掉的是手动位置，规则仍然把卡片摆在该在的地方（不重叠）',
       overlapPairs(cleared.placed).length === 0, JSON.stringify(overlapPairs(cleared.placed)));
     check('给出撤销入口，并写明刚才归位了几个',
-      cleared.notices.some((text) => text.includes('恢复手动摆放') && text.includes('手动摆放的 1 个节点')),
+      Object.keys(unchecked.overrides).length > 0
+        && cleared.notices.some((text) => text.includes('恢复手动摆放')
+          && text.includes(`手动摆放的 ${Object.keys(unchecked.overrides).length} 个节点`)),
       JSON.stringify(cleared.notices));
 
     /*
@@ -335,6 +339,7 @@ try {
     check('撤销把手动摆放原样放回去（画布与本机存储都回来了，撤销入口收起）',
       Math.abs((restoredPlace.get(draggable.id)?.x ?? 0) - (relayout.overrides[draggable.id]?.x ?? -1)) < 1.5
         && Boolean(restored.overrides[draggable.id])
+        && isDeepStrictEqual(restored.overrides, unchecked.overrides)
         && !restored.notices.some((text) => text.includes('恢复手动摆放')),
       JSON.stringify({ node: restoredPlace.get(draggable.id), override: relayout.overrides[draggable.id], notices: restored.notices }));
 
