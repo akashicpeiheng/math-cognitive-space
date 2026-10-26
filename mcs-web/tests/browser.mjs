@@ -14,7 +14,16 @@ let browser;
 try {
   const { chromium } = await import(PLAYWRIGHT);
   browser = await chromium.launch({ executablePath: CHROME ?? undefined, headless: true });
-  const context = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
+  const context = await browser.newContext({
+    viewport: { width: 1440, height: 1000 },
+    /*
+     * 显式钉住浅色（第一百零九轮）：这一套断言的是**浅色外观**（纸面是冷调紫罗兰、
+     * `--accent` 是品牌紫、辅助文字对比度……）。默认的 `system` 偏好会跟随运行环境的
+     * 系统设置，某台机器上浏览器偏好深色时这些断言会整片变红——那不是回归。
+     * 深色那半边另有 `tests/dark-mode-page.mjs`。
+     */
+    colorScheme: 'light',
+  });
   const page = await context.newPage();
   const consoleErrors = [];
   page.on('console', (message) => { if (message.type() === 'error') consoleErrors.push(message.text()); });
@@ -31,10 +40,10 @@ try {
    * 卡片由本体派生（`describeCase` 现场统计每个案例的节点数与学科分布），
    * `networkidle` 之后还要等 React 把这一批算完——2026-10-13 本体涨到 340 个节点（2026-10-14 已到 405）后，
    * 这一拍不再稳（同一次运行里红过一次、重跑即绿）。因此先等卡片出现再数，
-   * 断言本身不变，仍然是「恰好 6 张原型问题卡片」。
+   * 断言本身不变，仍然是「恰好 7 张原型问题卡片」。
    */
   await page.waitForSelector('.case-card', { timeout: 15000 });
-  check('开始学习页原型问题卡片齐全', (await page.locator('.case-card').count()) === 6);
+  check('开始学习页原型问题卡片齐全', (await page.locator('.case-card').count()) === 7);
   check('侧栏不再用本体哈希占位', (await page.locator('.sidebar-note').count()) === 0);
   // 本体哈希与运行时版本搬到了「我的学习 · 高级设置」，仍然可查。
   await page.goto(server.origin + '/profile?tab=advanced', { waitUntil: 'networkidle' });
@@ -46,8 +55,8 @@ try {
   await page.waitForSelector('.case-thumbnail svg[role="img"][aria-label]');
   const thumbnailCases = await page.evaluate(() =>
     [...document.querySelectorAll('.case-thumbnail')].map((item) => item.getAttribute('data-case')));
-  check('六个原型问题都有专属缩略图', thumbnailCases.length === 6 && new Set(thumbnailCases).size === 6, JSON.stringify(thumbnailCases));
-  check('缩略图带可访问说明', await page.locator('.case-thumbnail svg[role="img"][aria-label]').count() === 6);
+  check('七个原型问题都有专属缩略图', thumbnailCases.length === 7 && new Set(thumbnailCases).size === 7, JSON.stringify(thumbnailCases));
+  check('缩略图带可访问说明', await page.locator('.case-thumbnail svg[role="img"][aria-label]').count() === 7);
 
   await page.goto(server.origin, { waitUntil: 'networkidle' });
 
@@ -1910,11 +1919,11 @@ try {
   check('窄屏规划表单不撑宽页面', planOverflow.overflow <= 2 && planOverflow.widestControl <= planOverflow.formWidth,
     JSON.stringify(planOverflow));
   check('窄屏规划页目标在首屏附近', (await page.evaluate(() => document.querySelector('.plan-form').getBoundingClientRect().top + scrollY)) < 1200);
-  check('窄屏保留主导航', (await page.locator('.nav-item:not(.secondary)').count()) === 6);
-  // 主导航顺序是产品决定：知识网络在学习路线之前（先看清结构，再定路线）。
+  check('窄屏保留主导航', (await page.locator('.nav-item:not(.secondary)').count()) === 7);
+  // 主导航顺序是产品决定：先进入多尺度 MCS 总览，再保留原有的组建网络与学习路线入口。
   const navOrder = await page.locator('.nav-item:not(.secondary) .nav-label').allInnerTexts();
-  check('主导航順序包含我的笔记库，知识网络仍先于学习路线',
-    JSON.stringify(navOrder.map((label) => label.trim())) === JSON.stringify(['开始学习', '数学对象', '知识网络', '学习路线', '我的笔记库', '我的学习']),
+  check('主导航順序包含 MCS、我的笔记库，知识网络仍先于学习路线',
+    JSON.stringify(navOrder.map((label) => label.trim())) === JSON.stringify(['开始学习', '数学对象', 'MCS', '知识网络', '学习路线', '我的笔记库', '我的学习']),
     JSON.stringify(navOrder));
 
   // ---- 学习闭环 ----
@@ -2048,7 +2057,7 @@ try {
   check('原型问题栏目存在', prototype.headings.includes('从原型问题进入'), JSON.stringify(prototype.headings));
   check('原型问题按领域分组', prototype.sections.length >= 3, JSON.stringify(prototype.sections.map((s) => s.title)));
   check('每组标出思路数与节点数', prototype.sections.every((s) => /\d+\s*条思路/.test(s.meta) && /\d+\s*个节点/.test(s.meta)), JSON.stringify(prototype.sections.map((s) => s.meta)));
-  check('六个案例都在且只出现一次', prototype.cardCount === 6, `实际 ${prototype.cardCount} 张卡`);
+  check('七个案例都在且只出现一次', prototype.cardCount === 7, `实际 ${prototype.cardCount} 张卡`);
   check('每张卡给出「胚子」', prototype.allHaveEmbryo);
   check('每张卡列出学科分布', prototype.allHaveDisciplines);
   check('每张卡列出构造分布', prototype.allHaveConstructs);
@@ -2068,7 +2077,7 @@ try {
     }
     return tally;
   });
-  const expectedCounts = ['limit', 'manifold', 'tensor', 'group', 'dg', 'top'].map((id) => caseCounts[id]).sort((a, b) => a - b);
+  const expectedCounts = ['limit', 'manifold', 'tensor', 'group', 'dg', 'top', 'newvault'].map((id) => caseCounts[id]).sort((a, b) => a - b);
   check('卡片节点数与本体一致', JSON.stringify([...prototype.counts].sort((a, b) => a - b)) === JSON.stringify(expectedCounts),
     `卡片 ${JSON.stringify([...prototype.counts].sort((a, b) => a - b))} vs 本体 ${JSON.stringify(expectedCounts)}`);
   check('含数学记号的标题按公式排版', prototype.katex >= 1, `katex ${prototype.katex}`);

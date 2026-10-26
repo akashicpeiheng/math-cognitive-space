@@ -7,6 +7,7 @@ import { Markdown } from '../components/Markdown';
 import { ProgressBar } from '../components/ProgressBar';
 import { StatusBadge } from '../components/StatusBadge';
 import { ContinueNetwork } from '../components/ContinueNetwork';
+import {ContentCaseEntry} from '../components/ContentCaseControls';
 import { CaseThumbnail } from '../components/CaseThumbnail';
 import { LearningGuide } from '../components/LearningGuide';
 import { CASE_SECTION_TITLES, describeCase, groupByDiscipline, type CaseMeta } from '../case-catalog';
@@ -167,11 +168,28 @@ const CASES: Array<{ id: string; entry: string; goal: string; copy: Pair<CaseCop
       },
     },
   },
+  {
+    id: 'newvault',
+    entry: 'newvault:equivalence-relation',
+    goal: 'newvault:fundamental-theorem-algebra',
+    copy: {
+      zh: {
+        title: '新库：简明高等代数笔记',
+        question: '一组各自独立的代数笔记，怎样长成一张可读的概念地图？',
+        note: '23 篇笔记从等价关系、域与线性方程组出发，经矩阵、行列式、空间与内积，走到多项式分解与代数基本定理。',
+        embryo: '每个概念单独看都懂，合起来却不知道先读哪一篇、哪一篇在替另一篇铺路。',
+      },
+      en: {
+        title: 'New vault: advanced algebra notes',
+        question: 'How can a set of independent algebra notes grow into a readable concept map?',
+        note: 'Twenty-three notes start from equivalence relations, fields and linear systems, pass through matrices, determinants, spaces and inner products, and end at polynomial factorization and the fundamental theorem of algebra.',
+        embryo: 'Each concept makes sense alone, yet together it is unclear what to read first and which note prepares another.',
+      },
+    },
+  },
 ];
 
 /**
- * 案例标题里的数学记号（LaTeX 源，交给 Markdown 排版）。
- *
  * `labels.ts` 的 `CASE_MATH` 只有中文那一份（纯文本上下文另有 `CASE_LABELS`）；
  * 页面自己的英文标题在这里补齐，避免为了一个字符串去动共享词表。
  */
@@ -789,6 +807,7 @@ export function StartPage() {
 
   return (
     <div className="page start-page">
+      <ContentCaseEntry/>
       <header className="start-head">
         <h1>{pick(TEXT.title)}</h1>
         <p className="muted">

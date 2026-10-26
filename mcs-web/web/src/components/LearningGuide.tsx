@@ -1,3 +1,5 @@
+import { useMasterMode } from '../master-mode';
+import { MasterContent } from './MasterView';
 import { useId, useMemo, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useI18n } from '../i18n';
@@ -241,6 +243,7 @@ export function LearningPlanCard({ controller, learning }: { controller: Learnin
 }
 
 export function LearningGuide({ learning, compact = false }: { learning: LearningData; compact?: boolean }) {
+  const { isMaster } = useMasterMode();
   const controller = useLearningPlan(learning);
   const { pick, locale, hrefFor } = useI18n();
   const navigate = useNavigate();
@@ -277,12 +280,12 @@ export function LearningGuide({ learning, compact = false }: { learning: Learnin
         </div>}
         {entry === 'goals' && <label className="learning-search">{pick(COPY.search)}<input type="search" value={query} onChange={event => setQuery(event.target.value)} placeholder={pick(COPY.search)} /></label>}
         <div className="learning-goal-grid">{query.trim() ? searchNodes.map(node => <article className="learning-goal-card" key={node.id}>
-          <h3 {...pendingText(node.title)}>{node.title}</h3><div {...pendingText(node.summary)}><Markdown>{node.summary}</Markdown></div><span className={`badge ${pendingText(discipline(node.discipline)).className ?? ''}`}>{discipline(node.discipline)}</span><button className="button primary" disabled={saving} onClick={() => choose(node.id)}>{pick(COPY.choose)}</button>
+          <h3 {...pendingText(node.title)}>{node.title}</h3>{isMaster&&node.master?<MasterContent view={node.master} compact/>:<div {...pendingText(node.summary)}><Markdown>{node.summary}</Markdown></div>}<span className={`badge ${pendingText(discipline(node.discipline)).className ?? ''}`}>{discipline(node.discipline)}</span><button className="button primary" disabled={saving} onClick={() => choose(node.id)}>{pick(COPY.choose)}</button>
         </article>) : cards.map(card => {
           const node = graph?.nodes.find(item => item.id === card.node);
           return <article className="learning-goal-card" key={card.node} data-goal={card.node}>
-            <h3>{card.title}</h3><span className="eyebrow">{pick(COPY.question)}</span><Markdown>{GOAL_COPY[card.node] ? pick(GOAL_COPY[card.node].question) : node?.summary ?? ''}</Markdown>
-            <span className="eyebrow">{pick(COPY.outcome)}</span><Markdown>{GOAL_COPY[card.node] ? pick(GOAL_COPY[card.node].outcome) : node?.title ?? ''}</Markdown>
+            <h3>{card.title}</h3>{isMaster&&node?.master?<MasterContent view={node.master} compact/>:<><span className="eyebrow">{pick(COPY.question)}</span><Markdown>{GOAL_COPY[card.node] ? pick(GOAL_COPY[card.node].question) : node?.summary ?? ''}</Markdown>
+            <span className="eyebrow">{pick(COPY.outcome)}</span><Markdown>{GOAL_COPY[card.node] ? pick(GOAL_COPY[card.node].outcome) : node?.title ?? ''}</Markdown></>}
             <div className="learning-goal-fields">{card.skeleton.disciplines.map(field => <span className="badge" key={field.id}>{discipline(field.id)}</span>)}</div>
             <button className="button primary" disabled={saving} onClick={() => choose(card.node)}>{pick(COPY.choose)}</button>
           </article>;

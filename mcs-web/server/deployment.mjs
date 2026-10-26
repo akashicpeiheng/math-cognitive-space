@@ -159,7 +159,8 @@ export function assertDeploymentSafety(config) {
  *
  * 浏览器发起的跨站写请求一定带 `Origin`，因此：
  * - 本机模式：Origin 只允许回环；没有 Origin 的本机命令行调用放行（本来就在本机）。
- * - 公网模式：**必须**带 Origin，且必须等于 `publicOrigin`（或同站）。缺失即拒绝，
+ * - 公网模式：**必须**带 Origin，且必须等于 `publicOrigin`。平台提供的固定
+ *   deploymentOrigin 仅允许在该部署自己的 Host 上同源使用。缺失即拒绝，
  *   免得把「没带 Origin 的脚本请求」当成可信来源。
  */
 export function checkWriteOrigin(req, config) {
@@ -176,6 +177,8 @@ export function checkWriteOrigin(req, config) {
     return true;
   }
   const expected = String(config.publicOrigin ?? '').trim();
+  const deployment = config.deploymentOrigin;
+  if (deployment && parsed.origin === deployment && parsed.protocol === 'https:' && req.headers.host === parsed.host) return true;
   if (!expected || parsed.origin !== expected) {
     throw new McsError(CODES.FORBIDDEN, '写请求来源与站点地址不一致。', 403, { origin, expected: expected || null });
   }

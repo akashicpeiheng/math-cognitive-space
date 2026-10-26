@@ -1,0 +1,108 @@
+{
+  "generated_at": "2026-10-16",
+  "batch": "B0+B1+B2+Lean 接口层（2026-10-16 整稿重写首批）",
+  "changed": [
+    {
+      "path": "mcs-foundations/00-README.md",
+      "before": "99d28f1e1229da0d97876f4b39816806fb87cfad5888ec30c87b944b2c81a1f0",
+      "after": "d81b6de34e3b46cb0df4155858ad7c41c3fcf5463e20b577d094a843681c6c1b"
+    },
+    {
+      "path": "mcs-foundations/01-元理论与可构造宇宙.md",
+      "before": "d93133313fc066361162deed0e6138e2f5189a8b201e71bf0e27fabbba2ae08d",
+      "after": "b73443e20127c839c0a5a2055d65cbd0125f1bdd125bb7612ed77c95e32eea62"
+    },
+    {
+      "path": "mcs-foundations/02-对象语言：简单类型论.md",
+      "before": "2e8aee6932f52f9a84ce10af2a4f54b021b5a7db081557635a6ba7bfea7d58ae",
+      "after": "0595ea0d85b56c46c2d13ef2bf334d16673dfc1f7211a236e4d5729ea3f79398"
+    },
+    {
+      "path": "mcs-foundations/04-节点生成与身份.md",
+      "before": "3efb2749228eb958c1afa29a44823a5f17b86695be6aa2c95f90e896164bd077",
+      "after": "e08a81998d5bc567d6cb79dc749a26d8ff3d8c217334b06ec6b698455b0c1c82"
+    },
+    {
+      "path": "mcs-foundations/09-话题、领域、学科与元理论.md",
+      "before": "a09226a102a47eb2c79528f813550c10ce5a1520ab9a68301de1d2b4fb99e3ce",
+      "after": "8d65fb72e815a82fa16f7c69506e65965be91e1c19670861d7cdefb8ab23f280"
+    },
+    {
+      "path": "mcs-foundations/10-节点模板.md",
+      "before": "6c3982544d9ca26198addd31d74c5c8a215278d62968fe38b2098093b0600bd1",
+      "after": "f8aae477b13530367511106115a07526a2dc4840eb552d4838dec643c1f054a9"
+    },
+    {
+      "path": "mcs-foundations/15-验证与完成标准.md",
+      "before": "9381b439338c11766d522b92aed91f56ce833f5dc4a47550c09e9c3d515376e9",
+      "after": "f35f401af63c7047d81fca35d91e44a10340026bb1df9200402e53de9cb1632b"
+    },
+    {
+      "path": "mcs-foundations/A-定义与定理索引.md",
+      "before": "6fb1b75fcf6bb1412f30549688575601cd24d378bc82c5fed421adcec7cd6e6f",
+      "after": "1f355c558b978595cf445618947fc0e0607bac484c1fc9728c2a82c48563d89d"
+    },
+    {
+      "path": "mcs-foundations/C-记号索引.md",
+      "before": "e6cebd60c8671f1c9a17d8058fd210960ae1c99ace8f8f90f0d4d94ad6f89344",
+      "after": "2d9e69f27acf738671e69eb1f2406366ea4e9b598142e68d64c06aaed7b26643"
+    },
+    {
+      "path": "mcs-foundations/D-接口契约.md",
+      "before": "43279f2aee0cd3ad2e65dba87700254e7053803bf0ed7cb6a701f98493801aac",
+      "after": "df31ba233c3de3340b0f750cf1ab1762e9488ebf7fcf7d710a71921f61685ae6"
+    },
+    {
+      "path": "mcs-foundations/notes/数学对象六级尺度模型.md",
+      "before": "4040db01782ca5ac62fbfb05de9a27756530b10a2f3c8e8029e488a7229053ce",
+      "after": "db3c656a9b1aa80bbcc9a1f8b72013850167c1f5145b40e96bf3a53acae5a9ce"
+    },
+    {
+      "path": "mcs-foundations/notes/泛代数闭包与知识空间理论.md",
+      "before": "44dc7921c8b6cd426dc701db11ba7316573c34084df5ab80af9b558026bb6ee6",
+      "after": "9ffc278ccb584d10029726ea702fc972e7d024ac5b337f6f184938239c9afbb6"
+    },
+    {
+      "path": "mcs-foundations/validation/REPORT-scale-model.md",
+      "before": "052bd9c1509d2c7d75521a508847c0d92b106adc23a0311411d59eba64ec07c7",
+      "after": "f875392df9305f0ce5c6e14164a7f3f52a49c289df73aff29e9663c7853fffb9"
+    },
+    {
+      "path": "mcs-foundations/validation/REPORT.md",
+      "before": "ef73337df176269208a5ea8d5d8e4bca9c399e83f295bc871f963bab57d72130",
+      "after": "3442e522b744ca9cd4ad821c3ab8cd94c9f83dfdf2d4bad89a34b5b6f5735193"
+    },
+    {
+      "path": "mcs-foundations/validation/report-scale-model.json",
+      "before": "3416b2efde11c36f264e105031767ede6f8f9ebb4a98fffd0ba112969c863fa8",
+      "after": "6eb618919f4ba4511c01564af461a78f8579b2239f694891fa972db89a7addca"
+    },
+    {
+      "path": "mcs-foundations/validation/report.json",
+      "before": "1577a04909ac4943fc5ab259e1fc3ef0a4584670b826d7e1e3cd0f9b7eb16052",
+      "after": "e6ab84989206f7181563f52255a1f38959434b2fdf5af6b1cf6ab325512331c7"
+    },
+    {
+      "path": "mcs-foundations/validation/verify_scale_model.py",
+      "before": "2975913efa03a1faef087fe34136055737e7f61ea9ddbaf3628102ca067c0006",
+      "after": "622505194ddfd8877577ec5c293204eb199a69739b792c89114bd451490bd426"
+    }
+  ],
+  "new": [
+    {
+      "path": "mcs-foundations/publication/接口迁移表.md",
+      "sha256": "e92c77069396137c8e89da1a83e6754320f46ac249cc9925ec09a30213c0d592"
+    },
+    {
+      "path": "mcs-foundations/publication/baseline-20261016.json",
+      "sha256": "ffcd5453ae0661a571f9f3b00d4dc5680e526fb7a8df198af8980bc8e91de00a"
+    },
+    {
+      "path": "mcs-foundations/publication/交付记录-20261016-整稿重写B0B1B2.md",
+      "sha256": "be30466cad46c66403d9e238e700df459e1d3555cb99f6f0a8addad296ac1b43"
+    }
+  ],
+  "unchanged_count": 36,
+  "preserved_before_copies": "mcs-foundations/publication/before-20261016/",
+  "lean_seals_checked": "2026-10-16：两组报告输入摘要与当前文件一致，未过期（见接口迁移表第 7 节）"
+}

@@ -1,0 +1,12 @@
+{
+  "status": "passed",
+  "source_count": 26,
+  "lean_code_blocks_preserved": 3,
+  "checks": [
+    "code boundaries and indentation",
+    "literal inline underscores",
+    "line break opportunities in Lean identifiers",
+    "reject unterminated fences",
+    "all source hashes current"
+  ]
+}

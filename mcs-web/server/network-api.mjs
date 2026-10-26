@@ -2,9 +2,11 @@ import { McsError, CODES } from '../shared/errors.mjs';
 import { normalizePrivateRelation, relationSignature } from '../shared/network-workspace.mjs';
 import { relationInputHash } from '../core/network-check.mjs';
 import * as registry from '../data/formal/registry.mjs';
+import {loadContentLibrary} from '../core/content-library.mjs';
 export async function checkNetworkRefs(refs, owner, ontology, db, allowBrowser = false) {
   for (const ref of refs) {
     if (ref.source === 'ontology') { const node = ontology.node(ref.id); if (String(node.version) !== ref.version) throw new McsError(CODES.CONFLICT, '公共节点版本已变化，请重新载入', 409); continue; }
+    if(['math-object','learning-node'].includes(ref.source)){const l=loadContentLibrary(),key=ref.source==='math-object'?'formalHash':'nodeHash',record=(ref.source==='math-object'?l.objects:l.nodes).find(n=>n.id===ref.id);if(!record||record.version!==ref.version||record[key]!==ref[key])throw new McsError(CODES.CONFLICT,'公共内容引用已变化，请重新载入',409);continue;}
     if (ref.storage === 'browser') { if (!allowBrowser) throw new McsError(CODES.BAD_REQUEST, '含本地笔记的视图请保存本机；同步前需主动上传笔记库', 400); continue; }
     const vault = await db.vaults.get(owner, ref.vaultId);
     const file = vault.files.find(f => f.id === ref.fileId && f.kind === 'note' && !f.missing);
@@ -54,13 +56,13 @@ export function registerNetworkApi({ route, db, jobs, config, authoring, getOnto
     const relation = normalizePrivateRelation(body.relation);
     await checkNetworkRefs([relation.from, relation.to], owner(identity), ontology, db, true);
     await checkBindings(relation, owner(identity));
-    const job = jobs.run({ relation }, { kind: 'network-check', ontologyVersion: ontology.version, owner: owner(identity) });
+    const job = await jobs.run({ relation }, { kind: 'network-check', ontologyVersion: ontology.version, owner: owner(identity) });
     try {
       const record = await db.networks.create(owner(identity), 'check', { relation, inputHash: relationInputHash(relation, ontology.version), ontologyVersion: ontology.version, jobId: job.id }, job.status);
       jobs.onComplete(job.id, () => { void getCheck(identity, record.id).catch(() => {}); });
       return { check: record };
     }
-    catch (error) { jobs.cancel(job.id); throw error; }
+    catch (error) { await jobs.cancel(job.id); throw error; }
   });
   const getCheck = async (identity, id, cancel = false) => {
     const ontology = getOntology();
@@ -72,9 +74,9 @@ export function registerNetworkApi({ route, db, jobs, config, authoring, getOnto
       return { ...old, ...(old.result ? { result: { ...old.result, stale: stale || old.result.stale === true } } : {}) };
     }
     let job;
-    try { job = jobs.get(old.jobId); } catch { return db.networks.update(owner(identity), id, old.revision, { ...old, result: { inputHash: old.inputHash, ontologyVersion: old.ontologyVersion, relationSignature: relationSignature(old.relation), structure: { status: 'valid', problems: [], scope: '端点声明检查' }, math: { status: 'undecided', reason: '服务重启，任务已中断', scope: '' }, run: { status: 'interrupted' } } }, 'interrupted'); }
+    try { job = await jobs.get(old.jobId); } catch { return db.networks.update(owner(identity), id, old.revision, { ...old, result: { inputHash: old.inputHash, ontologyVersion: old.ontologyVersion, relationSignature: relationSignature(old.relation), structure: { status: 'valid', problems: [], scope: '端点声明检查' }, math: { status: 'undecided', reason: '服务重启，任务已中断', scope: '' }, run: { status: 'interrupted' } } }, 'interrupted'); }
     if (job.owner !== owner(identity) || job.kind !== 'network-check') throw new McsError(CODES.NOT_FOUND, '无法解析验证任务', 404);
-    if (cancel) { jobs.cancel(old.jobId); job = jobs.get(old.jobId); }
+    if (cancel) { await jobs.cancel(old.jobId); job = await jobs.get(old.jobId); }
     if (job.status !== old.status) {
       const result = job.result ?? { inputHash: old.inputHash, ontologyVersion: old.ontologyVersion, relationSignature: relationSignature(old.relation), structure: { status: 'valid', problems: [], scope: '端点声明检查' }, math: { status: 'undecided', reason: job.error?.message ?? '任务已取消', scope: '' }, run: { status: job.error?.code === CODES.EVIDENCE_RESOURCE ? 'timeout' : job.status === 'error' ? 'error' : job.status } };
       try { return await db.networks.update(owner(identity), id, old.revision, { ...old, result }, job.status); }
@@ -117,23 +119,23 @@ export function registerNetworkApi({ route, db, jobs, config, authoring, getOnto
     // A staged contribution is a frozen input to the existing authoring workflow.
     const drafts = { ...(old.drafts ?? {}) }, mapping = { ...(old.mapping ?? {}) };
     const store = await authoring();
-    const makeDraft = (side, publicId = null) => {
+    const makeDraft = async (side, publicId = null) => {
       const node = old.snapshot.endpoints[side], binding = old.snapshot.relation.bindings[side];
       const id = `submission:${old.id}:${side}`, nodeId = publicId || id;
       const registered = ontology.raw.formalSpecs?.[publicId] ?? registry.specs.find(s => s.node === publicId);
       const original = publicId ? registered : binding?.spec;
       const spec = original ? { ...original, specVersion: 'mcs-formal/1', node: nodeId, nodeVersion: publicId ? String(ontology.node(publicId).version) : '1', theoryVersion: original.theoryVersion ?? '1', declarations: original.declarations ?? [], definitions: original.definitions ?? [], assumptions: original.assumptions ?? [], claims: original.claims ?? [], references: original.references ?? [], boundary: original.boundary ?? [], source: old.snapshot.relation.source || '用户选定的公开摘录' } : null;
       const specSource = { declarations: (spec?.declarations ?? []).map(d => `${d.name} : ${d.type}`).join('\n'), definitions: (spec?.definitions ?? []).map(d => `${d.name} : ${d.type} := ${d.source}`).join('\n'), assumptions: (spec?.assumptions ?? []).map(d => `${d.id} : ${d.source}`).join('\n'), statement: spec?.statement?.source ?? '', claims: (spec?.claims ?? []).map(d => `${d.id} : ${d.source}`).join('\n') };
-      return store.createDraft({ id, name: publicId ? nodeId : node.title, construct: publicId ? ontology.node(publicId).construct : node.construct, case: spec?.background?.split(':')[1]?.split('/')[0] ?? 'group', summary: node.excerpt, reading: node.excerpt, background: spec?.background ?? null, spec, specSource, ontologyVersion: ontology.version, node: { id: nodeId, version: spec?.nodeVersion ?? '1', title: node.title, construct: node.construct, roles: [], discipline: node.discipline, granularity: 'unit', formal: {}, contentMarkdown: node.excerpt, provenance: { sources: [old.snapshot.relation.source || '用户选定的公开摘录'] } } });
+      return (await store.createDraft({ id, name: publicId ? nodeId : node.title, construct: publicId ? ontology.node(publicId).construct : node.construct, case: spec?.background?.split(':')[1]?.split('/')[0] ?? 'group', summary: node.excerpt, reading: node.excerpt, background: spec?.background ?? null, spec, specSource, ontologyVersion: ontology.version, node: { id: nodeId, version: spec?.nodeVersion ?? '1', title: node.title, construct: node.construct, roles: [], discipline: node.discipline, granularity: 'unit', formal: {}, contentMarkdown: node.excerpt, provenance: { sources: [old.snapshot.relation.source || '用户选定的公开摘录'] } } }));
     };
     if (body.status === 'staged') {
       for (const side of ['from', 'to']) {
         const node = old.snapshot.endpoints[side], publicId = body.mapping?.[side] || mapping[side] || node.publicNodeId;
-        if (publicId) { if (!drafts[side] || store.getDraft(drafts[side]).node?.id !== publicId) ontology.node(publicId); mapping[side] = publicId; continue; }
-        if (!drafts[side]) drafts[side] = makeDraft(side).id;
-        mapping[side] = store.getDraft(drafts[side]).spec?.node ?? store.getDraft(drafts[side]).node?.id;
+        if (publicId) { if (!drafts[side] || (await store.getDraft(drafts[side])).node?.id !== publicId) ontology.node(publicId); mapping[side] = publicId; continue; }
+        if (!drafts[side]) drafts[side] = (await makeDraft(side)).id;
+        mapping[side] = (await store.getDraft(drafts[side])).spec?.node ?? (await store.getDraft(drafts[side])).node?.id;
       }
-      if (!Object.keys(drafts).length) drafts.from = makeDraft('from', mapping.from).id;
+      if (!Object.keys(drafts).length) drafts.from = (await makeDraft('from', mapping.from)).id;
     }
     let publication = old.publication;
     if (body.status === 'published') {

@@ -141,7 +141,7 @@ try {
     ids: (new URLSearchParams(location.search).get('nodes') ?? '').split(',').filter(Boolean).sort(),
     canvas: [...document.querySelectorAll('.network-node')].map((node) => node.getAttribute('data-node')).sort(),
     menu: Boolean(document.querySelector('.node-menu')),
-    notice: document.querySelector('.network-notice')?.textContent?.replace(/\s+/g, ' ').trim() ?? '',
+    notice: [...document.querySelectorAll('.network-notice')].find(node => node.textContent.includes('只改本页显示'))?.textContent?.replace(/\s+/g, ' ').trim() ?? '',
   }));
   check('加进来的正是本体的硬前置闭包（一个不多、一个不少）',
     JSON.stringify(afterAdd.ids) === JSON.stringify([ROOT, ...expected].sort())
@@ -217,7 +217,7 @@ try {
   const removed = await page.evaluate(() => ({
     nodes: document.querySelectorAll('.network-node').length,
     menu: Boolean(document.querySelector('.node-menu')),
-    notice: document.querySelector('.network-notice')?.textContent?.replace(/\s+/g, ' ').trim() ?? '',
+    notice: [...document.querySelectorAll('.network-notice')].find(node => node.textContent.includes('移出视图'))?.textContent?.replace(/\s+/g, ' ').trim() ?? '',
   }));
   check('菜单里的「从视图移出」仍然真的移出',
     removed.nodes === beforeRemove - 1 && !removed.menu && removed.notice.includes('移出视图'),

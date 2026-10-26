@@ -15,6 +15,7 @@ export async function checkPrivateRelation(raw, ontology, repoRoot) {
   const undecided = reason => { result.math.reason = reason; return result; };
   if (structure.status !== 'valid') return undecided(structure.problems.join('；'));
   if (relation.kind === 'related') return undecided('参考关联是导航声明，不提出待证明的数学命题。');
+  if([relation.from,relation.to].some(r=>['math-object','learning-node'].includes(r.source)))return undecided('公共 M/L 的私人候选不自动继承登记关系或 Lean 证据；请查看公共关系的精确条件与审阅状态。');
   const specs = [];
   for (const side of ['from', 'to']) {
     const ref = relation[side];

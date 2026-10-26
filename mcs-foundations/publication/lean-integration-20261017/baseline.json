@@ -1,0 +1,86 @@
+{
+  "date": "2026-10-17",
+  "task": "Lean 成果入稿",
+  "files": [
+    {
+      "path": "mcs-foundations/00-README.md",
+      "sha256": "d81b6de34e3b46cb0df4155858ad7c41c3fcf5463e20b577d094a843681c6c1b"
+    },
+    {
+      "path": "mcs-foundations/03-语义：Henkin与标准.md",
+      "sha256": "0f62bb06426d16a651707e3c2bdd89254b758ceaeab299ab13fb3ec3d4d5c680"
+    },
+    {
+      "path": "mcs-foundations/08-关系代数与结构.md",
+      "sha256": "b0d630101f192de91dfb086b502d67fa87cfee782571448a7e32df8f60bc2b98"
+    },
+    {
+      "path": "mcs-foundations/13-贯通案例.md",
+      "sha256": "0a792a26f1dbca8812265549e9d4d80cfda1aba65b6498961717890de3cd0674"
+    },
+    {
+      "path": "mcs-foundations/15-验证与完成标准.md",
+      "sha256": "f35f401af63c7047d81fca35d91e44a10340026bb1df9200402e53de9cb1632b"
+    },
+    {
+      "path": "mcs-foundations/A-定义与定理索引.md",
+      "sha256": "1f355c558b978595cf445618947fc0e0607bac484c1fc9728c2a82c48563d89d"
+    },
+    {
+      "path": "mcs-foundations/B-文献证据表.md",
+      "sha256": "6731d624a668b375e05fb5ad92274b6a73b3645f05e8ee79d2d8b6d749a534e7"
+    },
+    {
+      "path": "mcs-foundations/D-接口契约.md",
+      "sha256": "df31ba233c3de3340b0f750cf1ab1762e9488ebf7fcf7d710a71921f61685ae6"
+    },
+    {
+      "path": "mcs-foundations/E-核心公理与验证条件.md",
+      "sha256": "207893b08ba0b66374342f6f538d43151aca3a311ad0e54efc0c970921734f6a"
+    },
+    {
+      "path": "mcs-foundations/cases/04-群概念的多来源.md",
+      "sha256": "885aef46e2564827d395fbd0a0c95a012aeb474afd8fcf67cea7137e87aade01"
+    },
+    {
+      "path": "mcs-foundations/publication/README.md",
+      "sha256": "d21d171bd161373e8093774211330e2d532b7f30c899e9e7801695bd2b48a9c6"
+    },
+    {
+      "path": "mcs-foundations/publication/接口迁移表.md",
+      "sha256": "e92c77069396137c8e89da1a83e6754320f46ac249cc9925ec09a30213c0d592"
+    },
+    {
+      "path": "mcs-foundations/publication/整稿重写方案-20261016.md",
+      "sha256": "ee895354890a41f9344e7e236afede868bdc6755f997544fafa333bfcef72ec3"
+    },
+    {
+      "path": "mcs-foundations/validation/REPORT.md",
+      "sha256": "3442e522b744ca9cd4ad821c3ab8cd94c9f83dfdf2d4bad89a34b5b6f5735193"
+    },
+    {
+      "path": "mcs-foundations/validation/report.json",
+      "sha256": "e6ab84989206f7181563f52255a1f38959434b2fdf5af6b1cf6ab325512331c7"
+    },
+    {
+      "path": "mcs-foundations/validation/REPORT-scale-model.md",
+      "sha256": "f875392df9305f0ce5c6e14164a7f3f52a49c289df73aff29e9663c7853fffb9"
+    },
+    {
+      "path": "mcs-foundations/validation/report-scale-model.json",
+      "sha256": "6eb618919f4ba4511c01564af461a78f8579b2239f694891fa972db89a7addca"
+    },
+    {
+      "path": "mcs-foundations/lean/integrity.json",
+      "sha256": "ac7363aa8be3edcece300b19bc464b59d3923933d197aeeae3101f736b429f93"
+    },
+    {
+      "path": "mcs-foundations/lean/reports/lean-group-injective.json",
+      "sha256": "8e82afddd1231ad6e8666ac7c8f943f264decd00802ef5df0509003b9474b5ec"
+    },
+    {
+      "path": "mcs-foundations/lean/reports/lean-closure-8-8.json",
+      "sha256": "7fc1932a6c266d89c4cb3e89063898ed10a8575a10b5cdec8f87414dd11fa60f"
+    }
+  ]
+}

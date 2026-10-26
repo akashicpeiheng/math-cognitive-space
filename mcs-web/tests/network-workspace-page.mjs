@@ -166,6 +166,29 @@ try {
   await dialog.getByRole('button', { name: '关闭', exact: true }).click();
   // Open a real note through its node-detail link; back restores the mixed snapshot.
   await page.locator('.network-node[data-node-source="vault"] .network-dot').first().click({ force: true });
+  /*
+   * 点击**不画方框**（2026-10-17 用户要求：「点击的时候还是会有方框，把框去掉」）。
+   *
+   * 那个方框是浏览器给聚焦元素加的 UA 轮廓，形状取节点组的包围盒（也就是卡片的矩形）：
+   * 圆点档下卡片透明，于是只剩一个框。选中视觉仍然在——圆点拿到 `.selected` 描边、名字变主色。
+   * 键盘 Tab 的那一圈描边是另一条规则（`:focus-visible`），由下面的单元测试钉住。
+   */
+  const focusAfterClick = await page.evaluate(() => {
+    const node = document.querySelector('.network-node.focused') ?? document.querySelector('.network-node');
+    const style = getComputedStyle(node);
+    const dot = node?.querySelector('.network-dot');
+    const label = node?.querySelector('.network-dot-label-text');
+    return {
+      shape: node?.dataset.nodeShape ?? null,
+      outlineStyle: style.outlineStyle,
+      outlineWidth: style.outlineWidth,
+      dotSelected: Boolean(dot?.classList.contains('selected')),
+      labelFill: label ? getComputedStyle(label).fill : null,
+    };
+  });
+  assert.equal(focusAfterClick.outlineStyle, 'none', `点击之后不该有方框：${JSON.stringify(focusAfterClick)}`);
+  assert.ok(focusAfterClick.dotSelected, `选中视觉应当在圆点自己身上：${JSON.stringify(focusAfterClick)}`);
+  console.log('click draws no focus box');
   const readLink = page.locator('a[href*="/library?"][href*="from=network"]').first();
   await readLink.click(); await page.locator('.library-reader article').waitFor();
   await page.getByRole('link', { name: '回到网络视图', exact: true }).click();

@@ -3,6 +3,7 @@ import { McsError, CODES } from '../shared/errors.mjs';
 import { createOntologySource } from './snapshot.mjs';
 import { makePlanner } from '../core/planner.mjs';
 import { buildLearningPlan, personalizePlanResult } from '../core/learning-plan.mjs';
+import { selectContentOntology } from '../core/content-case.mjs';
 
 /*
  * 规划工作线程。
@@ -26,7 +27,7 @@ try {
     extensionsDir: workerData.extensionsDir ?? null,
     repoRoot: workerData.repoRoot ?? null,
   });
-  const ontology = source.current();
+  let ontology = source.current();
   const integrity = source.integrity();
 
   if (expectedVersion && ontology.version !== expectedVersion) {
@@ -47,6 +48,8 @@ try {
    * 扩展包没生效（完整性失败）时要**说出来**，不能让「规划成功」暗示扩展内容也在场：
    * 结果里带 integrity 摘要，调用方据此判断这条规划覆盖了哪一层知识。
    */
+  const contentRequest=workerData.kind==='review'?workerData.request.plan:workerData.request;
+  ontology=selectContentOntology(contentRequest,ontology,workerData.repoRoot);
   const planner = makePlanner(ontology);
   let planned = workerData.kind === 'learning'
     ? buildLearningPlan(ontology, workerData.request.preferences, workerData.request.background)
@@ -61,6 +64,7 @@ try {
     ok: true,
     result: {
       ...planned,
+      ...(ontology.contentVersions??{}),
       ontologyVersion: ontology.version,
       ontologyIntegrity: {
         applied: integrity.applied,

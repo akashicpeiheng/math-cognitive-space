@@ -1,0 +1,197 @@
+{
+  "scope": "Finite structural model regression and document integrity only.",
+  "not_claimed": [
+    "HOL machine proof",
+    "empirical effectiveness",
+    "unbounded planning decidability"
+  ],
+  "checks": [
+    {
+      "id": "V01_closure_exhaustive",
+      "status": "passed",
+      "instances": 512,
+      "detail": "64 个规则系统 × 8 个背景：与全部封闭超集的交这一独立语义计算一致；满足单调、幂等及有界可达性。"
+    },
+    {
+      "id": "V02_and_or_prerequisites",
+      "status": "passed",
+      "instances": 8,
+      "detail": "联合输入保持 AND，替代入口保持 OR；空路线族不产生先修；个体筛选不改变公共路线族。"
+    },
+    {
+      "id": "V03_event_posets",
+      "status": "passed",
+      "instances": 65,
+      "detail": "四事件的 64 个按序有向无环图，核验 315 个线性扩张及相邻不可比交换连通性；另核对来源与策略分别无环但合并成环的二事件反例。"
+    },
+    {
+      "id": "V04_boundary_and_sources",
+      "status": "passed",
+      "instances": 6,
+      "detail": "三事件界内全部来源指派尊重每个线性扩张；隐藏 a、b 后两项义务均留在边界。"
+    },
+    {
+      "id": "V05_cycle_repeat_budget",
+      "status": "passed",
+      "instances": 6,
+      "detail": "无入口循环不可执行；独立零输入入口可解除循环；重复访问同一节点保留不同事件；零预算拒绝单位成本行动。"
+    },
+    {
+      "id": "V06_or_knowledge_space",
+      "status": "passed",
+      "instances": 49,
+      "detail": "七状态外部实例并闭且可达，但不交闭，因此不是任何条目偏序的全部下闭集族。"
+    },
+    {
+      "id": "V07_unknown_and_no_reflection",
+      "status": "passed",
+      "instances": 4,
+      "detail": "未知支持不等于已知空集，集合运算遍历可能值；命题可为假而相信它的判断为真。"
+    },
+    {
+      "id": "V08_padding_witness",
+      "status": "passed",
+      "instances": 1,
+      "detail": "闭常元出现在未使用实参中，β 结果仍为 e；一般饱和结论由正文证明。"
+    },
+    {
+      "id": "V09_external_noninterference",
+      "status": "passed",
+      "instances": 9,
+      "detail": "两名合成学习者得到不同群/张量路线和极限提示；学习、遗忘、答错、纠正及重校准不改变本体哈希；冷启动保留未知。"
+    },
+    {
+      "id": "V10_explicit_inputs_and_pareto",
+      "status": "passed",
+      "instances": 11,
+      "detail": "逐项改变本体、模型、状态、目标、预算、策略及种子均改变复现键；未知成本保留为不可比较候选，不用默认数值支配。"
+    },
+    {
+      "id": "V11_document_integrity",
+      "status": "passed",
+      "instances": 26,
+      "detail": "26 篇正文文档：本地链接、编号唯一性、LC01–LC36、13 类模板及四篇案例均通过检查。"
+    },
+    {
+      "id": "V12_aggregation_adjunction",
+      "status": "passed",
+      "instances": 17496,
+      "detail": "三元素域上的全部 128 个非空块子族选择，穷尽检查展开/完整块选择的伴随及闭包、内部算子的幂等性。"
+    },
+    {
+      "id": "V13_route_port_substitution",
+      "status": "passed",
+      "instances": 10,
+      "detail": "顺序复合同时替换事件输入与最终目标端口；核验左右单位、三路结合、背景透传及无资源依赖时的顺序约束，并拒绝悬空中间目标的旧反例。"
+    },
+    {
+      "id": "V14_noninjective_route_transport",
+      "status": "passed",
+      "instances": 5,
+      "detail": "两个不同输入合并为同一节点时须选一个合法生产者；输送后依赖为原图子图，不能宣称保留全部原依赖。"
+    },
+    {
+      "id": "V15_observational_nonidentification",
+      "status": "passed",
+      "instances": 6,
+      "detail": "两个确定模型在长度0至4的纯a记录上一致，在未试行动b上预测相反；见正文反例16.1的一般论证。"
+    },
+    {
+      "id": "V16_scaling_directions",
+      "status": "passed",
+      "instances": 64,
+      "detail": "三元素载体的 8 个子集：放/缩切片互为逆关系且各自为预序；严格包含不反转蕴含，混合方向不保证传递，缩方向可多值，遗忘映射不保证可逆。"
+    }
+  ],
+  "results": {
+    "core_sha256": "ece7b3f6266a7ed6483a21407322cd9c0cd4812fd2ab08c1751e03c26a4f6609",
+    "profiles": {
+      "A": {
+        "group": [
+          [
+            "g_perm"
+          ]
+        ],
+        "tensor": [
+          [
+            "t_basis",
+            "t_field"
+          ]
+        ],
+        "prompts": []
+      },
+      "B": {
+        "group": [
+          [
+            "g_sym"
+          ]
+        ],
+        "tensor": [
+          [
+            "t_multilin",
+            "t_field"
+          ]
+        ],
+        "prompts": [
+          "limit_unreachable"
+        ]
+      }
+    },
+    "cold_start": [
+      {
+        "action": "g_perm",
+        "assumed_entry": [
+          "Perm"
+        ],
+        "status": "Conditional"
+      },
+      {
+        "action": "g_sym",
+        "assumed_entry": [
+          "Sym"
+        ],
+        "status": "Conditional"
+      },
+      {
+        "action": "g_units",
+        "assumed_entry": [
+          "Unit5"
+        ],
+        "status": "Conditional"
+      }
+    ]
+  },
+  "documents": {
+    "manuscript_files": 26,
+    "indexed_statements": 237,
+    "localization_schemes": 36
+  },
+  "manuscript_sha256": {
+    "00-README.md": "d81b6de34e3b46cb0df4155858ad7c41c3fcf5463e20b577d094a843681c6c1b",
+    "01-元理论与可构造宇宙.md": "b73443e20127c839c0a5a2055d65cbd0125f1bdd125bb7612ed77c95e32eea62",
+    "02-对象语言：简单类型论.md": "0595ea0d85b56c46c2d13ef2bf334d16673dfc1f7211a236e4d5729ea3f79398",
+    "03-语义：Henkin与标准.md": "0f62bb06426d16a651707e3c2bdd89254b758ceaeab299ab13fb3ec3d4d5c680",
+    "04-节点生成与身份.md": "e08a81998d5bc567d6cb79dc749a26d8ff3d8c217334b06ec6b698455b0c1c82",
+    "05-概念函数与支持族.md": "9db2b97c73f1646f8462766ce4e11cffdba8177d4df0778e5b4b91dcabecb057",
+    "06-硬关系.md": "8d0475bf322f38d6d71a92fef4523b61f6186863b8d536faa97bcd15a37f3c3f",
+    "07-软关系与认知状态.md": "7336ec77d698d402f11a6fe13c91abc7eae1f9772275d9192e128106f5a6e055",
+    "08-关系代数与结构.md": "b0d630101f192de91dfb086b502d67fa87cfee782571448a7e32df8f60bc2b98",
+    "09-话题、领域、学科与元理论.md": "8d65fb72e815a82fa16f7c69506e65965be91e1c19670861d7cdefb8ab23f280",
+    "10-节点模板.md": "f8aae477b13530367511106115a07526a2dc4840eb552d4838dec643c1f054a9",
+    "11-局部化36方案.md": "b5d55288acd83f01b65530853e62a704503f2a71eaba243b1741009829244ee2",
+    "12-视图转换与路径规划.md": "f3833ba8d3d98d99f4a88213461bb3844c00d2b5d5722d0841134122d0cdfacd",
+    "13-贯通案例.md": "0a792a26f1dbca8812265549e9d4d80cfda1aba65b6498961717890de3cd0674",
+    "14-反例集.md": "20b9875eac96cdcab63a626b5dc97a11be799c800b16b39f387e15d676c96052",
+    "15-验证与完成标准.md": "f35f401af63c7047d81fca35d91e44a10340026bb1df9200402e53de9cb1632b",
+    "16-开放问题.md": "940e1aee9b7a5853705e4b15bbd06b340d3549e8431d844cf237a995175b4271",
+    "A-定义与定理索引.md": "1f355c558b978595cf445618947fc0e0607bac484c1fc9728c2a82c48563d89d",
+    "B-文献证据表.md": "6731d624a668b375e05fb5ad92274b6a73b3645f05e8ee79d2d8b6d749a534e7",
+    "C-记号索引.md": "2d9e69f27acf738671e69eb1f2406366ea4e9b598142e68d64c06aaed7b26643",
+    "D-接口契约.md": "df31ba233c3de3340b0f750cf1ab1762e9488ebf7fcf7d710a71921f61685ae6",
+    "E-核心公理与验证条件.md": "207893b08ba0b66374342f6f538d43151aca3a311ad0e54efc0c970921734f6a",
+    "cases\\01-极限与连续.md": "b0daa34abc1cb30b63e5ff4da5eeeac89c892bcb1a7a6c98f2fab379da06e362",
+    "cases\\02-Ck与光滑流形.md": "533d145136c99221069b0d5e45c5a2a4156e373a0c2bb4c580d986809e6370f4",
+    "cases\\03-张量与张量场.md": "72f2e17b4be5d94e888aacba61eb72c4c5291c9fd9fd8cc9e986ea16ef0a673e",
+    "cases\\04-群概念的多来源.md": "885aef46e2564827d395fbd0a0c95a012aeb474afd8fcf67cea7137e87aade01"
+  }
+}

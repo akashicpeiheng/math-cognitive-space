@@ -20,7 +20,7 @@ import { MCS_WEB_ROOT } from '../core/ontology.mjs';
  * 真浏览器那一侧（切页 / 刷新 / 显式链接优先 / 丢弃）在 `tests/network-draft-page.mjs`。
  */
 const {
-  NETWORK_DRAFT_KEY, EDGE_FAMILY_KEYS, normalizeDraftFamilies, normalizeDraftCamera,
+  NETWORK_DRAFT_KEY, EDGE_FAMILY_KEYS, normalizeDraftFamilies, normalizeDraftCamera, normalizeDraftScale,
   readNetworkDraft, writeNetworkDraft, clearNetworkDraft,
 } = await import(pathToFileURL(resolve(MCS_WEB_ROOT, 'web/src/network-draft.ts')).href);
 
@@ -221,3 +221,34 @@ test('键名是本会话专用的独立键，不与保存的视图混用', () =>
   assert.equal(NETWORK_DRAFT_KEY, 'mcs-network-draft-v1');
   assert.notEqual(NETWORK_DRAFT_KEY, LOCAL_VIEWS_KEY, '暂存与保存的视图是两套机制，不许共用一个键');
 });
+
+test('尺度状态：层级/加入/展开/开关读回，坏值丢掉', serial, () => {
+  const store = withStorage();
+  writeNetworkDraft({
+    added: ['top:space'],
+    families: ['contract'],
+    scale: {
+      levels: ['unit', 'topic', 'unknown', 'unit'],
+      added: ['topic:agg-top-manifold', 'topic:agg-top-manifold', ''],
+      split: ['unit:agg-top-manifold'],
+      autoMerge: false,
+      positions: { 'unit:agg-top-manifold': { x: 12.5, y: -3 }, bad: { x: 'no', y: 1 } },
+      version: 'scale:abc',
+    },
+  });
+  const read = readNetworkDraft();
+  assert.deepEqual(read.scale, {
+    levels: ['unit', 'topic'],
+    added: ['topic:agg-top-manifold'],
+    split: ['unit:agg-top-manifold'],
+    autoMerge: false,
+    positions: { 'unit:agg-top-manifold': { x: 12.5, y: -3 } },
+    version: 'scale:abc',
+  });
+  const saved = draftOf(store);
+  assert.deepEqual(saved.scale.levels, ['unit', 'topic']);
+  assert.equal(normalizeDraftScale({ levels: ['unknown'] }), null);
+  assert.equal(normalizeDraftScale({ levels: [], added: ['x'] }), null);
+  assert.deepEqual(normalizeDraftScale({ levels: ['node'], autoMerge: true }).added, []);
+});
+

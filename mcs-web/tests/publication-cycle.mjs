@@ -92,7 +92,7 @@ async function makeHarness(name) {
   await mkdir(dir, { recursive: true });
   const extensionsDir = join(dir, 'extensions');
   const authoringFile = join(dir, 'authoring.sqlite3');
-  const authoring = new AuthoringDatabase({ file: authoringFile });
+  const authoring = (await new AuthoringDatabase({ file: authoringFile }).init());
   const source = await createOntologySource({ dataDir: DATA_DIR, extensionsDir, repoRoot: REPO_ROOT });
   const config = { repoRoot: REPO_ROOT, authoringDbFile: authoringFile, dataDir: DATA_DIR };
   /*
@@ -106,7 +106,7 @@ async function makeHarness(name) {
 /** 建草稿 → 建任务 → 真跑发现 → 回填任务。 */
 async function runDiscovery(harness, { node, title, spec, kinds, maxCandidates = 6 }) {
   harness.registry = { ...registryModule, specs: [spec, ...registryModule.specs] };
-  const draft = harness.authoring.createDraft({
+  const draft = (await harness.authoring.createDraft({
     name: title,
     construct: 'Concept',
     case: 'group',
@@ -116,15 +116,15 @@ async function runDiscovery(harness, { node, title, spec, kinds, maxCandidates =
     ontologyVersion: harness.source.current().version,
     node: { id: node, discipline: '群论', granularity: 'unit', evidenceStatus: 'NOT-CLAIMED', title },
     spec,
-  });
-  const run = harness.authoring.createRun({
+  }));
+  const run = (await harness.authoring.createRun({
     draftId: draft.id,
     nodeRef: { node, version: '1' },
     ontologyVersion: harness.source.current().version,
     background: 'bg:group/1',
     budget: { ...DISCOVERY_BUDGET, maxCandidates },
     generatorVersion: GENERATOR_VERSION,
-  });
+  }));
   harness.ctx = {
     dataDir: DATA_DIR,
     extensionsDir: harness.extensionsDir,
@@ -144,10 +144,10 @@ async function runDiscovery(harness, { node, title, spec, kinds, maxCandidates =
     kinds,
     budget: { ...DISCOVERY_BUDGET, maxCandidates },
   });
-  harness.authoring.saveCandidates(run.id, outcome.candidates);
-  harness.authoring.updateRun(run.id, { status: 'completed', stats: { ...outcome.stats, runVersion: 'mcs-discovery-run/1' } });
-  harness.draft = harness.authoring.getDraft(draft.id);
-  harness.run = harness.authoring.getRun(run.id);
+  (await harness.authoring.saveCandidates(run.id, outcome.candidates));
+  (await harness.authoring.updateRun(run.id, { status: 'completed', stats: { ...outcome.stats, runVersion: 'mcs-discovery-run/1' } }));
+  harness.draft = (await harness.authoring.getDraft(draft.id));
+  harness.run = (await harness.authoring.getRun(run.id));
   harness.outcome = outcome;
   harness.requestFor = (acceptedIds) => ({
     draftId: harness.draft.id,
@@ -192,8 +192,8 @@ before(async () => {
 });
 
 after(async () => {
-  cycleA?.authoring.close();
-  cycleB?.authoring.close();
+  (await cycleA?.authoring.close());
+  (await cycleB?.authoring.close());
   if (cycleA) await safeRemove(cycleA.dir);
   if (cycleB) await safeRemove(cycleB.dir);
 });
@@ -247,8 +247,8 @@ test('C.6 证书正文改一个字节 → 提交被拒（EVIDENCE_FAILED），�
   assert.equal(tampered.evidence.certificateText.length, text.length, '只改一个字节，长度不变');
 
   // 写回编写库：从库里读到的就是被改过的那一份。
-  harness.authoring.saveCandidates(harness.run.id, [tampered]);
-  const stored = harness.authoring.listCandidates(harness.run.id).find((item) => item.id === tampered.id);
+  (await harness.authoring.saveCandidates(harness.run.id, [tampered]));
+  const stored = (await harness.authoring.listCandidates(harness.run.id)).find((item) => item.id === tampered.id);
   assert.equal(stored.evidence.certificateText, tampered.evidence.certificateText);
 
   await assert.rejects(
@@ -268,8 +268,8 @@ test('C.6 证书正文改一个字节 → 提交被拒（EVIDENCE_FAILED），�
   assert.equal(harness.source.current().version, harness.source.base.version);
 
   // 把好的一份放回库里，后续用例接着用。
-  harness.authoring.saveCandidates(harness.run.id, [verifiedCandidate]);
-  const restored = harness.authoring.listCandidates(harness.run.id).find((item) => item.id === verifiedCandidate.id);
+  (await harness.authoring.saveCandidates(harness.run.id, [verifiedCandidate]));
+  const restored = (await harness.authoring.listCandidates(harness.run.id)).find((item) => item.id === verifiedCandidate.id);
   assert.equal(restored.evidence.certificateText, verifiedCandidate.evidence.certificateText);
 });
 
@@ -344,7 +344,7 @@ test('C.4 读回：重新装载后关系仍是 verified，且 replayCandidate �
   assert.ok(existsSync(resolve(REPO_ROOT, evidence.certificate)), `证书文件应当可读：${evidence.certificate}`);
 
   // 重放：用与发现同一套上下文，在当前本体上重新走一遍判定。
-  const stored = harness.authoring.listCandidates(harness.run.id).find((item) => item.id === verifiedCandidate.id);
+  const stored = (await harness.authoring.listCandidates(harness.run.id)).find((item) => item.id === verifiedCandidate.id);
   const replayed = await replayCandidate({
     candidate: stored,
     registry: harness.registry,
@@ -421,7 +421,7 @@ test('M.1 概念锚点：预览里进「不可入库」并写明原因、整批�
       evidence: { ...publishable.evidence, id: 'ev:cand:cycle-anchor-demo' },
       review: 'accepted',
     };
-    harness.authoring.saveCandidates(harness.run.id, [anchor]);
+    (await harness.authoring.saveCandidates(harness.run.id, [anchor]));
 
     // ---- 预览：它进 excluded（有原因、有稳定 reasonCode），不是阻断项 ----
     const preview = await previewPublication(harness.ctx, harness.requestFor([anchor.id]));
@@ -472,7 +472,7 @@ test('M.1 概念锚点：预览里进「不可入库」并写明原因、整批�
       },
     );
   } finally {
-    harness.authoring.close();
+    (await harness.authoring.close());
     await safeRemove(harness.dir);
   }
 });
@@ -559,7 +559,7 @@ test('M.2 跨盘 extensionsDir：发布走完六步、包能回读（P2）', asy
      * 并在结果里写明走的是哪一条（`takeover.mode`）。
      */
     const certHarnessNode = 'ext:publication-cycle-crossdrive-cert';
-    const draft = harness.authoring.createDraft({
+    const draft = (await harness.authoring.createDraft({
       name: '跨盘：机器证书',
       construct: 'Concept',
       case: 'group',
@@ -569,16 +569,16 @@ test('M.2 跨盘 extensionsDir：发布走完六步、包能回读（P2）', asy
       ontologyVersion: harness.source.current().version,
       node: { id: certHarnessNode, discipline: '群论', granularity: 'unit', evidenceStatus: 'NOT-CLAIMED', title: '跨盘证书' },
       spec: conceptSpecFor(certHarnessNode),
-    });
+    }));
     harness.registry = { ...registryModule, specs: [draft.spec, ...registryModule.specs] };
-    const certRun = harness.authoring.createRun({
+    const certRun = (await harness.authoring.createRun({
       draftId: draft.id,
       nodeRef: { node: certHarnessNode, version: '1' },
       ontologyVersion: harness.source.current().version,
       background: 'bg:group/1',
       budget: { ...DISCOVERY_BUDGET, maxCandidates: 6 },
       generatorVersion: GENERATOR_VERSION,
-    });
+    }));
     harness.ctx = {
       dataDir: DATA_DIR, extensionsDir: crossDrive, authoring: harness.authoring,
       config: harness.config, ontologySource: harness.source, registry: harness.registry,
@@ -588,10 +588,10 @@ test('M.2 跨盘 extensionsDir：发布走完六步、包能回读（P2）', asy
       nodeRef: { node: certHarnessNode, version: '1' }, background: 'bg:group/1',
       repoRoot: REPO_ROOT, kinds: ['scaling'], budget: { ...DISCOVERY_BUDGET, maxCandidates: 6 },
     });
-    harness.authoring.saveCandidates(certRun.id, certOutcome.candidates);
-    harness.authoring.updateRun(certRun.id, { status: 'completed', stats: { ...certOutcome.stats, runVersion: 'mcs-discovery-run/1' } });
-    harness.draft = harness.authoring.getDraft(draft.id);
-    harness.run = harness.authoring.getRun(certRun.id);
+    (await harness.authoring.saveCandidates(certRun.id, certOutcome.candidates));
+    (await harness.authoring.updateRun(certRun.id, { status: 'completed', stats: { ...certOutcome.stats, runVersion: 'mcs-discovery-run/1' } }));
+    harness.draft = (await harness.authoring.getDraft(draft.id));
+    harness.run = (await harness.authoring.getRun(certRun.id));
 
     // 只取**端点都是本体节点**的那条（概念锚点那条按 M.1 的规则不入库）。
     const certificateCandidate = certOutcome.candidates.find(
@@ -617,7 +617,7 @@ test('M.2 跨盘 extensionsDir：发布走完六步、包能回读（P2）', asy
     assert.equal(existsSync(join(crossDrive, extensions.dirNameFor(certCommit.revision.id), certRecord.certificateFile)), true,
       '证书文件必须真的落在跨盘扩展目录里');
   } finally {
-    harness.authoring.close();
+    (await harness.authoring.close());
     await safeRemove(harness.dir);
     await safeRemove(crossDrive);
   }

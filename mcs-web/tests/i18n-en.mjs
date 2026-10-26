@@ -138,7 +138,7 @@ try {
 
   /* ---- 3. 导航在英文下是相对链接（不会点回中文页） ---- */
   const navHrefs = await page.locator('.nav-primary .nav-item').evaluateAll((nodes) => nodes.map((node) => node.getAttribute('href')));
-  check('英文导航全部带 /en 前缀', navHrefs.length === 6 && navHrefs.every((href) => href && href.startsWith('/en')), JSON.stringify(navHrefs));
+  check('英文导航全部带 /en 前缀', navHrefs.length === 7 && navHrefs.every((href) => href && href.startsWith('/en')), JSON.stringify(navHrefs));
   const navLabels = await page.locator('.nav-primary .nav-label').allInnerTexts();
   check('英文导航是英文', navLabels.includes('Start learning') && navLabels.includes('Knowledge network'), JSON.stringify(navLabels));
   const crumb = await page.locator('.topbar-title').innerText();

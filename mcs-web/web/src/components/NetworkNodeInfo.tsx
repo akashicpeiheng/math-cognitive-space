@@ -1,4 +1,8 @@
 import { useEffect, useState } from 'react';
+import { useMasterMode } from '../master-mode';
+import {useAuth} from '../auth';
+import type {MasterView} from '../../../shared/master-view.mjs';
+import { MasterContent } from './MasterView';
 import { api } from '../api';
 import { useI18n } from '../i18n';
 import { getLocalValue, putLocalValue } from '../vault-local';
@@ -7,18 +11,26 @@ import type { NetworkEdge } from '../network';
 import { extractSignificance, type NoteMeta } from '../network-workspace';
 const details = new Map<string, NodeDetailResponse>();
 export function NetworkNodeInfo({ node, edges, titleOf, note, version }: { node: NodeSummary; edges: NetworkEdge[]; titleOf: (id: string) => string; note?: NoteMeta; version?: string }) {
+  const { isMaster } = useMasterMode();
+  const auth=useAuth(),meaningKey=node.contentRefData?`${auth.user?.id??'guest'}:${node.id}`:node.id;
+  const [content,setContent]=useState<{body:string;master?:MasterView}|null>(null);
   const { locale, pick } = useI18n(), [detail, setDetail] = useState<NodeDetailResponse | null>(null), [meaning, setMeaning] = useState(''), [edit, setEdit] = useState(false), [message, setMessage] = useState('');
   useEffect(() => {
-    setDetail(null); setEdit(false); setMeaning(''); setMessage('');
-    const controller = new AbortController(), cacheKey = `${version}:${node.id}:${locale}`;
-    void getLocalValue<string>('network-meanings', node.id).then(value => { if (!controller.signal.aborted) setMeaning(value ?? ''); }).catch(() => {});
-    if (!note && !node.id.startsWith('note:')) {
+    setDetail(null);setContent(null); setEdit(false); setMeaning(''); setMessage('');
+    const controller = new AbortController(), cacheKey = `${version}:${node.master?.version}:${node.master?.sourceVersion}:${node.id}:${locale}`;
+    void getLocalValue<string>('network-meanings', meaningKey).then(value => { if (!controller.signal.aborted) setMeaning(value ?? ''); }).catch(() => {});
+    if(node.contentRefData){const section=node.contentRefData.source==='math-object'?'ontology/objects':'learning/nodes';void api<{object?:{body:string};node?:{body:string};master?:MasterView}>(`/${section}/${encodeURIComponent(node.id)}`,{signal:controller.signal}).then(r=>{if(!controller.signal.aborted)setContent({body:r.object?.body??r.node?.body??'',master:r.master});}).catch(()=>{});}
+    else if (!note && !node.id.startsWith('note:')) {
       const found = details.get(cacheKey);
       if (found) setDetail(found);
       else void api<NodeDetailResponse>(`/ontology/nodes/${encodeURIComponent(node.id)}`, { signal: controller.signal }).then(value => { details.set(cacheKey, value); if (details.size > 150) details.delete(details.keys().next().value!); if (!controller.signal.aborted) setDetail(value); }).catch(() => {});
     }
     return () => controller.abort();
-  }, [node.id, version, locale, note?.file.sha256]);
+  }, [node.id, version, locale, note?.file.sha256, node.master?.version, node.master?.sourceVersion,meaningKey]);
+  if (isMaster && !note && !node.id.startsWith('note:')) return <div className="network-node-info" data-node-info={node.id}>
+    <strong className="detail-title">{node.title}</strong>
+    {(content?.master??detail?.node.master ?? node.master) ? <MasterContent view={(content?.master??detail?.node.master ?? node.master)!} compact/> : null}
+  </div>;
   const incident = edges.filter(e => e.from === node.id || e.to === node.id), prereqs = new Set<string>(), subsequent = new Set<string>(), related = new Set<string>(), incoming = new Set<string>(), outgoing = new Set<string>();
   for (const edge of incident) {
     const other = edge.from === node.id ? edge.to : edge.from;
@@ -28,7 +40,7 @@ export function NetworkNodeInfo({ node, edges, titleOf, note, version }: { node:
   }
   const motivation = detail?.node.motivation;
   const registeredMeaning = [...(motivation?.internal ?? []), ...(motivation?.external ?? []), ...(motivation?.aesthetic ?? [])].slice(0, 2).join('\n');
-  const contentMeaning = detail?.node.contentMarkdown ? extractSignificance(detail.node.contentMarkdown) : null;
+  const contentMeaning = (content?.body??detail?.node.contentMarkdown) ? extractSignificance((content?.body??detail?.node.contentMarkdown)!) : null;
   const publishedMeaning = note?.indexed?.significance || registeredMeaning || contentMeaning?.significance;
   const lines = (label: string, values: Set<string>) => <p><strong>{label} {values.size}</strong>{values.size > 0 && <> · {[...values].sort().slice(0, 3).map(titleOf).join('、')}{values.size > 3 ? '…' : ''}</>}</p>;
   return <div className="network-node-info" data-node-info={node.id}>
@@ -39,7 +51,7 @@ export function NetworkNodeInfo({ node, edges, titleOf, note, version }: { node:
     {publishedMeaning && <small>{note ? `${note.file.path} · ${note.indexed?.section ?? ''} · r${note.vault.revision}` : `${registeredMeaning ? pick({ zh: '来源：节点登记的动机', en: 'Source: registered node motivations' }) : `${pick({ zh: '来源：节点正文', en: 'Source: node content' })} · ${contentMeaning?.section}`} · ${detail?.node.evidenceStatus ?? 'NOT-CLAIMED'}`}</small>}
     {meaning && <p><strong>{pick({ zh: '我的补充', en: 'My explanation' })}</strong> · {meaning}</p>}
     <button className="link-button" onClick={() => setEdit(v => !v)}>{pick({ zh: '补充私人说明', en: 'Add a private explanation' })}</button>
-    {edit && <form onSubmit={event => { event.preventDefault(); void putLocalValue('network-meanings', node.id, meaning).then(() => { setEdit(false); setMessage(pick({ zh: '已保存在当前浏览器', en: 'Saved in this browser' })); }).catch(() => setMessage(pick({ zh: '本机存储不可用', en: 'Browser storage unavailable' }))); }}><textarea aria-label={pick({ zh: '私人数学意义说明', en: 'Private mathematical explanation' })} value={meaning} maxLength={8000} onChange={event => setMeaning(event.target.value)} /><button className="button small" type="submit">{pick({ zh: '保存', en: 'Save' })}</button></form>}
+    {edit && <form onSubmit={event => { event.preventDefault(); void putLocalValue('network-meanings', meaningKey, meaning).then(() => { setEdit(false); setMessage(pick({ zh: '已保存在当前浏览器', en: 'Saved in this browser' })); }).catch(() => setMessage(pick({ zh: '本机存储不可用', en: 'Browser storage unavailable' }))); }}><textarea aria-label={pick({ zh: '私人数学意义说明', en: 'Private mathematical explanation' })} value={meaning} maxLength={8000} onChange={event => setMeaning(event.target.value)} /><button className="button small" type="submit">{pick({ zh: '保存', en: 'Save' })}</button></form>}
     {message && <p role="status">{message}</p>}
     <h4>{pick({ zh: '在当前视图中的联系', en: 'Connections in this view' })}</h4>
     {!note && <>{lines(pick({ zh: '已登记硬前置', en: 'Registered hard prerequisites' }), prereqs)}{lines(pick({ zh: '后续节点', en: 'Subsequent nodes' }), subsequent)}</>}

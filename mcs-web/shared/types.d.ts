@@ -1,4 +1,5 @@
 // MCS Web 公共类型。运行时校验在 contracts.mjs；此处只描述线上协议。
+export type { MathObjectRecord, LearningNodeDocument, ObjectRef, LeanBinding, ContentLibrary } from './content-documents.mjs';
 
 export type Construct =
   | 'Symbol' | 'Term' | 'Concept' | 'Definition' | 'Claim' | 'Proof'

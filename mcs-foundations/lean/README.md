@@ -82,3 +82,28 @@ node scripts/lean.mjs status
 - 本仓库修订源：第 08 章定义 8.7 与命题 8.8、群案例的 Cayley 单射步骤。
 
 本工程阅读了上述接口说明和相关源码入口；没有据此声称已读完 Lean 或 mathlib 的全部源码。Lean 逻辑和检查实现的正确性仍是可信基础。
+# 拓扑—微分几何新增验收
+
+`MCS/TopologyTargets.lean` 独立陈述七个目标；候选证明在 `MCS/Proofs/Topology.lean`，
+`Verified` 的定理类型必须精确等于对应 `Expected` 目标，再由审计读取实际公理依赖。
+
+| 目标 | 对应材料与边界 |
+| --- | --- |
+| secondToFirst | 任意拓扑空间，第二可数推出第一可数；mathlib Topology/Bases |
+| t4ToT3 | normal + T1 推出 regular + T1；不把 normal 预设为含 T1 |
+| t3ToT2 | regular + T1 推出 Hausdorff；mathlib T3 的 T0 条件由 T1 提供 |
+| t2ToT1 | Hausdorff 推出闭单点 |
+| compactToParacompact | 任意拓扑空间，紧推出仿紧；不要求 Hausdorff |
+| directionalFderiv | 实赋范向量空间上在点 Fréchet 可微，lineDeriv=fderiv 应用于 v |
+| exteriorSquared | 整个 EuclideanSpace ℝ (Fin n) 上的实值 C² k 形式，extDeriv(extDeriv ω)=0 |
+
+最后一个目标使用固定版本 mathlib 的
+`Mathlib/Analysis/Calculus/DifferentialForm/Basic.lean` 中 `extDeriv_extDeriv`。
+该文件尚未实现一般流形形式，不能把本登记称为一般流形上的机器证明。
+其 `minSmoothness ℝ 2 ≤ 2` 条件由实数域的规则化简，不作为新公理。
+允许公理仍只有 `propext`、`Classical.choice`、`Quot.sound`，禁止 `sorryAx`。
+
+M 对象的 HOL 负载使用显式背景接口表达当前条件；Lean 的全称类型量化对应一族
+HOL 签名实例。接口的自然语言解释、量词、领域与声明锚点的对应审阅全部保持
+`pending`。类型检查、目标核对、公理审计、内核重放与人工审阅是五种不同记录。
+

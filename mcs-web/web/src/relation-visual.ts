@@ -90,6 +90,8 @@ export function contractModeLabel(mode: string, locale: string = 'zh'): string {
 export const RELATION_KIND_LABELS: Record<string, string> = {
   noteReference: '笔记引用', privateReference: '私人参考关联', definitionReference: '定义引用', equivalentTo: '等价', conditionalDerivation: '条件推导', instanceOf: '实例', counterexampleTo: '反例',
   hardPrereq: '硬前置',
+  deduction: '推导',
+  softPrereq: '软先修',
   scaling: '放缩',
   bridge: '桥接',
   application: '应用',
@@ -101,6 +103,8 @@ export const RELATION_KIND_LABELS: Record<string, string> = {
 export const RELATION_KIND_LABELS_EN: Record<string, string> = {
   noteReference: 'Note link', privateReference: 'Private reference', definitionReference: 'Definition reference', equivalentTo: 'Equivalence', conditionalDerivation: 'Conditional derivation', instanceOf: 'Instance', counterexampleTo: 'Counterexample',
   hardPrereq: 'Hard prerequisite',
+  deduction: 'Deduction',
+  softPrereq: 'Suggested prerequisite',
   scaling: 'Scaling',
   bridge: 'Bridge',
   application: 'Application',
@@ -177,6 +181,8 @@ export function tierNote(tier: RelationTier, locale: string = 'zh'): string {
 /** 每种关系的视觉权重基数（0–1）。数值即规格，改动必须同步更新本条注释与测试。 */
 export const RELATION_WEIGHT: Record<string, number> = {
   hardPrereq: 1,
+  deduction: 0.8,
+  softPrereq: 0.4,
   scaling: 0.95,
   application: 0.72,
   crossDomain: 0.68,
@@ -236,6 +242,21 @@ export const TIER_SAMPLE_COLOR: Record<RelationTier, string> = {
   medium: '#ea580c',
   structural: '#64748b',
   ambient: '#94a3b8',
+};
+
+/**
+ * 深色外观下的图例示意色（第一百零九轮）。
+ *
+ * 与关系色同一条理由：`#4c1d95` 这类深色在深色画布上读不出来。
+ * 五档的**相对关系**不变（core 与 strong 最亮最实、ambient 最弱），
+ * 因此图例与画布上的线宽/虚实仍对得上号。
+ */
+export const TIER_SAMPLE_COLOR_DARK: Record<RelationTier, string> = {
+  core: '#a78bfa',
+  strong: '#60a5fa',
+  medium: '#fb923c',
+  structural: '#a1a1aa',
+  ambient: '#c4c7ce',
 };
 
 /**

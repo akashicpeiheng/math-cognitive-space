@@ -19,6 +19,8 @@ function fixture(t, publicLayout = false) {
     put('mcs-foundations/' + path + '/README.md');
   }
   put('mcs-foundations/00-README.md');
+  put('mcs-content/objects/example.md');
+  put('mcs-content/nodes/example.md');
   put('mcs-foundations/08-关系代数与结构.md');
   put('mcs-foundations/15-验证与完成标准.md');
   for (const name of ['LICENSE-MIT', 'LICENSE-CONTENT', 'NOTICE', 'SECURITY.md', 'CONTRIBUTING.md', '.gitignore']) {

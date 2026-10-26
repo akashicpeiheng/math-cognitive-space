@@ -531,7 +531,7 @@ export async function buildChangeSet(ctx, request = {}) {
   }
 
   // ---- 第 1 步的核对内容（草稿修订 / 本体版本 / 背景版本） ----
-  const draft = authoring.getDraft(draftId);
+  const draft = (await authoring.getDraft(draftId));
   if (draft.revision !== draftRevision) {
     throw new McsError(CODES.CONFLICT, `草稿修订已变化：期望 ${draftRevision}，当前 ${draft.revision}`, 409,
       { expected: draft.revision, received: draftRevision, draft_id: draftId });
@@ -544,10 +544,10 @@ export async function buildChangeSet(ctx, request = {}) {
 
   // ---- 运行与候选 ----
   let run = null;
-  if (request.runId) run = authoring.getRun(request.runId);
+  if (request.runId) run = (await authoring.getRun(request.runId));
   else {
-    const candidates = authoring.listRuns({ limit: 500 }).filter((item) => item.draftId === draftId);
-    run = candidates.length ? authoring.getRun(candidates[0].id) : null;
+    const candidates = (await authoring.listRuns({ limit: 500 })).filter((item) => item.draftId === draftId);
+    run = candidates.length ? (await authoring.getRun(candidates[0].id)) : null;
   }
   if (!run && acceptedIds.length) {
     throw new McsError(CODES.BAD_REQUEST, '选中的候选需要一个发现任务；请带 runId 或先运行发现。', 400);
@@ -943,6 +943,7 @@ export async function previewPublication(ctx, request = {}) {
  * 需要证书的那一类直接判不通过——宁可发不出去，也不能把没重放的东西说成重放过。
  */
 async function resolveReplay(ctx) {
+  if (typeof ctx.replayTransport === 'function') return ctx.replayTransport;
   if (typeof ctx.replay === 'function') return ctx.replay;
   try {
     const discovery = await import('../core/formal/discovery.mjs');
@@ -1432,7 +1433,7 @@ export async function commitPublication(ctx, request = {}) {
    * 锁内还会再查一次——两次提交同时到达时，第一个写完之后第二个必须能看见。
    */
   if (key) {
-    const existing = authoring.findPublicationByIdempotency(key);
+    const existing = (await authoring.findPublicationByIdempotency(key));
     if (existing) {
       const source = await resolveSource(ctx);
       return reusePublication(existing, key, fingerprintFromRequest(request, baseFingerprint(source.base)));
@@ -1441,7 +1442,7 @@ export async function commitPublication(ctx, request = {}) {
 
   return withWriteLock(ctx, async () => {
     if (key) {
-      const again = authoring.findPublicationByIdempotency(key);
+      const again = (await authoring.findPublicationByIdempotency(key));
       if (again) {
         const lockSource = await resolveSource(ctx);
         return reusePublication(again, key, fingerprintFromRequest(request, baseFingerprint(lockSource.base)));
@@ -1567,7 +1568,7 @@ export async function commitPublication(ctx, request = {}) {
         relations: plan.diff.relations.added.map((relation) => ({ id: relation.id, kind: relation.kind, from: relation.from, to: relation.to })),
       },
     };
-    authoring.createPublication({
+    (await authoring.createPublication({
       id: `pub:${written.revisionId}`,
       idempotencyKey: key,
       draftId: plan.draft.id,
@@ -1575,11 +1576,11 @@ export async function commitPublication(ctx, request = {}) {
       revision: plan.revision,
       result,
       requestDigest: plan.requestFingerprint,
-    });
-    const counter = authoring.stats().publications;
-    authoring.setActiveRevision(written.revisionId, { revision: counter });
-    authoring.publishDraft(plan.draft.id, written.revisionId);
-    if (plan.acceptedIds.length) authoring.setReview(plan.run.id, plan.acceptedIds, 'published');
+    }));
+    const counter = (await authoring.stats()).publications;
+    (await authoring.setActiveRevision(written.revisionId, { revision: counter }));
+    (await authoring.publishDraft(plan.draft.id, written.revisionId));
+    if (plan.acceptedIds.length) (await authoring.setReview(plan.run.id, plan.acceptedIds, 'published'));
     return result;
   });
 }
@@ -1618,7 +1619,7 @@ export async function rollbackPublication(ctx, request = {}) {
   const wantedId = extensions.assertRevisionId(targetRevisionId);
 
   if (key) {
-    const existing = authoring.findPublicationByIdempotency(key);
+    const existing = (await authoring.findPublicationByIdempotency(key));
     if (existing) {
       const source = await resolveSource(ctx);
       return reusePublication(existing, key, rollbackFingerprint(request, wantedId, source));
@@ -1629,7 +1630,7 @@ export async function rollbackPublication(ctx, request = {}) {
     const target = extensionTarget(ctx);
     const source = await resolveSource(ctx);
     if (key) {
-      const again = authoring.findPublicationByIdempotency(key);
+      const again = (await authoring.findPublicationByIdempotency(key));
       if (again) return reusePublication(again, key, rollbackFingerprint(request, wantedId, source));
     }
     const ontology = source.current();
@@ -1863,7 +1864,7 @@ export async function rollbackPublication(ctx, request = {}) {
       integrity: source.integrity(),
       note: '回滚是新的一条版本记录：历史包、证据与学习者记录都没有删除。',
     };
-    authoring.createPublication({
+    (await authoring.createPublication({
       id: `pub:${written.revisionId}`,
       idempotencyKey: key,
       draftId: null,
@@ -1871,9 +1872,9 @@ export async function rollbackPublication(ctx, request = {}) {
       revision,
       result,
       requestDigest: revision.requestFingerprint,
-    });
-    const counter = authoring.stats().publications;
-    authoring.setActiveRevision(written.revisionId, { revision: counter });
+    }));
+    const counter = (await authoring.stats()).publications;
+    (await authoring.setActiveRevision(written.revisionId, { revision: counter }));
     return result;
   });
 }

@@ -402,8 +402,8 @@ try {
   });
   await enPage.goto(server.origin + '/en/network', { waitUntil: 'networkidle' });
   await enPage.waitForTimeout(700);
-  // 面板开关按位置取（英文站的 aria-label 是「Show the All nodes panel」，写死文案会随文案改动而红）。
-  await enPage.locator('.network-hud-toggle input').first().check().catch(() => {});
+  // 按控件职责定位；第一个 HUD 开关现为旧尺度显示，不是节点列表。
+  await enPage.getByRole('checkbox', { name: 'Show the All nodes panel', exact: true }).check();
   await enPage.waitForTimeout(300);
   const enCheckbox = '.floating-panel .network-node-list input[type="checkbox"]';
   for (let index = 0; index < 8; index += 1) {

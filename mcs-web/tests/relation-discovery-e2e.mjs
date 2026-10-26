@@ -117,12 +117,12 @@ test('四案例端到端：新节点输入 → 发现 → 独立重放 → 入�
 
   const runtimeDir = mkdtempSync(join(tmpdir(), 'mcs-e2e-'));
   const extensionsDir = join(runtimeDir, 'extensions');
-  const store = new AuthoringDatabase({ file: join(runtimeDir, 'authoring.sqlite3') });
+  const store = (await new AuthoringDatabase({ file: join(runtimeDir, 'authoring.sqlite3') }).init());
   // 版本 id 形如 `rev:<hash>`，落盘目录名形如 `rev-<hash>`（extensions.dirNameFor）。
   const { dirNameFor } = await load('../server/extensions.mjs');
 
-  t.after(() => {
-    try { store.close(); } catch { /* 已关闭 */ }
+  t.after(async () => {
+    try { (await store.close()); } catch { /* 已关闭 */ }
     rmSync(runtimeDir, { recursive: true, force: true });
   });
 
@@ -271,7 +271,7 @@ test('四案例端到端：新节点输入 → 发现 → 独立重放 → 入�
      * 再建发现任务、写入候选、预览、提交。
      */
     const draftNodeId = 'group:claim-injective';
-    const draft = store.createDraft({
+    const draft = (await store.createDraft({
       name: '（端到端）左乘映射相等推出元素相等',
       construct: 'Claim',
       case: 'group',
@@ -311,13 +311,13 @@ test('四案例端到端：新节点输入 → 发现 → 独立重放 → 入�
         hash: `sha256:${'e'.repeat(64)}`,
       },
       specSource: { statement: 'g0 = h0' },
-    });
+    }));
     /*
      * 发现任务记下的是**它启动时的那份本体快照版本**；发布时事务会核对它。
      * 这与真实流程一致（旧结果不能发布到新背景），所以测试也要用当前快照的版本，
      * 而不是随便写一个字符串——否则测的是"版本核对会不会拦"，不是发布流程本身。
      */
-    const run = store.createRun({ draftId: draft.id, nodeRef: null, ontologyVersion: ctxPack.ontology.version, background: 'bg:group/1', budget: { maxCandidates: 100, perCandidateMs: 2000, totalMs: 30000, depth: 8, maxStates: 10000 } });
+    const run = (await store.createRun({ draftId: draft.id, nodeRef: null, ontologyVersion: ctxPack.ontology.version, background: 'bg:group/1', budget: { maxCandidates: 100, perCandidateMs: 2000, totalMs: 30000, depth: 8, maxStates: 10000 } }));
     const verifiedCandidate = {
       /*
        * 这条候选的形状与 `data/formal/registry.mjs` 里**真实登记**的
@@ -348,8 +348,8 @@ test('四案例端到端：新节点输入 → 发现 → 独立重放 → 入�
     };
     const undecidedCandidate = { ...verifiedCandidate, id: 'cand:e2e:undecided', math: { status: 'undecided', reason: '预算内未找到证明。', scope: '' }, review: 'pending' };
     const refutedCandidate = { ...verifiedCandidate, id: 'cand:e2e:refuted', kind: 'scaling', math: { status: 'refuted', reason: '有限反模型。', scope: '有限对象上' }, review: 'pending' };
-    store.saveCandidates(run.id, [verifiedCandidate, undecidedCandidate, refutedCandidate]);
-    store.updateRun(run.id, { status: 'completed' });
+    (await store.saveCandidates(run.id, [verifiedCandidate, undecidedCandidate, refutedCandidate]));
+    (await store.updateRun(run.id, { status: 'completed' }));
 
     const ctx = {
       /*

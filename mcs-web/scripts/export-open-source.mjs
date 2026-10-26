@@ -40,6 +40,7 @@ const RELEASE_DIR = join(MCS_WEB_ROOT, 'release');
 /** 白名单：`[仓库内路径, 发布包内路径]`。 */
 const INCLUDE = [
   ['mcs-web', 'mcs-web'],
+  ['mcs-content', 'mcs-content'],
   ['mcs-foundations/validation/certification', 'mcs-foundations/validation/certification'],
   ['mcs-foundations/lean', 'mcs-foundations/lean'],
   ['mcs-foundations/08-关系代数与结构.md', 'mcs-foundations/08-关系代数与结构.md'],

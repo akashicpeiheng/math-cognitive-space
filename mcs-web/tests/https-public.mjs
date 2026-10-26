@@ -232,9 +232,15 @@ try {
     const learnerBefore = await handle.db.dumpAll(); const ontologyBefore = handle.getOntology().version;
     await page.goto(`${origin}/en/nodes/${encodeURIComponent('group:claim-injective')}`, { waitUntil: 'networkidle' });
     const leanCard = page.locator('[data-lean-registration="lean-group-injective"]'); await leanCard.waitFor();
+    const submitted = page.waitForResponse(response => response.url().includes('/api/v2/lean/jobs') && response.request().method() === 'POST');
     await leanCard.getByRole('button', { name: 'Check again', exact: true }).click();
-    await page.waitForFunction(() => document.querySelector('[data-lean-registration="lean-group-injective"] .lean-job-status')?.textContent.includes('Check finished'), null, { timeout: TEST_LEAN_TIMEOUT_MS + 10000 });
-    check('公网 HTTPS 登录浏览器可实际重放 Lean', (await leanCard.locator('.lean-job-status').innerText()).includes('Passed'));
+    const id = (await (await submitted).json()).data.id;
+    await page.waitForFunction(id => {
+      const status = document.querySelector('[data-lean-registration="lean-group-injective"] .lean-job-status');
+      return status?.getAttribute('data-lean-job-id') === id && status.textContent.includes('Check finished');
+    }, id, { timeout: TEST_LEAN_TIMEOUT_MS + 10000 });
+    const replay = await page.evaluate(async id => (await (await fetch(`/api/v2/lean/jobs/${id}`)).json()).data, id);
+    check('公网 HTTPS 登录浏览器可实际重放 Lean', (await leanCard.locator('.lean-job-status').innerText()).includes('Passed'), JSON.stringify({ status: replay.status, result: replay.result?.status, error: replay.error, diagnostics: replay.result?.logs }));
     const learnerAfter = await handle.db.dumpAll();
     check('公网 Lean 重放保持本体与全部学习状态不变', handle.getOntology().version === ontologyBefore && ['profiles', 'events', 'notes', 'networkViews', 'directions', 'learningPlans', 'connectionNotes'].every(key => JSON.stringify(learnerAfter[key]) === JSON.stringify(learnerBefore[key])));
   } else {

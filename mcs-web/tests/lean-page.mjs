@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { startTestServer } from './helpers.mjs';
-import { leanCapabilities } from '../core/lean.mjs';
+import { leanCapabilities,readLeanRegistry } from '../core/lean.mjs';
 import { REPO_ROOT } from '../core/ontology.mjs';
 import { TEST_LEAN_TIMEOUT_MS } from './lean-test-budget.mjs';
 import { PLAYWRIGHT_SPECIFIER, CHROME_PATH } from './browser-runtime.mjs';
@@ -20,7 +20,7 @@ try {
     const card = page.locator('[data-lean-registration="lean-group-injective"]'); await card.waitFor();
     assert.match(await card.innerText(), locale === 'en' ? /Awaiting human review/ : /待人工复核/);
     await card.getByText(locale === 'en' ? 'Prose–Lean correspondence (Chinese source)' : '原文与 Lean 的逐项对照', { exact: true }).click();
-    assert.ok(await card.locator('.lean-correspondence table').isVisible());
+    assert.ok(await card.locator('.lean-correspondence table').first().isVisible());
     await card.getByText(locale === 'en' ? 'Lean source and versions' : '查看 Lean 源码与版本', { exact: true }).click();
     await card.getByText('MCS/Expected.lean', { exact: true }).click();
     assert.ok(await card.locator('pre', { hasText: 'def rightUnitInjective' }).isVisible());
@@ -39,7 +39,7 @@ try {
     } else console.log('真实重放未执行：' + ready.reason);
     await page.goto(`${server.origin}${prefix}/research`, { waitUntil: 'networkidle' });
     await page.locator('[data-lean-registration="lean-closure-8-8"]').waitFor();
-    assert.equal(await page.locator('[data-lean-registration]').count(), 2);
+    assert.equal(await page.locator('[data-lean-registration]').count(), (await readLeanRegistry(REPO_ROOT)).registrations.length);
     await page.setViewportSize({ width: 390, height: 844 });
     assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), 'Lean cards overflow on mobile');
     await page.setViewportSize({ width: 1280, height: 960 });

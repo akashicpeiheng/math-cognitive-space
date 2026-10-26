@@ -11,6 +11,15 @@ export interface SavedNetworkView {
     families?: string[];
     positions?: Record<string, { x: number; y: number }>;
     camera?: { x: number; y: number; scale: number } | null;
+    /** 尺度视图状态（2026-10-17 加）：缺省 = 这张快照不是按尺度视图保存的。 */
+    scale?: {
+      levels: string[];
+      added: string[];
+      split: string[];
+      autoMerge: boolean;
+      positions?: Record<string, { x: number; y: number }>;
+      version?: string | null;
+    };
   };
   updatedAt: string;
   local?: boolean;
@@ -34,14 +43,26 @@ export function writeLocalViews(views: SavedNetworkView[]) {
 /** Compare all four snapshot fields, allowing only the server's documented normalization. */
 function snapshotKey(view: SavedNetworkView): string {
   const { added = [], families = [], positions = {}, camera = null } = view.payload;
+  const scale = view.payload.scale
+    ? {
+      levels: [...new Set(view.payload.scale.levels)].sort(),
+      added: [...new Set(view.payload.scale.added)].sort(),
+      split: [...new Set(view.payload.scale.split)].sort(),
+      autoMerge: view.payload.scale.autoMerge === true,
+      positions: Object.entries(view.payload.scale.positions ?? {}).sort(([a], [b]) => a.localeCompare(b)).map(([id, point]) =>
+        [id, Math.round(point.x * 100) / 100, Math.round(point.y * 100) / 100]),
+      version: view.payload.scale.version ?? null,
+    }
+    : null;
   return JSON.stringify({
-    ...view.payload.schema ? { extras: { schema: view.payload.schema, refs: view.payload.refs, sources: view.payload.sources, filters: view.payload.filters, placements: view.payload.placements, layout: view.payload.layout } } : {},
+    ...view.payload.schema ? { extras: { schema: view.payload.schema==='mcs-network/2'?'mcs-network/3':view.payload.schema,contentCase:view.payload.contentCase,contentLayer:view.payload.contentLayer, refs: view.payload.refs, sources: view.payload.sources, filters: view.payload.filters, placements: view.payload.placements, layout: view.payload.layout } } : {},
     name: view.name.trim().slice(0, 80),
     added: [...new Set(added)].sort(),
     families: [...new Set(families)].sort(),
     positions: Object.entries(positions).sort(([a], [b]) => a.localeCompare(b)).map(([id, point]) =>
       [id, Math.round(point.x * 100) / 100, Math.round(point.y * 100) / 100]),
     camera: camera && { x: camera.x, y: camera.y, scale: camera.scale },
+    ...(scale ? { scale } : {}),
   });
 }
 

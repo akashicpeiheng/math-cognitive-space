@@ -1,4 +1,5 @@
 import { lazy, Suspense } from 'react';
+import { MasterModeProvider } from './master-mode';
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { ProfileProvider } from './state';
 import { AuthProvider } from './auth';
@@ -6,6 +7,7 @@ import { ConnectionNotesProvider } from './connection-notes';
 import { VaultProvider } from './vault-context';
 import { LibraryPage } from './pages/LibraryPage';
 import { I18nProvider, localeOfPath } from './i18n';
+import { ThemeProvider } from './theme-context';
 import { Layout } from './components/Layout';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { AuthGuard } from './components/AuthGuard';
@@ -27,6 +29,10 @@ import { LoginPage } from './pages/LoginPage';
 import { AuthConfirmPage } from './pages/AuthConfirmPage';
 import { ManualPage } from './pages/ManualPage';
 const WritingPage = lazy(() => import('./pages/WritingPage').then(module => ({ default: module.WritingPage })));
+const McsPage = lazy(() => import('./pages/McsPage').then(module => ({ default: module.McsPage })));
+const ContentLibraryPage = lazy(() => import('./pages/ContentLibraryPage').then(module => ({ default: module.ContentLibraryPage })));
+const MathObjectPage = lazy(() => import('./pages/ContentLibraryPage').then(module => ({ default: module.MathObjectPage })));
+const LearningNodePage = lazy(() => import('./pages/ContentLibraryPage').then(module => ({ default: module.LearningNodePage })));
 
 /**
  * 路由树：**同一棵树在两种语种下各挂一次**。
@@ -42,6 +48,10 @@ function AppRoutes() {
   return (
     <Routes>
       <Route element={<Layout />}>
+        <Route path="mcs" element={<McsPage />} />
+        <Route path="objects" element={<ContentLibraryPage />} />
+        <Route path="objects/:objectId" element={<MathObjectPage />} />
+        <Route path="learning-nodes/:nodeId" element={<LearningNodePage />} />
         {/* 首页只有六幕动画；学习入口在紧接着它的「开始学习」页。 */}
         <Route index element={<HomePage />} />
         <Route path="start" element={<StartPage />} />
@@ -122,32 +132,39 @@ function ZhRedirect() {
  */
 export function App() {
   return (
-    <AuthProvider>
-      <ProfileProvider>
-        {/*
-          错误边界在路由之外：任何一页的渲染异常都落到它身上（从前是整站白屏）。
-          放在 Layout 以内会把导航一起丢掉，用户连"回首页"都点不到。
-        */}
-        <ErrorBoundary>
-          <I18nProvider>
-            <ConnectionNotesProvider>
-            <VaultProvider>
-            <Routes>
-              {/* 中文的显式别名先于兜底匹配，避免被当成未知路径。 */}
-              <Route path="/zh" element={<Navigate to="/" replace />} />
-              <Route path="/zh/*" element={<ZhRedirect />} />
-              {/*
-                一条 `/*` 承载两种语种，由 `CurrentLocaleRoutes` 按路径前缀选树。
-                这样无论语种如何，路由表的形状都只有一份。
-              */}
-              <Route path="/*" element={<CurrentLocaleRoutes />} />
-            </Routes>
-            </VaultProvider>
-            </ConnectionNotesProvider>
-          </I18nProvider>
-        </ErrorBoundary>
-      </ProfileProvider>
-    </AuthProvider>
+    /*
+     * `ThemeProvider` 在最外层：外观是**整页**属性（首页六幕在 Layout 之外、
+     * 知识网络的画布在 Layout 之内，两边都要读同一份解析结果）。
+     * 它不读路由、不读账号，因此放在最外层不会与其它 Provider 的嵌套顺序纠缠。
+     */
+    <MasterModeProvider><ThemeProvider>
+      <AuthProvider>
+        <ProfileProvider>
+          {/*
+            错误边界在路由之外：任何一页的渲染异常都落到它身上（从前是整站白屏）。
+            放在 Layout 以内会把导航一起丢掉，用户连"回首页"都点不到。
+          */}
+          <ErrorBoundary>
+            <I18nProvider>
+              <ConnectionNotesProvider>
+                <VaultProvider>
+                  <Routes>
+                    {/* 中文的显式别名先于兜底匹配，避免被当成未知路径。 */}
+                    <Route path="/zh" element={<Navigate to="/" replace />} />
+                    <Route path="/zh/*" element={<ZhRedirect />} />
+                    {/*
+                      一条 `/*` 承载两种语种，由 `CurrentLocaleRoutes` 按路径前缀选树。
+                      这样无论语种如何，路由表的形状都只有一份。
+                    */}
+                    <Route path="/*" element={<CurrentLocaleRoutes />} />
+                  </Routes>
+                </VaultProvider>
+              </ConnectionNotesProvider>
+            </I18nProvider>
+          </ErrorBoundary>
+        </ProfileProvider>
+      </AuthProvider>
+    </ThemeProvider></MasterModeProvider>
   );
 }
 

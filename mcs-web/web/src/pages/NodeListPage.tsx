@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMasterMode } from '../master-mode';
+import { MasterContent } from '../components/MasterView';
 import { Link, useSearchParams } from 'react-router-dom';
 import { formatError, useApi } from '../api';
 import { StatusBadge } from '../components/StatusBadge';
@@ -202,6 +204,7 @@ function fill(template: string, values: Record<string, string | number>): string
  *   32 个节点在界面上永远不可达。这里显式请求上限，并用「显示更多」分页；真的触到接口上限时如实说明。
  */
 export function NodeListPage() {
+  const { isMaster } = useMasterMode();
   const [searchParams, setSearchParams] = useSearchParams();
   const [query, setQuery] = useState(() => searchParams.get('q') ?? '');
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -411,8 +414,8 @@ export function NodeListPage() {
     <div className="page nodes-page">
       <div className="section-heading">
         <h1>{t('nav.nodes')}</h1>
-        <p>{pick(TEXT.lead)}</p>
-        <details className="glossary">
+        {!isMaster && <p>{pick(TEXT.lead)}</p>}
+        {!isMaster && <details className="glossary">
           <summary>{pick(TEXT.glossarySummary)}</summary>
           <dl>
             <div>
@@ -442,7 +445,7 @@ export function NodeListPage() {
               <dd>{pick(TEXT.glossaryStateBody)}</dd>
             </div>
           </dl>
-        </details>
+        </details>}
       </div>
 
       {/* 窄屏把四个下拉收进折叠区：390×844 下筛选栏曾把第一张卡挤到 913px（整屏无内容）。 */}
@@ -610,6 +613,11 @@ export function NodeListPage() {
       <div className="node-grid">
         {visible.map((node) => {
           const state = stateOf(node);
+          if (isMaster) return <article className="card node-card master-list-card" key={node.id} data-master-node={node.id}>
+            <h3><Link to={hrefFor(`/nodes/${encodeURIComponent(node.id)}`)}>{plainMathText(node.title)}</Link></h3>
+            {node.master ? <MasterContent view={node.master} compact/> : null}
+            <footer><span>{disciplineText(node.discipline)}</span><Link to={hrefFor(`/nodes/${encodeURIComponent(node.id)}`)}>{pick({ zh:'打开', en:'Open' })}</Link></footer>
+          </article>;
           /*
            * 英文站上服务端按 `?locale=en` 下发英文标题；**没译的条目回落中文原文**，
            * 这里如实标出来（`i18n-pending` + title），不让读者以为站点混着两种语言。

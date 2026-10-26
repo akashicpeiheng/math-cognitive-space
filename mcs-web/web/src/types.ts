@@ -1,3 +1,4 @@
+import type { MasterView } from '../../shared/master-view.mjs';
 export type Construct =
   | 'Symbol' | 'Term' | 'Concept' | 'Definition' | 'Claim' | 'Proof'
   | 'Example' | 'Counterexample' | 'Problem' | 'Theory' | 'Construction'
@@ -9,6 +10,8 @@ export type Role =
   | 'GlobalMethod' | 'LocalMethod';
 
 export interface NodeSummary {
+  contentRefData?:import('../../shared/network-workspace.mjs').OntologyRef;
+  master?: MasterView;
   id: string;
   version: string;
   title: string;

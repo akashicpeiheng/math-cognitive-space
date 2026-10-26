@@ -4,26 +4,29 @@
   "status": "passed",
   "evidenceId": "ev-lean-closure-8-8",
   "registrationId": "lean-closure-8-8",
-  "inputSha256": "7edcd56250b14f0fc36f8afa0719bdc2b90664252b9fa68ab3051f0d33192a36",
+  "inputSha256": "6420c35bcba29d53a295c5d23ca200344b765f3b914a67d3f1509d9a655e433f",
   "sourceHashes": {
     "lean-toolchain": "d5edba4e4b8faad9c1baeadb265716d20d03be4d1a2647dc5e35b0c0325bea7b",
     "lakefile.toml": "85c9a263e6757e06d968d377f4f5a9d9c744a0ab1b29cbc7eca63895b18fcaf1",
     "lake-manifest.json": "b9017892816d4f2ab68e8a09f1430484669f69fea504798c32af66fa5d367d93",
-    "registrations.json": "ccbe4c63cf1ad6e4d10a25f968f22d480be9783955cbfc95ff360e75cf614911",
-    "README.md": "824569f415a23ba9d7d09025554f72659d8d863f33ce43968f0556bfb4992aa8",
+    "registrations.json": "e1504af59e737b16ed8de4422cab21e175de6de4f57736e7f5d0633c4f5fdbad",
+    "README.md": "f8daca32a667f2242581a6099cb9faa97e475ca6fc9997b56354f1f870c86bc0",
     "MCS.lean": "42cc286844434b22e65e01c3927ed4d21cf291bd57eb7658a72c89ef34f5e7e8",
     "MCS/Definitions.lean": "490740f999c14ce84b8a3ca984dc6b925fcb3d9a1b627432e1f09dd8e3ff5c19",
     "MCS/Expected.lean": "f4632a46f23655f927dc7837183e4813607226efde613a2fd0cc31e81dfe9d42",
+    "MCS/TopologyTargets.lean": "97fdf0ce86497c49ab2dd23e36bc9e947fc9d483895f1b2ed6b41fd95e664dd4",
     "MCS/Proofs/Group.lean": "a1c0628cf8c433cea4488c14523a351de61dc4342148c820e3a41dde0a7d8c7b",
     "MCS/Proofs/Closure.lean": "956dfab9f0ee4567ad70ea98e3c7e75b67b46fb72311087b509701919e0389e7",
-    "MCS/Verified.lean": "f4f68be1897116ea90d89db574d8e9064d9c2748d83a1024710f07e4c7d88b2b",
-    "MCS/Audit.lean": "64186b0b1cd5d406fb89d363f3e74279748eb5a8437a79aead46e2781d294ed2"
+    "MCS/Proofs/Topology.lean": "5e089ad58319409cb7704d58603c88e9ceab6a90201cca1d5fd8d4a509093667",
+    "MCS/Verified.lean": "2b2bda284a8d1d3ed9a99be358b7038c18a73545dd0935545efd37db66d1b2e2",
+    "MCS/Audit.lean": "4246632d5aa63d52d633978b8e07162cbfa09a0b9c999c7cc6515987cca15f1f"
   },
   "originalHashes": {
-    "mcs-foundations/08-关系代数与结构.md": "b0d630101f192de91dfb086b502d67fa87cfee782571448a7e32df8f60bc2b98"
+    "mcs-foundations/08-关系代数与结构.md": "b175fc9e8bdb3f76dd5728aa8be0313d73ddaccb5f1e1da550024642d1d3a96b"
   },
+  "objectBindings": [],
   "policyVersion": "mcs-lean-check/2",
-  "checkerSourceSha256": "6152ee106c8f42372d0b30f61a7bcf3a2b063f83dc2014f74050b209ea45623b",
+  "checkerSourceSha256": "38a0ab9fd823219a503b04efa42006fb914d43e4cf9d935aa05629f565091405",
   "toolchainHashes": {
     "lean": "fcc4a10077d5fdd575592cea5f2981c91cbd77c490c80bc74407908e57e8b87b",
     "lake": "9780a6abfb6d751c7958f2fd7f696154bdda8b46c0de9755c4080ffb8a8788e6",
@@ -36,21 +39,23 @@
   "replayMode": "project-modules-sequential-single-process",
   "leanVersion": "4.34.1",
   "mathlibRevision": "d13f23b723b8a846827a245b89c10fc7d3f11612",
-  "ranAt": "2026-10-13T15:01:18.393Z",
-  "durationMs": 64460,
-  "logsSha256": "a5fd0184e4e32079196f9cfc06ab33c853da69172cdce40bcc36d3853e964022",
+  "ranAt": "2026-10-22T10:41:01.881Z",
+  "durationMs": 123038,
+  "logsSha256": "3488ca678dedea12269e169074ac8e0c861f49541843d969176db7d16003d1a4",
   "logs": [
     {
       "stage": "build",
       "exitCode": 0,
-      "stdout": "",
+      "stdout": "MCS/Proofs/Topology.lean:7:2: warning: Try this: \n  letI̵\n\nThe goal is a proposition, so `let` is preferred over `letI`.\nThe difference between `let` and `letI` is that `letI` inlines the value.\nBut this is not relevant for proofs because of proof irrelevance.\n\nNote: This linter can be disabled with `set_option linter.style.haveILetI false`\nMCS/Proofs/Topology.lean:11:2: warning: Try this: \n  letI̵\n\nThe goal is a proposition, so `let` is preferred over `letI`.\nThe difference between `let` and `letI` is that `letI` inlines the value.\nBut this is not relevant for proofs because of proof irrelevance.\n\nNote: This linter can be disabled with `set_option linter.style.haveILetI false`\nMCS/Proofs/Topology.lean:12:2: warning: Try this: \n  letI̵\n\nThe goal is a proposition, so `let` is preferred over `letI`.\nThe difference between `let` and `letI` is that `letI` inlines the value.\nBut this is not relevant for proofs because of proof irrelevance.\n\nNote: This linter can be disabled with `set_option linter.style.haveILetI false`\nMCS/Proofs/Topology.lean:16:2: warning: Try this: \n  letI̵\n\nThe goal is a proposition, so `let` is preferred over `letI`.\nThe difference between `let` and `letI` is that `letI` inlines the value.\nBut this is not relevant for proofs because of proof irrelevance.\n\nNote: This linter can be disabled with `set_option linter.style.haveILetI false`\nMCS/Proofs/Topology.lean:17:2: warning: Try this: \n  letI̵\n\nThe goal is a proposition, so `let` is preferred over `letI`.\nThe difference between `let` and `letI` is that `letI` inlines the value.\nBut this is not relevant for proofs because of proof irrelevance.\n\nNote: This linter can be disabled with `set_option linter.style.haveILetI false`\nMCS/Proofs/Topology.lean:21:2: warning: Try this: \n  letI̵\n\nThe goal is a proposition, so `let` is preferred over `letI`.\nThe difference between `let` and `letI` is that `letI` inlines the value.\nBut this is not relevant for proofs because of proof irrelevance.\n\nNote: This linter can be disabled with `set_option linter.style.haveILetI false`\nMCS/Proofs/Topology.lean:25:2: warning: Try this: \n  letI̵\n\nThe goal is a proposition, so `let` is preferred over `letI`.\nThe difference between `let` and `letI` is that `letI` inlines the value.\nBut this is not relevant for proofs because of proof irrelevance.\n\nNote: This linter can be disabled with `set_option linter.style.haveILetI false`\n",
       "stderr": "",
       "commands": [
         "lake env <node> (capture Lean environment)",
         "lean -j 1 MCS/Definitions.lean -o <verification-workspace>/.lake/build/lib/lean/MCS/Definitions.olean",
         "lean -j 1 MCS/Expected.lean -o <verification-workspace>/.lake/build/lib/lean/MCS/Expected.olean",
+        "lean -j 1 MCS/TopologyTargets.lean -o <verification-workspace>/.lake/build/lib/lean/MCS/TopologyTargets.olean",
         "lean -j 1 MCS/Proofs/Group.lean -o <verification-workspace>/.lake/build/lib/lean/MCS/Proofs/Group.olean",
         "lean -j 1 MCS/Proofs/Closure.lean -o <verification-workspace>/.lake/build/lib/lean/MCS/Proofs/Closure.olean",
+        "lean -j 1 MCS/Proofs/Topology.lean -o <verification-workspace>/.lake/build/lib/lean/MCS/Proofs/Topology.olean",
         "lean -j 1 MCS/Verified.lean -o <verification-workspace>/.lake/build/lib/lean/MCS/Verified.olean",
         "lean -j 1 MCS.lean -o <verification-workspace>/.lake/build/lib/lean/MCS.olean"
       ]
@@ -58,7 +63,7 @@
     {
       "stage": "kernel_replay",
       "exitCode": 0,
-      "stdout": "MCS_KERNEL_REPLAY:MCS.Definitions\nMCS_KERNEL_REPLAY:MCS.Expected\nMCS_KERNEL_REPLAY:MCS.Proofs.Group\nMCS_KERNEL_REPLAY:MCS.Proofs.Closure\nMCS_KERNEL_REPLAY:MCS.Verified\n",
+      "stdout": "MCS_KERNEL_REPLAY:MCS.Definitions\nMCS_KERNEL_REPLAY:MCS.Expected\nMCS_KERNEL_REPLAY:MCS.TopologyTargets\nMCS_KERNEL_REPLAY:MCS.Proofs.Group\nMCS_KERNEL_REPLAY:MCS.Proofs.Closure\nMCS_KERNEL_REPLAY:MCS.Proofs.Topology\nMCS_KERNEL_REPLAY:MCS.Verified\n",
       "stderr": "",
       "commands": [
         "lean -j 1 MCSReplayRunner.lean (LeanChecker.replayFromImports, sequential)"
@@ -67,7 +72,7 @@
     {
       "stage": "target_audit",
       "exitCode": 0,
-      "stdout": "MCS_AUDIT_JSON:{\"schema\":\"mcs-lean-audit/1\",\"targets\":[{\"axioms\":[],\"declaration\":\"MCS.Verified.rightUnitInjective\",\"expected\":\"MCS.Expected.rightUnitInjective\",\"kind\":\"theorem\",\"targetMatched\":true},{\"axioms\":[\"propext\"],\"declaration\":\"MCS.Verified.groupSpecialization\",\"expected\":\"MCS.Expected.groupSpecialization\",\"kind\":\"theorem\",\"targetMatched\":true},{\"axioms\":[],\"declaration\":\"MCS.Verified.missingRightUnit\",\"expected\":\"MCS.Expected.missingRightUnit\",\"kind\":\"theorem\",\"targetMatched\":true},{\"axioms\":[],\"declaration\":\"MCS.Verified.missingEquality\",\"expected\":\"MCS.Expected.missingEquality\",\"kind\":\"theorem\",\"targetMatched\":true},{\"axioms\":[\"propext\",\"Classical.choice\",\"Quot.sound\"],\"declaration\":\"MCS.Verified.extensive\",\"expected\":\"MCS.Expected.extensive\",\"kind\":\"theorem\",\"targetMatched\":true},{\"axioms\":[\"propext\",\"Classical.choice\",\"Quot.sound\"],\"declaration\":\"MCS.Verified.monotone\",\"expected\":\"MCS.Expected.monotone\",\"kind\":\"theorem\",\"targetMatched\":true},{\"axioms\":[\"propext\",\"Classical.choice\",\"Quot.sound\"],\"declaration\":\"MCS.Verified.idempotent\",\"expected\":\"MCS.Expected.idempotent\",\"kind\":\"theorem\",\"targetMatched\":true},{\"axioms\":[\"propext\",\"Classical.choice\",\"Quot.sound\"],\"declaration\":\"MCS.Verified.finitary\",\"expected\":\"MCS.Expected.finitary\",\"kind\":\"theorem\",\"targetMatched\":true}]}\n",
+      "stdout": "MCS_AUDIT_JSON:{\"schema\":\"mcs-lean-audit/1\",\"targets\":[{\"axioms\":[],\"declaration\":\"MCS.Verified.rightUnitInjective\",\"expected\":\"MCS.Expected.rightUnitInjective\",\"kind\":\"theorem\",\"targetMatched\":true},{\"axioms\":[\"propext\"],\"declaration\":\"MCS.Verified.groupSpecialization\",\"expected\":\"MCS.Expected.groupSpecialization\",\"kind\":\"theorem\",\"targetMatched\":true},{\"axioms\":[],\"declaration\":\"MCS.Verified.missingRightUnit\",\"expected\":\"MCS.Expected.missingRightUnit\",\"kind\":\"theorem\",\"targetMatched\":true},{\"axioms\":[],\"declaration\":\"MCS.Verified.missingEquality\",\"expected\":\"MCS.Expected.missingEquality\",\"kind\":\"theorem\",\"targetMatched\":true},{\"axioms\":[\"propext\",\"Classical.choice\",\"Quot.sound\"],\"declaration\":\"MCS.Verified.extensive\",\"expected\":\"MCS.Expected.extensive\",\"kind\":\"theorem\",\"targetMatched\":true},{\"axioms\":[\"propext\",\"Classical.choice\",\"Quot.sound\"],\"declaration\":\"MCS.Verified.monotone\",\"expected\":\"MCS.Expected.monotone\",\"kind\":\"theorem\",\"targetMatched\":true},{\"axioms\":[\"propext\",\"Classical.choice\",\"Quot.sound\"],\"declaration\":\"MCS.Verified.idempotent\",\"expected\":\"MCS.Expected.idempotent\",\"kind\":\"theorem\",\"targetMatched\":true},{\"axioms\":[\"propext\",\"Classical.choice\",\"Quot.sound\"],\"declaration\":\"MCS.Verified.finitary\",\"expected\":\"MCS.Expected.finitary\",\"kind\":\"theorem\",\"targetMatched\":true},{\"axioms\":[\"propext\",\"Classical.choice\",\"Quot.sound\"],\"declaration\":\"MCS.Verified.secondToFirst\",\"expected\":\"MCS.Expected.secondToFirst\",\"kind\":\"theorem\",\"targetMatched\":true},{\"axioms\":[\"propext\",\"Classical.choice\",\"Quot.sound\"],\"declaration\":\"MCS.Verified.t4ToT3\",\"expected\":\"MCS.Expected.t4ToT3\",\"kind\":\"theorem\",\"targetMatched\":true},{\"axioms\":[\"propext\",\"Classical.choice\",\"Quot.sound\"],\"declaration\":\"MCS.Verified.t3ToT2\",\"expected\":\"MCS.Expected.t3ToT2\",\"kind\":\"theorem\",\"targetMatched\":true},{\"axioms\":[\"propext\",\"Classical.choice\",\"Quot.sound\"],\"declaration\":\"MCS.Verified.t2ToT1\",\"expected\":\"MCS.Expected.t2ToT1\",\"kind\":\"theorem\",\"targetMatched\":true},{\"axioms\":[\"propext\",\"Classical.choice\",\"Quot.sound\"],\"declaration\":\"MCS.Verified.compactToParacompact\",\"expected\":\"MCS.Expected.compactToParacompact\",\"kind\":\"theorem\",\"targetMatched\":true},{\"axioms\":[\"propext\",\"Classical.choice\",\"Quot.sound\"],\"declaration\":\"MCS.Verified.directionalFderiv\",\"expected\":\"MCS.Expected.directionalFderiv\",\"kind\":\"theorem\",\"targetMatched\":true},{\"axioms\":[\"propext\",\"Classical.choice\",\"Quot.sound\"],\"declaration\":\"MCS.Verified.exteriorSquared\",\"expected\":\"MCS.Expected.exteriorSquared\",\"kind\":\"theorem\",\"targetMatched\":true}]}\n",
       "stderr": "",
       "commands": [
         "lean -j 1 MCS/Audit.lean"
@@ -150,6 +155,83 @@
         "expected": "MCS.Expected.finitary",
         "kind": "theorem",
         "targetMatched": true
+      },
+      {
+        "axioms": [
+          "propext",
+          "Classical.choice",
+          "Quot.sound"
+        ],
+        "declaration": "MCS.Verified.secondToFirst",
+        "expected": "MCS.Expected.secondToFirst",
+        "kind": "theorem",
+        "targetMatched": true
+      },
+      {
+        "axioms": [
+          "propext",
+          "Classical.choice",
+          "Quot.sound"
+        ],
+        "declaration": "MCS.Verified.t4ToT3",
+        "expected": "MCS.Expected.t4ToT3",
+        "kind": "theorem",
+        "targetMatched": true
+      },
+      {
+        "axioms": [
+          "propext",
+          "Classical.choice",
+          "Quot.sound"
+        ],
+        "declaration": "MCS.Verified.t3ToT2",
+        "expected": "MCS.Expected.t3ToT2",
+        "kind": "theorem",
+        "targetMatched": true
+      },
+      {
+        "axioms": [
+          "propext",
+          "Classical.choice",
+          "Quot.sound"
+        ],
+        "declaration": "MCS.Verified.t2ToT1",
+        "expected": "MCS.Expected.t2ToT1",
+        "kind": "theorem",
+        "targetMatched": true
+      },
+      {
+        "axioms": [
+          "propext",
+          "Classical.choice",
+          "Quot.sound"
+        ],
+        "declaration": "MCS.Verified.compactToParacompact",
+        "expected": "MCS.Expected.compactToParacompact",
+        "kind": "theorem",
+        "targetMatched": true
+      },
+      {
+        "axioms": [
+          "propext",
+          "Classical.choice",
+          "Quot.sound"
+        ],
+        "declaration": "MCS.Verified.directionalFderiv",
+        "expected": "MCS.Expected.directionalFderiv",
+        "kind": "theorem",
+        "targetMatched": true
+      },
+      {
+        "axioms": [
+          "propext",
+          "Classical.choice",
+          "Quot.sound"
+        ],
+        "declaration": "MCS.Verified.exteriorSquared",
+        "expected": "MCS.Expected.exteriorSquared",
+        "kind": "theorem",
+        "targetMatched": true
       }
     ]
   },
@@ -199,5 +281,5 @@
       "targetMatched": true
     }
   ],
-  "receiptSha256": "f84c346d457fc12f1a803e81f7aa4ae59b05aa23d0bb00b310caff7d7c3986d0"
+  "receiptSha256": "63dc0a60e75e25480a7cf3f4b08a8c2e45217cb9642e763af0c183f94ed05d15"
 }

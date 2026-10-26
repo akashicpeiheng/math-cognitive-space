@@ -1,3 +1,4 @@
+import { cp } from 'node:fs/promises';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtemp, mkdir, writeFile, readFile, rm, stat } from 'node:fs/promises';
@@ -9,6 +10,8 @@ import { REPO_ROOT } from '../core/ontology.mjs';
 import { LEAN_FILES, LEAN_PROJECT, LEAN_POLICY, digest, hasCompleteLeanReplay, readLeanRegistry, captureLeanSnapshot, sealLeanSources, validateLeanAudit, validateLeanReport, leanRegistrationView, runLeanProcess, killLeanProcessTree, leanBinaries, leanCapabilities, matchesLeanVersion } from '../core/lean.mjs';
 import { LeanJobManager, LeanVerificationStore } from '../server/lean-jobs.mjs';
 import { createLearnerStore } from '../server/db.mjs';
+import {readContentSources} from '../core/content-library.mjs';
+import {compileContentLibrary,parseContentDocument,formatContentDocument} from '../shared/content-documents.mjs';
 
 async function fixture() {
   const dir = await mkdtemp(join(tmpdir(), 'mcs-lean-unit-'));
@@ -22,6 +25,7 @@ async function fixture() {
   for (const ref of new Set(registry.registrations.flatMap(r => r.originalRefs))) {
     const target = join(dir, ref); await mkdir(join(target, '..'), { recursive: true }); await writeFile(target, await readFile(join(REPO_ROOT, ref)));
   }
+  await cp(join(REPO_ROOT, 'mcs-content'), join(dir, 'mcs-content'), { recursive: true });
   await sealLeanSources(dir);
   return dir;
 }
@@ -31,6 +35,26 @@ const auditFor = registry => ({ schema: 'mcs-lean-audit/1', targets: registry.re
 test('only the exact pinned Lean version is accepted', () => {
   assert.equal(matchesLeanVersion('Lean (version 4.34.1, x86_64, Release)\n'), true);
   for (const version of ['4.34.10', '4.34.1-rc1', '4.34.0', '4.35.1']) assert.equal(matchesLeanVersion(`Lean (version ${version}, x86_64, Release)`), false);
+});
+test('formal Markdown changes expire machine seals; reading and annotation changes do not',async()=>{
+  const dir=await fixture();
+  try{
+    const before=await captureLeanSnapshot(dir,'lean-group-injective');
+    for(const ref of ['nodes/injective-proof.md','objects/group-injective.md']){
+      const path=join(dir,'mcs-content',ref),source=await readFile(path,'utf8');await writeFile(path,source+'\n讲解修改。\n');
+      assert.equal((await captureLeanSnapshot(dir,'lean-group-injective')).inputSha256,before.inputSha256);
+    }
+    const docs=readContentSources(join(dir,'mcs-content')).map(s=>parseContentDocument(s.markdown,s.path));
+    docs.find(d=>d.data.id==='obj:group:injective').data.assumptions=['forall a:G b:G. a = b'];
+    const library=compileContentLibrary(docs,{checkPins:false});
+    const pin=value=>{
+      if(!value||typeof value!=='object')return;
+      if(value.formalHash!==undefined&&value.anchor){const o=library.objects.find(o=>o.id===value.id);value.formalHash=value.anchor==='$'?o.formalHash:o.declarations.find(d=>d.id===value.anchor).formalHash;}
+      for(const child of Object.values(value))pin(child);
+    };
+    for(const doc of docs){pin(doc.data);await writeFile(join(dir,'mcs-content',doc.path),formatContentDocument(doc.data,doc.body));}
+    const after=await captureLeanSnapshot(dir,'lean-group-injective');assert.notEqual(after.inputSha256,before.inputSha256);assert.equal(after.sealed,false);
+  }finally{await cleanup(dir);}
 });
 
 test('an incomplete native toolchain is never invoked and materials remain readable', async () => {
@@ -47,7 +71,7 @@ test('an incomplete native toolchain is never invoked and materials remain reada
 
 test('Lean policy rejects missing targets, changed goals, indirect sorry, custom and native axioms', async () => {
   const registry = await readLeanRegistry(REPO_ROOT);
-  assert.equal(validateLeanAudit(auditFor(registry), registry).length, 8);
+  assert.equal(validateLeanAudit(auditFor(registry), registry).length, 15);
   const attacks = [
     parsed => parsed.targets.pop(),
     parsed => parsed.targets.push(parsed.targets[0]),

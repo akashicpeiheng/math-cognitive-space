@@ -21,6 +21,8 @@ export function renderWritingSample(sample) {
 }
 export function renderAdaptiveSample(sample) {
   let markdown = createWritingDocument({ title: sample.title, type: sample.type, roles: sample.roles });
+  // These are historical calibration notes, not new documents or upgrade targets.
+  markdown = updateDocumentMetadata(markdown, { 'mcs-template': 'mcs-object-note', 'mcs-template-version': '2026-10-15.1' });
   for (const [id, content] of Object.entries(sample.sections)) markdown = replaceWritingSection(markdown, id, content);
   if (sample.customChecks) markdown = updateDocumentMetadata(markdown, { 'mcs-custom-checks': sample.customChecks });
   return markdown;

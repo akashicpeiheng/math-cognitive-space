@@ -1,0 +1,728 @@
+{
+  "scope": "Template generation and compatibility only; no deployment or production ima migration",
+  "recordedAt": "2026-10-19T10:15:35.201504+00:00",
+  "templateVersion": "2026-10-19.1",
+  "templateIds": [
+    "mcs-learning-node-template",
+    "mcs-formal-object-template"
+  ],
+  "overallRegressionStatus": "failed",
+  "checks": {
+    "templateTestsPassed": 43,
+    "pluginTestsPassed": 47,
+    "theoryScaleGroupsPassed": 9,
+    "finiteRightUnitOperationsChecked": 734,
+    "theoryStructuralGroupsPassed": 16,
+    "webBuild": "passed",
+    "webCheck": "passed",
+    "templatesCheck": "passed",
+    "pluginBuild": "passed",
+    "pluginCheck": "passed"
+  },
+  "webRegression": {
+    "totalStages": 93,
+    "successfulExitStages": 92,
+    "failedStages": 1,
+    "leanUnitTestsSkipped": 3,
+    "leanAuthTestsSkipped": 1,
+    "leanBrowserReplay": "not-executed",
+    "stages": [
+      {
+        "number": 1,
+        "name": "形式对象与阅读节点浏览器贯通",
+        "processResult": "passed",
+        "log": "tmp/template-update-full-test.log"
+      },
+      {
+        "number": 2,
+        "name": "数学对象与阅读节点协议、五级尺度及隔离",
+        "processResult": "passed",
+        "log": "tmp/template-update-full-test.log"
+      },
+      {
+        "number": 3,
+        "name": "准备云端测试运行包（只含公开源码）",
+        "processResult": "passed",
+        "log": "tmp/template-update-full-test.log"
+      },
+      {
+        "number": 4,
+        "name": "云端持久任务、内容发布、备份与编写库（跨实例、重投、取消、事务隔离）",
+        "processResult": "passed",
+        "log": "tmp/template-update-full-test.log"
+      },
+      {
+        "number": 5,
+        "name": "简明高等代数第一程：内容、依赖与独立有限语义",
+        "processResult": "passed",
+        "log": "tmp/template-update-full-test.log"
+      },
+      {
+        "number": 6,
+        "name": "简明高等代数第一程：桌面与手机阅读、公式与后续链接",
+        "processResult": "passed",
+        "log": "tmp/template-update-full-test.log"
+      },
+      {
+        "number": 7,
+        "name": "混合网络：身份、语义缩放、私人验证与双驱动隔离",
+        "processResult": "passed",
+        "log": "tmp/template-update-full-test.log"
+      },
+      {
+        "number": 8,
+        "name": "混合网络：浏览器缩放、悬停、笔记与投稿",
+        "processResult": "passed",
+        "log": "tmp/template-update-full-test.log"
+      },
+      {
+        "number": 9,
+        "name": "混合网络：千级双库布局、缩放、悬停与静置",
+        "processResult": "passed",
+        "log": "tmp/template-update-full-test.log"
+      },
+      {
+        "number": 10,
+        "name": "双模板与 Markdown 创作正文保全",
+        "processResult": "passed",
+        "log": "tmp/template-update-full-test.log"
+      },
+      {
+        "number": 11,
+        "name": "笔记创作闭环（暂存、历史、冲突、复制与上传）",
+        "processResult": "passed",
+        "log": "tmp/template-update-full-test.log"
+      },
+      {
+        "number": 12,
+        "name": "私人笔记库（Obsidian、修订、分块、双驱动与恢复）",
+        "processResult": "passed",
+        "log": "tmp/template-update-full-test.log"
+      },
+      {
+        "number": 13,
+        "name": "私人笔记库浏览器（导入、附件、关联、刷新与上传）",
+        "processResult": "passed",
+        "log": "tmp/template-update-full-test.log"
+      },
+      {
+        "number": 14,
+        "name": "Lean 登记、真实证明、持久化任务与进程树取消",
+        "processResult": "passed",
+        "log": "tmp/template-update-full-test.log"
+      },
+      {
+        "number": 15,
+        "name": "Lean 中英双语浏览器：查看断言 → 重放 → 下载报告",
+        "processResult": "passed",
+        "log": "tmp/template-update-full-test.log"
+      },
+      {
+        "number": 16,
+        "name": "连接条件与个人备注（身份、原子修订、撤销、双驱动与备份）",
+        "processResult": "passed",
+        "log": "tmp/template-update-full-test.log"
+      },
+      {
+        "number": 17,
+        "name": "连接备注交互（右键、合并线、缩放与跨页面）",
+        "processResult": "passed",
+        "log": "tmp/template-update-full-test.log"
+      },
+      {
+        "number": 18,
+        "name": "Sites 接入：GitHub 回到原浏览器、一次性凭证与账号隔离",
+        "processResult": "passed",
+        "log": "tmp/template-update-full-test.log"
+      },
+      {
+        "number": 19,
+        "name": "维护命令（异步存储、演示去重与备份恢复）",
+        "processResult": "passed",
+        "log": "tmp/template-update-full-test.log"
+      },
+      {
+        "number": 20,
+        "name": "公开导出边界（缓存、凭据、必需文件与目录联接）",
+        "processResult": "passed",
+        "log": "tmp/template-update-full-test.log"
+      },
+      {
+        "number": 21,
+        "name": "形式语言层（语法、类型、α 规范、证书桥）",
+        "processResult": "passed",
+        "log": "tmp/template-update-full-test.log"
+      },
+      {
+        "number": 22,
+        "name": "放缩关系合并（方向、原证据、旧记录兼容与逆命题）",
+        "processResult": "passed",
+        "log": "tmp/template-update-full-test.log"
+      },
+      {
+        "number": 23,
+        "name": "定义引用的可信性（局部变量不得生成跨节点依赖）",
+        "processResult": "passed",
+        "log": "tmp/template-update-full-test.log"
+      },
+      {
+        "number": 24,
+        "name": "独立有限语义（模 5 单位群 / S₃，不导入检查器）",
+        "processResult": "passed",
+        "log": "tmp/template-update-full-test.log"
+      },
+      {
+        "number": 25,
+        "name": "四案例形式表达登记",
+        "processResult": "passed",
+        "log": "tmp/template-update-full-test.log"
+      },
+      {
+        "number": 26,
+        "name": "发现引擎（合一、有界搜索、证书装配、目标核对）",
+        "processResult": "passed",
+        "log": "tmp/template-update-full-test.log"
+      },
+      {
+        "number": 27,
+        "name": "自动关联：存储、发布事务与回滚",
+        "processResult": "passed",
+        "log": "tmp/template-update-full-test.log"
+      },
+      {
+        "number": 28,
+        "name": "新节点闭环：草稿 → 任务 → 后台结算（P1-3/4/5）",
+        "processResult": "passed",
+        "log": "tmp/template-update-full-test.log"
+      },
+      {
+        "number": 29,
+        "name": "证书交接与发布：采纳一条真实关系（P1-6）",
+        "processResult": "passed",
+        "log": "tmp/template-update-full-test.log"
+      },
+      {
+        "number": 30,
+        "name": "快照完整性：失败即拒绝生效（P1-2/7）",
+        "processResult": "passed",
+        "log": "tmp/template-update-full-test.log"
+      },
+      {
+        "number": 31,
+        "name": "四案例端到端：输入 → 发现 → 重放 → 入库 → 撤出",
+        "processResult": "passed",
+        "log": "tmp/template-update-full-test.log"
+      },
+      {
+        "number": 32,
+        "name": "自动关联页（六步、窄屏、键盘、节点页入口）",
+        "processResult": "passed",
+        "log": "tmp/template-update-full-test.log"
+      },
+      {
+        "number": 33,
+        "name": "领域内核与理论边界",
+        "processResult": "passed",
+        "log": "tmp/template-update-full-test.log"
+      },
+      {
+        "number": 34,
+        "name": "从零走一遍范例路径（真接口：七程规划 + 档案确认 + 走通记录）",
+        "processResult": "passed",
+        "log": "tmp/template-update-full-test.log"
+      },
+      {
+        "number": 35,
+        "name": "中英双语：语言覆盖与接口语种",
+        "processResult": "passed",
+        "log": "tmp/template-update-full-test.log"
+      },
+      {
+        "number": 36,
+        "name": "中英双语：结构对等与覆盖率",
+        "processResult": "passed",
+        "log": "tmp/template-update-full-test.log"
+      },
+      {
+        "number": 37,
+        "name": "中英双语：正文块公式逐字核对",
+        "processResult": "passed",
+        "log": "tmp/template-update-full-test.log"
+      },
+      {
+        "number": 38,
+        "name": "本机 API 与数据库",
+        "processResult": "passed",
+        "log": "tmp/template-update-full-test.log"
+      },
+      {
+        "number": 39,
+        "name": "部署边界（公网模式缺账号体系必须拒绝启动、Host 白名单、写来源、安全头）",
+        "processResult": "passed",
+        "log": "tmp/template-update-full-test.log"
+      },
+      {
+        "number": 40,
+        "name": "账号与权限（公网模式：登录、越权 404、管理员 403、CSRF、任务配额）",
+        "processResult": "passed",
+        "log": "tmp/template-update-full-test.log"
+      },
+      {
+        "number": 41,
+        "name": "账号入口（本机模式不加登录墙：登录页说明、页头无入口、档案列表照常加载）",
+        "processResult": "passed",
+        "log": "tmp/template-update-full-test.log"
+      },
+      {
+        "number": 42,
+        "name": "公网 HTTPS 端到端（自签证书 + 真浏览器：Secure Cookie、CSRF、退出、http 走不通）",
+        "processResult": "passed",
+        "log": "tmp/template-update-full-test.log"
+      },
+      {
+        "number": 43,
+        "name": "PostgreSQL 存储层（去重、乐观锁、分页、导出完整、备份恢复、事务隔离）",
+        "processResult": "passed",
+        "log": "tmp/template-update-full-test.log"
+      },
+      {
+        "number": 44,
+        "name": "浏览器交互与响应式",
+        "processResult": "passed",
+        "log": "tmp/template-update-full-test.log"
+      },
+      {
+        "number": 45,
+        "name": "外观：三态切换、持久化、跟随系统与深色画布",
+        "processResult": "passed",
+        "log": "tmp/template-update-full-test.log"
+      },
+      {
+        "number": 46,
+        "name": "动效覆盖面（prefers-reduced-motion 全站核对）",
+        "processResult": "passed",
+        "log": "tmp/template-update-full-test.log"
+      },
+      {
+        "number": 47,
+        "name": "性能观测（227 节点视图的耗时与长任务）",
+        "processResult": "failed",
+        "log": "tmp/template-update-full-test.log"
+      },
+      {
+        "number": 48,
+        "name": "首页六幕叙事（主题 → 愿景）",
+        "processResult": "passed",
+        "log": "tmp/template-update-remaining-test.log"
+      },
+      {
+        "number": 49,
+        "name": "开始学习页（各角度入口）",
+        "processResult": "passed",
+        "log": "tmp/template-update-remaining-test.log"
+      },
+      {
+        "number": 50,
+        "name": "数学对象列表页（可达性与学习状态）",
+        "processResult": "passed",
+        "log": "tmp/template-update-remaining-test.log"
+      },
+      {
+        "number": 51,
+        "name": "分面选项（不许有筛不出东西的选项）",
+        "processResult": "passed",
+        "log": "tmp/template-update-remaining-test.log"
+      },
+      {
+        "number": 52,
+        "name": "单元 / 话题分层与本质领域分类",
+        "processResult": "passed",
+        "log": "tmp/template-update-remaining-test.log"
+      },
+      {
+        "number": 53,
+        "name": "知识网络：左键按住取强关联节点（含高亮视觉）",
+        "processResult": "passed",
+        "log": "tmp/template-update-remaining-test.log"
+      },
+      {
+        "number": 54,
+        "name": "知识网络：移动端双指缩放（触屏手势与窄屏坐标系）",
+        "processResult": "passed",
+        "log": "tmp/template-update-remaining-test.log"
+      },
+      {
+        "number": 55,
+        "name": "方法库（带简介的栏目与细致解析）",
+        "processResult": "passed",
+        "log": "tmp/template-update-remaining-test.log"
+      },
+      {
+        "number": 56,
+        "name": "用户手册（入口、章节锚点、双语与响应式）",
+        "processResult": "passed",
+        "log": "tmp/template-update-remaining-test.log"
+      },
+      {
+        "number": 57,
+        "name": "重要节点的形式表达（LaTeX 与记号）",
+        "processResult": "passed",
+        "log": "tmp/template-update-remaining-test.log"
+      },
+      {
+        "number": 58,
+        "name": "知识网络：新增节点的自动摆位",
+        "processResult": "passed",
+        "log": "tmp/template-update-remaining-test.log"
+      },
+      {
+        "number": 59,
+        "name": "知识网络：摆位模式的两条规则（分层 / 分圈、让位与确定性）",
+        "processResult": "passed",
+        "log": "tmp/template-update-remaining-test.log"
+      },
+      {
+        "number": 60,
+        "name": "知识网络：摆位模式的界面（切换、选锚点、手动优先、刷新记得）",
+        "processResult": "passed",
+        "log": "tmp/template-update-remaining-test.log"
+      },
+      {
+        "number": 61,
+        "name": "知识网络：边的颜色与遮挡关系",
+        "processResult": "passed",
+        "log": "tmp/template-update-remaining-test.log"
+      },
+      {
+        "number": 62,
+        "name": "知识网络：加节点后相机平滑居中",
+        "processResult": "passed",
+        "log": "tmp/template-update-remaining-test.log"
+      },
+      {
+        "number": 63,
+        "name": "知识网络：保存 / 载入视图（写 E，不改本体）",
+        "processResult": "passed",
+        "log": "tmp/template-update-remaining-test.log"
+      },
+      {
+        "number": 64,
+        "name": "知识网络：视图搜索、排序、同名提示与快照边界",
+        "processResult": "passed",
+        "log": "tmp/template-update-remaining-test.log"
+      },
+      {
+        "number": 65,
+        "name": "知识网络：右键节点菜单（一键加入全部硬前置）",
+        "processResult": "passed",
+        "log": "tmp/template-update-remaining-test.log"
+      },
+      {
+        "number": 66,
+        "name": "尺度登记：映射完备、引用与层级",
+        "processResult": "passed",
+        "log": "tmp/template-update-remaining-test.log"
+      },
+      {
+        "number": 67,
+        "name": "尺度视图：可见性、合拢、边投影与锚点",
+        "processResult": "passed",
+        "log": "tmp/template-update-remaining-test.log"
+      },
+      {
+        "number": 68,
+        "name": "知识网络：四层尺度、右键分裂与缩小时自动合拢",
+        "processResult": "passed",
+        "log": "tmp/template-update-remaining-test.log"
+      },
+      {
+        "number": 69,
+        "name": "知识网络：画布占满工作区（桌面不滚动 / 窄屏仍是卡片）",
+        "processResult": "passed",
+        "log": "tmp/template-update-remaining-test.log"
+      },
+      {
+        "number": 70,
+        "name": "知识网络：回到网络视图的来路上下文（该存的存、该退的退、语种跟着走）",
+        "processResult": "passed",
+        "log": "tmp/template-update-remaining-test.log"
+      },
+      {
+        "number": 71,
+        "name": "知识网络：从节点页回到同一张图（真浏览器）",
+        "processResult": "passed",
+        "log": "tmp/template-update-remaining-test.log"
+      },
+      {
+        "number": 72,
+        "name": "知识网络：本次学习的暂存（存储边界、坏数据、键与边源表一致）",
+        "processResult": "passed",
+        "log": "tmp/template-update-remaining-test.log"
+      },
+      {
+        "number": 73,
+        "name": "知识网络：切页回来自动恢复同一张图（真浏览器）",
+        "processResult": "passed",
+        "log": "tmp/template-update-remaining-test.log"
+      },
+      {
+        "number": 74,
+        "name": "检索：相关性排序与两处实现一致（命中字段 / 完整度 / 位置 / 连续性）",
+        "processResult": "passed",
+        "log": "tmp/template-update-remaining-test.log"
+      },
+      {
+        "number": 75,
+        "name": "检索：「全部节点」面板的次序与命中理由（真浏览器）",
+        "processResult": "passed",
+        "log": "tmp/template-update-remaining-test.log"
+      },
+      {
+        "number": 76,
+        "name": "本体：硬前置关系（覆盖各案例核心的定义依赖与证明依赖）",
+        "processResult": "passed",
+        "log": "tmp/template-update-remaining-test.log"
+      },
+      {
+        "number": 77,
+        "name": "本体：硬前置闭包（传递、方向、确定性、成环与上限）",
+        "processResult": "passed",
+        "log": "tmp/template-update-remaining-test.log"
+      },
+      {
+        "number": 78,
+        "name": "本体：同一对象的多处登记合并（身份、内容与改写）",
+        "processResult": "passed",
+        "log": "tmp/template-update-remaining-test.log"
+      },
+      {
+        "number": 79,
+        "name": "本体：点集拓扑案例（12 项点名单 → 节点）",
+        "processResult": "passed",
+        "log": "tmp/template-update-remaining-test.log"
+      },
+      {
+        "number": 80,
+        "name": "本体：强关联圈的候选判据（长按节点摊开哪些邻居）",
+        "processResult": "passed",
+        "log": "tmp/template-update-remaining-test.log"
+      },
+      {
+        "number": 81,
+        "name": "起始节点与档案模板（前置已确认的判据）",
+        "processResult": "passed",
+        "log": "tmp/template-update-remaining-test.log"
+      },
+      {
+        "number": 82,
+        "name": "学习方向与并行节点排序（可用集合、排序判据与分档）",
+        "processResult": "passed",
+        "log": "tmp/template-update-remaining-test.log"
+      },
+      {
+        "number": 83,
+        "name": "学习方案（AND/OR、硬前置、兴趣排序与有效调整）",
+        "processResult": "passed",
+        "log": "tmp/template-update-remaining-test.log"
+      },
+      {
+        "number": 84,
+        "name": "学习方案保存（SQLite / PostgreSQL、冲突与备份往返）",
+        "processResult": "passed",
+        "log": "tmp/template-update-remaining-test.log"
+      },
+      {
+        "number": 85,
+        "name": "辅导页：DeepTutor 提示、介绍与三步引导",
+        "processResult": "passed",
+        "log": "tmp/template-update-remaining-test.log"
+      },
+      {
+        "number": 86,
+        "name": "学习引导（双入口 → 方案 → 阅读，跨设备与双语）",
+        "processResult": "passed",
+        "log": "tmp/template-update-remaining-test.log"
+      },
+      {
+        "number": 87,
+        "name": "十二学科导读：数据、API 与纯函数网络",
+        "processResult": "passed",
+        "log": "tmp/template-update-remaining-test.log"
+      },
+      {
+        "number": 88,
+        "name": "十二学科导读：浏览、兴趣与目标，双语和响应布局",
+        "processResult": "passed",
+        "log": "tmp/template-update-remaining-test.log"
+      },
+      {
+        "number": 89,
+        "name": "学习引导：搜索截断与英文未译标注",
+        "processResult": "passed",
+        "log": "tmp/template-update-remaining-test.log"
+      },
+      {
+        "number": 90,
+        "name": "开始学习页：方向派生（次级学科、已有目标与兴趣排序）",
+        "processResult": "passed",
+        "log": "tmp/template-update-remaining-test.log"
+      },
+      {
+        "number": 91,
+        "name": "开始学习页：方向派生（自足夹具，不依赖语料）",
+        "processResult": "passed",
+        "log": "tmp/template-update-remaining-test.log"
+      },
+      {
+        "number": 92,
+        "name": "中英双语：英文站与切换按键（真浏览器）",
+        "processResult": "passed",
+        "log": "tmp/template-update-remaining-test.log"
+      },
+      {
+        "number": 93,
+        "name": "研究台（前沿研究）与网站维护（专稿 / arXiv 梳理）",
+        "processResult": "passed",
+        "log": "tmp/template-update-remaining-test.log"
+      }
+    ]
+  },
+  "performanceFailure": {
+    "stage": "性能观测（227 节点视图的耗时与长任务）",
+    "longTaskBudgetMs": 800,
+    "totalBudgetMs": 3000,
+    "attempts": [
+      {
+        "maxLongTaskMs": 911,
+        "elapsedMs": 1488
+      },
+      {
+        "maxLongTaskMs": 986,
+        "elapsedMs": 1581
+      }
+    ],
+    "changedWritingBundleLoaded": false,
+    "rootCause": "not-established",
+    "thresholdsModified": false
+  },
+  "content": {
+    "before": {
+      "status": "passed",
+      "objects": 8,
+      "nodes": 3,
+      "objectVersion": "sha256:01ba0726a4caafa546287630ea2bb2a7999e83970a029699fe6a279ca9b98f5d",
+      "learningVersion": "sha256:21bf143be9bcf0764ab8f6acc014eba6e7989944d29e6312323222e6d4250075",
+      "scope": "FINITE：结构、类型、引用与摘要检查；不判定数学真值"
+    },
+    "after": {
+      "status": "passed",
+      "objects": 8,
+      "nodes": 3,
+      "objectVersion": "sha256:01ba0726a4caafa546287630ea2bb2a7999e83970a029699fe6a279ca9b98f5d",
+      "learningVersion": "sha256:21bf143be9bcf0764ab8f6acc014eba6e7989944d29e6312323222e6d4250075",
+      "scope": "FINITE：结构、类型、引用与摘要检查；不判定数学真值"
+    },
+    "equal": true
+  },
+  "lean": {
+    "snapshotsEqual": true,
+    "replayThisTask": "not-verified",
+    "reason": "Preexisting stale closure registration blocks shared readiness gate",
+    "registrations": [
+      {
+        "id": "lean-group-injective",
+        "inputSha256": "d942e7d3247fca6c361306d3b11594a884b2f6bf981191c15260ce84ec9106b2",
+        "freshnessBefore": "current",
+        "freshnessAfter": "current",
+        "reportStatus": "passed",
+        "reportReceiptSha256": "c1a1131f81a5bda014a229f6c181e9bdc1cdcdac77f2b74386c466dfcc4076f7",
+        "reportUnchanged": true
+      },
+      {
+        "id": "lean-closure-8-8",
+        "inputSha256": "b15060c27d551e80cadd2f570b6b62e2101c6455ee76abe1e51ee6bba4f16094",
+        "freshnessBefore": "stale",
+        "freshnessAfter": "stale",
+        "reportStatus": "passed",
+        "reportReceiptSha256": "aaa4d32c90b0ffa093f08caf324c9fbcf312334c4526395ebb44f16d66929e41",
+        "reportUnchanged": true
+      }
+    ]
+  },
+  "obsidianDesktopManualValidation": "not-verified",
+  "logs": [
+    {
+      "path": "tmp/template-update-build.log",
+      "sha256": "b1c4d4ddace5a04db6007d627846f7298ce1a1638ce8cd78217a6082ef1b8c46"
+    },
+    {
+      "path": "tmp/template-update-check.log",
+      "sha256": "870f085e1985b34ad70debc12660d9af5876ee837f5d9fc33583fe80a6207e7f"
+    },
+    {
+      "path": "tmp/template-update-unit.log",
+      "sha256": "5bd696a751ec2ed0bd7e9723872d6b277ffac588d00e0ff87c2b5d5244f3d865"
+    },
+    {
+      "path": "tmp/template-update-artifacts.log",
+      "sha256": "df63eeaa9149a9c8f8749387a72b3e06c6ca061bc9e95275ea6a52b612097c04"
+    },
+    {
+      "path": "tmp/template-update-legacy-browser.log",
+      "sha256": "2900f80e148294363e60edbdba2274093af4defed060e0ffd36509603348df2e"
+    },
+    {
+      "path": "tmp/template-update-plugin-build.log",
+      "sha256": "53d7cbbf26be755577790cb217c41b6c0b2a68eff90dbec921d2050575a26d27"
+    },
+    {
+      "path": "tmp/template-update-plugin-check.log",
+      "sha256": "06ea253a70019cdb6a9b69a28ab3102dc98bd21f5e77523b2b13f766374115bf"
+    },
+    {
+      "path": "tmp/template-update-plugin-test.log",
+      "sha256": "ab17c52fbe8e53db0826e3f641e074676b42b034de98abac2da7594360ee69b2"
+    },
+    {
+      "path": "tmp/template-update-theory-scale.log",
+      "sha256": "83667c7c39e1a883ac4b4c9838a14a86b95f3aacdb072aaf6ee9806bcd6b2b59"
+    },
+    {
+      "path": "tmp/template-update-theory.log",
+      "sha256": "a4dbc6d3fc78d632e004daa491630e8686d3da24fb4d4709960f4ca7c2a615c0"
+    },
+    {
+      "path": "tmp/template-update-full-test.log",
+      "sha256": "127b49ee31bddcd623f07552865e16decfec1f2dd87d010dc94ef14d20e175f8"
+    },
+    {
+      "path": "tmp/template-update-perf-recheck.log",
+      "sha256": "49e65e3feb26dd0438ec28c7c8994ff068ba3f71a0abb5349b5c000e4783dcf8"
+    },
+    {
+      "path": "tmp/template-update-remaining-test.log",
+      "sha256": "823f72e5429f3a3b3686d706c7c98ef9e99866638e217119b06caa7262c33f78"
+    }
+  ],
+  "sourceHashes": {
+    "mcs-web/shared/writing-template.mjs": "1586d95f6f9fa53002afcc1af36e2327d1da92597ab9b057639f73505f557aaa",
+    "mcs-web/shared/writing-template.d.mts": "c32487b94466d6d059658b38a696f16b74a16393108fb02dec2edc3171fc5df2",
+    "mcs-web/shared/formal-template.mjs": "beea76fe0bf740245cc1e655f3163e8d80160d06bad5c69c25c00faea96a357b",
+    "mcs-web/shared/formal-template.d.mts": "9f9f510686c5d57428209e9c4de499d9f86bc03106caae5fbaf75e1dbfbc7e93",
+    "mcs-web/shared/content-template-format.mjs": "79060f1047e7d2dc38050ef8b034f0c13d0b18d9a196250eb57d6456113b114e",
+    "mcs-web/scripts/writing-templates.mjs": "270917f2a1047c030dfef6914f2e94224542d059097217f917becb2682dcdc20",
+    "mcs-web/scripts/writing-samples.mjs": "fe5f71883f3e9950527a96c2f72a48de4bf691f948756cbddd1610b319167832",
+    "mcs-web/web/src/writing-store.ts": "8e02f21c90d80273490eff28ff06d69ba29870f6a60b6da53f0f56f5b244eb32",
+    "mcs-web/tests/content-templates.test.mjs": "3fc6a479d577fcc86449d55792fdb1c4ca775926bc94af0506d1f280dfb165b4",
+    "mcs-web/tests/writing-legacy-flow.mjs": "a4225a37f06e19aa557163f53745618a5765a5c16c6d5f17acb0307446203962",
+    "mcs-web/tests/writing-page.mjs": "8020ce6800861f003413ff12b8857419366a14ef91b22bf7df2d7c2402d13fa3",
+    "mcs-web/tests/run-all.mjs": "f1222d8cccdfc6077bdd7ee27e58e2deb6cda8bdb696253cb6c10034f28c2150"
+  },
+  "baselineFiles": {
+    "tmp/template-update-content-before.json": "fa25c8f4cd7a020587f767c4981c02840ecf4b0b6b7e59a90bf364c13d95dcc6",
+    "tmp/template-update-content-after.json": "fa25c8f4cd7a020587f767c4981c02840ecf4b0b6b7e59a90bf364c13d95dcc6",
+    "tmp/template-update-lean-snapshots-before.json": "d1f4c50ced04ef12458a8ea2f52353d1ecefb1535653d51cfa3d9ad09a4a2994",
+    "tmp/template-update-lean-snapshots-after.json": "d1f4c50ced04ef12458a8ea2f52353d1ecefb1535653d51cfa3d9ad09a4a2994",
+    "tmp/template-update-network-load.json": "b731b10767cb3fb160f7e0dff9564769b7b2847295c717225d1248e24da4ef49"
+  }
+}

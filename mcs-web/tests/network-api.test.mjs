@@ -36,6 +36,36 @@ test('HTTP verification runs the real proof worker and freezes only selected evi
     assert.equal(posted.submission.status, 'pending');
   } finally { await server.cleanup(); }
 });
+test('scale plan endpoint is read-only, reference-complete and deterministic', async () => {
+  const server = await startTestServer();
+  const call = async (path) => {
+    const response = await fetch(server.origin + '/api/v2' + path);
+    return { status: response.status, payload: await response.json() };
+  };
+  try {
+    const first = await call('/ontology/scale');
+    assert.equal(first.status, 200);
+    const data = first.payload.data;
+    assert.match(data.ontologyVersion, /^sha256:[0-9a-f]{64}$/);
+    assert.match(data.version, /^scale:[0-9a-f]{64}$/);
+    assert.equal(data.scale.schema, 'mcs-scale-plan/1');
+    assert.equal(data.scale.status, 'provisional-migration');
+    assert.deepEqual(data.scale.levels.map((level) => level.id), ['molecule', 'node', 'unit', 'topic']);
+    assert.equal(data.scale.counts.units, 55);
+    assert.equal(data.scale.counts.topics, 2);
+    assert.equal(data.scale.counts.molecules, 9);
+    assert.equal(data.scale.counts.paths, 4);
+    assert.equal(data.scale.counts.nodesCovered, 328);
+    const graph = (await call('/ontology/graph')).payload.data;
+    const nodeIds = new Set(graph.nodes.map((node) => node.id));
+    for (const unit of data.scale.units) assert.ok(unit.members.every((id) => nodeIds.has(id)), unit.id);
+    for (const molecule of data.scale.molecules) assert.ok(nodeIds.has(molecule.node), molecule.id);
+    const second = await call('/ontology/scale');
+    assert.equal(second.payload.data.version, data.version);
+    assert.equal((await call('/ontology/scale-missing')).status, 404);
+  } finally { await server.cleanup(); }
+});
+
 test('private relation endpoints, persistent checks and minimal submission snapshots', async () => {
   const server = await startTestServer();
   async function call(path, method = 'GET', body) { const response = await fetch(server.origin + '/api/v2' + path, { method, headers: { 'content-type': 'application/json' }, body: body && JSON.stringify(body) }); return { status: response.status, ...(await response.json()) }; }

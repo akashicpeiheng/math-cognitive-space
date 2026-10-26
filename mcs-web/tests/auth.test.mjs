@@ -203,6 +203,7 @@ test('公网模式：未登录只能读公共本体，个人数据一律 401', a
     const ontology = await guest.request('/api/v2/ontology');
     assert.equal(ontology.status, 200, '公共本体对公网开放');
     assert.equal((await guest.request('/api/v2/lean/capabilities')).status, 200);
+    for(const path of ['/api/v2/ontology/object-network','/api/v2/learning/network','/api/v2/content-cases']) assert.equal((await guest.request(path)).status,200,path);
     assert.equal((await guest.request('/api/v2/lean/registrations/lean-group-injective')).status, 200);
 
     for (const [method, path] of [['GET', '/api/v2/profiles'], ['GET', '/api/v2/me/vaults'], ['POST', '/api/v2/backup'], ['POST', '/api/v2/lean/jobs'], ['GET', '/api/v2/lean/jobs/unknown'], ['DELETE', '/api/v2/lean/jobs/unknown']]) {
@@ -265,6 +266,15 @@ test('公网模式：两个账号的数据互不可见、互不可改（越权�
     assert.equal((await b.login('b@example.com')).status, 200);
     const theirs = await b.request('/api/v2/profiles');
     assert.deepEqual(theirs.payload.data.profiles, [], 'B 的档案清单里不出现 A 的档案');
+
+    const contentRequest={contentCase:'topology-dg',goalId:'learn:tdg:gradient',profileId};
+    const draft={title:'拓扑局部 MCS 草稿',nodeId:contentRequest.goalId,tags:['mcs-case-draft'],body:JSON.stringify({schema:'mcs-case-draft/1',note:'A 的私人进度'})};
+    assert.equal((await a.request(`/api/v2/profiles/${profileId}/notes`,{method:'POST',body:draft})).status,200);
+    for(const client of [b,new Client(server.origin)]){
+      const expected=client===b?404:401;
+      assert.equal((await client.request(`/api/v2/profiles/${profileId}/notes?nodeId=${encodeURIComponent(contentRequest.goalId)}`)).status,expected);
+      assert.equal((await client.request('/api/v2/plans',{method:'POST',body:contentRequest})).status,expected);
+    }
 
     /* 逐条走一遍「拿到 id 就能碰」的路子：读取、改写、导出、删掉、写事件、写笔记。 */
     const attempts = [

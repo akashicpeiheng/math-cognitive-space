@@ -27,10 +27,13 @@
     "release:export": "node scripts/export-open-source.mjs",
     "templates:build": "node scripts/writing-templates.mjs && node scripts/writing-samples.mjs",
     "templates:check": "node scripts/writing-templates.mjs --check && node scripts/writing-samples.mjs --check",
-    "test:writing": "node --test tests/writing.test.mjs tests/writing-adaptive.test.mjs && node tests/writing-page.mjs"
+    "test:writing": "node --test tests/writing.test.mjs tests/writing-adaptive.test.mjs tests/content-templates.test.mjs && node tests/writing-page.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.117.2",
+    "@vercel/functions": "3.10.1",
+    "@vercel/queue": "0.8.0",
+    "@vercel/sandbox": "3.8.0",
     "katex": "^0.16.25",
     "mdast-util-from-markdown": "2.0.3",
     "mdast-util-gfm": "3.1.0",

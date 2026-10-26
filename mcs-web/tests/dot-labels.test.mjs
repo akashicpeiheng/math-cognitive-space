@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  dotLabels, truncateTitle, textWidthPx, dotLabelBaselinePx,
+  dotLabels, truncateTitle, textWidthPx, dotLabelBaselinePx, dotLabelMaxChars,
   DOT_LABEL_FONT_PX, DOT_LABEL_GAP_PX, DOT_LABEL_MAX_CHARS,
 } from '../web/src/dot-labels.ts';
 
@@ -145,4 +145,21 @@ test('名称标签：字号与上限可调，调用方不必改公式', () => {
   assert.equal(small.get('a').text, '一元函数…');
   assert.equal(small.get('a').height, 12 * 1.2);
   assert.equal(small.get('a').width, textWidthPx('一元函数…', 12));
+});
+
+test('名称上限随比例放宽：放大的视图不必再按 7 个字截断', () => {
+  /*
+   * 方块只在 120% 以上出现（`network-workspace.ts`），圆点档因此是绝大多数视图的常态；
+   * 但 7 个字那条上限是为 25% 档（圆点间距中位 27px）定的。放大的时候圆点在屏幕上被拉开
+   * （100% 下最近邻中位约 190px），仍旧截到 7 个字就是白丢信息。
+   */
+  assert.equal(dotLabelMaxChars(0.25), DOT_LABEL_MAX_CHARS, '挤的时候保持原来的上限');
+  assert.equal(dotLabelMaxChars(0.45), DOT_LABEL_MAX_CHARS);
+  assert.ok(dotLabelMaxChars(0.7) > DOT_LABEL_MAX_CHARS);
+  assert.ok(dotLabelMaxChars(1.1) > dotLabelMaxChars(0.7), '越放大给得越多');
+  assert.equal(dotLabelMaxChars(1.1), dotLabelMaxChars(3), '到 14 个字为止（与卡片自己的 15 字截断同量级）');
+  // 14 个汉字约 147px：100% 档最近邻中位 190px，放得下。
+  assert.ok(dotLabelMaxChars(1.1) * DOT_LABEL_FONT_PX < 190, '上限不能超过实测的圆点间距');
+  const wide = dotLabels([node('a', 100, 100, { title: '一元函数在一点的连续性与可导性' })], { maxChars: dotLabelMaxChars(1.1) });
+  assert.ok(wide.get('a').text.length > DOT_LABEL_MAX_CHARS, `放大后给出的名字更长：${wide.get('a').text}`);
 });

@@ -24,8 +24,39 @@
 }
 /* 选中的那个：标签跟着变成主色，与详情面板标题对得上。 */
 .network-node.focused .network-dot-label-text { fill: var(--accent-strong); }
+/*
+ * 点击网络节点时**不画方框**（2026-10-17 用户要求：「点击的时候还是会有方框，把框去掉」）。
+ *
+ * 那个方框不是我们画的：它是浏览器给**聚焦元素**加的 UA 轮廓——实测点击之后
+ * `<g class="network-node">` 的 computed outline 是 `rgb(16, 16, 16) auto 5px`，
+ * 而轮廓形状取的是节点的**包围盒**，也就是卡片的矩形（实测 130×44 的框包住一个 16px 的圆点）。
+ * 圆点档下卡片本身是透明的（`.network-card-body` 的 opacity 为 0），于是画面上多出一个
+ * 「只有框、没有卡片」的方框——正是用户截图里包住圆点和名字的那个大圆角矩形。
+ *
+ * 只对**指针聚焦**关掉（`:focus:not(:focus-visible)`）：键盘 Tab 到节点时 `:focus-visible` 为真，
+ * 仍然保留 styles.css 那条全站统一的描边，可访问性线索没有被拿掉。
+ * 选中的视觉不靠这个框：圆点自己会拿到 `.selected` 的描边与四向发光（见上面第 3 行）。
+ */
+.network-node:focus:not(:focus-visible) { outline: none; }
+/*
+ * 圆点档的关系文字（2026-10-17 加）。
+ *
+ * 文字放在反缩放的组里（屏幕恒定字号），描边用的是画布底色——关系线会从字底下穿过，
+ * 没有这道描边两头都读不清。`pointer-events: none`：边的命中区是一条透明的粗路径，
+ * 文字浮在上面会把悬停/右键抢走（与圆点下方的名字同一条理由）。
+ */
+.network-edge-label-dot { pointer-events: none; }
+.network-edge-label-dot text {
+  font-family: var(--sans);
+  font-weight: 600;
+  paint-order: stroke;
+  stroke: var(--canvas);
+  stroke-width: 3px;
+  stroke-linejoin: round;
+  fill-opacity: 0.95;
+}
 .network-edge { transition: opacity 160ms ease; }
-.network-hover-info { position: absolute; z-index: 30; width: min(328px, calc(100% - 16px)); max-height: min(410px, calc(100% - 16px)); overflow: auto; padding: 16px; border: 1px solid var(--line); border-radius: 12px; background: var(--paper, #fff); color: var(--ink); box-shadow: 0 8px 24px #0002; }
+.network-hover-info { position: absolute; z-index: 30; width: min(328px, calc(100% - 16px)); max-height: min(410px, calc(100% - 16px)); overflow: auto; padding: 16px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); color: var(--ink); box-shadow: 0 8px 24px #0002; }
 .network-node-info p { margin: .5rem 0; font-size: .88rem; }
 .network-node-info h4 { margin: .9rem 0 .3rem; }
 .network-node-info small { color: var(--ink-faint); }
@@ -35,7 +66,7 @@
 .network-sources > summary { cursor: pointer; font-weight: 650; }
 .network-source-choice { display: flex; gap: .5rem; align-items: center; margin: .5rem 0; }
 .network-sources select { width: 100%; }
-.network-relation-dialog { width: min(720px, calc(100vw - 24px)); max-height: calc(100dvh - 32px); overflow: auto; padding: 22px; border: 1px solid var(--line); border-radius: 16px; background: var(--paper, #fff); color: var(--ink); }
+.network-relation-dialog { width: min(720px, calc(100vw - 24px)); max-height: calc(100dvh - 32px); overflow: auto; padding: 22px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); color: var(--ink); }
 .network-relation-dialog::backdrop { background: #0005; }
 .network-editor-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .network-relation-dialog fieldset { border: 0; padding: 0; }

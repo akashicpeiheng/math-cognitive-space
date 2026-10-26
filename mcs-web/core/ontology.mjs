@@ -125,7 +125,7 @@ function collectKeys(value, keys = []) {
   return keys;
 }
 
-export function validateOntologyShape(ontology, { repoRoot = REPO_ROOT } = {}) {
+export function validateOntologyShape(ontology, { repoRoot = REPO_ROOT, contentProjection = false } = {}) {
   const problems = [];
   const boundary = new Set(ontology.environmentBoundary?.refs ?? []);
   const resolves = (id) => ontology.nodes.some((node) => node.id === id) || boundary.has(id);
@@ -292,7 +292,7 @@ export function validateOntologyShape(ontology, { repoRoot = REPO_ROOT } = {}) {
   }
 
   const templateRoles = new Set(ontology.templates.map((template) => template.role));
-  for (const role of ROLES) {
+  for (const role of contentProjection ? [] : ROLES) {
     if (!templateRoles.has(role)) problems.push(`模板缺少角色：${role}`);
   }
 
@@ -355,9 +355,9 @@ export function validateOntologyShape(ontology, { repoRoot = REPO_ROOT } = {}) {
     }
   }
 
-  for (const problem of granularityGaps(ontology.nodes, { mergedIds: new Set(Object.keys(merges?.aliases ?? {})) })) problems.push(problem);
+  if(!contentProjection)for (const problem of granularityGaps(ontology.nodes, { mergedIds: new Set(Object.keys(merges?.aliases ?? {})) })) problems.push(problem);
 
-  if (!Array.isArray(ontology.localizations) || ontology.localizations.length !== 36) {
+  if (!contentProjection && (!Array.isArray(ontology.localizations) || ontology.localizations.length !== 36)) {
     problems.push(`局部化算子应登记 36 项，实际 ${ontology.localizations?.length ?? 0}`);
   }
   return problems;
@@ -372,9 +372,9 @@ export function validateOntologyShape(ontology, { repoRoot = REPO_ROOT } = {}) {
  * 传进来的哈希因此必须是**中文源**在覆盖之前算出的那一个。这是唯一允许绕开自算哈希的
  * 调用点；其它调用方一律不传，哈希继续由结构决定。
  */
-export function createOntology(ontology, { validate = true, repoRoot = REPO_ROOT, contentHash: hashOverride = null } = {}) {
+export function createOntology(ontology, { validate = true, repoRoot = REPO_ROOT, contentHash: hashOverride = null, contentProjection = false } = {}) {
   if (validate) {
-    const problems = validateOntologyShape(ontology, { repoRoot });
+    const problems = validateOntologyShape(ontology, { repoRoot, contentProjection });
     if (problems.length) {
       throw new McsError(CODES.ONTOLOGY_INVALID, `公共本体未通过检查（${problems.length} 项）`, 500, { problems });
     }

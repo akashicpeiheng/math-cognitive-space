@@ -8,6 +8,15 @@ export interface TemplateSection { id: string; title: LocalizedText; purpose: Lo
 export interface TemplateDefinition { id: string; version: string; sections: TemplateSection[]; variants: typeof WRITING_TYPES; rules: LocalizedText; coreSections: string[] }
 export const TEMPLATE_ID: string;
 export const TEMPLATE_VERSION: string;
+export const LEGACY_TEMPLATE_IDS: readonly string[];
+export function isWritingTemplate(id: string): boolean;
+export interface LearningNodeTemplateData {
+  schema?: 'mcs-node/1'; id?: string; version?: string; title?: string; goals?: string[];
+  objects?: import('./content-documents.mjs').ObjectRef[];
+  prerequisites?: Array<{ id: string; version: string }>;
+}
+export function renderLearningNodeTemplate(options?: { data?: LearningNodeTemplateData; body?: string; methodology?: boolean; locale?: WritingLocale }): string;
+export function buildLearningNodePrompt(options?: WritingPlanOptions & { data?: LearningNodeTemplateData; title?: string; materials?: string; locale?: WritingLocale }): string;
 export const WRITING_TYPES: Array<{ id: WritingType; title: LocalizedText; focus: LocalizedText; checks: LocalizedText }>;
 export const WRITING_SECTIONS: TemplateSection[];
 export const WRITING_STATUSES: WritingStatus[];

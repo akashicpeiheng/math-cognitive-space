@@ -40,7 +40,7 @@ const spec = await import(moduleUrl);
 
 test('关系可视化条款：权重表完整且取值合法', () => {
   const kinds = Object.keys(spec.RELATION_WEIGHT);
-  assert.equal(kinds.length, 7, `合并放缩后应覆盖本体里的 7 种关系，实际 ${kinds.length}`);
+  assert.deepEqual(new Set(kinds), new Set(['hardPrereq','deduction','softPrereq','scaling','application','crossDomain','duality','bridge','analogy']));
   for (const [kind, weight] of Object.entries(spec.RELATION_WEIGHT)) {
     assert.ok(weight > 0 && weight <= 1, `${kind} 的权重 ${weight} 必须落在 (0, 1]`);
   }

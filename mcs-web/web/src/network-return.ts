@@ -43,7 +43,7 @@ export interface NetworkReturnSnapshot extends NetworkExtras { added: string[]; 
  * `stages` 是 2026-10-15 随「多程合一图」加的：它记「第几步属于哪一程」，
  * 与 `path` 是一件事的两半——点进某个节点再回来时，程名与程的起点标记要跟着回来。
  */
-export const NETWORK_PARAM_KEYS = ['nodes', 'play', 'entry', 'path', 'goal', 'route', 'stages'] as const;
+export const NETWORK_PARAM_KEYS = ['nodes', 'play', 'entry', 'path', 'goal', 'route', 'stages','contentCase','layer','preset','relation'] as const;
 
 /** 节点页 URL 上标记来路的参数：`?from=network`。 */
 export const FROM_PARAM = 'from';
@@ -155,7 +155,8 @@ export function networkNodeHref(nodeId: string, currentSearch?: string): string 
   const own = new URLSearchParams(currentSearch ?? '');
   own.delete(FROM_PARAM);
   own.set(FROM_PARAM, FROM_NETWORK);
-  return `/nodes/${encodeURIComponent(nodeId)}?${own.toString()}`;
+  const section=nodeId.startsWith('obj:')?'objects':nodeId.startsWith('learn:')?'learning-nodes':'nodes';
+  return `/${section}/${encodeURIComponent(nodeId)}?${own.toString()}`;
 }
 
 /** 读回某个节点的来路；没有（或坏数据）时返回 null，**不编一个**。 */

@@ -4,7 +4,7 @@ import { pathToFileURL } from 'node:url';
 import { resolve } from 'node:path';
 import { MCS_WEB_ROOT, loadOntology } from '../core/ontology.mjs';
 
-const { mergeParallelEdges, visualWeightOf, buildEdges } = await import(
+const { mergeParallelEdges, scalingDisplayEndpoints, visualWeightOf, buildEdges } = await import(
   pathToFileURL(resolve(MCS_WEB_ROOT, 'web/src/network.ts')).href
 );
 
@@ -23,6 +23,27 @@ const contract = (id, from, to, mode, actionTitle = '引入') => ({
   source: 'contract', id, from, to, actionId: `a-${id}`, actionTitle, mode,
 });
 const family = (id, source, from, to) => ({ source, id, from, to, note: '族边' });
+
+test('紧性族的显示方向沿原说明泛化，不改旧登记的数学方向状态', async () => {
+  const ontology = await loadOntology();
+  for (const target of ['locally-compact', 'sigma-compact', 'paracompactness']) {
+    const record = ontology.raw.relationDescriptions.find(record => record.kind === 'scaling'
+      && record.from === 'top:compactness' && record.to === `top:${target}`);
+    assert.ok(record);
+    const edge = { ...relation(record.id, record.from, record.to, record.kind), scaling: null };
+    const direction = { general: record.to, special: record.from };
+    assert.deepEqual(scalingDisplayEndpoints(edge), direction);
+    assert.deepEqual(scalingDisplayEndpoints({ ...edge, from: edge.to, to: edge.from }), direction);
+    assert.equal(scalingDisplayEndpoints({ ...edge, to: 'unrelated' }), null);
+    assert.equal(scalingDisplayEndpoints({ ...edge, kind: 'hardPrereq' }), null);
+    assert.deepEqual(scalingDisplayEndpoints({ ...edge, scaling: { general: edge.from, special: edge.to } }),
+      { general: edge.from, special: edge.to }, '显式方向必须优先于旧记录的显示登记');
+    assert.equal(record.direction, null);
+    assert.equal(record.scalingMode, 'unresolved');
+    assert.equal(edge.scaling, null);
+  }
+  assert.equal(scalingDisplayEndpoints(relation('unknown', 'a', 'b', 'scaling')), null);
+});
 
 test('规则一：同一对节点只留一条，最强的那条留下', () => {
   // hardPrereq（权重 1.0）应当压过 definition 契约（0.9）与族边（≤0.13）。

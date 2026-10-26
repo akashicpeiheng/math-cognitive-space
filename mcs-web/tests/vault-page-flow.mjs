@@ -25,7 +25,8 @@ export async function exerciseVaultPage(page, origin, directory, { upload = fals
   await page.locator('.library-reader article').waitFor();
   await page.getByRole('button', { name: /数学\/极限.md/ }).click();
   await page.locator('.vault-document .katex').first().waitFor();
-  assert.ok(await page.locator('.vault-document img').count());
+  // Attachment blobs load after the Markdown/KaTeX frame has rendered.
+  await page.locator('.vault-document img').first().waitFor();
   await page.locator('.vault-document audio').first().waitFor(); await page.locator('.vault-document video').first().waitFor();
   await page.locator('.vault-document').getByRole('link', { name: 'paper.pdf', exact: true }).first().waitFor();
   await page.locator('#block-group-block').first().waitFor();

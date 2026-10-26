@@ -1,3 +1,5 @@
+import { useMasterMode } from '../master-mode';
+import { MasterContent } from './MasterView';
 import { useId, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useApi, formatError } from '../api';
@@ -6,6 +8,7 @@ import { useLabels } from '../i18n/useLabels';
 import { defaultField, deriveFieldGuide, type FieldGuide, type FieldGuidesResponse } from '../field-guide';
 import { edgeAnchor, NODE_H, NODE_W, type NetworkEdge } from '../network';
 import { edgeVisual, relationKindLabel, contractModeLabel } from '../relation-visual';
+import { useThemePalette } from '../theme-palette';
 import type { LearningData } from '../useLearningData';
 import { Markdown } from './Markdown';
 
@@ -50,7 +53,10 @@ export function FieldGuideExplorer(props:Props){
  </div>;
 }
 function FieldGuideView({guide,learning,interests,saving,onInterest,onGoal}:Props&{guide:FieldGuide}){
+ const {isMaster}=useMasterMode();
  const {pick,locale,hrefFor}=useI18n();
+ /* 画布用色板（第一百零九轮）：学科导读的节点网络与知识网络页共用同一套取色。 */
+ const palette=useThemePalette();
  const marker=useId().replace(/:/g,'');
  const [question,setQuestion]=useState<string|null>(null);
  const [selected,setSelected]=useState(guide.anchor);
@@ -85,13 +91,13 @@ function FieldGuideView({guide,learning,interests,saving,onInterest,onGoal}:Prop
      {view.merged.map(({edge,merged})=>{
        const a=placed.get(edge.from),b=placed.get(edge.to);if(!a||!b)return null;
        const coords=edgeAnchor(a,b);
-       const v=edgeVisual(edge.source,edge.source==='relation'?edge.kind:null,edge.source==='relation'?edge.witnessStatus:null,'#6d5c91',edge.source==='contract'?edge.mode:null);
+       const v=edgeVisual(edge.source,edge.source==='relation'?edge.kind:null,edge.source==='relation'?edge.witnessStatus:null,palette.colors.neutral,edge.source==='contract'?edge.mode:null);
        return <line key={edge.id} {...coords} stroke={v.color} strokeWidth={v.width} strokeDasharray={v.dash} opacity={v.opacity} markerEnd={'url(#'+marker+')'}><title>{[edge,...merged].map(e=>title(e.from)+' → '+title(e.to)+': '+edgeText(e)).join('\n')}</title></line>;
      })}
      {view.layout.placed.map(node=><g key={node.id} data-guide-node={node.id} className={'field-guide-node '+(selected===node.id?'selected ':'')+(highlighted.has(node.id)?'highlighted':'')} transform={'translate('+node.x+','+node.y+')'} role="button" tabIndex={0} aria-label={node.title+' · '+state(node.id)} aria-pressed={selected===node.id} onClick={()=>setSelected(node.id)} onKeyDown={e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();setSelected(node.id);}}}><rect width={NODE_W} height={NODE_H} rx="12"/><foreignObject x="8" y="5" width={NODE_W-16} height={NODE_H-10}><div className="field-guide-svg-label">{node.title}</div></foreignObject><title>{node.title+' · '+state(node.id)}</title></g>)}
     </svg>
     <div className="field-guide-node-list" aria-label={pick(COPY.list)}>{view.nodes.map(n=><button className={'button small '+(selected===n.id?'selected ':'')+(highlighted.has(n.id)?'highlighted':'')} key={n.id} data-guide-list-node={n.id} disabled={!n.node} aria-pressed={selected===n.id} onClick={()=>setSelected(n.id)}>{n.node?.title??n.id}</button>)}</div>
-    {selection?.node&&<article className="field-guide-selection" aria-live="polite" data-selected-node={selection.id}><h4>{selection.node.title}</h4><span className="badge">{state(selection.id)}</span>{selection.bridge&&<span className="badge">{pick(COPY.bridge)}</span>}<Markdown>{selection.node.summary}</Markdown><p><strong>{pick(COPY.reason)}：</strong>{selection.reason}</p><div className="field-guide-actions"><Link className="button" to={hrefFor('/nodes/'+encodeURIComponent(selection.id))}>{pick(COPY.read)}</Link><button className="button primary" disabled={saving} onClick={()=>onGoal(selection.id)}>{pick(COPY.goal)}</button></div></article>}
+    {selection?.node&&<article className="field-guide-selection" aria-live="polite" data-selected-node={selection.id}><h4>{selection.node.title}</h4><span className="badge">{state(selection.id)}</span>{selection.bridge&&<span className="badge">{pick(COPY.bridge)}</span>}{isMaster&&selection.node.master?<MasterContent view={selection.node.master} compact/>:<><Markdown>{selection.node.summary}</Markdown><p><strong>{pick(COPY.reason)}：</strong>{selection.reason}</p></>}<div className="field-guide-actions"><Link className="button" to={hrefFor('/nodes/'+encodeURIComponent(selection.id))}>{pick(COPY.read)}</Link><button className="button primary" disabled={saving} onClick={()=>onGoal(selection.id)}>{pick(COPY.goal)}</button></div></article>}
     <Link className="button field-guide-full-network" to={hrefFor('/network?nodes='+encodeURIComponent(guide.core.map(n=>n.id).join(',')))}>{pick(COPY.open)}</Link>
     <details className="field-guide-evidence"><summary>{pick(COPY.evidence)+' · '+view.edges.length}</summary><ul>{view.edges.map(edge=><li key={edge.id}><strong>{title(edge.from)+' → '+title(edge.to)}</strong><p className={locale==='en'&&/[\u3400-\u9fff]/.test(edgeText(edge))?'i18n-pending':undefined}>{edgeText(edge)}</p>{edge.source==='contract'&&<p>{pick(COPY.allInputs)}: {learning.graph?.actions.find(a=>a.id===edge.actionId)?.inputs.map(i=>title(i.node)+' ['+i.accepts.join(' / ')+']'+(i.condition?' ('+i.condition+')':'')).join(locale==='en'?', ':'、')}</p>}</li>)}</ul></details>
    </div>

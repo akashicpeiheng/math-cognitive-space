@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { loadConfig } from '../server/config.mjs';
 import { loadOntology } from '../core/ontology.mjs';
+import { loadContentLibrary } from '../core/content-library.mjs';
 import { checkFormation, checkOntologyLegality } from '../core/formation.mjs';
 import { replayCertificate, evidenceSummary } from '../core/evidence.mjs';
 import { leanCapabilities, leanRegistrationView } from '../core/lean.mjs';
@@ -15,6 +16,7 @@ import { coverage, formatCoverage, overlayFor } from '../data/i18n/index.mjs';
 import { localizeOntologyRaw } from '../data/i18n/overlay.mjs';
 import { validateFieldGuides } from '../data/field-guides/index.mjs';
 import { validateWritingTemplate } from '../shared/writing-template.mjs';
+import { buildScalePlan, validateScalePlan, planVersion, scalePlanStats } from '../core/scale.mjs';
 import {
   PROFILE_TEMPLATES, DEFAULT_PROFILE_TEMPLATE_ID, profileTemplate, validateProfileTemplates,
 } from '../data/profile-templates.mjs';
@@ -29,6 +31,8 @@ function check(name, condition, detail = '') {
 }
 
 console.log('MCS Web doctor\n');
+try { const library=loadContentLibrary(); check('M/L Markdown：类型、五级尺度与精确引用',library.objects.length>0&&library.nodes.length>0); }
+catch(error) { check('M/L Markdown：类型、五级尺度与精确引用',false,error.message); }
 const config = loadConfig();
 
 console.log('[1] 公共本体与形成检查');
@@ -57,7 +61,7 @@ for (const record of machine) {
 }
 const evidence = evidenceSummary(ontology);
 const lean = await leanCapabilities(config.repoRoot, config.lean ?? {});
-check('Lean 登记存在', lean.registrations.length === 2);
+check('Lean 登记存在', ['lean-group-injective','lean-closure-8-8','lean-topology-dg'].every(id=>lean.registrations.some(r=>r.id===id)));
 if (process.env.MCS_WEB_REQUIRE_LEAN === '1') check('真实 Lean 工具链就绪', lean.ready, lean.reason ?? '');
 if (!lean.ready) notes.push(`Lean 重放不可用（未声称通过）：${lean.reason}`);
 for (const registration of lean.registrations) {
@@ -190,6 +194,36 @@ check('模板声明的每一个节点都是背景接口', PROFILE_TEMPLATES.ever
 check('存在不声明任何节点的默认模板', profileTemplate(DEFAULT_PROFILE_TEMPLATE_ID).declares.length === 0);
 notes.push(`档案模板：${PROFILE_TEMPLATES.map((template) => `${template.name.zh} ${template.declares.length} 条声明`).join('，')}`
   + '（声明只写 E：source=system、payload.declared=true）');
+
+console.log('\n[10] 尺度登记（四层迁移投影）');
+/*
+ * 尺度计划是**派生登记**（`data/scale.mjs` + `core/scale.mjs`），不进本体 contentHash。
+ * 但它的映射完备性必须在这里守住：每个 kind:'topic' 聚合都要恰好登记一次，
+ * 单元/话题/分子的成员与父节点都要能解析，版本号必须由内容决定。
+ *
+ * 这一节失败说明「数据新增了聚合但没人决定它属于哪个尺度」，不是展示层的小毛病。
+ */
+let scalePlan = null;
+try {
+  scalePlan = buildScalePlan({ nodes: ontology.raw.nodes, aggregates: ontology.raw.aggregates });
+} catch (error) {
+  check('尺度登记可构建', false, (error.problems ?? [error.message]).slice(0, 5).join('；'));
+}
+if (scalePlan) {
+  const scaleProblems = validateScalePlan(scalePlan, { nodes: ontology.raw.nodes, aggregates: ontology.raw.aggregates });
+  check('尺度登记结构校验', scaleProblems.length === 0, scaleProblems.slice(0, 5).join('；'));
+  check('四层尺度齐全且顺序固定', scalePlan.levels.map((level) => level.id).join(',') === 'molecule,node,unit,topic');
+  check('每个聚合都有单元映射（12 整条 + 43 教材块）',
+    scalePlan.counts.units === 55 && scalePlan.counts.aggregateUnits === 12 && scalePlan.counts.blockUnits === 43,
+    JSON.stringify(scalePlan.counts));
+  check('话题成员都是已登记单元', scalePlan.topics.every((topic) => topic.members.length > 0 && topic.unitCount === topic.members.length));
+  check('分子父节点与原子明细可核', scalePlan.molecules.every((molecule) => ontology.maybeNode(molecule.node) && molecule.atoms.length > 0));
+  check('尺度计划版本由内容决定', planVersion(scalePlan) === scalePlan.version, scalePlan.version);
+  const scaleStats = scalePlanStats(scalePlan);
+  notes.push(`尺度登记：${scaleStats.units} 单元（整条 ${scaleStats.aggregateUnits} + 教材块 ${scaleStats.blockUnits}） / `
+    + `${scaleStats.topics} 话题 / ${scaleStats.molecules} 分子 / ${scaleStats.paths} 路径组；`
+    + `节点覆盖 ${scaleStats.nodesCovered}/${scaleStats.nodes}（其余作为无单元节点根显示）`);
+}
 
 console.log('\n摘要');
 for (const note of notes) console.log('  · ' + note);

@@ -1,12 +1,24 @@
 import { spawn } from 'node:child_process';
 
 const steps = [
+  ['MCS：全库只读接口、尺度投影与视图恢复', ['node', '--test', 'tests/mcs-view-api.test.mjs', 'tests/mcs-space.test.mjs']],
+  ['MCS：多尺度画布、筛选、拖动与分享贯通', ['node', 'tests/mcs-page.mjs']],
+  ['拓扑—微分几何：协议、数学边界、替代路线、版本与工作线程', ['node','--test','tests/topology-content.test.mjs']],
+  ['拓扑—微分几何：桌面、390px 与中英学习闭环', ['node','tests/topology-page.mjs']],
+  ['拓扑—微分几何：网络视图恢复、阅读返回与E层隔离', ['node','tests/topology-workspace.mjs']],
+  ['Master：全量内容投影、数学边界、版本及个人数据隔离', ['node','--test','tests/master-view.test.mjs']],
+  ['Master：全站切换、极简阅读、提示与响应式', ['node','tests/master-page.mjs']],
+  ['形式对象与阅读节点浏览器贯通', ['node','tests/content-page.mjs']],
+  ['数学对象与阅读节点协议、五级尺度及隔离', ['node','--test','tests/content-documents.test.mjs','tests/content-api.test.mjs']],
+  ['准备云端测试运行包（只含公开源码）', ['node', 'scripts/build-vercel-runtime.mjs']],
+  ['Master：部署运行包包含当前压缩规则与展示资料', ['node','--test','tests/master-runtime.test.mjs']],
+  ['云端持久任务、内容发布、备份与编写库（跨实例、重投、取消、事务隔离）', ['node', '--test', '--test-concurrency=1', 'tests/cloud-jobs.test.mjs', 'tests/cloud-backups.test.mjs', 'tests/cloud-extensions.test.mjs', 'tests/authoring-store.test.mjs']],
   ['简明高等代数第一程：内容、依赖与独立有限语义', ['node', '--test', 'tests/jiang-first-stage.test.mjs']],
   ['简明高等代数第一程：桌面与手机阅读、公式与后续链接', ['node', 'tests/jiang-first-stage-page.mjs']],
   ['混合网络：身份、语义缩放、私人验证与双驱动隔离', ['node', '--test', 'tests/network-workspace.test.mjs', 'tests/network-check.test.mjs', 'tests/network-store.test.mjs', 'tests/network-api.test.mjs', 'tests/network-jobs.test.mjs']],
   ['混合网络：浏览器缩放、悬停、笔记与投稿', ['node', 'tests/network-workspace-page.mjs']],
   ['混合网络：千级双库布局、缩放、悬停与静置', ['node', 'tests/network-mixed-perf.mjs']],
-  ['双模板与 Markdown 创作正文保全', ['node', '--test', 'tests/writing.test.mjs', 'tests/writing-adaptive.test.mjs']],
+  ['双模板与 Markdown 创作正文保全', ['node', '--test', 'tests/writing.test.mjs', 'tests/writing-adaptive.test.mjs', 'tests/content-templates.test.mjs']],
   ['笔记创作闭环（暂存、历史、冲突、复制与上传）', ['node', 'tests/writing-page.mjs']],
   ['私人笔记库（Obsidian、修订、分块、双驱动与恢复）', ['node', '--test', 'tests/vault.test.mjs']],
   ['私人笔记库浏览器（导入、附件、关联、刷新与上传）', ['node', 'tests/vault-page.mjs']],
@@ -35,7 +47,7 @@ const steps = [
   ['快照完整性：失败即拒绝生效（P1-2/7）', ['node', '--test', 'tests/snapshot-integrity.mjs']],
   ['四案例端到端：输入 → 发现 → 重放 → 入库 → 撤出', ['node', '--test', 'tests/relation-discovery-e2e.mjs']],
   ['自动关联页（六步、窄屏、键盘、节点页入口）', ['node', 'tests/authoring-page.mjs']],
-  ['领域内核与理论边界', ['node', '--test', 'tests/core.test.mjs', 'tests/planner.test.mjs', 'tests/localization.test.mjs', 'tests/tutor.test.mjs', 'tests/relation-visual.test.mjs', 'tests/example-paths.test.mjs', 'tests/example-combined.test.mjs', 'tests/stage-arrow.test.mjs', 'tests/dot-labels.test.mjs', 'tests/node-groups.test.mjs', 'tests/tutor-critique.test.mjs', 'tests/node-placement.test.mjs', 'tests/network-repel.test.mjs', 'tests/edge-routing.test.mjs', 'tests/edge-merge.test.mjs', 'tests/network-stress.test.mjs', 'tests/a11y-contrast.test.mjs', 'tests/context-budget.test.mjs', 'tests/maintenance.test.mjs', 'tests/label-option-scan.test.mjs', 'tests/design-values.test.mjs', 'tests/thread-layer.test.mjs', 'tests/relation-coverage.test.mjs', 'tests/construct-registry.test.mjs']],
+  ['领域内核与理论边界', ['node', '--test', 'tests/core.test.mjs', 'tests/planner.test.mjs', 'tests/localization.test.mjs', 'tests/tutor.test.mjs', 'tests/relation-visual.test.mjs', 'tests/example-paths.test.mjs', 'tests/example-combined.test.mjs', 'tests/stage-arrow.test.mjs', 'tests/dot-labels.test.mjs', 'tests/edge-labels.test.mjs', 'tests/node-groups.test.mjs', 'tests/tutor-critique.test.mjs', 'tests/node-placement.test.mjs', 'tests/network-repel.test.mjs', 'tests/edge-routing.test.mjs', 'tests/edge-merge.test.mjs', 'tests/network-stress.test.mjs', 'tests/a11y-contrast.test.mjs', 'tests/theme-tokens.test.mjs', 'tests/context-budget.test.mjs', 'tests/maintenance.test.mjs', 'tests/label-option-scan.test.mjs', 'tests/design-values.test.mjs', 'tests/thread-layer.test.mjs', 'tests/relation-coverage.test.mjs', 'tests/construct-registry.test.mjs']],
   /*
    * 从零走一遍范例路径（2026-10-13 加）：单独一步，失败语义与「领域内核」那一步不同。
    *
@@ -62,6 +74,12 @@ const steps = [
   ['公网 HTTPS 端到端（自签证书 + 真浏览器：Secure Cookie、CSRF、退出、http 走不通）', ['node', 'tests/https-public.mjs']],
   ['PostgreSQL 存储层（去重、乐观锁、分页、导出完整、备份恢复、事务隔离）', ['node', '--test', 'tests/postgres-store.test.mjs']],
   ['浏览器交互与响应式', ['node', 'tests/browser.mjs']],
+  /*
+   * 外观（浅色 / 深色 / 跟随系统）：单独一步，失败语义与「浏览器交互」不同——
+   * 这一步红说明**外观切换或首帧引导**有问题（三态、持久化、跟随系统、画布配色没跟着切），
+   * 而不是某个页面的交互坏了。取值成对与两种外观的对比度在那之前的「领域内核」一步里核对。
+   */
+  ['外观：三态切换、持久化、跟随系统与深色画布', ['node', 'tests/dark-mode-page.mjs']],
   ['动效覆盖面（prefers-reduced-motion 全站核对）', ['node', 'tests/motion-coverage.mjs']],
   ['性能观测（227 节点视图的耗时与长任务）', ['node', 'tests/network-perf.mjs']],
   ['首页六幕叙事（主题 → 愿景）', ['node', 'tests/home-narrative.mjs']],
@@ -93,6 +111,14 @@ const steps = [
    * （菜单没开、闭包算错、加进去的集合与本体不一致），而不是候选排序或拖动。
    */
   ['知识网络：右键节点菜单（一键加入全部硬前置）', ['node', 'tests/network-node-menu.mjs']],
+  /*
+   * 尺度视图（2026-10-17 加）：三步分开，失败语义不同。
+   * 纯函数那步红了说明映射/可见性/合拢/边投影的判据错了；
+   * 真浏览器那步红了说明用户看得见的「同时出现四层 / 右键分裂 / 缩小时合拢」断了一环。
+   */
+  ['尺度登记：映射完备、引用与层级', ['node', '--test', 'tests/scale-plan.test.mjs']],
+  ['尺度视图：可见性、合拢、边投影与锚点', ['node', '--test', 'tests/scale-network.test.mjs']],
+  ['知识网络：四层尺度、右键分裂与缩小时自动合拢', ['node', 'tests/network-scale.mjs']],
   /*
    * 网络页占满工作区（2026-10-12 加）：用户要求画布吃掉「除边栏以外的全部空间」。
    * 它红了说明这一页又多出滚动条（画布之外冒出了别的内容），或窄屏那一档的卡片版式被改坏。
@@ -196,7 +222,9 @@ const steps = [
 function run(name, command) {
   return new Promise((resolvePromise, rejectPromise) => {
     console.log(`\n=== ${name} ===`);
-    const child = spawn(command[0], command.slice(1), { stdio: 'inherit', shell: process.platform === 'win32' });
+    const args = command.slice(1);
+    if (args.includes('--test') && process.env.MCS_WEB_TEST_CONCURRENCY && !args.some(arg => arg.startsWith('--test-concurrency'))) args.splice(1, 0, `--test-concurrency=${Number(process.env.MCS_WEB_TEST_CONCURRENCY) || 1}`);
+    const child = spawn(command[0], args, { stdio: 'inherit', shell: process.platform === 'win32' });
     child.on('exit', (code) => (code === 0 ? resolvePromise() : rejectPromise(new Error(`${name} 失败，退出码 ${code}`))));
     child.on('error', rejectPromise);
   });

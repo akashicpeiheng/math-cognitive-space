@@ -84,7 +84,7 @@ try {
   check('侧栏「按需查阅」首位是用户手册',
     shape.navSecondaryFirstLabel === '用户手册' && shape.navSecondaryFirstHref === '/manual',
     JSON.stringify({ label: shape.navSecondaryFirstLabel, href: shape.navSecondaryFirstHref }));
-  check('主导航仍是六项（手册没有挤进学习主线）', shape.primaryCount === 6, String(shape.primaryCount));
+  check('主导航包含 MCS 的七项（手册没有挤进学习主线）', shape.primaryCount === 7, String(shape.primaryCount));
   check('顶栏显示当前位置「用户手册」', shape.crumb === '用户手册', shape.crumb);
   check('证据标签词表齐全',
     JSON.stringify(shape.evidenceTags) === JSON.stringify(['DEF', 'PROOF', 'REF', 'FINITE', 'ILLUSTRATION', 'NOT-CLAIMED']),

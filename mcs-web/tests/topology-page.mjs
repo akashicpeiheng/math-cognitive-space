@@ -1,0 +1,18 @@
+import assert from 'node:assert/strict';
+import {mkdirSync} from 'node:fs';
+import {startTestServer} from './helpers.mjs';
+import {CHROME_PATH,PLAYWRIGHT_SPECIFIER} from './browser-runtime.mjs';
+const app=await startTestServer();let browser;
+try{
+ const {chromium}=await import(PLAYWRIGHT_SPECIFIER);browser=await chromium.launch({executablePath:CHROME_PATH??undefined,headless:true});const page=await browser.newPage({viewport:{width:1440,height:1000}}),errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.goto(app.origin+'/start');await page.getByRole('link',{name:'打开局部 MCS',exact:true}).click();await page.locator('.content-case-controls').waitFor();await page.waitForSelector('.network-node');
+ await page.getByRole('button',{name:'视图与关系',exact:true}).click();const condition=page.locator('[data-content-relation="rel:tdg:deduce-compact-hausdorff-normal-compact"]');await condition.locator('summary').click();assert.match(await condition.innerText(),/组合前提/);assert.equal(await condition.locator('ul li').count(),2);
+ await condition.getByRole('link',{name:'终点／命题',exact:true}).click();await page.getByRole('heading',{name:'紧 Hausdorff ⇒ T₄',exact:true}).waitFor();await page.getByRole('link',{name:'紧 Hausdorff ⇒ T₄',exact:true}).first().click();await page.getByRole('heading',{name:'选择构造路线',exact:true}).waitFor();
+ await page.goto(app.origin+'/objects/obj%3Atdg%3Agradient');await page.getByRole('link',{name:'梯度',exact:true}).click();await page.getByRole('heading',{name:'选择构造路线',exact:true}).waitFor();assert.equal(await page.locator('.content-route-controls select option').count(),2);await page.locator('.content-route-controls select').selectOption('route:tdg:gradient:2');await page.getByRole('button',{name:'生成学习计划',exact:true}).click();await page.locator('[data-content-plan="Found"]').waitFor({timeout:30000});
+ await page.getByRole('button',{name:'标记读完',exact:true}).click();await page.getByRole('button',{name:'已读完',exact:true}).waitFor();assert.equal(await page.getByRole('button',{name:'确认掌握',exact:true}).isEnabled(),true);
+ await page.getByRole('textbox',{name:'私人备注',exact:true}).fill('合成验收：先比较线性微分与内积表示。');await page.getByRole('button',{name:'保存计划与进度',exact:true}).click();await page.reload();await page.locator('[data-content-plan="Found"]').waitFor();assert.equal(await page.getByRole('textbox',{name:'私人备注',exact:true}).inputValue(),'合成验收：先比较线性微分与内积表示。');assert.equal(await page.locator('.content-route-controls select').inputValue(),'route:tdg:gradient:2');
+ mkdirSync('runtime/topology-qa',{recursive:true});await page.screenshot({path:'runtime/topology-qa/reading-desktop.png',fullPage:true});
+ await page.setViewportSize({width:390,height:844});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'390px horizontal overflow');await page.screenshot({path:'runtime/topology-qa/reading-mobile.png',fullPage:true});
+ await page.goto(app.origin+'/en/start');await page.getByRole('link',{name:'Open the local MCS',exact:true}).click();await page.locator('.content-case-controls').waitFor();await page.getByRole('button',{name:'Views and relations',exact:true}).click();await page.getByRole('link',{name:'Learning routes',exact:true}).click();await page.getByRole('button',{name:'Views and relations',exact:true}).click();await page.getByRole('link',{name:'Operators',exact:true}).click();await page.waitForSelector('.network-node');await page.screenshot({path:'runtime/topology-qa/network-mobile-en.png'});
+ assert.deepEqual(errors,[]);console.log('passed: case → network → premise group → object → reading → alternative route → plan → separate reading/mastery → local save/restore; 390px and English entry');
+}finally{await browser?.close();await app.cleanup();}

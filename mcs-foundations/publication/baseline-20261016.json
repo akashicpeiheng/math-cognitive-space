@@ -1,0 +1,325 @@
+{
+  "generated_at": "2026-10-16",
+  "basis": "工作区现状（含未提交改动，原样保护）；本清单冻结本批次重写前的来源版本。",
+  "scope": "R01–R14 关联来源与理论修订源；不含 publication/releases 冻结快照、edition 生成物与 arxiv 包。",
+  "files": [
+    {
+      "path": "mcs-foundations/00-README.md",
+      "category": "chapter",
+      "size": 8376,
+      "sha256": "99d28f1e1229da0d97876f4b39816806fb87cfad5888ec30c87b944b2c81a1f0"
+    },
+    {
+      "path": "mcs-foundations/01-元理论与可构造宇宙.md",
+      "category": "chapter",
+      "size": 26922,
+      "sha256": "d93133313fc066361162deed0e6138e2f5189a8b201e71bf0e27fabbba2ae08d"
+    },
+    {
+      "path": "mcs-foundations/02-对象语言：简单类型论.md",
+      "category": "chapter",
+      "size": 27396,
+      "sha256": "2e8aee6932f52f9a84ce10af2a4f54b021b5a7db081557635a6ba7bfea7d58ae"
+    },
+    {
+      "path": "mcs-foundations/03-语义：Henkin与标准.md",
+      "category": "chapter",
+      "size": 18033,
+      "sha256": "0f62bb06426d16a651707e3c2bdd89254b758ceaeab299ab13fb3ec3d4d5c680"
+    },
+    {
+      "path": "mcs-foundations/04-节点生成与身份.md",
+      "category": "chapter",
+      "size": 12929,
+      "sha256": "3efb2749228eb958c1afa29a44823a5f17b86695be6aa2c95f90e896164bd077"
+    },
+    {
+      "path": "mcs-foundations/05-概念函数与支持族.md",
+      "category": "chapter",
+      "size": 12354,
+      "sha256": "9db2b97c73f1646f8462766ce4e11cffdba8177d4df0778e5b4b91dcabecb057"
+    },
+    {
+      "path": "mcs-foundations/06-硬关系.md",
+      "category": "chapter",
+      "size": 16923,
+      "sha256": "8d0475bf322f38d6d71a92fef4523b61f6186863b8d536faa97bcd15a37f3c3f"
+    },
+    {
+      "path": "mcs-foundations/07-软关系与认知状态.md",
+      "category": "chapter",
+      "size": 16679,
+      "sha256": "7336ec77d698d402f11a6fe13c91abc7eae1f9772275d9192e128106f5a6e055"
+    },
+    {
+      "path": "mcs-foundations/08-关系代数与结构.md",
+      "category": "chapter",
+      "size": 15389,
+      "sha256": "b0d630101f192de91dfb086b502d67fa87cfee782571448a7e32df8f60bc2b98"
+    },
+    {
+      "path": "mcs-foundations/09-话题、领域、学科与元理论.md",
+      "category": "chapter",
+      "size": 6194,
+      "sha256": "a09226a102a47eb2c79528f813550c10ce5a1520ab9a68301de1d2b4fb99e3ce"
+    },
+    {
+      "path": "mcs-foundations/10-节点模板.md",
+      "category": "chapter",
+      "size": 13699,
+      "sha256": "6c3982544d9ca26198addd31d74c5c8a215278d62968fe38b2098093b0600bd1"
+    },
+    {
+      "path": "mcs-foundations/11-局部化36方案.md",
+      "category": "chapter",
+      "size": 18575,
+      "sha256": "b5d55288acd83f01b65530853e62a704503f2a71eaba243b1741009829244ee2"
+    },
+    {
+      "path": "mcs-foundations/12-视图转换与路径规划.md",
+      "category": "chapter",
+      "size": 14731,
+      "sha256": "f3833ba8d3d98d99f4a88213461bb3844c00d2b5d5722d0841134122d0cdfacd"
+    },
+    {
+      "path": "mcs-foundations/13-贯通案例.md",
+      "category": "chapter",
+      "size": 4604,
+      "sha256": "0a792a26f1dbca8812265549e9d4d80cfda1aba65b6498961717890de3cd0674"
+    },
+    {
+      "path": "mcs-foundations/14-反例集.md",
+      "category": "chapter",
+      "size": 11751,
+      "sha256": "20b9875eac96cdcab63a626b5dc97a11be799c800b16b39f387e15d676c96052"
+    },
+    {
+      "path": "mcs-foundations/15-验证与完成标准.md",
+      "category": "chapter",
+      "size": 14882,
+      "sha256": "9381b439338c11766d522b92aed91f56ce833f5dc4a47550c09e9c3d515376e9"
+    },
+    {
+      "path": "mcs-foundations/16-开放问题.md",
+      "category": "chapter",
+      "size": 10289,
+      "sha256": "940e1aee9b7a5853705e4b15bbd06b340d3549e8431d844cf237a995175b4271"
+    },
+    {
+      "path": "mcs-foundations/A-定义与定理索引.md",
+      "category": "appendix",
+      "size": 26286,
+      "sha256": "6fb1b75fcf6bb1412f30549688575601cd24d378bc82c5fed421adcec7cd6e6f"
+    },
+    {
+      "path": "mcs-foundations/B-文献证据表.md",
+      "category": "appendix",
+      "size": 16747,
+      "sha256": "6731d624a668b375e05fb5ad92274b6a73b3645f05e8ee79d2d8b6d749a534e7"
+    },
+    {
+      "path": "mcs-foundations/C-记号索引.md",
+      "category": "appendix",
+      "size": 6615,
+      "sha256": "e6cebd60c8671f1c9a17d8058fd210960ae1c99ace8f8f90f0d4d94ad6f89344"
+    },
+    {
+      "path": "mcs-foundations/D-接口契约.md",
+      "category": "appendix",
+      "size": 20197,
+      "sha256": "43279f2aee0cd3ad2e65dba87700254e7053803bf0ed7cb6a701f98493801aac"
+    },
+    {
+      "path": "mcs-foundations/E-核心公理与验证条件.md",
+      "category": "appendix",
+      "size": 8041,
+      "sha256": "207893b08ba0b66374342f6f538d43151aca3a311ad0e54efc0c970921734f6a"
+    },
+    {
+      "path": "mcs-foundations/cases/01-极限与连续.md",
+      "category": "case",
+      "size": 7057,
+      "sha256": "b0daa34abc1cb30b63e5ff4da5eeeac89c892bcb1a7a6c98f2fab379da06e362"
+    },
+    {
+      "path": "mcs-foundations/cases/02-Ck与光滑流形.md",
+      "category": "case",
+      "size": 6962,
+      "sha256": "533d145136c99221069b0d5e45c5a2a4156e373a0c2bb4c580d986809e6370f4"
+    },
+    {
+      "path": "mcs-foundations/cases/03-张量与张量场.md",
+      "category": "case",
+      "size": 6569,
+      "sha256": "72f2e17b4be5d94e888aacba61eb72c4c5291c9fd9fd8cc9e986ea16ef0a673e"
+    },
+    {
+      "path": "mcs-foundations/cases/04-群概念的多来源.md",
+      "category": "case",
+      "size": 5824,
+      "sha256": "885aef46e2564827d395fbd0a0c95a012aeb474afd8fcf67cea7137e87aade01"
+    },
+    {
+      "path": "mcs-foundations/notes/数学对象六级尺度模型.md",
+      "category": "note",
+      "size": 20655,
+      "sha256": "4040db01782ca5ac62fbfb05de9a27756530b10a2f3c8e8029e488a7229053ce"
+    },
+    {
+      "path": "mcs-foundations/notes/泛代数闭包与知识空间理论.md",
+      "category": "note",
+      "size": 38016,
+      "sha256": "44dc7921c8b6cd426dc701db11ba7316573c34084df5ab80af9b558026bb6ee6"
+    },
+    {
+      "path": "mcs-foundations/validation/REPORT.md",
+      "category": "validation",
+      "size": 3656,
+      "sha256": "ef73337df176269208a5ea8d5d8e4bca9c399e83f295bc871f963bab57d72130"
+    },
+    {
+      "path": "mcs-foundations/validation/report.json",
+      "category": "validation",
+      "size": 8407,
+      "sha256": "1577a04909ac4943fc5ab259e1fc3ef0a4584670b826d7e1e3cd0f9b7eb16052"
+    },
+    {
+      "path": "mcs-foundations/validation/REPORT-scale-model.md",
+      "category": "validation",
+      "size": 2027,
+      "sha256": "052bd9c1509d2c7d75521a508847c0d92b106adc23a0311411d59eba64ec07c7"
+    },
+    {
+      "path": "mcs-foundations/validation/report-scale-model.json",
+      "category": "validation",
+      "size": 2611,
+      "sha256": "3416b2efde11c36f264e105031767ede6f8f9ebb4a98fffd0ba112969c863fa8"
+    },
+    {
+      "path": "mcs-foundations/validation/RELATION_MERGE-20261011.md",
+      "category": "validation",
+      "size": 2595,
+      "sha256": "c71dbe2bfcd693e0166485fee75ecfb503a792d1b46d569eaeb147af307a0c2b"
+    },
+    {
+      "path": "mcs-foundations/validation/verify_scale_model.py",
+      "category": "validation",
+      "size": 24377,
+      "sha256": "2975913efa03a1faef087fe34136055737e7f61ea9ddbaf3628102ca067c0006"
+    },
+    {
+      "path": "mcs-foundations/validation/verify_finite_models.py",
+      "category": "validation",
+      "size": 29574,
+      "sha256": "2ca1e869b8199698e4555d8d1a81d6f5fe54e864b206b1e4da98baa59a634c79"
+    },
+    {
+      "path": "mcs-foundations/publication/整稿重写方案-20261016.md",
+      "category": "publication",
+      "size": 34172,
+      "sha256": "ee895354890a41f9344e7e236afede868bdc6755f997544fafa333bfcef72ec3"
+    },
+    {
+      "path": "mcs-foundations/publication/内容编排.md",
+      "category": "publication",
+      "size": 6177,
+      "sha256": "f6e2087a670569e5b67eefb288687d584f7c5bad6d64839a70152832756b729d"
+    },
+    {
+      "path": "mcs-foundations/publication/catalog.json",
+      "category": "publication",
+      "size": 5451,
+      "sha256": "6b31e7336829a9147915a43fee3963f560ec48cb3d5e88aa1901295991383981"
+    },
+    {
+      "path": "mcs-foundations/publication/build.py",
+      "category": "publication",
+      "size": 11719,
+      "sha256": "2d55e48cdbe8ddd91e21a75edc4c218547a00b89ecec8326d2170852103e7411"
+    },
+    {
+      "path": "MCS_vault/MCS/template/MCS节点写作指南.md",
+      "category": "vault-writing",
+      "size": 21297,
+      "sha256": "e851a840a4b8483a5217ab279f638c19dfa3b8408f9284f757dc4e73966a648e"
+    },
+    {
+      "path": "MCS_vault/MCS/template/MCS节点AI写作提示词.md",
+      "category": "vault-writing",
+      "size": 15277,
+      "sha256": "079f32f33b4854257a13db74c2e3a94760bcede03673e4901550ebbf47204ff5"
+    },
+    {
+      "path": "mcs-web/docs/连接条件与个人备注.md",
+      "category": "web-docs",
+      "size": 7066,
+      "sha256": "a97c7b518a925017b0e540e27d08a5b529f67206cee2f9d8dff1594b37c24154"
+    },
+    {
+      "path": "mcs-web/docs/自动关系发现-接口与语言规格.md",
+      "category": "web-docs",
+      "size": 39243,
+      "sha256": "a9da07d4c222f5e03776c00ebb3c9b9cb9d4889beaac967fe7e5baeb0f189792"
+    },
+    {
+      "path": "mcs-web/docs/自动关系发现-操作说明与覆盖报告.md",
+      "category": "web-docs",
+      "size": 13055,
+      "sha256": "072a8474abf6d6cc27f55e7c19db029fa234625f917ff6b5e2ddd17e7f886f25"
+    },
+    {
+      "path": "mcs-web/docs/学习引导与路径安排.md",
+      "category": "web-docs",
+      "size": 7655,
+      "sha256": "7cf86442075d20576f1198702cec1c83401857ad582585443b3ab55282644299"
+    },
+    {
+      "path": "mcs-web/docs/网络视图与私人关系.md",
+      "category": "web-docs",
+      "size": 8474,
+      "sha256": "808caf7f8dc4f6d9ea1ad3365589eb0bae8106a43660b2bbc0ca854bf15b04b1"
+    },
+    {
+      "path": "mcs-web/docs/网络视图验收记录-2026-10-15.md",
+      "category": "web-docs",
+      "size": 7228,
+      "sha256": "94abcf973565c9550d6b23b95f39e67f46c3d2d4653ff2ab024d041d5bf9f812"
+    },
+    {
+      "path": "mcs-web/docs/LEAN.md",
+      "category": "web-docs",
+      "size": 8305,
+      "sha256": "f80f9ccb37628d9b9376c9a003fc842b82cf17a39964da60e3eea0e96b923ac3"
+    },
+    {
+      "path": "mcs-web/docs/LEAN-验收记录.md",
+      "category": "web-docs",
+      "size": 11413,
+      "sha256": "82f2b73dc894074f053ffaa6abc9b31d2937d763188e8603cae8b6e70c7a67bf"
+    },
+    {
+      "path": "mcs-web/docs/field-guides-20261012.md",
+      "category": "web-docs",
+      "size": 11779,
+      "sha256": "fac1fecdab0923599fa9f28e66a788d528bbb899764abba7dff6564fa86a997f"
+    },
+    {
+      "path": "mcs-web/docs/writing/适配验收记录.md",
+      "category": "web-docs",
+      "size": 5595,
+      "sha256": "cbd4987d45b07546c354a08146bd66c542dadb814a247a455ddd6ecb6625aa4a"
+    },
+    {
+      "path": "mcs-web/docs/放缩关系合并-2026-10-11.md",
+      "category": "web-docs",
+      "size": 3786,
+      "sha256": "3ae8d07254ae9eb6888a01d7a7ff2116722df4e19bc5e7bac593c881a2f3c205"
+    },
+    {
+      "path": "mcs-foundations/lean/README.md",
+      "category": "lean",
+      "size": 7597,
+      "sha256": "824569f415a23ba9d7d09025554f72659d8d863f33ce43968f0556bfb4992aa8"
+    }
+  ]
+}
