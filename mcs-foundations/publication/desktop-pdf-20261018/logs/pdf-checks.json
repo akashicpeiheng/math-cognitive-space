@@ -1,0 +1,16 @@
+{
+  "schema": "mcs-pdf-delivery-checks/1",
+  "date": "2026-10-18",
+  "pages": 172,
+  "title_page_ok": true,
+  "front_matter_updated": true,
+  "M_L_E_D_boundary": true,
+  "five_level_scale": true,
+  "old_six_level_section_absent": true,
+  "protocol_section": true,
+  "lean_target": true,
+  "missing_character": false,
+  "latex_error": false,
+  "overfull_hbox": 0,
+  "scope": "text presence and LaTeX log checks; not new mathematical certification"
+}

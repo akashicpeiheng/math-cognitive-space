@@ -45,7 +45,7 @@ export function useNetworkWorkspace(base: NetworkGraph | undefined) {
   useEffect(() => { void refresh(); return () => { refreshGeneration.current++; }; }, [refresh]);
   const relations = useMemo(() => [...localRelations, ...(remote.identity === libraries.identityKey && libraries.cloudAllowed ? remote.relations : [])].map(relation => {
     const missing = [relation.from, relation.to].some(ref => {
-      if (ref.source === 'ontology') return base?.nodes.find(n => n.id === ref.id)?.version !== ref.version;
+      if (ref.source !== 'vault') {const node=base?.nodes.find(n=>n.id===ref.id);return node?.version!==ref.version || (ref.source!=='ontology'&&JSON.stringify(node?.contentRefData)!==JSON.stringify(ref));}
       const vault = available.find(v => v.id === ref.vaultId && v.storage === ref.storage), file = vault?.files.find(f => f.id === ref.fileId);
       return !file || file.missing || file.sha256 !== ref.sha256 || vault?.revision !== ref.revision;
     });

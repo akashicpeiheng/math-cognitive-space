@@ -1,10 +1,44 @@
 # MCS Web 待办清单
 
-**更新：2026-10-14（北京时间）。** 这是当前执行清单；实现证据在 [VALIDATION.md](VALIDATION.md)，
+**更新：2026-10-16（北京时间）。** 这是当前执行清单；实现证据在 [VALIDATION.md](VALIDATION.md)，
 运行状态摘要在 [RELEASE-READINESS.md](RELEASE-READINESS.md)，执行流程在 [维护与更新](docs/维护与更新.md)。
 下方保留 A1–A6 历史编号，避免旧讨论失去对应；B 是设计取值，C 是需要实际使用证据的事项，不混入功能缺口计数。
 
-**本一轮（第一百零八轮，进行中）**：用户要求「按照节点模板为简明高等代数涉及的节点撰写节点内容」。查证：`data/cases/jiang.mjs` 的
+**本一轮（第一百零九轮，2026-10-16）**：用户要求「给网站加上暗色模式」。范围经确认只含 `mcs-web`
+（本机工作台与本机 3785 的公网实例共用同一份 `web/dist`），旧 `mcs-site`、Sites 部署副本与公开包不动。
+三件事一起做，缺一件都会留下半截状态：
+
+- **三态外观**：偏好 ∈ `light | dark | system`（默认跟随系统），存本机 `localStorage['mcs-theme-v1']`；
+  解析结果写 `<html data-theme>` 与 `data-theme-preference`，切换入口在顶栏（语言开关旁边）。
+  **CSS 只认 `[data-theme='dark']`**，不写 `prefers-color-scheme` 媒体查询——两套真相会让
+  「用户显式选浅色」与「系统是深色」互相打架。首帧由 `web/public/theme-boot.js` 引导：
+  它是**外链同步脚本**，因为生产 CSP 是 `script-src 'self'`，内联脚本会被浏览器拒绝执行。
+- **令牌层**：`styles.css` 末尾追加「第一百零九轮：暗色主题」一节，`html[data-theme='dark']`
+  覆盖纸面 / 墨色 / 线 / 品牌 / 语义 / 代码块 / 阴影 / 玻璃 / 舞台 / 首屏渐变共 55 个令牌；
+  同时把**主题色与语义色兼任的两种角色拆开**（`--accent-fill` / `--accent-fill-strong` /
+  `--green-fill`，两种外观取值相同），并收敛了会随外观出错的白玻璃 / 浅渐变 / 浅面板字面色。
+- **画布一起变暗**：`theme.ts` 加 `THEME_DARK`、`labels.ts` 加关系/契约/构造三张深色表、
+  `relation-visual.ts` 加图例深色表、`network.ts` 加 `TOPIC_PALETTE_DARK`；
+  组件不再各自判断明暗，一律经 `src/theme-palette.ts` 的 `useThemePalette()` 一次取齐。
+- **判据不因外观放宽**：`tests/a11y-contrast.test.mjs` 现在对**两套外观各跑一遍**
+  （文字 ≥4.5:1、边色对画布 ≥3:1、正常视觉 ΔE ≥15、色盲模拟 ΔE ≥12 或有冗余通道、
+  卡片文字对 10 色话题底与 12 色构造底 ≥4.5:1）。新增 `tests/theme-tokens.test.mjs`
+  （令牌成对、镜像逐字一致、首帧脚本与 CSP 相容、字面色扫描）与 `tests/dark-mode-page.mjs`
+  （三态切换、持久化、跟随系统、深色画布，真浏览器）。
+- **顺手修掉两处既有漂移**：`theme.ts` 的 `inkFaint` 是 `#6b6389` 而样式表生效值是 `#6a6292`
+  （同一令牌在 `:root` 里声明过两次），由新的镜像一致性断言当场抓到；`network-workspace.css`
+  里两处 `var(--paper, #fff)` 的 `--paper` 根本不存在，深色下会留下一块白面板，已改为 `var(--surface)`。
+
+**验收（2026-10-16）**：`npm run check`（doctor 全部通过）、`npm run check:i18n`、`npm run build` 均 EXIT=0；
+外观与浅色相关的定向门全部通过（`theme-tokens` / `a11y-contrast` / `design-values` / `deployment` 共 58 项，
+`dark-mode-page` 25 项，`browser.mjs`、`home-narrative.mjs`、`motion-coverage.mjs`、`i18n-en.mjs` 各通过）；
+`npm test` 按 run-all 的续跑开关分三段跑完 0–85 阶段，**只有 Lean 内核重放相关的四处红**
+（阶段 9、10、35 的一条、37 的一条），原因是本机 mathlib 的 `.olean.private` 缺失，
+同样的报错在本轮之前的日志里就有，与本轮改动无关。线上复核在 `https://mathcognitivespace.com`
+（系统深色 → 首帧即深色；切浅色后纸面回到 `rgb(245, 243, 251)`，与改动前逐值相同）。
+明细见 [VALIDATION.md 第一百零九轮](VALIDATION.md)。
+
+**上一轮（第一百零八轮，进行中）**：用户要求「按照节点模板为简明高等代数涉及的节点撰写节点内容」。查证：`data/cases/jiang.mjs` 的
 47 个里程碑 + 4 个方法节点此前**一律 `contentRef: false`**（只挂名字、正文留空，站点如实显示「没有正文」）；权威模板是
 `MCS_vault/MCS/template/MCS节点写作指南.md`（mcs-object-note@2026-10-13.1）与同目录的《MCS 节点 AI 写作提示词》，
 T0–T6 类型卡文件头已声明「网站创作使用新版统一定义」。**51 个节点（47 里程碑 + 4 方法）已全部写完并接线**，做法与状态如下：
@@ -241,6 +275,35 @@ Lean / HTTPS / 账号那几组未跑，整仓全绿未声称；
 按重测的最大 26482 定）、`start-direction` 的 ⑩（免责声明句被正则误判成评价词）与
 ⑪（确认数之差的符号写反，断言一直红）。**翻译欠账如实登记**：那 7 篇刷新对的英文仍是旧世代译文，
 `check:i18n` 里以带理由的白名单报为警告（`scripts/i18n-parity.mjs` 的 `PENDING_RETRANSLATION`）。
+
+**本轮（2026-10-17，深色圆点提亮）**：用户要求「深色模式的时候节点颜色调亮，现在看不清楚」。
+量出来：深色圆点填充对画布只有 **1.11:1**——圆点上没有字，却用了「为托住浅墨字」的那张深色底表。
+新增 `TOPIC_PALETTE_DOT_DARK` / `TOPIC_NONE_COLOR_DOT_DARK`（保住色相，提到对画布 **4:1**），
+`theme-palette` 增加 `topicPaletteDot` / `topicNoneDot`，圆点填充改走 `dotFillOf()`；卡片底刻意不变。
+实测深色圆点 1.11 → **4.04:1**，卡片/浅色逐字不变；`a11y-contrast` 新增「深色圆点填充 ≥3:1」一条（14/14）。
+详见 [VALIDATION.md](VALIDATION.md) 2026-10-17（下午）一节。
+
+**本轮（2026-10-17，圆点档关系文字）**：用户要求「节点是圆点的时候，要显示关系的文字」。
+新增 `web/src/edge-labels.ts`（纯函数放置）+ 圆点档渲染：屏幕恒定 10.5px、只有语义边标注、
+三条回避（不重叠 / 不压圆点 / 不压节点名）、沿线三个落点 × 线上线下两侧、优先序「焦点相连 → 权重 → 位置」。
+实测 22 节点 45% 7 条 / 68% 13 条，405 节点 25% 50 条，零压圆点零重叠，稳态 6ms/帧。
+落地时修掉三处偏差：反缩放组里用了屏幕坐标（文字飘到左上）、中文字形盒比估算宽 0.8px/字（压 0.3px）、
+线下方文字的下伸部越界。**性能闸门**那次红是环境边缘（A/B：关掉本轮逻辑仍 804ms > 800；同一份代码 786/1014 各一次），
+已如实登记在 [VALIDATION.md](VALIDATION.md) 2026-10-17 第 5 节；并做了防御性收敛（候选截断到 160）。
+验收：`tests/edge-labels.test.mjs` 9/9、`network-edges` 新增 4 条、`browser.mjs` 全绿、
+`network-workspace-page`/`manual-page`/`motion-coverage` 通过。
+
+**本轮（2026-10-16，形状规则）**：用户要求「只有视图很大的时候节点形状用方块，其余视图用圆点」。
+阈值从 55%/65% 改成 **100%/120%**（`DOT_THRESHOLD`/`CARD_THRESHOLD`），依据是卡片上的字能不能读
+（65% 时标题只有 8.1px、id 6.2px；120% 时 15px/11.4px）。配套两处：首帧形状取圆点
+（滞后带里初值就是「上一次」，取卡片会让 105% 冷启动显示卡片）、名称上限随比例放宽
+（`dotLabelMaxChars`：60% 以上 10 字、90% 以上 14 字，与卡片的 15 字截断同量级）；
+`showEdgeLabels` 简化为「卡片档」。**弧线与「压卡」判据只对方块档有意义**，
+三条依赖它们的断言（`network-edges` 两条、`connection-notes-page` 一条）补上了
+`helpers.mjs` 的 `zoomToCardShape`，否则测的就不是它们声称要测的东西。
+验收：单元 17/17、`network-placement`（拖动在圆点档下照常）、`network-edges`、`connection-notes-page`、
+`network-camera/picker/node-menu/views/fullbleed/pinch`、`dark-mode-page`、`network-perf`、`network-mixed-perf` 全部通过。
+详见 [VALIDATION.md](VALIDATION.md) 2026-10-16 一节。
 
 **本轮（2026-10-15 夜三，拖动斥力）**：用户要求「拖动节点靠近另一个节点时会闪……改进为节点被拖动的时候会因为斥力相互挤压」。
 旧实现是**放手时**才避让（螺线搜索找空位）：实测拖到邻座中心松手会当场下移 128px、再飘 31px；有序摆位下更糟——
@@ -669,6 +732,8 @@ R3、R4b 是分组编号，按子项逐一验收；某个子项完成不把整�
 | **方向预览 5 步、并行门槛 2 条** | 第九十七轮（2026-10-11） | `web/src/direction.ts` 的 `DIRECTION_BOUNDED_STEPS` / `PARALLEL_THRESHOLD` | 两个数都是**尺度**不是结论：5 步是「一次坐下」的预览上限（不是路线长度）；门槛取 2 的理由是「只要存在第二条通向方向的路，按兴趣分配才有意义」，取 3 会把「二选一」说成「没得选」 |
 | **摆位模式：行距 46px、列距 36px、一层最多 10 列（超出折行）、圈距 210px、同圈相邻卡片最小弦长 200px、外留白 28px** | 第一百零一轮（2026-10-11） | `web/src/network-order.ts` 的 `ORDER_LAYOUT` | 按「读得出来」定，不是实验结论：弦长取 200 而非刚好不压的 182（容量用反正弦，小圈上弦长与半径非线性，留 10% 余量）；一层 10 列是**视口约束**（不折行时一层能到两万像素宽，`ZOOM_MIN` 0.25 下看不全）；PageRank 0.85 / 40 轮按惯例取定，固定轮数是为了确定性 |
 | **放缩关系的粗细变化：一般端 ×2.2、特殊端 ×0.5（相对本档线宽）+ 细端专用小箭头** | 第一百零二轮（2026-10-11） | `web/src/relation-visual.ts` 的 `SCALING_TAPER` / `scalingTaperArrowWidth` / `TAPER_ARROW_PATH`；几何在 `web/src/edge-routing.ts` 的 `taperedOutline` | 用倍数而非绝对像素：线宽由「关系强度 × 见证状态」决定，粗细只表达这条边内部的**方向**，不该覆盖强弱（strong 档的一般端仍粗于 core 档的特殊端，有断言）。**第一版 1.6 / 0.6 被用户否掉**（「还是两头一样粗」）：箭头是固定像素的，横向 10.14px 比粗端 8.02px 还宽，细端被箭头重新撑粗；现在两头一起改，两端**看得见的**宽度比 4.4:1。一般端压在 2.2 倍以内（11.0px ≈ 硬前置 5.06px 的两倍），细端 0.5 倍是「不细到看不见」的界限。方向未核验的旧记录不做变化 |
+| **深色纸面 #14101f、卡片 #1e1830、画布 #191331、墨色 #f2eefb、弱化墨 #a79fc4；实心底 `--accent-fill` #6d28d9 / `--green-fill` #0f7a52 两种外观共用** | 第一百零九轮（2026-10-16） | `web/src/styles.css` 的 `html[data-theme='dark']`；镜像在 `web/src/theme.ts` 的 `THEME_DARK` | 深色不是「把浅色涂黑」：色相仍锁在紫族，只把明暗关系反过来（深靛纸 + 近白墨）。取值按与浅色**同一套**判据选：文字对四种深色底 ≥4.5:1、关系/契约色对深色画布 ≥3:1、卡片文字对 10 色话题底与 12 色构造底 ≥4.5:1。主题色与语义色同时兼任「文字色」与「实心底」，两者对明暗的要求相反，因此实心底拆成独立令牌且**两种外观取值相同**——混用会让深色下的白字掉到 4.5:1 以下 |
+| **尺度视图：90% / 55% / 30%、320px 邻近、0.06 滞后、卡片 160/196/224** | 第一百一十轮（2026-10-17） | `web/src/scale-network.ts` 的 `SCALE_LOD` / `SCALE_CARD_PX` | 按「卡片上的字还读不读得出来」定：分子是明细，最早收；节点到 55% 已是圆点而单元标题仍可读；单元到 30% 再收进话题。`nearPx` 是「临近」的唯一判据——成员在当前缩放下的屏幕包围盒两个方向都 ≤320px 才合并，成员分散时如实保留。0.06 的滞后带防止阈值抖动；卡片宽高是屏幕像素，反缩放后 25% 下仍可读 |
 
 **这张表怎么维护**：改任何一处设计取值，`tests/design-values.test.mjs` 会红（数值对不上，或本表关键词缺失/旧值没清）。
 新加的设计取值请同时登记进 `data/design-values.mjs`；那里的 `source` 检查是最弱的一层，

@@ -1,19 +1,24 @@
 // Private network declarations. They are E data; no declaration here mutates M.
 import { McsError, CODES } from './errors.mjs';
-export const NETWORK_SCHEMA = 'mcs-network/2';
+export const NETWORK_SCHEMA = 'mcs-network/3';
 export const PRIVATE_KINDS = ['related', 'definitionReference', 'scaling', 'equivalentTo', 'conditionalDerivation', 'instanceOf', 'counterexampleTo'];
 const object = value => value && typeof value === 'object' && !Array.isArray(value);
 const fail = message => { throw new McsError(CODES.BAD_REQUEST, message, 400); };
 export function normalizeNodeRef(raw) {
   if (!object(raw)) fail('节点引用必须是对象');
   if (raw.source === 'ontology' && typeof raw.id === 'string' && raw.id.length && raw.id.length <= 300) return { source: 'ontology', id: raw.id, version: String(raw.version ?? '') };
+  if(['math-object','learning-node'].includes(raw.source)){
+    const key=raw.source==='math-object'?'formalHash':'nodeHash';
+    if(typeof raw.id!=='string'||!raw.id||raw.id.length>300||typeof raw.version!=='string'||!raw.version||!/^sha256:[a-f0-9]{64}$/.test(raw[key]??''))fail('公共内容引用需要身份、版本与精确摘要');
+    return {source:raw.source,id:raw.id,version:raw.version,[key]:raw[key]};
+  }
   if (raw.source !== 'vault' || !['browser', 'account'].includes(raw.storage)) fail('未知节点来源');
   for (const key of ['vaultId', 'fileId']) if (typeof raw[key] !== 'string' || !raw[key] || raw[key].length > 300) fail(`缺少 ${key}`);
   if (!Number.isInteger(raw.revision) || raw.revision < 1 || !/^[a-f0-9]{64}$/.test(raw.sha256 ?? '')) fail('笔记引用需要修订和 SHA-256');
   return { source: 'vault', storage: raw.storage, vaultId: raw.vaultId, fileId: raw.fileId, revision: raw.revision, sha256: raw.sha256 };
 }
 export function nodeRefKey(ref) {
-  return ref.source === 'ontology' ? ref.id : `note:${ref.storage}:${encodeURIComponent(ref.vaultId)}:${encodeURIComponent(ref.fileId)}`;
+  return ref.source !== 'vault' ? ref.id : `note:${ref.storage}:${encodeURIComponent(ref.vaultId)}:${encodeURIComponent(ref.fileId)}`;
 }
 export function decodeNoteKey(key) {
   const match = /^note:(browser|account):([^:]+):([^:]+)$/.exec(key);
@@ -49,7 +54,7 @@ export function checkRelationStructure(relation) {
   return { status: problems.length ? 'invalid' : 'valid', problems, scope: '类型、方向、条件与端点声明检查；不是数学证明' };
 }
 export function normalizeNetworkExtras(payload) {
-  if (payload.schema !== NETWORK_SCHEMA) return {};
+  if (![NETWORK_SCHEMA,'mcs-network/2'].includes(payload.schema)) return {};
   const refs = (Array.isArray(payload.refs) ? payload.refs : []).map(normalizeNodeRef);
   if (refs.length > 2000) fail('每张视图最多 2,000 个节点');
   const sources = (Array.isArray(payload.sources) ? payload.sources : []).filter(object).map(s => {
@@ -63,7 +68,8 @@ export function normalizeNetworkExtras(payload) {
     if (object(point) && Number.isFinite(point.x) && Number.isFinite(point.y) && Math.abs(point.x) <= 2000000 && Math.abs(point.y) <= 2000000) placements[id] = { x: point.x, y: point.y };
   }
   const layout = object(payload.layout) && ['free', 'learning', 'logic'].includes(payload.layout.mode) ? { mode: payload.layout.mode, anchors: { learning: text(payload.layout.anchors?.learning, 1000) || null, logic: text(payload.layout.anchors?.logic, 1000) || null } } : undefined;
-  return { schema: NETWORK_SCHEMA, refs, sources, filters, ...(Object.keys(placements).length ? { placements } : {}), ...(layout ? { layout } : {}) };
+  const contentCase=payload.contentCase==='topology-dg'?{contentCase:'topology-dg',contentLayer:payload.contentLayer==='L'?'L':'M'}:{};
+  return { schema: NETWORK_SCHEMA, refs, sources, filters,...contentCase, ...(Object.keys(placements).length ? { placements } : {}), ...(layout ? { layout } : {}) };
 }
 export function normalizeSubmission(raw) {
   const relation = normalizePrivateRelation(raw.relation);

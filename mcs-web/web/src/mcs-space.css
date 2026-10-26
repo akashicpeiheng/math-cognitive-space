@@ -1,0 +1,128 @@
+.mcs-workspace { display: flex; flex-direction: column; height: 100%; min-height: 580px; overflow: hidden; position: relative; color: var(--ink); background: var(--surface); }
+.mcs-workspace button { font: inherit; cursor: pointer; }
+.mcs-workspace button:focus-visible, .mcs-workspace input:focus-visible, .mcs-workspace [tabindex]:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+.mcs-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 18px 24px; border-bottom: 1px solid var(--line); background: var(--surface); z-index: 2; }
+.mcs-eyebrow { display: block; color: var(--ink-faint); font-size: 10px; font-weight: 650; letter-spacing: .12em; line-height: 1.5; }
+.mcs-title h1 { display: flex; align-items: baseline; gap: 16px; margin: 4px 0 0; font-size: 30px; font-weight: 650; letter-spacing: -.04em; }
+.mcs-title h1 span { font-size: 13px; font-weight: 400; letter-spacing: .02em; color: var(--ink-soft); }
+.mcs-toolbar-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.mcs-toolbar-actions button, .mcs-detail-actions button, .mcs-camera-tools button { color: var(--ink-soft); background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; font-size: 12px; }
+.mcs-toolbar-actions button:hover, .mcs-detail-actions button:hover, .mcs-camera-tools button:hover { color: var(--accent); border-color: var(--accent); background: var(--accent-wash); }
+.mcs-stage { display: flex; flex: 1; min-height: 0; position: relative; }
+.mcs-filters { flex: 0 0 240px; padding: 20px 18px; overflow: auto; background: var(--surface); border-right: 1px solid var(--line); z-index: 3; }
+.mcs-panel-heading { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 18px; }
+.mcs-panel-heading h2 { font-size: 14px; font-weight: 600; margin: 0; }
+.mcs-icon-button { display: inline-flex; flex: 0 0 28px; justify-content: center; align-items: center; width: 28px; height: 28px; padding: 0; color: var(--ink-soft); background: transparent; border: 0; border-radius: 6px; font-size: 20px !important; }
+.mcs-icon-button:hover { background: var(--surface2); }
+.mcs-search { display: block; font-size: 11px; color: var(--ink-soft); }
+.mcs-search input, .mcs-notice input { display: block; width: 100%; min-width: 0; margin-top: 8px; padding: 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--ink); font-size: 12px; }
+.mcs-filters fieldset { margin: 24px 0; padding: 0; border: 0; }
+.mcs-filters legend { color: var(--ink-faint); font-size: 10px; letter-spacing: .08em; margin-bottom: 10px; }
+.mcs-filters fieldset label { display: flex; flex-direction: row; align-items: center; gap: 8px; font-size: 12px; line-height: 1.6; padding: 5px 0; cursor: pointer; }
+.mcs-filters input[type="checkbox"] { width: 13px; height: 13px; margin: 0; accent-color: var(--accent); }
+.mcs-filters label small { margin-left: auto; font-size: 10px; color: var(--ink-faint); font-variant-numeric: tabular-nums; }
+.mcs-meta { color: var(--ink-faint); font-size: 11px; line-height: 1.7; overflow-wrap: anywhere; }
+.mcs-text-button { color: var(--accent); background: none; border: 0; padding: 0; font-size: 12px !important; text-decoration: underline; text-underline-offset: 3px; }
+.mcs-viewport { flex: 1; min-width: 0; position: relative; overflow: hidden; background: var(--canvas, var(--bg)); }
+.mcs-canvas { display: block; width: 100%; height: 100%; min-height: 400px; touch-action: none; user-select: none; cursor: grab; }
+.mcs-canvas.is-dragging { cursor: grabbing; }
+.mcs-grid-dot { fill: var(--line); }
+.mcs-scale-atom { --mcs-color: var(--teal); }
+.mcs-scale-molecule { --mcs-color: var(--cyan); }
+.mcs-scale-unit { --mcs-color: var(--accent); }
+.mcs-scale-topic { --mcs-color: var(--magenta); }
+.mcs-scale-subdiscipline { --mcs-color: var(--ember); }
+.mcs-scale-swatch { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--mcs-color); }
+.mcs-region > rect { fill: color-mix(in srgb, var(--mcs-color) 4%, var(--surface)); stroke: var(--mcs-color); stroke-width: 1; stroke-opacity: .65; }
+.mcs-region.is-context > rect { fill-opacity: .6; stroke-dasharray: 5 5; stroke-opacity: .4; }
+.mcs-region.is-selected > rect { stroke-width: 2; stroke-opacity: 1; }
+.mcs-region-grip { fill: transparent; cursor: grab; }
+.mcs-region-title { fill: var(--ink); font-weight: 600; pointer-events: none; }
+.mcs-region-meta { fill: var(--ink-faint); pointer-events: none; }
+.mcs-node-shape { fill: var(--surface); stroke: var(--mcs-color); stroke-width: 1.6; }
+.mcs-node-core { fill: var(--mcs-color); opacity: .8; pointer-events: none; }
+.mcs-object { cursor: grab; }
+.mcs-object:hover .mcs-node-shape, .mcs-object.is-selected .mcs-node-shape { fill: color-mix(in srgb, var(--mcs-color) 14%, var(--surface)); stroke-width: 2.5; }
+.mcs-object.is-context .mcs-node-shape { stroke-dasharray: 4 4; stroke-opacity: .5; }
+.mcs-object.is-lifted { filter: drop-shadow(0 5px 6px var(--line)); }
+.mcs-node-label { pointer-events: none; }
+.mcs-node-label text { fill: var(--ink); font-size: 11px; paint-order: stroke; stroke: var(--surface); stroke-width: 3px; stroke-linejoin: round; }
+.mcs-node-label .mcs-node-meta { font-size: 9px; fill: var(--ink-faint); }
+.mcs-declaration-shape { fill: var(--surface); stroke: var(--mcs-color); stroke-width: 1; }
+.mcs-formula-card, .mcs-reference-card { height: 100%; padding: 16px; font-size: 13px; overflow: hidden; color: var(--ink); }
+.mcs-formula-card .markdown { padding-top: 8px; }
+.mcs-formula-card .mcs-eyebrow { font-size: .75em; }
+.mcs-formula-card .markdown p { margin: 4px 0; }
+.mcs-formula-card .markdown pre, .mcs-formula-card .markdown code { white-space: pre-wrap; overflow-wrap: anywhere; font-size: .92em; }
+.mcs-formula-card .katex-display { margin: 6px 0; overflow: hidden; }
+.mcs-formula-card small, .mcs-reference-card small { display: block; margin-top: 8px; color: var(--ink-faint); font-size: 10px; }
+.mcs-formula-card small { font-size: .75em; }
+.mcs-relation path { stroke: var(--ink-faint); stroke-width: 1; fill: none; opacity: .18; }
+.mcs-connections.has-selection .mcs-relation:not(.is-emphasized) path { opacity: .08; }
+.mcs-relation.is-scaling path { stroke: var(--cyan); }
+.mcs-relation.is-duality path { stroke: var(--magenta); }
+.mcs-relation.is-application path { stroke: var(--teal); stroke-dasharray: 4 4; }
+.mcs-relation.is-emphasized path, .mcs-relation:hover path { opacity: .9; stroke-width: 1.6; }
+.mcs-relation .mcs-edge-hit { stroke-width: 12; opacity: 0; cursor: pointer; pointer-events: stroke; }
+.mcs-relation:hover .mcs-edge-hit { opacity: 0; }
+.mcs-arrow { fill: var(--ink-faint); }
+.mcs-structure-edge { stroke: var(--ink-faint); stroke-width: .8; stroke-dasharray: 2 5; opacity: .25; }
+.mcs-structure-edge.is-import { stroke-dasharray: 7 4; }
+.mcs-edge-label { cursor: pointer; }
+.mcs-edge-label rect { fill: var(--surface); stroke: var(--line); stroke-width: .7; }
+.mcs-edge-label text { font-size: 8px; fill: var(--ink-soft); text-anchor: start; }
+.mcs-viewport-caption { position: absolute; left: 20px; top: 16px; display: flex; align-items: center; gap: 9px; font-size: 10px; color: var(--ink-faint); pointer-events: none; background: color-mix(in srgb, var(--surface) 92%, transparent); padding: 6px 10px; border-radius: 20px; }
+.mcs-live-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--accent); }
+.mcs-camera-tools { display: flex; align-items: center; gap: 4px; position: absolute; bottom: 18px; left: 18px; padding: 5px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow); }
+.mcs-camera-tools button { padding: 6px 9px; border-color: transparent; font-size: 10px; }
+.mcs-camera-tools output { min-width: 40px; text-align: center; font-size: 10px; color: var(--ink-faint); font-variant-numeric: tabular-nums; }
+.mcs-selection-action { position: absolute; right: 16px; bottom: 20px; }
+.mcs-selection-action .button { font-size: 11px; }
+.mcs-empty { position: absolute; left: 50%; top: 40%; transform: translate(-50%, -50%); text-align: center; width: min(300px, 80%); font-size: 13px; color: var(--ink-soft); pointer-events: none; }
+.mcs-empty p { color: var(--ink-faint); font-size: 11px; }
+.mcs-inspector { flex: 0 0 340px; border-left: 1px solid var(--line); padding: 20px; overflow: auto; background: var(--surface); z-index: 4; }
+.mcs-inspector h2 { font-size: 20px; line-height: 1.5; margin: 12px 0 6px; }
+.mcs-inspector h3 { font-size: 12px; margin-top: 24px; }
+.mcs-inspector ul { padding-left: 18px; font-size: 12px; line-height: 1.8; }
+.mcs-detail-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 18px 0; }
+.mcs-detail-actions a { font-size: 11px; }
+.mcs-detail-actions button { font-size: 11px; padding: 6px 10px; }
+.mcs-inspector .master-content { margin: 16px 0; font-size: 12px; overflow-wrap: anywhere; }
+.mcs-inspector .master-context { max-height: 150px; overflow: auto; }
+.mcs-inspector .content-relation { font-size: 11px; margin: 12px 0; }
+.mcs-evidence-note { padding: 12px; background: var(--surface2); border-radius: 8px; color: var(--ink-faint); font-size: 10px; line-height: 1.8; }
+.mcs-member-list button { border: 0; padding: 3px 0; background: none; color: var(--accent); font-size: 12px; text-align: left; }
+.mcs-statusbar { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; padding: 10px 20px; background: var(--surface); border-top: 1px solid var(--line); font-size: 9px; color: var(--ink-faint); }
+.mcs-notice { position: absolute; right: 20px; top: 90px; z-index: 8; width: min(390px, calc(100% - 40px)); padding: 16px 36px 16px 16px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow-lift); font-size: 11px; }
+.mcs-notice > .mcs-icon-button { position: absolute; right: 5px; top: 5px; }
+.mcs-notice p { margin: 0 0 8px; }
+@media (max-width: 1200px) {
+  .mcs-filters { flex-basis: 205px; padding: 16px; }
+  .mcs-inspector { flex-basis: 290px; padding: 16px; }
+  .mcs-title h1 span { display: none; }
+  .mcs-selection-action { bottom: 70px; }
+}
+@media (max-width: 900px) {
+  .mcs-filters { position: absolute; left: 0; top: 0; bottom: 0; width: 240px; box-shadow: var(--shadow-lift); }
+  .mcs-inspector { flex-basis: 280px; }
+  .mcs-toolbar { padding: 12px 16px; }
+  .mcs-toolbar-actions button { padding: 7px 9px; font-size: 10px; }
+}
+@media (max-width: 640px) {
+  .mcs-workspace { min-height: calc(100dvh - 65px); height: calc(100dvh - 65px); }
+  .mcs-toolbar { flex-wrap: wrap; gap: 8px; }
+  .mcs-title { display: flex; align-items: center; gap: 10px; }
+  .mcs-title h1 { margin: 0; font-size: 22px; }
+  .mcs-title .mcs-eyebrow { order: 2; font-size: 9px; }
+  .mcs-toolbar-actions { gap: 6px; }
+  .mcs-inspector { position: absolute; left: 0; right: 0; bottom: 0; height: 42%; border-top: 1px solid var(--line); border-left: 0; border-radius: 18px 18px 0 0; box-shadow: var(--shadow-lift); }
+  .mcs-workspace.has-inspector .mcs-camera-tools { bottom: calc(42% + 12px); }
+  .mcs-workspace.has-inspector .mcs-selection-action { bottom: calc(42% + 60px); }
+  .mcs-camera-tools { left: 8px; right: 8px; bottom: 12px; justify-content: center; gap: 0; }
+  .mcs-camera-tools button { padding: 7px 6px; font-size: 9px; }
+  .mcs-statusbar { padding: 7px 10px; font-size: 8px; gap: 5px; }
+  .mcs-viewport-caption { left: 8px; top: 10px; gap: 5px; font-size: 8px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mcs-workspace *, .mcs-workspace *::before, .mcs-workspace *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}

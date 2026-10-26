@@ -17,6 +17,7 @@ const LABELS: Record<string, Pair> = {
   group: { zh: '群：不同对称操作组成同一个封闭结构', en: 'Group: different symmetry operations form one closed structure' },
   dg: { zh: '微分几何：曲面、切向量与边界积分相互连接', en: 'Differential geometry: surfaces, tangent vectors and boundary integrals connected' },
   top: { zh: '点集拓扑：两个开邻域覆盖一点，局部片与平面坐标相互对应', en: 'Point-set topology: two open neighbourhoods covering a point, a local patch corresponding to plane coordinates' },
+  newvault: { zh: '新库笔记：23 篇代数笔记通过链接连成一张阅读网络', en: 'New vault notes: twenty-three algebra notes linked into one reading network' },
 };
 
 const FALLBACK: Pair = { zh: '数学对象之间的结构关系图', en: 'A diagram of structural relations between mathematical objects' };
@@ -184,6 +185,19 @@ export function CaseThumbnail({ caseId }: CaseThumbnailProps) {
             <text className="thumb-math-label" x="306" y="176">V</text>
             <text className="thumb-math-label" x="238" y="93">x</text>
             <text className="thumb-math-label" x="452" y="200">ℝⁿ</text>
+          </g>
+        )}
+        {caseId === 'newvault' && (
+          <g className="thumb-scene thumb-newvault">
+            <path className="thumb-grid-line" d="M142 78h356M142 120h356M142 162h356M196 55v145M292 55v145M388 55v145M484 55v145" />
+            <path className="thumb-primary-stroke" d="M196 78h96v42h-96zM388 78h96v42h-96zM292 120h96v42h-96zM196 162h96v-42h-96zM388 162h96v-42h-96z" />
+            <path className="thumb-secondary-stroke" d="M292 99h96M292 141h96M340 78v-23M340 183v-21" markerEnd={`url(#${arrowId})`} />
+            <circle className="thumb-solid-point" cx="196" cy="78" r="5" />
+            <circle className="thumb-solid-point" cx="388" cy="78" r="5" />
+            <circle className="thumb-solid-point" cx="292" cy="120" r="5" />
+            <circle className="thumb-solid-point" cx="196" cy="162" r="5" />
+            <circle className="thumb-solid-point" cx="388" cy="162" r="5" />
+            <text className="thumb-math-label thumb-label-primary" x="292" y="208">23 notes</text>
           </g>
         )}
       </svg>

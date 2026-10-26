@@ -1,0 +1,38 @@
+import assert from 'node:assert/strict';
+import {startTestServer,jsonCall} from './helpers.mjs';
+import {CHROME_PATH,PLAYWRIGHT_SPECIFIER} from './browser-runtime.mjs';
+const app=await startTestServer();let browser;
+try{
+ const {chromium}=await import(PLAYWRIGHT_SPECIFIER);browser=await chromium.launch({executablePath:CHROME_PATH??undefined,headless:true});
+ const page=await browser.newPage({viewport:{width:1440,height:1000}}),errors=[];
+ page.on('pageerror',e=>errors.push(e.message));page.on('response',r=>{if(r.status()>=400&&r.url().includes('/api/v2/'))errors.push(`${r.status()} ${r.url()}`);});
+ const profile=await app.db.createProfile({name:'局部MCS工作区A',modelVersion:'mcs-tests/1'}),other=await app.db.createProfile({name:'局部MCS工作区B',modelVersion:'mcs-tests/1'});
+ await page.goto(app.origin+'/start',{waitUntil:'networkidle'});await page.evaluate(id=>localStorage.setItem('mcs-web-selected-profile',id),profile.id);
+ const nodes='obj:tdg:compact,obj:tdg:paracompact',address=`/network?contentCase=topology-dg&layer=M&nodes=${encodeURIComponent(nodes)}`;
+ await page.goto(app.origin+address,{waitUntil:'networkidle'});await page.waitForSelector('.network-node');
+ await page.locator('.network-node').first().click({force:true});await page.locator('.network-node-info').waitFor();await page.waitForTimeout(400);
+ await page.getByLabel('显示保存的视图面板').evaluate(e=>{if(!e.checked)e.click();});
+ page.once('dialog',d=>d.accept('局部MCS数学结构快照'));
+ const savedResponse=page.waitForResponse(r=>r.request().method()==='POST'&&r.url().includes('/network-views'),{timeout:10000}).catch(()=>null);
+ await page.getByRole('button',{name:'保存当前视图',exact:true}).evaluate(e=>e.click());
+ const response=await savedResponse;assert(response,(await page.locator('.floating-panel[aria-label="保存的视图"]').innerText()).slice(0,1600));assert.equal(response.status(),200);
+ const listed=await jsonCall(app.origin,`/api/v2/profiles/${profile.id}/network-views`),saved=listed.payload.data.views.find(v=>v.name==='局部MCS数学结构快照');
+ assert.equal(saved.payload.schema,'mcs-network/3');assert.equal(saved.payload.contentLayer,'M');assert(saved.payload.refs.every(r=>r.source==='math-object'));
+ await page.goto(app.origin+'/network?nodes=group%3Agroup',{waitUntil:'networkidle'});
+ await page.getByLabel('显示保存的视图面板').evaluate(e=>{if(!e.checked)e.click();});
+ await page.locator('.saved-view-list li',{hasText:saved.name}).getByRole('button',{name:'载入',exact:true}).click();
+ await page.waitForURL(/contentCase=topology-dg/);await page.waitForSelector('.network-node');
+ await page.waitForFunction(()=>document.body.innerText.includes('已载入视图'));
+ assert.equal(new URL(page.url()).searchParams.get('layer'),'M');assert.equal(await page.locator('.network-node').count(),2);
+ await page.locator('[data-node="obj:tdg:compact"]').click({force:true});
+ await page.getByRole('link',{name:'打开节点页',exact:true}).click();await page.getByRole('link',{name:'返回案例网络',exact:true}).click();
+ await page.waitForSelector('.network-node');assert.equal(new URL(page.url()).searchParams.get('contentCase'),'topology-dg');assert.equal(await page.locator('.network-node').count(),2);
+ await page.goto(app.origin+'/learning-nodes/learn%3Atdg%3Agradient');await page.locator('.content-route-controls select').selectOption('route:tdg:gradient:2');
+ await page.getByRole('button',{name:'生成学习计划',exact:true}).click();await page.locator('[data-content-plan="Found"]').waitFor();
+ await page.getByRole('textbox',{name:'私人备注',exact:true}).fill('只保存在A的E层');await page.getByRole('button',{name:'保存计划与进度',exact:true}).click();
+ await page.getByRole('status').filter({hasText:'已保存至个人档案'}).waitFor();
+ await page.reload();await page.locator('[data-content-plan="Found"]').waitFor();assert.equal(await page.getByRole('textbox',{name:'私人备注',exact:true}).inputValue(),'只保存在A的E层');
+ await page.evaluate(id=>localStorage.setItem('mcs-web-selected-profile',id),other.id);await page.reload();await page.locator('.content-route-controls').waitFor();await page.waitForTimeout(350);assert.equal(await page.getByRole('textbox',{name:'私人备注',exact:true}).inputValue(),'');
+ await page.evaluate(id=>localStorage.setItem('mcs-web-selected-profile',id),profile.id);await page.reload();await page.locator('[data-content-plan="Found"]').waitFor();assert.equal(await page.getByRole('textbox',{name:'私人备注',exact:true}).inputValue(),'只保存在A的E层');
+ assert.deepEqual(errors,[]);console.log('passed: native M/L node details, snapshot v3 save/cross-case restore, reading return, plan restore in E and profile separation');
+}finally{await browser?.close();await app.cleanup();}

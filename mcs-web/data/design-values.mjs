@@ -299,6 +299,53 @@ export const DESIGN_VALUES = [
       { type: 'source', file: 'web/src/relation-visual.ts', pattern: "TAPER_ARROW_PATH = 'M 0\\.6 3\\.3 L 9\\.4 5 L 0\\.6 6\\.7 z'" },
     ],
   },
+  {
+    id: 'dark-theme-surfaces',
+    label: '暗色纸面与墨色：深底浅字，判据与浅色同一套',
+    display: '深色纸面 #14101f · 卡片 #1e1830 · 画布 #191331 · 墨色 #f2eefb · 弱化墨 #a79fc4 · '
+      + '实心底（--accent-fill #6d28d9 / --green-fill #0f7a52）两种外观共用',
+    kind: 'design',
+    source: '第一百零九轮（2026-10-16，暗色主题）',
+    where: "web/src/styles.css 的 html[data-theme='dark']；镜像在 web/src/theme.ts 的 THEME_DARK",
+    note: '深色不是「把浅色涂黑」：色相仍锁在紫族（深靛纸 + 近白墨），只是明暗关系反过来。'
+      + '取值按与浅色**同一套**判据选，不是凭手感：文字令牌对四种深色底 ≥4.5:1（`--ink-faint` 实测 5.48–7.48）、'
+      + '关系色/契约色对深色画布 ≥3:1（最低 3.55）、卡片文字对 10 色话题底与 12 色构造底 ≥4.5:1（最低 7.05）。'
+      + '凡是「当实心底、上面压白字」的令牌（`--accent-fill`、`--green-fill`）**两种外观取值相同**：'
+      + '主题色同时兼任「文字色」与「实心底」两种角色，而两者对明暗的要求相反，混用会让深色下的白字掉到 4.5:1 以下。'
+      + '判据由 `tests/a11y-contrast.test.mjs` 对两套外观各跑一遍，令牌成对与镜像一致由 `tests/theme-tokens.test.mjs` 断言。',
+    docKeyword: '深色纸面 #14101f',
+    checks: [
+      { type: 'css-block', file: 'web/src/styles.css', selector: "html[data-theme='dark']", pattern: '--bg:\\s*(#[0-9a-f]{6})', equals: '#14101f' },
+      { type: 'css-block', file: 'web/src/styles.css', selector: "html[data-theme='dark']", pattern: '--canvas:\\s*(#[0-9a-f]{6})', equals: '#191331' },
+      { type: 'css-block', file: 'web/src/styles.css', selector: "html[data-theme='dark']", pattern: '--ink:\\s*(#[0-9a-f]{6})', equals: '#f2eefb' },
+      { type: 'css-block', file: 'web/src/styles.css', selector: "html[data-theme='dark']", pattern: '--ink-faint:\\s*(#[0-9a-f]{6})', equals: '#a79fc4' },
+      { type: 'css-block', file: 'web/src/styles.css', selector: ":root", pattern: '--accent-fill:\\s*(#[0-9a-f]{6})', equals: '#6d28d9' },
+      { type: 'module', file: 'web/src/theme.ts', export: 'THEME_DARK', path: ['surface'], equals: '#1e1830' },
+    ],
+  },
+  {
+    id: 'scale-lod',
+    label: '尺度视图：90% / 55% / 30%、320px 邻近、0.06 滞后、卡片 160/196/224',
+    display: '分子 ≤90% → 节点 · 节点 ≤55% → 单元 · 单元 ≤30% → 话题 · 同屏包围盒 ≤320px · 滞后 0.06',
+    kind: 'design',
+    source: '第一百一十轮（2026-10-17，四层尺度视图）',
+    where: 'web/src/scale-network.ts 的 SCALE_LOD / SCALE_CARD_PX / SCALE_DOCK',
+    note: '阈值按「卡片上的字还读不读得出来」定：分子是明细，最早收；节点到 55% 已是圆点而单元标题仍可读；'
+      + '单元到 30% 再收进话题。`nearPx` 是「临近」的唯一判据——成员在当前缩放下的屏幕包围盒两个方向都 ≤320px 才合并，'
+      + '成员分散时如实保留、不强行并。0.06 的滞后带防止阈值附近来回抖。卡片宽高是**屏幕像素**，'
+      + '外层反缩放后 25% 下仍可读。判据由 `tests/scale-network.test.mjs` 与 `tests/network-scale.mjs` 核对。',
+    docKeyword: '尺度视图：90% / 55% / 30%',
+    checks: [
+      { type: 'module', file: 'web/src/scale-network.ts', export: 'SCALE_LOD', path: ['molecule'], equals: 0.9 },
+      { type: 'module', file: 'web/src/scale-network.ts', export: 'SCALE_LOD', path: ['node'], equals: 0.55 },
+      { type: 'module', file: 'web/src/scale-network.ts', export: 'SCALE_LOD', path: ['unit'], equals: 0.3 },
+      { type: 'module', file: 'web/src/scale-network.ts', export: 'SCALE_LOD', path: ['nearPx'], equals: 320 },
+      { type: 'module', file: 'web/src/scale-network.ts', export: 'SCALE_LOD', path: ['hysteresis'], equals: 0.06 },
+      { type: 'module', file: 'web/src/scale-network.ts', export: 'SCALE_CARD_PX', path: ['molecule', 'w'], equals: 160 },
+      { type: 'module', file: 'web/src/scale-network.ts', export: 'SCALE_CARD_PX', path: ['unit', 'w'], equals: 196 },
+      { type: 'module', file: 'web/src/scale-network.ts', export: 'SCALE_CARD_PX', path: ['topic', 'w'], equals: 224 },
+    ],
+  },
 ];
 
 /** 便于文档与测试引用：登记条数与各类检查的条数。 */

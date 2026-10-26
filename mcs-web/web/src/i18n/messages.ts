@@ -39,6 +39,7 @@ export const MESSAGES = {
   'nav.start': { zh: '开始学习', en: 'Start learning' },
   'nav.nodes': { zh: '数学对象', en: 'Objects' },
   'nav.network': { zh: '知识网络', en: 'Knowledge network' },
+  'nav.mcs': { zh: 'MCS', en: 'MCS' },
   'nav.plan': { zh: '学习路线', en: 'Learning route' },
   'nav.library': { zh: '我的笔记库', en: 'My note libraries' },
   'nav.profile': { zh: '我的学习', en: 'My learning' },
@@ -47,6 +48,7 @@ export const MESSAGES = {
   'nav.method': { zh: '学习方法论', en: 'Methodology' },
   'nav.tutor': { zh: '辅导', en: 'Tutor' },
   'nav.lab': { zh: '前沿研究', en: 'Research' },
+  'nav.formalObjects': { zh: '形式对象与阅读节点', en: 'Objects and readings' },
   'nav.maintenance': { zh: '网站维护', en: 'Maintenance' },
   'nav.authoring': { zh: '自动关联', en: 'Relation discovery' },
   'nav.secondaryTitle': { zh: '按需查阅', en: 'Look up as needed' },
@@ -70,6 +72,16 @@ export const MESSAGES = {
   'topbar.collapseNav': { zh: '收起导航', en: 'Collapse navigation' },
   'topbar.expandSidebar': { zh: '展开侧栏', en: 'Expand sidebar' },
   'topbar.collapseSidebar': { zh: '收起侧栏', en: 'Collapse sidebar' },
+
+  /*
+   * 外观三态（第一百零九轮）：文案描述的是**规则**，不是**结果**——
+   * 「跟随系统」与「浅色 / 深色」并列，而不是「自动 / 手动」。
+   */
+  'theme.label': { zh: '外观', en: 'Appearance' },
+  'theme.title': { zh: '现在显示为', en: 'Currently showing' },
+  'theme.system': { zh: '跟随系统', en: 'System' },
+  'theme.light': { zh: '浅色', en: 'Light' },
+  'theme.dark': { zh: '深色', en: 'Dark' },
 
   'profile.pickerLabel': { zh: '学习者档案（E）', en: 'Learner profile (E)' },
   'profile.none': { zh: '未选择档案', en: 'No profile selected' },

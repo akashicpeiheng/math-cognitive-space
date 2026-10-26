@@ -67,7 +67,7 @@ async function makeHarness(name, { replay = fakeReplay() } = {}) {
   await mkdir(dir, { recursive: true });
   const extensionsDir = join(dir, 'extensions');
   const authoringFile = join(dir, 'authoring.sqlite3');
-  const authoring = new AuthoringDatabase({ file: authoringFile });
+  const authoring = (await new AuthoringDatabase({ file: authoringFile }).init());
   const source = await createOntologySource({ dataDir: DATA_DIR, extensionsDir, repoRoot: REPO_ROOT });
   const config = { repoRoot: REPO_ROOT, authoringDbFile: authoringFile, dbFile: join(dir, 'mcs-web.sqlite3'), dataDir: DATA_DIR };
   const ctx = { dataDir: DATA_DIR, extensionsDir, authoring, config, ontologySource: source, replay };
@@ -137,8 +137,8 @@ function draftSpec(node = DRAFT_NODE) {
   };
 }
 
-function makeDraft(harness, { node = DRAFT_NODE, extra = {} } = {}) {
-  return harness.authoring.createDraft({
+async function makeDraft(harness, { node = DRAFT_NODE, extra = {} } = {}) {
+  return (await harness.authoring.createDraft({
     name: DRAFT_TITLE,
     construct: 'Concept',
     case: 'group',
@@ -149,25 +149,25 @@ function makeDraft(harness, { node = DRAFT_NODE, extra = {} } = {}) {
     node: { id: node, discipline: '群论', granularity: 'unit', evidenceStatus: 'NOT-CLAIMED', title: DRAFT_TITLE },
     spec: draftSpec(node),
     ...extra,
-  });
+  }));
 }
 
 /** 造一个已完成的发现任务（候选由测试直接给，模拟引擎产出）。 */
-function seedRun(harness, { draftId, candidates, status = 'completed', ontologyVersion = null }) {
-  const run = harness.authoring.createRun({
+async function seedRun(harness, { draftId, candidates, status = 'completed', ontologyVersion = null }) {
+  const run = (await harness.authoring.createRun({
     draftId,
     nodeRef: null,
     ontologyVersion: ontologyVersion ?? harness.source.current().version,
     background: 'bg:group/1',
     budget: { ...DISCOVERY_BUDGET },
     generatorVersion: 'test/1',
-  });
-  harness.authoring.saveCandidates(run.id, candidates);
-  harness.authoring.updateRun(run.id, {
+  }));
+  (await harness.authoring.saveCandidates(run.id, candidates));
+  (await harness.authoring.updateRun(run.id, {
     status,
     stats: { candidates: candidates.length, coveredNodes: 2, durationMs: 1, verified: candidates.filter((c) => c.math.status === 'verified').length, refuted: 0, undecided: 0, unprocessed: 0 },
-  });
-  return harness.authoring.getRun(run.id);
+  }));
+  return (await harness.authoring.getRun(run.id));
 }
 
 function baseNode(harness, index = 0) {
@@ -177,14 +177,14 @@ function baseNode(harness, index = 0) {
 
 /** 一份「可发布」的请求：草稿 + 一条已验证的定义引用 + 一条**选中但未验证**的关系。 */
 async function publishableSetup(harness, { name = 'A' } = {}) {
-  const draft = makeDraft(harness);
+  const draft = (await makeDraft(harness));
   const from = baseNode(harness);
   const candidate = candidateFixture({ id: `cand-${name}-ok`, from, to: { node: DRAFT_NODE, version: '1' } });
   // 选中了、但还没通过机器检查：只能进「待证」，不进公共网络。
   const pendingCandidate = candidateFixture({ id: `cand-${name}-pending`, from, to: { node: DRAFT_NODE, version: '1' }, math: 'undecided', evidence: false });
   // 根本没选中的那条：既不发布，也不在本次发布的待证清单里。
   const unselected = candidateFixture({ id: `cand-${name}-unselected`, from, to: { node: DRAFT_NODE, version: '1' } });
-  const run = seedRun(harness, { draftId: draft.id, candidates: [candidate, pendingCandidate, unselected] });
+  const run = (await seedRun(harness, { draftId: draft.id, candidates: [candidate, pendingCandidate, unselected] }));
   return {
     draft, run, candidate, pendingCandidate, unselected, other: pendingCandidate, from,
     request: {
@@ -244,7 +244,7 @@ test('内容包不可变、哈希自洽，写入后回读校验通过', async ()
     // 路径穿越：非法 revisionId 在拼路径之前就被挡住。
     await assert.rejects(async () => extensions.readPackage({ extensionsDir: harness.extensionsDir }, 'rev:..%2f..'), (error) => error.code === 'BAD_REQUEST');
   } finally {
-    harness.authoring.close();
+    (await harness.authoring.close());
     await safeRemove(harness.dir);
   }
 });
@@ -259,7 +259,7 @@ test('快照 = 基础数据 + 激活包；未发布时就是基础数据本身',
     assert.deepEqual([...extensions.extensionsRoot({ dataDir: DATA_DIR })].length > 0, true);
     assert.deepEqual(extensions.BASE_FINGERPRINT_KEYS ?? null, null);   // 常量在 snapshot.mjs，这里只确认 extensions 不导出它
   } finally {
-    harness.authoring.close();
+    (await harness.authoring.close());
     await safeRemove(harness.dir);
   }
 });
@@ -280,31 +280,31 @@ test('BASE_FINGERPRINT_KEYS 只覆盖 schema/signature/theory，扩展内容不�
 test('草稿更新走乐观锁：修订号不符 409，本体版本不符 409', async () => {
   const harness = await makeHarness('authoring-draft');
   try {
-    const draft = makeDraft(harness);
+    const draft = (await makeDraft(harness));
     assert.equal(draft.revision, 1);
-    const updated = harness.authoring.updateDraft(draft.id, { summary: '改一次' }, { expectedRevision: 1, ontologyVersion: harness.source.current().version });
+    const updated = (await harness.authoring.updateDraft(draft.id, { summary: '改一次' }, { expectedRevision: 1, ontologyVersion: harness.source.current().version }));
     assert.equal(updated.revision, 2);
     assert.equal(updated.summary, '改一次');
 
     await assert.rejects(
-      async () => harness.authoring.updateDraft(draft.id, { summary: '并发改' }, { expectedRevision: 1, ontologyVersion: harness.source.current().version }),
+      async () => (await harness.authoring.updateDraft(draft.id, { summary: '并发改' }, { expectedRevision: 1, ontologyVersion: harness.source.current().version })),
       (error) => error instanceof McsError && error.code === 'REVISION_CONFLICT' && error.status === 409,
     );
 
     // 换一个本体版本去改「形式表达」→ 版本冲突（`stale-reference` 的来源就在这里被挡住）。
     await assert.rejects(
-      async () => harness.authoring.updateDraft(draft.id, { spec: draftSpec() }, { expectedRevision: 2, ontologyVersion: 'sha256:another-version' }),
+      async () => (await harness.authoring.updateDraft(draft.id, { spec: draftSpec() }, { expectedRevision: 2, ontologyVersion: 'sha256:another-version' })),
       (error) => error instanceof McsError && error.code === 'ONTOLOGY_VERSION_CONFLICT' && error.status === 409,
     );
 
     // 只改文字，不该被本体版本锁住。
-    const ok = harness.authoring.updateDraft(draft.id, { reading: '换一段正文' }, { expectedRevision: 2, ontologyVersion: null });
+    const ok = (await harness.authoring.updateDraft(draft.id, { reading: '换一段正文' }, { expectedRevision: 2, ontologyVersion: null }));
     assert.equal(ok.revision, 3);
 
     // 找不到的草稿按规格报 404。
-    await assert.rejects(async () => harness.authoring.getDraft('draft-不存在'), (error) => error.status === 404);
+    await assert.rejects(async () => (await harness.authoring.getDraft('draft-不存在')), (error) => error.status === 404);
   } finally {
-    harness.authoring.close();
+    (await harness.authoring.close());
     await safeRemove(harness.dir);
   }
 });
@@ -312,22 +312,22 @@ test('草稿更新走乐观锁：修订号不符 409，本体版本不符 409', 
 test('编写库只吃声明式数据，且与学习者 E 库物理分开', async () => {
   const harness = await makeHarness('authoring-separation');
   try {
-    const draft = makeDraft(harness);
+    const draft = (await makeDraft(harness));
     assert.ok(draft.id);
     await assert.rejects(
-      async () => harness.authoring.createDraft({ name: '带函数的草稿', node: { id: 'x', discipline: () => '群论' } }),
+      async () => (await harness.authoring.createDraft({ name: '带函数的草稿', node: { id: 'x', discipline: () => '群论' } })),
       (error) => error.code === 'BAD_REQUEST',
     );
     await assert.rejects(
-      async () => harness.authoring.createDraft({ name: '原型污染', spec: JSON.parse('{"__proto__":{"polluted":true}}') }),
+      async () => (await harness.authoring.createDraft({ name: '原型污染', spec: JSON.parse('{"__proto__":{"polluted":true}}') })),
       (error) => error.code === 'BAD_REQUEST',
     );
 
     // E 库是另一个文件：编写库里不存在 profiles/notes/events 这些表。
     const learner = await createLearnerStore({ config: { dbFile: join(harness.dir, 'mcs-web.sqlite3') } });
     const tables = (name) => learner.driver.get("SELECT name FROM sqlite_master WHERE type='table' AND name = ?", [name]);
-    assert.ok(tables('notes'));
-    const authoringTables = harness.authoring.db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all().map((row) => row.name);
+    assert.ok(await tables('notes'));
+    const authoringTables = (await harness.authoring.driver.all("SELECT name FROM sqlite_master WHERE type='table'")).map((row) => row.name);
     for (const forbidden of ['profiles', 'notes', 'events']) {
       assert.equal(authoringTables.includes(forbidden), false, `编写库不该有 ${forbidden} 表`);
     }
@@ -335,7 +335,7 @@ test('编写库只吃声明式数据，且与学习者 E 库物理分开', async
     assert.notEqual(harness.authoring.file, learner.file);
     await learner.close();
   } finally {
-    harness.authoring.close();
+    (await harness.authoring.close());
     await safeRemove(harness.dir);
   }
 });
@@ -367,7 +367,7 @@ test('预览与提交共用同一段差异计算：预览零写入且给出同�
     assert.equal(committed.replay.length, 1);
     assert.equal(harness.replay.calls.length, 1, '第 2 步只重放选中的证据');
   } finally {
-    harness.authoring.close();
+    (await harness.authoring.close());
     await safeRemove(harness.dir);
   }
 });
@@ -404,7 +404,7 @@ test('只发布选中结果：未选中/未验证的候选不进公共网络', a
     // 旧版本（基础数据）的那一份没有被改：快照的 base 仍然是 232 个节点。
     assert.equal(harness.source.base.raw.nodes.some((item) => item.id === DRAFT_NODE), false);
   } finally {
-    harness.authoring.close();
+    (await harness.authoring.close());
     await safeRemove(harness.dir);
   }
 });
@@ -438,7 +438,7 @@ test('重复发布幂等：同 idempotencyKey 与同请求指纹都返回同一�
       (error) => error.code === 'REVISION_CONFLICT' && error.status === 409,
     );
   } finally {
-    harness.authoring.close();
+    (await harness.authoring.close());
     await safeRemove(harness.dir);
   }
 });
@@ -448,8 +448,8 @@ test('并发与旧结果发布：晚到的那次拿到 409，且不会写坏版�
   try {
     const setup = await publishableSetup(harness, { name: 'CONF' });
     const second = candidateFixture({ id: 'cand-CONF-second', from: setup.from, to: { node: DRAFT_NODE, version: '1' } });
-    harness.authoring.saveCandidates(setup.run.id, [second]);
-    const draft = harness.authoring.getDraft(setup.draft.id);
+    (await harness.authoring.saveCandidates(setup.run.id, [second]));
+    const draft = (await harness.authoring.getDraft(setup.draft.id));
     const staleVersion = harness.source.current().version;
 
     // 两个请求都用**发布前**取的那份快照版本：真正的并发窗口就是这样。
@@ -470,14 +470,14 @@ test('并发与旧结果发布：晚到的那次拿到 409，且不会写坏版�
     assert.ok(ontology.maybeNode(DRAFT_NODE));
 
     // 旧结果（在旧本体版本下跑出来的任务）再想发布 → 409。
-    const otherDraft = makeDraft(harness, { node: 'ext:test-second-node' });
-    const otherRun = seedRun(harness, { draftId: otherDraft.id, candidates: [], ontologyVersion: staleVersion });
+    const otherDraft = (await makeDraft(harness, { node: 'ext:test-second-node' }));
+    const otherRun = (await seedRun(harness, { draftId: otherDraft.id, candidates: [], ontologyVersion: staleVersion }));
     await assert.rejects(
       async () => commitPublication(harness.ctx, { draftId: otherDraft.id, draftRevision: otherDraft.revision, ontologyVersion: harness.source.current().version, acceptedCandidateIds: [], dismissedCandidateIds: [], runId: otherRun.id }),
       (error) => error.status === 409,
     );
   } finally {
-    harness.authoring.close();
+    (await harness.authoring.close());
     await safeRemove(harness.dir);
   }
 });
@@ -499,7 +499,7 @@ test('任一步失败 → 原版本继续生效（逐阶段注入失败）', asy
       assert.equal(await extensions.readActivePointer(harness.ctx), null, '失败后不该有任何激活指针');
       assert.deepEqual(await readdir(harness.extensionsDir).catch(() => []), [], '失败后不该留下内容包');
     } finally {
-      harness.authoring.close();
+      (await harness.authoring.close());
       await safeRemove(harness.dir);
     }
   }
@@ -517,7 +517,7 @@ test('任一步失败 → 原版本继续生效（逐阶段注入失败）', asy
       assert.equal(await extensions.readActivePointer(harness.ctx), null);
       assert.deepEqual(await readdir(harness.extensionsDir).catch(() => []), []);
     } finally {
-      harness.authoring.close();
+      (await harness.authoring.close());
       await safeRemove(harness.dir);
     }
   }
@@ -526,7 +526,7 @@ test('任一步失败 → 原版本继续生效（逐阶段注入失败）', asy
   {
     const harness = await makeHarness('fail-step3');
     try {
-      const draft = makeDraft(harness, {
+      const draft = (await makeDraft(harness, {
         extra: {
           contracts: [{
             id: 'act:broken', mode: 'deduction', title: '引用未知节点的契约',
@@ -535,10 +535,10 @@ test('任一步失败 → 原版本继续生效（逐阶段注入失败）', asy
             witness: { type: 'declared', status: 'DEF' }, version: '1',
           }],
         },
-      });
+      }));
       const from = baseNode(harness);
       const candidate = candidateFixture({ id: 'cand-F3', from, to: { node: DRAFT_NODE, version: '1' } });
-      seedRun(harness, { draftId: draft.id, candidates: [candidate] });
+      (await seedRun(harness, { draftId: draft.id, candidates: [candidate] }));
       const request = { draftId: draft.id, draftRevision: draft.revision, ontologyVersion: harness.source.current().version, acceptedCandidateIds: [candidate.id], dismissedCandidateIds: [] };
 
       // 预览就该看得见阻断项；提交则在隔离区被挡下。
@@ -553,7 +553,7 @@ test('任一步失败 → 原版本继续生效（逐阶段注入失败）', asy
       // 暂存目录用后即清：试算场地不该留垃圾。
       assert.equal(existsSync(join(harness.dir, 'publication-staging')), false);
     } finally {
-      harness.authoring.close();
+      (await harness.authoring.close());
       await safeRemove(harness.dir);
     }
   }
@@ -576,7 +576,7 @@ test('任一步失败 → 原版本继续生效（逐阶段注入失败）', asy
       assert.equal(harness.source.applied(), false);
       assert.equal(harness.source.current().version, harness.source.base.version);
     } finally {
-      harness.authoring.close();
+      (await harness.authoring.close());
       await safeRemove(harness.dir);
     }
   }
@@ -611,7 +611,7 @@ test('任一步失败 → 原版本继续生效（逐阶段注入失败）', asy
       await real.reload();
       assert.equal(real.applied(), false);
     } finally {
-      harness.authoring.close();
+      (await harness.authoring.close());
       await safeRemove(harness.dir);
     }
   }
@@ -644,7 +644,7 @@ test('任一步失败 → 原版本继续生效（逐阶段注入失败）', asy
       assert.equal(real.applied(), false, '回退之后生效的仍是原版本');
       assert.equal(real.current().version, real.base.version);
     } finally {
-      harness.authoring.close();
+      (await harness.authoring.close());
       await safeRemove(harness.dir);
     }
   }
@@ -655,15 +655,15 @@ test('任一步失败 → 原版本继续生效（逐阶段注入失败）', asy
 test('服务重启：运行中的任务标 interrupted，已核验结果原样保留', async () => {
   const harness = await makeHarness('restart-interrupted');
   try {
-    const draft = makeDraft(harness);
+    const draft = (await makeDraft(harness));
     const from = baseNode(harness);
     const verified = candidateFixture({ id: 'cand-R-verified', from, to: { node: DRAFT_NODE, version: '1' } });
     const undecided = candidateFixture({ id: 'cand-R-undecided', from, to: { node: DRAFT_NODE, version: '1' }, math: 'undecided', evidence: false });
-    const run = seedRun(harness, { draftId: draft.id, candidates: [verified, undecided], status: 'running' });
+    const run = (await seedRun(harness, { draftId: draft.id, candidates: [verified, undecided], status: 'running' }));
 
-    const restart = harness.authoring.markInterruptedRuns();
+    const restart = (await harness.authoring.markInterruptedRuns());
     assert.equal(restart.count, 1);
-    const after = harness.authoring.getRun(run.id);
+    const after = (await harness.authoring.getRun(run.id));
     assert.equal(after.status, 'interrupted');
     assert.equal(after.interrupted, true);
     assert.ok(after.finishedAt);
@@ -685,9 +685,9 @@ test('服务重启：运行中的任务标 interrupted，已核验结果原样�
     assert.ok(committed.revision.id.startsWith('rev:'));
 
     // 再跑一次重启收尾：没有 running/queued 的任务，不该有动作。
-    assert.equal(harness.authoring.markInterruptedRuns().count, 0);
+    assert.equal((await harness.authoring.markInterruptedRuns()).count, 0);
   } finally {
-    harness.authoring.close();
+    (await harness.authoring.close());
     await safeRemove(harness.dir);
   }
 });
@@ -695,10 +695,10 @@ test('服务重启：运行中的任务标 interrupted，已核验结果原样�
 test('取消任务：状态变 cancelled，已完成的候选结果保留', async () => {
   const harness = await makeHarness('cancel-run');
   try {
-    const draft = makeDraft(harness);
+    const draft = (await makeDraft(harness));
     const from = baseNode(harness);
     const candidate = candidateFixture({ id: 'cand-C', from, to: { node: DRAFT_NODE, version: '1' } });
-    const run = seedRun(harness, { draftId: draft.id, candidates: [candidate], status: 'running' });
+    const run = (await seedRun(harness, { draftId: draft.id, candidates: [candidate], status: 'running' }));
     const cancelled = await harness.authoring.cancelRun(run.id);
     assert.equal(cancelled.cancelled, true);
     assert.equal(cancelled.status, 'cancelled');
@@ -707,7 +707,7 @@ test('取消任务：状态变 cancelled，已完成的候选结果保留', asyn
     const again = await harness.authoring.cancelRun(run.id);
     assert.equal(again.cancelled, false);
   } finally {
-    harness.authoring.close();
+    (await harness.authoring.close());
     await safeRemove(harness.dir);
   }
 });
@@ -729,31 +729,31 @@ test('回滚创建新 revision：不删历史包/证据/学习者记录，且没
 
     // 第一次发布：草稿节点甲 + 一条定义引用 + 一份契约。
     const first = await publishableSetup(harness, { name: 'RB1' });
-    const draft1 = harness.authoring.updateDraft(first.draft.id, {
+    const draft1 = (await harness.authoring.updateDraft(first.draft.id, {
       contracts: [{
         id: 'act:first', mode: 'deduction', title: '第一版契约',
         inputs: [{ node: DRAFT_NODE, accepts: ['statement'] }],
         outputs: [{ node: first.from.node, provides: ['proof'] }],
         witness: { type: 'declared', status: 'DEF' }, version: '1',
       }],
-    }, { expectedRevision: first.draft.revision, ontologyVersion: harness.source.current().version });
+    }, { expectedRevision: first.draft.revision, ontologyVersion: harness.source.current().version }));
     const rev1 = await commitPublication(harness.ctx, { ...first.request, draftRevision: draft1.revision });
     assert.equal(rev1.revision.summary.contracts, 1);
     assert.equal(rev1.revision.summary.nodes, 1);
 
     // 第二次发布：再加一个新节点乙，以及一条**依赖乙**的关系与契约。
     const secondNode = 'ext:test-dependent-node';
-    const draft2 = makeDraft(harness, { node: secondNode });
+    const draft2 = (await makeDraft(harness, { node: secondNode }));
     const relationCandidate = candidateFixture({ id: 'cand-RB2', from: { node: DRAFT_NODE, version: '1' }, to: { node: secondNode, version: '1' } });
-    seedRun(harness, { draftId: draft2.id, candidates: [relationCandidate] });
-    const draft2b = harness.authoring.updateDraft(draft2.id, {
+    (await seedRun(harness, { draftId: draft2.id, candidates: [relationCandidate] }));
+    const draft2b = (await harness.authoring.updateDraft(draft2.id, {
       contracts: [{
         id: 'act:second', mode: 'deduction', title: '第二版契约',
         inputs: [{ node: secondNode, accepts: ['statement'] }],
         outputs: [{ node: DRAFT_NODE, provides: ['proof'] }],
         witness: { type: 'declared', status: 'DEF' }, version: '1',
       }],
-    }, { expectedRevision: draft2.revision, ontologyVersion: harness.source.current().version });
+    }, { expectedRevision: draft2.revision, ontologyVersion: harness.source.current().version }));
     const rev2 = await commitPublication(harness.ctx, {
       draftId: draft2b.id, draftRevision: draft2b.revision, ontologyVersion: harness.source.current().version,
       acceptedCandidateIds: [relationCandidate.id], dismissedCandidateIds: [], idempotencyKey: 'key-RB2',
@@ -808,9 +808,9 @@ test('回滚创建新 revision：不删历史包/证据/学习者记录，且没
     assert.equal((await extensions.readPackage(harness.ctx, rev1.revision.id)).package.nodes.length, 1);
 
     // 编写库里的草稿、运行与候选都还在。
-    assert.equal(harness.authoring.getDraft(first.draft.id).publishedRevisionId, rev1.revision.id);
-    assert.equal(harness.authoring.listRuns({ limit: 50 }).length, 2);
-    assert.equal(harness.authoring.listCandidates(first.run.id).length, 3);
+    assert.equal((await harness.authoring.getDraft(first.draft.id)).publishedRevisionId, rev1.revision.id);
+    assert.equal((await harness.authoring.listRuns({ limit: 50 })).length, 2);
+    assert.equal((await harness.authoring.listCandidates(first.run.id)).length, 3);
 
     // 学习者记录逐字节没变。
     const learnerAfter = await learner.exportProfile(profile.id);
@@ -826,7 +826,7 @@ test('回滚创建新 revision：不删历史包/证据/学习者记录，且没
     assert.equal(forward.revision.kind, 'rollback');
     assert.equal(forward.revision.restores, rev2.revision.id);
   } finally {
-    harness.authoring.close();
+    (await harness.authoring.close());
     await safeRemove(harness.dir);
   }
 });
@@ -836,8 +836,8 @@ test('回滚同一版本两次：内容相同即同一个 revision（不会写�
   try {
     const setup = await publishableSetup(harness, { name: 'RBI' });
     const rev1 = await commitPublication(harness.ctx, setup.request);
-    const second = makeDraft(harness, { node: 'ext:test-third-node' });
-    seedRun(harness, { draftId: second.id, candidates: [] });
+    const second = (await makeDraft(harness, { node: 'ext:test-third-node' }));
+    (await seedRun(harness, { draftId: second.id, candidates: [] }));
     const rev2 = await commitPublication(harness.ctx, {
       draftId: second.id, draftRevision: second.revision, ontologyVersion: harness.source.current().version,
       acceptedCandidateIds: [], dismissedCandidateIds: [], idempotencyKey: 'key-RBI-2',
@@ -857,7 +857,7 @@ test('回滚同一版本两次：内容相同即同一个 revision（不会写�
     const activeMeta = revisions.revisions.find((item) => item.id === revisions.active);
     assert.equal(activeMeta.kind, 'rollback');
   } finally {
-    harness.authoring.close();
+    (await harness.authoring.close());
     await safeRemove(harness.dir);
   }
 });
@@ -882,7 +882,7 @@ test('回滚到正在生效的版本：安全空操作（幂等返回），不�
       (error) => error.code === 'NOT_FOUND' && error.status === 404,
     );
   } finally {
-    harness.authoring.close();
+    (await harness.authoring.close());
     await safeRemove(harness.dir);
   }
 });
@@ -914,7 +914,7 @@ test('预算口径如实：耗时/截断/超时都写进 stats，并说明「单
     assert.ok(outcome.stats.warnings.some((item) => item.includes('候选上限')), outcome.stats.warnings.join('；'));
     assert.equal(typeof outcome.stats.timedOut, 'number');
   } finally {
-    harness.authoring.close();
+    (await harness.authoring.close());
     await safeRemove(harness.dir);
   }
 });
@@ -962,7 +962,7 @@ test('发现编排：候选生成 → 判定 → 统计字段齐全（同步）'
     assert.equal(outcome.stats.verified, references.length);
     assert.equal(outcome.stats.undecided, certificateKinds.length);
   } finally {
-    harness.authoring.close();
+    (await harness.authoring.close());
     await safeRemove(harness.dir);
   }
 });
@@ -993,7 +993,7 @@ test('发现编排：预算截断保留已完成结果，并如实报未处理�
     assert.equal(outcome.candidates.length, 2);
     assert.ok(outcome.candidates.every((item) => item.math.status === 'undecided'));
   } finally {
-    harness.authoring.close();
+    (await harness.authoring.close());
     await safeRemove(harness.dir);
   }
 });
@@ -1180,23 +1180,23 @@ test('端到端：发现产出候选 → 重放 → 入库（假引擎驱动的�
     assert.equal(replayed.candidate.replay.status, 'not_run');
 
     // 把发现结果与重放结果写进编写库，再走发布。
-    const draft = makeDraft(harness);
-    const run = harness.authoring.createRun({
+    const draft = (await makeDraft(harness));
+    const run = (await harness.authoring.createRun({
       draftId: draft.id, nodeRef: { node: DRAFT_NODE, version: '1' },
       ontologyVersion: harness.source.base.version, background: 'bg:group/1', budget: { ...DISCOVERY_BUDGET },
-    });
-    harness.authoring.saveCandidates(run.id, outcome.candidates);
-    harness.authoring.updateRun(run.id, { status: 'completed', stats: outcome.stats });
-    harness.authoring.setReview(run.id, [replayed.candidate.id], 'accepted');
+    }));
+    (await harness.authoring.saveCandidates(run.id, outcome.candidates));
+    (await harness.authoring.updateRun(run.id, { status: 'completed', stats: outcome.stats }));
+    (await harness.authoring.setReview(run.id, [replayed.candidate.id], 'accepted'));
 
-    const selected = harness.authoring.getRun(run.id).candidates.filter((item) => item.review === 'accepted');
+    const selected = (await harness.authoring.getRun(run.id)).candidates.filter((item) => item.review === 'accepted');
     assert.equal(selected.length, 1);
     // 让重放把定义引用确认成 verified（真链路由上游的 verify.mjs 完成，这里注入同等结果）。
-    harness.authoring.saveCandidates(run.id, [{
+    (await harness.authoring.saveCandidates(run.id, [{
       ...replayed.candidate,
       math: { status: 'verified', reason: '重放确认定义引用成立', scope: '定义层' },
       evidence: { id: `ev:${replayed.candidate.id}`, kind: 'reference', status: 'DEF', checkStatus: 'not_run', title: '定义引用', scope: '定义层', nodes: [replayed.candidate.from.node, replayed.candidate.to.node], checkerVerified: false },
-    }]);
+    }]));
 
     const committed = await commitPublication(harness.ctx, {
       draftId: draft.id, draftRevision: draft.revision, ontologyVersion: harness.source.current().version,
@@ -1208,10 +1208,10 @@ test('端到端：发现产出候选 → 重放 → 入库（假引擎驱动的�
     assert.ok(ontology.raw.relationDescriptions.some((item) => item.id === `rel:${replayed.candidate.id}`));
     assert.equal(committed.revision.kind, 'publish');
     // 发布后审阅状态推进到 published，草稿记录下已发布版本。
-    assert.equal(harness.authoring.getDraft(draft.id).publishedRevisionId, committed.revision.id);
-    assert.equal(harness.authoring.listCandidates(run.id).find((item) => item.id === replayed.candidate.id).review, 'published');
+    assert.equal((await harness.authoring.getDraft(draft.id)).publishedRevisionId, committed.revision.id);
+    assert.equal((await harness.authoring.listCandidates(run.id)).find((item) => item.id === replayed.candidate.id).review, 'published');
   } finally {
-    harness.authoring.close();
+    (await harness.authoring.close());
     await safeRemove(harness.dir);
   }
 });
@@ -1240,7 +1240,7 @@ test('写入口只在本机开放；请求只吃声明式数据', async () => {
       (error) => error.status === 404 || error.code === 'BAD_REQUEST',
     );
   } finally {
-    harness.authoring.close();
+    (await harness.authoring.close());
     await safeRemove(harness.dir);
   }
 });
@@ -1312,7 +1312,7 @@ test('基线指纹变化：扩展关系标为待复核，不再当作已认证�
     assert.equal(relation.verificationStatus, 'stale');
     assert.match(relation.reviewNote, /schema\/签名\/理论已变化/);
   } finally {
-    harness.authoring.close();
+    (await harness.authoring.close());
     await safeRemove(harness.dir);
   }
 });
@@ -1327,7 +1327,7 @@ test('内容包指向坏目录时：快照退回基础数据并如实报问题�
     assert.equal(harness.source.integrity().ok, false);
     assert.ok(harness.source.integrity().problems.length > 0);
   } finally {
-    harness.authoring.close();
+    (await harness.authoring.close());
     await safeRemove(harness.dir);
   }
 });

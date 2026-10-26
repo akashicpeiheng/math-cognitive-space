@@ -1,0 +1,183 @@
+{
+  "date": "2026-10-17",
+  "scope": "Lean 成果入稿；不是 B3–B6 全部完成",
+  "changes": [
+    {
+      "path": "mcs-foundations/00-README.md",
+      "beforeSha256": "d81b6de34e3b46cb0df4155858ad7c41c3fcf5463e20b577d094a843681c6c1b",
+      "afterSha256": "af6493536cb15f4ec70a0cffbb45884586ce7aabc9a434e6656a575b3cb413bc",
+      "bytesBefore": 8766,
+      "bytesAfter": 9242
+    },
+    {
+      "path": "mcs-foundations/03-语义：Henkin与标准.md",
+      "beforeSha256": "0f62bb06426d16a651707e3c2bdd89254b758ceaeab299ab13fb3ec3d4d5c680",
+      "afterSha256": "a795d4ff4b820fb4ad84fba3f3852e8da0df0e5177e36f77a9c64e8961eaa088",
+      "bytesBefore": 18033,
+      "bytesAfter": 20526
+    },
+    {
+      "path": "mcs-foundations/08-关系代数与结构.md",
+      "beforeSha256": "b0d630101f192de91dfb086b502d67fa87cfee782571448a7e32df8f60bc2b98",
+      "afterSha256": "94f75b3b69a270fc40da5b59cca618a4dc88f155a9688efeb83d6ada576d12e4",
+      "bytesBefore": 15389,
+      "bytesAfter": 19659
+    },
+    {
+      "path": "mcs-foundations/13-贯通案例.md",
+      "beforeSha256": "0a792a26f1dbca8812265549e9d4d80cfda1aba65b6498961717890de3cd0674",
+      "afterSha256": "49c04413e07182e129e0ca3c2c95193430b84fe1a377c883f6849d26d948be84",
+      "bytesBefore": 4604,
+      "bytesAfter": 6324
+    },
+    {
+      "path": "mcs-foundations/15-验证与完成标准.md",
+      "beforeSha256": "f35f401af63c7047d81fca35d91e44a10340026bb1df9200402e53de9cb1632b",
+      "afterSha256": "94a87f6daeaab0ed585b02fea7385776c557bddb8d18ee38553c7ea1a77bcfbc",
+      "bytesBefore": 15294,
+      "bytesAfter": 18715
+    },
+    {
+      "path": "mcs-foundations/A-定义与定理索引.md",
+      "beforeSha256": "1f355c558b978595cf445618947fc0e0607bac484c1fc9728c2a82c48563d89d",
+      "afterSha256": "ce07c4b8f589cf742fb63ff4da3109b0b7e6df231e6cb5c5d00724ad1a93d83b",
+      "bytesBefore": 28161,
+      "bytesAfter": 28162
+    },
+    {
+      "path": "mcs-foundations/B-文献证据表.md",
+      "beforeSha256": "6731d624a668b375e05fb5ad92274b6a73b3645f05e8ee79d2d8b6d749a534e7",
+      "afterSha256": "7ff488a3c52865a876ab051f615f66bbe6ed11ca762400e67f7dad8c9a22fb7d",
+      "bytesBefore": 16747,
+      "bytesAfter": 19079
+    },
+    {
+      "path": "mcs-foundations/D-接口契约.md",
+      "beforeSha256": "df31ba233c3de3340b0f750cf1ab1762e9488ebf7fcf7d710a71921f61685ae6",
+      "afterSha256": "c9b55d9a4207403230caa0b5e673386f5d45e78353fef101a35974fd46971045",
+      "bytesBefore": 23830,
+      "bytesAfter": 24016
+    },
+    {
+      "path": "mcs-foundations/E-核心公理与验证条件.md",
+      "beforeSha256": "207893b08ba0b66374342f6f538d43151aca3a311ad0e54efc0c970921734f6a",
+      "afterSha256": "c1d27b15b7fdecd07769fdc96dc2867d5070813b267045354d1c807f1ccc15d6",
+      "bytesBefore": 8041,
+      "bytesAfter": 9703
+    },
+    {
+      "path": "mcs-foundations/cases/04-群概念的多来源.md",
+      "beforeSha256": "885aef46e2564827d395fbd0a0c95a012aeb474afd8fcf67cea7137e87aade01",
+      "afterSha256": "b0eb95f8c72ad3277550a12b2a61f53ee53f9e1da0b3ea300ef67d28986c7ca3",
+      "bytesBefore": 5824,
+      "bytesAfter": 10197
+    },
+    {
+      "path": "mcs-foundations/publication/README.md",
+      "beforeSha256": "d21d171bd161373e8093774211330e2d532b7f30c899e9e7801695bd2b48a9c6",
+      "afterSha256": "7bfce89a857ac5b500e7560719bffb77c445259d63f39e883560dc52fd2a0b44",
+      "bytesBefore": 6152,
+      "bytesAfter": 6543
+    },
+    {
+      "path": "mcs-foundations/publication/接口迁移表.md",
+      "beforeSha256": "e92c77069396137c8e89da1a83e6754320f46ac249cc9925ec09a30213c0d592",
+      "afterSha256": "5e6432879c3df4af4291f257d24cc534ca71eda315e997fe9baeba58446a6b84",
+      "bytesBefore": 9346,
+      "bytesAfter": 10341
+    },
+    {
+      "path": "mcs-foundations/publication/整稿重写方案-20261016.md",
+      "beforeSha256": "ee895354890a41f9344e7e236afede868bdc6755f997544fafa333bfcef72ec3",
+      "afterSha256": "c10e4465a4152ad4830594cf545520007029c55a600cb2c441f4363e25347efd",
+      "bytesBefore": 34172,
+      "bytesAfter": 34432
+    },
+    {
+      "path": "mcs-foundations/validation/report.json",
+      "beforeSha256": "e6ab84989206f7181563f52255a1f38959434b2fdf5af6b1cf6ab325512331c7",
+      "afterSha256": "46a2c08312d5140fba1e4894a0a4f7a8e0e03a88f0a96cd45688e88125b78855",
+      "bytesBefore": 8407,
+      "bytesAfter": 8407
+    },
+    {
+      "path": "mcs-foundations/lean/integrity.json",
+      "beforeSha256": "ac7363aa8be3edcece300b19bc464b59d3923933d197aeeae3101f736b429f93",
+      "afterSha256": "f03dba2779ab2e35fcf9626ee032dd34c9375be655f0b65579598dc1bee7d243",
+      "bytesBefore": 635,
+      "bytesAfter": 635
+    },
+    {
+      "path": "mcs-foundations/lean/reports/lean-group-injective.json",
+      "beforeSha256": "8e82afddd1231ad6e8666ac7c8f943f264decd00802ef5df0509003b9474b5ec",
+      "afterSha256": "775bbb1abb567b7ccafff9bdbe06da64a1063068490ddc1db557fd275a54654d",
+      "bytesBefore": 8339,
+      "bytesAfter": 8339
+    },
+    {
+      "path": "mcs-foundations/lean/reports/lean-closure-8-8.json",
+      "beforeSha256": "7fc1932a6c266d89c4cb3e89063898ed10a8575a10b5cdec8f87414dd11fa60f",
+      "afterSha256": "1a3765ceb2a7f28f2f25b102a46db3311a2ae4689278063ab6f8d905b23cf056",
+      "bytesBefore": 8430,
+      "bytesAfter": 8430
+    }
+  ],
+  "added": [
+    {
+      "path": "mcs-foundations/publication/交付记录-20261017-Lean成果入稿.md",
+      "sha256": "a2e26c85806d3e36634de41265e34e025ef1c485527bbfc0e4bebc573c6713eb"
+    }
+  ],
+  "leanReports": [
+    {
+      "id": "lean-group-injective",
+      "status": "passed",
+      "inputSha256": "1bbdc2c221ab27928aabf5fe98e4c3afd29b8a38dd088ab4ebc6a1527368e369",
+      "ranAt": "2026-10-17T00:30:10.950Z",
+      "durationMs": 75429,
+      "current": "mcs-foundations/lean/reports/lean-group-injective.json",
+      "history": "mcs-foundations/lean/reports/lean-group-injective-1bbdc2c221ab27928aabf5fe98e4c3afd29b8a38dd088ab4ebc6a1527368e369-2026-10-17T00-30-10-950Z.json"
+    },
+    {
+      "id": "lean-closure-8-8",
+      "status": "passed",
+      "inputSha256": "d6702c8dcb350c6bdd5d78674f2870a75c3742161602531a23459f32e4461641",
+      "ranAt": "2026-10-17T00:31:12.542Z",
+      "durationMs": 61573,
+      "current": "mcs-foundations/lean/reports/lean-closure-8-8.json",
+      "history": "mcs-foundations/lean/reports/lean-closure-8-8-d6702c8dcb350c6bdd5d78674f2870a75c3742161602531a23459f32e4461641-2026-10-17T00-31-12-542Z.json"
+    }
+  ],
+  "checks": [
+    {
+      "command": "node scripts/lean.mjs seal",
+      "exitCode": 0
+    },
+    {
+      "command": "node scripts/lean.mjs publish-report",
+      "exitCode": 0
+    },
+    {
+      "command": "node scripts/lean.mjs ready",
+      "exitCode": 0
+    },
+    {
+      "command": "python mcs-foundations/validation/verify_scale_model.py",
+      "exitCode": 0
+    },
+    {
+      "command": "python mcs-foundations/validation/verify_finite_models.py",
+      "exitCode": 0
+    },
+    {
+      "command": "python mcs-foundations/publication/build.py --check",
+      "exitCode": 0
+    },
+    {
+      "command": "python mcs-foundations/publication/test_build.py",
+      "exitCode": 0
+    }
+  ],
+  "correspondence": "pending",
+  "leanProofSourcesChanged": false
+}

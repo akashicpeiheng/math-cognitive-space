@@ -1,0 +1,24 @@
+{
+  "schema": "mcs-lean-integrity/1",
+  "policy": {
+    "version": "mcs-lean-check/2",
+    "allowedAxioms": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "module": "MCS.Verified",
+    "replayModules": [
+      "MCS.Definitions",
+      "MCS.Expected",
+      "MCS.Proofs.Group",
+      "MCS.Proofs.Closure",
+      "MCS.Verified"
+    ],
+    "replayMode": "project-modules-sequential-single-process"
+  },
+  "inputs": {
+    "lean-group-injective": "e8ce12426ed1316fff6bd7eaca71c601492bcbd7a3553b50551d25dacf421fa3",
+    "lean-closure-8-8": "7edcd56250b14f0fc36f8afa0719bdc2b90664252b9fa68ab3051f0d33192a36"
+  }
+}

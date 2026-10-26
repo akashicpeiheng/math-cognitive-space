@@ -11,6 +11,7 @@ import { jiang } from './cases/jiang.mjs';
 import { axler } from './cases/axler.mjs';
 import { top } from './cases/top.mjs';
 import { vault } from './cases/vault.mjs';
+import { newVault } from './cases/new-vault.mjs';
 import { attachFormalStatements } from './formal-statements.mjs';
 import { applyGranularity } from './granularity.mjs';
 import { applyMerges } from './merges.mjs';
@@ -142,14 +143,14 @@ export default applyMerges({
   theory,
   // 形式表达在装配时贴上去：登记表与案例数据分开维护，挑选清单集中在一处可见（见 formal-statements.mjs）。
   // 粒度同理：判据与逐条判定结果集中在 granularity.mjs，案例文件不各写一份（第五十二轮只在 liang 里判过）。
-  nodes: applyGranularity(attachFormalStatements(attachEntryBodies([...backgroundNodes, ...limit.nodes, ...manifold.nodes, ...tensor.nodes, ...group.nodes, ...dg.nodes, ...liang.nodes, ...rudin.nodes, ...jiang.nodes, ...axler.nodes, ...top.nodes, ...vault.nodes, ...fieldEntry.nodes]))),
-  actions: attachEntryActions([...backgroundActions, ...limit.actions, ...manifold.actions, ...tensor.actions, ...group.actions, ...dg.actions, ...liang.actions, ...rudin.actions, ...jiang.actions, ...axler.actions, ...top.actions, ...vault.actions, ...fieldEntry.actions]),
-  relations: attachScalingExplanations([...limit.relations, ...manifold.relations, ...tensor.relations, ...group.relations, ...dg.relations, ...liang.relations, ...rudin.relations, ...jiang.relations, ...axler.relations, ...top.relations, ...vault.relations, ...fieldEntry.relations]),
-  evidence: attachEntryEvidence([...limit.evidence, ...manifold.evidence, ...tensor.evidence, ...group.evidence, ...dg.evidence, ...liang.evidence, ...rudin.evidence, ...jiang.evidence, ...axler.evidence, ...top.evidence, ...vault.evidence, ...leanEvidence, ...fieldEntry.evidence]),
-  support: [...limit.support, ...manifold.support, ...tensor.support, ...group.support, ...dg.support, ...liang.support, ...rudin.support, ...jiang.support, ...axler.support, ...top.support, ...vault.support],
-  claims: [...limit.claims, ...manifold.claims, ...tensor.claims, ...group.claims, ...dg.claims, ...liang.claims, ...rudin.claims, ...jiang.claims, ...axler.claims, ...top.claims, ...vault.claims],
-  patterns: [...limit.patterns, ...manifold.patterns, ...tensor.patterns, ...group.patterns, ...dg.patterns, ...liang.patterns, ...rudin.patterns, ...jiang.patterns, ...axler.patterns, ...top.patterns, ...vault.patterns],
-  aggregates: [...aggregates, ...vault.aggregates],
+  nodes: applyGranularity(attachFormalStatements(attachEntryBodies([...backgroundNodes, ...limit.nodes, ...manifold.nodes, ...tensor.nodes, ...group.nodes, ...dg.nodes, ...liang.nodes, ...rudin.nodes, ...jiang.nodes, ...axler.nodes, ...top.nodes, ...vault.nodes, ...newVault.nodes, ...fieldEntry.nodes]))),
+  actions: attachEntryActions([...backgroundActions, ...limit.actions, ...manifold.actions, ...tensor.actions, ...group.actions, ...dg.actions, ...liang.actions, ...rudin.actions, ...jiang.actions, ...axler.actions, ...top.actions, ...vault.actions, ...newVault.actions, ...fieldEntry.actions]),
+  relations: attachScalingExplanations([...limit.relations, ...manifold.relations, ...tensor.relations, ...group.relations, ...dg.relations, ...liang.relations, ...rudin.relations, ...jiang.relations, ...axler.relations, ...top.relations, ...vault.relations, ...newVault.relations, ...fieldEntry.relations]),
+  evidence: attachEntryEvidence([...limit.evidence, ...manifold.evidence, ...tensor.evidence, ...group.evidence, ...dg.evidence, ...liang.evidence, ...rudin.evidence, ...jiang.evidence, ...axler.evidence, ...top.evidence, ...vault.evidence, ...newVault.evidence, ...leanEvidence, ...fieldEntry.evidence]),
+  support: [...limit.support, ...manifold.support, ...tensor.support, ...group.support, ...dg.support, ...liang.support, ...rudin.support, ...jiang.support, ...axler.support, ...top.support, ...vault.support, ...newVault.support],
+  claims: [...limit.claims, ...manifold.claims, ...tensor.claims, ...group.claims, ...dg.claims, ...liang.claims, ...rudin.claims, ...jiang.claims, ...axler.claims, ...top.claims, ...vault.claims, ...newVault.claims],
+  patterns: [...limit.patterns, ...manifold.patterns, ...tensor.patterns, ...group.patterns, ...dg.patterns, ...liang.patterns, ...rudin.patterns, ...jiang.patterns, ...axler.patterns, ...top.patterns, ...vault.patterns, ...newVault.patterns],
+  aggregates: [...aggregates, ...vault.aggregates, ...newVault.aggregates],
   templates,
   environmentBoundary,
 });

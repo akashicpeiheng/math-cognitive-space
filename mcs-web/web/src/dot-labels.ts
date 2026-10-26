@@ -34,6 +34,21 @@ export const DOT_LABEL_GAP_PX = 3;
 /** 最多写几个字（超出用省略号）。7 个汉字约 74px，再长就必然和邻居压上。 */
 export const DOT_LABEL_MAX_CHARS = 7;
 /**
+ * 按相机比例取「最多写几个字」。
+ *
+ * 7 个字那条上限是为**挤在一起**的视图定的（圆点间距在 25% 档只有 27px 中位）。
+ * 但圆点档现在是绝大多数视图的常态（方块只在 120% 以上才出现，见 `network-workspace.ts`），
+ * 放大的时候圆点在屏幕上被拉开（间距 = 世界间距 × 比例），再按 7 个字截断就成了无谓的信息损失：
+ * 实测 100% 下最近邻中位间距约 190px，14 个汉字（147px）仍放得下。
+ * 卡片自己也是 15 个字截断（`NetworkPage` 的 `network-node-label`），因此这里到 14 为止，
+ * 圆点档与卡片档给出的名字长度在同一量级，切档时不会突然多出/少掉半句话。
+ */
+export function dotLabelMaxChars(scale: number): number {
+  if (scale >= 0.9) return 14;
+  if (scale >= 0.6) return 10;
+  return DOT_LABEL_MAX_CHARS;
+}
+/**
  * 第二遍用的短名长度。
  *
  * 第一遍按 7 个字放，放不下的**再试一次 4 个字**（宽约 42px）——挤的地方因此不是「没有名字」，
@@ -119,6 +134,17 @@ function distanceToBox(px: number, py: number, x: number, y: number, w: number, 
   const dx = Math.max(x - px, 0, px - (x + w));
   const dy = Math.max(y - py, 0, py - (y + h));
   return Math.hypot(dx, dy);
+}
+
+/**
+ * 矩形有没有**碰到**一个圆（矩形左上角 x,y、宽高 w,h；圆心 cx,cy、半径 r）。
+ *
+ * 导出是给 `edge-labels.ts` 用的同一套判据：圆点档下关系文字也不许压住圆点。
+ * 不用圆心距近似——那会把「圆周离矩形还有 1px」算成碰撞，整排标签因此被白白丢掉
+ * （圆点档的标签在这个项目里就是靠这条判据决定留不留，见文件头的实测）。
+ */
+export function boxHitsCircle(x: number, y: number, w: number, h: number, cx: number, cy: number, r: number): boolean {
+  return distanceToBox(cx, cy, x, y, w, h) < r;
 }
 
 /**

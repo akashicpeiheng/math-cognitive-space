@@ -1,0 +1,52 @@
+[
+  {
+    "path": "E:\\MCS\\mcs-foundations\\edition\\MCS-完整理论专稿.aux",
+    "backup": "before\\mcs-foundations\\edition\\MCS-完整理论专稿.aux",
+    "sha256": "07662a1dd975e83e88d0a3fbe9ef105055b45a41c45569126d691ae461bc0d14"
+  },
+  {
+    "path": "E:\\MCS\\mcs-foundations\\edition\\MCS-完整理论专稿.log",
+    "backup": "before\\mcs-foundations\\edition\\MCS-完整理论专稿.log",
+    "sha256": "00f5c9a7ff4ab3e0d8191c7ad1ec37faaba8c4ef33f3774618e45322fb8487fa"
+  },
+  {
+    "path": "E:\\MCS\\mcs-foundations\\edition\\MCS-完整理论专稿.md",
+    "backup": "before\\mcs-foundations\\edition\\MCS-完整理论专稿.md",
+    "sha256": "0641d2d8b909926cdec2866a9020210a5f87d7718826c9812da0c21e075364c3"
+  },
+  {
+    "path": "E:\\MCS\\mcs-foundations\\edition\\MCS-完整理论专稿.out",
+    "backup": "before\\mcs-foundations\\edition\\MCS-完整理论专稿.out",
+    "sha256": "60356e37bd0634c8c0bf77d0818b3a3a62ee683119ac5c7d156a87e1da5b63f0"
+  },
+  {
+    "path": "E:\\MCS\\mcs-foundations\\edition\\MCS-完整理论专稿.pdf",
+    "backup": "before\\mcs-foundations\\edition\\MCS-完整理论专稿.pdf",
+    "sha256": "01595b35c38df24b9c2fc7ab8c832444cb62b0aa3d1ec1ec703534977af0ef7a"
+  },
+  {
+    "path": "E:\\MCS\\mcs-foundations\\edition\\MCS-完整理论专稿.tex",
+    "backup": "before\\mcs-foundations\\edition\\MCS-完整理论专稿.tex",
+    "sha256": "ef44caa1a403666e10e4e367c4d3cee09ed3b5ed18b438830a82c8c8dbe8335f"
+  },
+  {
+    "path": "E:\\MCS\\mcs-foundations\\edition\\MCS-完整理论专稿.toc",
+    "backup": "before\\mcs-foundations\\edition\\MCS-完整理论专稿.toc",
+    "sha256": "3a49c588a828406aeb2496f3510f53d84c7a472d3b15acb5ecf090d27b6c88fd"
+  },
+  {
+    "path": "E:\\MCS\\mcs-foundations\\edition\\sources.json",
+    "backup": "before\\mcs-foundations\\edition\\sources.json",
+    "sha256": "abcb7e0138fe1c26514b3b52e031aaa22dd8e7836f91ed37ff8118a0090b08e6"
+  },
+  {
+    "path": "E:\\MCS\\mcs-foundations\\validation\\build_latex.py",
+    "backup": "before\\mcs-foundations\\validation\\build_latex.py",
+    "sha256": "19c6990255f0d6b483d5a76aaa61b136b959a5266be52a45792fef1b3a84d6d3"
+  },
+  {
+    "path": "E:\\OneDrive\\Desktop\\MCS-完整理论专稿.pdf",
+    "backup": "before\\desktop\\MCS-完整理论专稿.pdf",
+    "sha256": "01595b35c38df24b9c2fc7ab8c832444cb62b0aa3d1ec1ec703534977af0ef7a"
+  }
+]

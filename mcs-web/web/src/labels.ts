@@ -69,6 +69,8 @@ export const RELATION_LABELS: PairedTable = {
   instanceOf: { zh: '实例', en: 'Instance' },
   counterexampleTo: { zh: '反例', en: 'Counterexample' },
   hardPrereq: { zh: '硬前置', en: 'Hard prerequisite' },
+  deduction: { zh: '推导', en: 'Deduction' },
+  softPrereq: { zh: '软先修', en: 'Suggested prerequisite' },
   scaling: { zh: '放缩', en: 'Scaling' },
   bridge: { zh: '桥接', en: 'Bridge' },
   application: { zh: '应用', en: 'Application' },
@@ -151,6 +153,7 @@ export const CASE_LABELS: PairedTable = {
   axler: { zh: 'Linear Algebra Done Right（Axler）', en: 'Linear Algebra Done Right (Axler)' },
   top: { zh: '点集拓扑', en: 'Point-set topology' },
   vault: { zh: '笔记库（MCS_vault）', en: 'Note library (MCS_vault)' },
+  newvault: { zh: '新库：简明高等代数笔记', en: 'New vault: advanced algebra notes' },
   'field-entry': { zh: '学科入门节点', en: 'Field entry nodes' },
 };
 
@@ -356,12 +359,37 @@ export const caseLabel = (value: string | null | undefined, options: LabelOption
  */
 export const RELATION_COLOR: Record<string, string> = {
   hardPrereq: '#4c1d95',
+  deduction: '#b91c1c',
+  softPrereq: '#0e7499',
   scaling: '#2563eb',
   bridge: '#ea580c',
   application: '#854d0e',
   analogy: '#64748b',
   duality: '#db2777',
   crossDomain: '#059669',
+};
+
+/**
+ * 深色外观下的关系色（第一百零九轮）。
+ *
+ * 深色画布（`THEME_DARK.canvas` = `#191331`）不满足浅色那套「中深明度」的取色前提：
+ * `#4c1d95` 这类深色在深底上只有 1.5:1 左右，等于看不见。因此这套值是把**色相**留下、
+ * 把明度整体抬到浅色区间（HSL 的 L 约 65–80%），让「哪一种关系」仍由色相说，
+ * 「有多硬」仍由线宽/虚实/饱和度说——两套信息不互换。
+ *
+ * 判据与浅色逐条相同，由 `tests/a11y-contrast.test.mjs` 在两套表上各跑一遍：
+ * 每色对深色画布 ≥3:1（实测最低 6.55:1），正常视觉两两 ΔE ≥15（实测全部满足）。
+ */
+export const RELATION_COLOR_DARK: Record<string, string> = {
+  hardPrereq: '#a78bfa',
+  deduction: '#f87171',
+  softPrereq: '#67e8f9',
+  scaling: '#60a5fa',
+  bridge: '#fb923c',
+  application: '#eab308',
+  analogy: '#a1a1aa',
+  duality: '#f472b6',
+  crossDomain: '#34d399',
 };
 
 /**
@@ -382,8 +410,34 @@ export const CONTRACT_MODE_COLOR: Record<string, string> = {
   representation: '#be185d',
 };
 
+/**
+ * 深色外观下的契约色（第一百零九轮）。
+ *
+ * 与关系色同一条理由（深底上必须提亮），但**保持「弱于关系色」这条纪律**：
+ * 语义契约（definition / deduction）仍给足饱和度，其余结构骨架保持低饱和，
+ * 于是画布上「数学断言」与「结构骨架」的分层在深色下同样读得出来。
+ * 实测对深色画布最低 3.55:1（evidence），正常视觉两两 ΔE ≥15。
+ */
+export const CONTRACT_MODE_COLOR_DARK: Record<string, string> = {
+  definition: '#8b5cf6',
+  deduction: '#3b82f6',
+  construction: '#22d3ee',
+  method: '#2dd4bf',
+  task: '#d97706',
+  evidence: '#b45309',
+  /*
+   * 表示性契约用**粉**而不是更亮的浅粉：浅粉在两种色盲模拟下都会与青色/青绿（construction、
+   * method）挤到 ΔE 12 以下——第一版取 `#f9a8d4` 时，deuteranopia 下它与 method 只差 5.3，
+   * 是 `tests/a11y-contrast.test.mjs` 当场抓到的。`#ec4899` 在这两条模拟下分别差 14.2 / 41.5，
+   * 正常视觉差 116.3，同时仍对深色画布有 5.05:1。
+   */
+  representation: '#ec4899',
+};
+
 /** 未登记的 mode 用中性灰：不假装知道它是什么类型。 */
 export const CONTRACT_UNKNOWN_COLOR = '#8d85ae';
+/** 深色外观下的中性灰：对深色画布 7.02:1，仍是最不抢注意力的一档。 */
+export const CONTRACT_UNKNOWN_COLOR_DARK = '#9ca3af';
 
 export function contractModeColor(mode: string | null | undefined, fallback: string): string {
   if (!mode) return fallback;
@@ -407,6 +461,29 @@ export const CONSTRUCT_COLOR: Record<string, string> = {
   Method: '#f2efe9',
   MisconceptionPattern: '#fbe9f0',
   Representation: '#e7f2f8',
+};
+
+/**
+ * 深色外观下的构造浅底（第一百零九轮）。
+ *
+ * 它们同时是节点卡片的底色与类型徽标的底色，上面压的是 `--ink` / `--ink-soft`；
+ * 深色下墨色变浅，因此这 12 个底必须整体压深（明度约 12–20%），否则浅字压在浅底上。
+ * 取向仍是「同类构造同族色相」，与浅色那张表一一对应（Symbol 紫、Concept 蓝、Claim 青……）。
+ * 实测两种墨色对每个底的最低值：`ink` 10.74:1、`ink-soft` 7.05:1。
+ */
+export const CONSTRUCT_COLOR_DARK: Record<string, string> = {
+  Symbol: '#2a2350',
+  Concept: '#1e2a4d',
+  Claim: '#173a38',
+  Proof: '#2b2050',
+  Example: '#1b3a2f',
+  Counterexample: '#43261f',
+  Problem: '#3d3018',
+  Theory: '#1f3a34',
+  Construction: '#3a2a20',
+  Method: '#332f36',
+  MisconceptionPattern: '#40213a',
+  Representation: '#14313f',
 };
 
 /**

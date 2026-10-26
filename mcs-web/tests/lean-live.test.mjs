@@ -1,3 +1,4 @@
+import { cp } from 'node:fs/promises';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtemp, mkdir, writeFile, rm, symlink, rmdir } from 'node:fs/promises';
@@ -11,21 +12,21 @@ import { TEST_LEAN_TIMEOUT_MS } from './lean-test-budget.mjs';
 const capabilities = await leanCapabilities(REPO_ROOT);
 if (process.env.MCS_WEB_REQUIRE_LEAN === '1') assert.equal(capabilities.ready, true, capabilities.reason ?? 'Lean required');
 
-test('real Lean: both registrations replay via HTTP without changing M or learner events', { skip: !capabilities.ready, timeout: TEST_LEAN_TIMEOUT_MS * 2 + 60000 }, async () => {
+test('real Lean: all registrations replay via HTTP without changing M or learner events', { skip: !capabilities.ready, timeout: TEST_LEAN_TIMEOUT_MS * 3 + 60000 }, async () => {
   const app = await startTestServer();
   try {
     const version = app.ontology.version;
-    for (const evidenceId of ['ev-lean-group-injective', 'ev-lean-closure-8-8']) {
+    for (const [evidenceId,targetCount] of [['ev-lean-group-injective',4], ['ev-lean-closure-8-8',4], ['ev-lean-topology-dg',7]]) {
       const submitted = await jsonCall(app.origin, '/api/v2/lean/jobs', { method: 'POST', body: { evidenceId, ontologyVersion: version } });
       assert.equal(submitted.status, 200); const id = submitted.payload.data.id;
       let job;
-      for (let i = 0; i < 600; i++) {
+      for (const deadline=Date.now()+TEST_LEAN_TIMEOUT_MS+10000;Date.now()<deadline;) {
         job = (await jsonCall(app.origin, `/api/v2/lean/jobs/${id}`)).payload.data;
         if (!['running', 'queued'].includes(job.status)) break;
         await new Promise(resolvePromise => setTimeout(resolvePromise, 250));
       }
       assert.equal(job.status, 'completed', JSON.stringify(job)); assert.equal(job.result.status, 'passed', JSON.stringify(job.result));
-      assert.equal(job.result.targets.length, 4); assert.equal(job.result.checkerVerified, false); assert.equal(job.freshness, 'current');
+      assert.equal(job.result.targets.length, targetCount); assert.equal(job.result.checkerVerified, false); assert.equal(job.freshness, 'current');
     }
     assert.equal(app.getOntology().version, version); assert.equal((await app.db.dumpAll()).events.length, 0);
     const malicious = await jsonCall(app.origin, '/api/v2/lean/jobs', { method: 'POST', body: { evidenceId: 'ev-lean-group-injective', ontologyVersion: version, code: 'axiom x : False' } });
@@ -82,6 +83,7 @@ test('real Lean rejects sorry, indirect sorry, extra/native axioms, stronger tar
       await symlink(join(REPO_ROOT, LEAN_PROJECT, '.lake', 'packages'), join(project, '.lake', 'packages'), process.platform === 'win32' ? 'junction' : 'dir');
       const registry = JSON.parse(files['registrations.json']);
       for (const ref of new Set(registry.registrations.flatMap(r => r.originalRefs))) { const { readFile } = await import('node:fs/promises'); const target = join(dir, ref); await mkdir(join(target, '..'), { recursive: true }); await writeFile(target, await readFile(join(REPO_ROOT, ref))); }
+      await cp(join(REPO_ROOT, 'mcs-content'), join(dir, 'mcs-content'), { recursive: true });
       await sealLeanSources(dir);
       const result = await checkLeanSnapshot(dir, await captureLeanSnapshot(dir, baseline.registration.id), { config: { timeoutMs: TEST_LEAN_TIMEOUT_MS, lakePath: leanBinaries(REPO_ROOT).lake, workDir: join(REPO_ROOT, 'mcs-web', 'runtime', 'lean-check') } });
       assert.notEqual(result.status, 'passed', label);

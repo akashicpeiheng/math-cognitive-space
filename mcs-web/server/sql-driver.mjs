@@ -58,26 +58,31 @@ export function createSqliteDriver({ file }) {
   let db = new DatabaseSync(target);
   db.exec('PRAGMA journal_mode = WAL;');
   db.exec('PRAGMA foreign_keys = ON;');
-  /*
-   * 事务用**连接级**语句。SQLite 只有一条连接，所以不需要 AsyncLocalStorage 那套；
-   * `depth` 只用来拦住误嵌套（`BEGIN` 里再 `BEGIN` 会报错，而不是默默变成子事务）。
-   */
-  let depth = 0;
+  // A transaction may await business logic. Other requests must wait outside it;
+  // only operations in the same async chain may reuse the open transaction.
+  const scope = new AsyncLocalStorage();
+  let serial = Promise.resolve();
+  const exclusive = fn => {
+    if (scope.getStore()) return Promise.resolve().then(fn);
+    const next = serial.then(() => scope.run(true, fn));
+    serial = next.catch(() => {});
+    return next;
+  };
   return {
     dialect: 'sqlite',
     seqColumnDdl: 'INTEGER PRIMARY KEY AUTOINCREMENT',
     file: target,
     describe() { return { dialect: 'sqlite', file: target }; },
-    async all(sql, params = []) { return db.prepare(sql).all(...params); },
-    async get(sql, params = []) { return db.prepare(sql).get(...params); },
-    async run(sql, params = []) {
+    async all(sql, params = []) { return exclusive(() => db.prepare(sql).all(...params)); },
+    async get(sql, params = []) { return exclusive(() => db.prepare(sql).get(...params)); },
+    async run(sql, params = []) { return exclusive(() => {
       const result = db.prepare(sql).run(...params);
       return { changes: Number(result.changes ?? 0) };
-    },
-    async exec(sql) { db.exec(sql); },
+    }); },
+    async exec(sql) { return exclusive(() => db.exec(sql)); },
     async transaction(fn) {
-      if (depth > 0) return fn();
-      depth += 1;
+      if (scope.getStore()) return fn();
+      return exclusive(async () => {
       db.exec('BEGIN IMMEDIATE');
       try {
         const out = await fn();
@@ -86,19 +91,18 @@ export function createSqliteDriver({ file }) {
       } catch (error) {
         try { db.exec('ROLLBACK'); } catch { /* 回滚失败不掩盖原始错误 */ }
         throw error;
-      } finally {
-        depth -= 1;
       }
+      });
     },
-    async checkpoint() { db.exec('PRAGMA wal_checkpoint(TRUNCATE);'); },
+    async checkpoint() { return exclusive(() => db.exec('PRAGMA wal_checkpoint(TRUNCATE);')); },
     /** 备份 = 复制数据库文件（SQLite 的物理备份，含全部表）。 */
-    async backupToFile(targetPath) {
+    async backupToFile(targetPath) { return exclusive(async () => {
       const { copyFileSync } = await import('node:fs');
       db.exec('PRAGMA wal_checkpoint(TRUNCATE);');
       copyFileSync(target, targetPath);
-    },
+    }); },
     /** 恢复 = 关闭 → 覆盖文件 → 重开（沿用原来的三步，语义不变）。 */
-    async restoreFromFile(sourcePath) {
+    async restoreFromFile(sourcePath) { return exclusive(async () => {
       const { copyFileSync } = await import('node:fs');
       db.exec('PRAGMA wal_checkpoint(TRUNCATE);');
       db.close();
@@ -106,8 +110,8 @@ export function createSqliteDriver({ file }) {
       db = new DatabaseSync(target);
       db.exec('PRAGMA journal_mode = WAL;');
       db.exec('PRAGMA foreign_keys = ON;');
-    },
-    async close() { try { db.close(); } catch { /* 已关闭 */ } },
+    }); },
+    async close() { return exclusive(() => { try { db.close(); } catch { /* 已关闭 */ } }); },
   };
 }
 

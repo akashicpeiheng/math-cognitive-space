@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams, useLocation, useNavigate } from 'react-router-dom';
-import { networkNodeIds, networkUrlParts } from '../network-url';
+import { networkNodeIds, networkParam, networkUrlParts } from '../network-url';
 import { api, formatError, useApi } from '../api';
 import { LOCAL_VIEWS_KEY, migrateLocalViews, readLocalViews, writeLocalViews, type SavedNetworkView } from '../network-views';
 /*
@@ -15,27 +15,38 @@ import {
   clearNetworkDraft, readNetworkDraft, writeNetworkDraft,
 } from '../network-draft';
 import { useNetworkWorkspace } from '../useNetworkWorkspace';
+import {ContentCaseControls,ContentRelationDetails} from '../components/ContentCaseControls';
+import '../content-case.css';
 import { NetworkNodeInfo } from '../components/NetworkNodeInfo';
+import { useMasterMode } from '../master-mode';
 import { NetworkSubmissions } from '../components/NetworkSubmissions';
 import { NetworkSources } from '../components/NetworkSources';
 import { NetworkRelationEditor } from '../components/NetworkRelationEditor';
 import { nextNodeShape, circleAnchor, DOT_RADIUS_PX, DOT_THRESHOLD } from '../network-workspace';
 import { EXAMPLE_SETS_BY_LOCALE } from '../example-paths';
-import { dotLabels, dotLabelBaselinePx, DOT_LABEL_FONT_PX, DOT_LABEL_GAP_PX, DOT_LABEL_MAX_CHARS, type DotLabel, type DotLabelNode } from '../dot-labels';
+import { dotLabels, dotLabelBaselinePx, dotLabelMaxChars, DOT_LABEL_FONT_PX, DOT_LABEL_GAP_PX, type DotLabel, type DotLabelNode } from '../dot-labels';
+import { edgeLabels, type EdgeLabel, type EdgeLabelInput } from '../edge-labels';
 import { decodeNoteKey, nodeRefKey } from '../../../shared/network-workspace.mjs';
 import type { PrivateRelation } from '../../../shared/network-workspace.mjs';
 import '../network-workspace.css';
 import { useNetworkMotion } from '../useNetworkMotion';
 import { StatusBadge } from '../components/StatusBadge';
 import { NetworkConnectionAnnotation } from '../components/NetworkConnectionAnnotation';
+import { ScaleLayer, type ScaleLayerText } from '../components/ScaleLayer';
+import { ScalePanel, type ScalePanelText } from '../components/ScalePanel';
+import {
+  SCALE_LOD, SCALE_ORDER, buildScaleCatalogue, displayRect, existingScaleIds, parseScaleIds, parseScaleLevels,
+  projectScaleEdges, rectAnchors, resolveScaleDisplay, scaleFitBounds, scaleIdsParam,
+  type Point, type ScaleCatalogue, type ScaleDisplay, type ScaleLevelId, type ScalePlanResponse,
+} from '../scale-network';
 import { ScalingExplanationView } from '../components/ScalingExplanation';
 import { ConnectionPairNotes } from '../components/ConnectionPairNotes';
 import { ConnectionNote, ConnectionMenu } from '../connection-notes';
 import { connectionTarget, connectionTargets, type ConnectionTarget } from '../connection-display';
 import { useDraggablePanel, type PanelPosition } from '../useDraggablePanel';
-import { THEME } from '../theme';
+import { useThemePalette } from '../theme-palette';
 import {
-  CASE_LABELS, CONSTRUCT_COLOR, CONSTRUCT_LABELS, RELATION_COLOR, contractModeColor, plainMathText,
+  CASE_LABELS, CONSTRUCT_LABELS, contractModeColor, plainMathText,
 } from '../labels';
 import { useI18n, useLabels } from '../i18n';
 import type { Locale } from '../i18n/locales';
@@ -45,8 +56,8 @@ import {
   applyOverrides, autoAddCandidates, avoidOverlaps, buildEdges, degreeMap, edgeAnchor, edgeFamilyLabel,
   repelFromDrag,
   edgeFamilyNote, groupOfNode, layout, nodeGroupLabel, nodeGroupNote,
-  reasonText, recommend, relationKindsPresent, topicAssignment, TOPIC_NONE_COLOR, TOPIC_PALETTE,
-  mergeParallelEdges, visualWeightOf, CAMERA_TWEEN_MS, CAMERA_HUD_SPACE,
+  reasonText, recommend, relationKindsPresent, topicAssignment,
+  mergeParallelEdges, scalingDisplayEndpoints, visualWeightOf, CAMERA_TWEEN_MS, CAMERA_HUD_SPACE,
   NODE_H, NODE_W,
   type EdgeFamily, type MergedEdge, type NetworkEdge, type NetworkGraph, type NodeGroup, type PlacedNode, type PositionOverrides, type ReasonKind, type Recommendation,
 } from '../network';
@@ -94,7 +105,7 @@ import { useMediaQuery } from '../useMediaQuery';
 import { useProfileContext } from '../state';
 import {
   CONTRACT_MODE_LABELS, CONTRACT_MODE_WEIGHT, SEMANTIC_CONTRACT_MODES,
-  TIER_SAMPLE_COLOR, TIER_STYLE,
+  TIER_STYLE,
   ARROW_PATH, TAPER_ARROW_PATH, contractModeLabel, edgeKindLabel, edgeVisual, scalingTaperArrowWidth, scalingTaperWidths, tierLabel, tierNote,
   type EdgeVisual, type RelationTier,
 } from '../relation-visual';
@@ -125,11 +136,11 @@ const REASON_TONE: Record<ReasonKind, string> = {
   starting: 'known',
 };
 
-type PanelId = 'list' | 'recommend' | 'detail' | 'families' | 'spec' | 'views';
-const PANEL_IDS: PanelId[] = ['list', 'recommend', 'detail', 'families', 'spec', 'views'];
+type PanelId = 'list' | 'recommend' | 'detail' | 'families' | 'spec' | 'views' | 'scale';
+const PANEL_IDS: PanelId[] = ['list', 'recommend', 'detail', 'families', 'spec', 'views', 'scale'];
 /** 面板分属画布左右两侧：同一侧一次只开一个，避免两块浮窗吃掉半个画布。 */
 const PANEL_SIDE: Record<PanelId, 'left' | 'right'> = {
-  list: 'left', recommend: 'right', detail: 'left', families: 'right', spec: 'left', views: 'right',
+  list: 'left', recommend: 'right', detail: 'left', families: 'right', spec: 'left', views: 'right', scale: 'right',
 };
 
 /**
@@ -492,8 +503,8 @@ const PAGE_TEXT = {
    * 画布上多了一种读法就必须在这里写明，否则读者只能猜那条渐粗的线是什么意思。
    */
   specScalingTaper: {
-    zh: '放缩关系（scaling）的箭头一头粗一头细：粗的一端是泛化（一般）方向，细的一端是特化（特殊）方向。倍数按本档线宽算（一般端 ×1.6、特殊端 ×0.6），因此「越硬越重」这条不受影响。方向未核验的旧记录不做粗细变化——不知道哪端是一般端就不假装知道。',
-    en: 'A scaling arrow is thicker at one end and thinner at the other: the thick end is the general (generalisation) direction, the thin end the special (specialisation) direction. The factors are relative to the tier width (×1.6 at the general end, ×0.6 at the special end), so “harder is heavier” still holds. Records whose direction was never verified keep a constant width — if we do not know which end is general, we do not pretend to.',
+    zh: '放缩关系（scaling）的连线沿泛化方向由细渐粗：一般端粗、特殊端细。粗细按本档线宽计算（一般端 ×2.2、特殊端 ×0.5）。显示方向取自已核验方向或原关系说明的明确登记，不提升数学证据等级；没有明确方向的旧记录保持等宽。',
+    en: 'A scaling connection widens towards the general end and narrows towards the special end (×2.2 and ×0.5 relative to its tier width). Display direction comes from verified endpoints or an explicit registration based on the original relation description; it does not upgrade mathematical evidence. Legacy records without an explicit direction keep a constant width.',
   },
   specModeTitle: { zh: '行动契约按 mode 分档', en: 'Action contracts tiered by mode' },
   specModeMeta: { zh: '{tier} · 权重 {weight} · 当前视图 {count} 条边', en: '{tier} · weight {weight} · {count} edges in the current view' },
@@ -517,6 +528,99 @@ const PAGE_TEXT = {
     en: 'Starting nodes: every registered prerequisite (all inputs of an action contract, plus the sources of incoming hardPrereq relations) is already confirmed in your profile; background interfaces, which no action can produce, also count, since only you can declare them. This is not a difficulty label, and it does not mean the site measured your ability. {placed} on the canvas (heavier outline + “Start” badge) · {total} in this profile.',
   },
   legendTopicTitle: { zh: '{title}（{count} 个节点）', en: '{title} ({count} nodes)' },
+  /*
+   * 尺度视图（2026-10-17 加）：面板、卡片、图例与菜单的文案。
+   *
+   * 数据标题（单元/话题/分子）来自 `data/scale.mjs`，没有英文译文时按现有「未译」规则处理；
+   * 下面这些是**界面文案**，必须中英成对。
+   */
+  panelScale: { zh: '尺度对象', en: 'Scale objects' },
+  scaleToggle: { zh: '尺度', en: 'Scales' },
+  scaleToggleTitle: { zh: '显示四层尺度对象：分子 / 节点 / 单元 / 话题。分裂与合拢只改本页显示，不写本体与学习记录。', en: 'Show the four scale layers: molecule / node / unit / topic. Splitting and collapsing change this view only; they do not write the ontology or learning records.' },
+  scaleLevelMolecule: { zh: '分子', en: 'Molecule' },
+  scaleLevelNode: { zh: '节点', en: 'Node' },
+  scaleLevelUnit: { zh: '单元', en: 'Unit' },
+  scaleLevelTopic: { zh: '话题', en: 'Topic' },
+  scalePanelLevels: { zh: '显示尺度', en: 'Visible scales' },
+  scalePanelSearch: { zh: '搜索尺度对象', en: 'Search scale objects' },
+  scalePanelTopics: { zh: '话题', en: 'Topics' },
+  scalePanelPaths: { zh: '教材路径', en: 'Textbook paths' },
+  scalePanelUnits: { zh: '单元', en: 'Units' },
+  scalePanelMolecules: { zh: '分子', en: 'Molecules' },
+  scalePanelUngrouped: { zh: '未归话题的单元', en: 'Units without a topic' },
+  scalePanelAdd: { zh: '加入', en: 'Add' },
+  scalePanelRemove: { zh: '移出', en: 'Remove' },
+  scalePanelExpand: { zh: '展开', en: 'Expand' },
+  scalePanelCollapse: { zh: '合拢', en: 'Collapse' },
+  scalePanelAutoMerge: { zh: '缩小时自动合拢临近对象', en: 'Merge nearby objects when zooming out' },
+  scalePanelAutoMergeHint: {
+    zh: '只在全部成员都在视图中、且当前缩放下同屏包围盒 ≤ {near}px 时合拢：分子 ≤{molecule}% → 节点，节点 ≤{node}% → 单元，单元 ≤{unit}% → 话题。已合拢的要放大到阈值 + {hysteresis} 才解开。',
+    en: 'Merge only when every member is in the view and their on-screen box is ≤ {near}px: molecule ≤{molecule}% → node, node ≤{node}% → unit, unit ≤{unit}% → topic. A merged object reopens after zooming past threshold + {hysteresis}.',
+  },
+  scalePanelShowEdges: { zh: '显示尺度归属连线', en: 'Show membership links' },
+  scalePanelNodeScale: { zh: '节点尺度', en: 'Node scale' },
+  scalePanelNodeScaleHint: {
+    zh: '画布上有 {added} 个节点，当前可见 {visible} 个。点下方「加入节点尺度」把已加入单元/话题的成员节点放上画布；没有尺度对象时会加入全部节点。节点卡片本身可直接拖动。',
+    en: '{added} nodes on the canvas, {visible} visible now. Use “Add node scale” to put the member nodes of added units/topics on the canvas; with no scale objects it adds all nodes. Node cards are draggable themselves.',
+  },
+  scalePanelNodeScaleAdd: { zh: '加入节点尺度', en: 'Add node scale' },
+  scaleNoticeNodesAdded: { zh: '已加入 {count} 个节点；节点卡片可直接拖动。', en: 'Added {count} nodes; node cards are draggable.' },
+  scalePanelFilterHint: { zh: '单元/话题是迁移登记：由现有聚合按规则派生，不是六级模型的最终分类。', en: 'Units/topics are provisional migration records derived from existing aggregates; they are not the final six-level classification.' },
+  scalePanelNote: {
+    zh: '尺度登记是只读投影：不改本体、不改档案、不产生学习事件。「展开」把成员加入画布，「合拢」只隐藏它们。',
+    en: 'The scale plan is a read-only projection: it does not modify the ontology, profiles or learning events. “Expand” adds members to the canvas; “Collapse” only hides them.',
+  },
+  scalePanelEmpty: { zh: '没有匹配的尺度对象。', en: 'No matching scale objects.' },
+  scalePanelCount: { zh: '{count} 个{unit}', en: '{count} {unit}' },
+  scalePanelProvisional: { zh: '迁移登记', en: 'Migration record' },
+  scalePanelNoPlan: { zh: '尺度登记不可用：本版本没有返回尺度计划。节点网络照常使用。', en: 'Scale registration is unavailable: this build returned no scale plan. The node network still works.' },
+  scaleCountNodes: { zh: '节点', en: 'nodes' },
+  scaleCountUnits: { zh: '单元', en: 'units' },
+  scaleCountTopics: { zh: '话题', en: 'topics' },
+  scaleCountMolecules: { zh: '分子', en: 'molecules' },
+  scaleCountAtoms: { zh: '{count} 个原子', en: '{count} atoms' },
+  scaleLegendTitle: { zh: '四层尺度：分子 / 节点 / 单元 / 话题', en: 'Four scale layers: molecule / node / unit / topic' },
+  scaleLegendCounts: { zh: '话题 {topics} · 单元 {units} · 节点 {nodes} · 分子 {molecules}', en: 'Topics {topics} · Units {units} · Nodes {nodes} · Molecules {molecules}' },
+  scaleLegendMerged: { zh: '已合拢 {count} 组；合拢只改显示，不改成员。', en: '{count} groups merged; merging changes display only, not membership.' },
+  scaleLegendUncovered: { zh: '{count} 个节点尚未登记单元，缩小时保持原样。', en: '{count} nodes have no registered unit yet and stay as they are when zooming out.' },
+  scaleLegendAggregate: { zh: '聚合边写「N 条联系」：读作存在联系（R∃），不代表整体先修。', en: 'Aggregated edges show “N links”: read as existential links (R∃), not as whole-object prerequisites.' },
+  scaleMenuAria: { zh: '「{title}」的尺度菜单', en: 'Scale menu for “{title}”' },
+  scaleMenuTitle: { zh: '尺度菜单', en: 'Scale menu' },
+  scaleMenuHint: { zh: '右键打开 · Esc 关闭', en: 'Opened by right-click · Esc closes' },
+  scaleMenuSplit: { zh: '分裂为小尺度对象（{count} 个）', en: 'Split into smaller objects ({count})' },
+  scaleMenuCollapse: { zh: '合拢（隐藏 {count} 个，展开即回来）', en: 'Collapse (hide {count}; expand to restore)' },
+  scaleMenuRemove: { zh: '从视图移出', en: 'Remove from the view' },
+  scaleMenuInfo: { zh: '查看成员与依据', en: 'View members and basis' },
+  scaleMenuNoChildren: { zh: '这个对象没有登记更小尺度的成员', en: 'No smaller-scale members are registered for this object' },
+  scaleMenuMerged: { zh: '当前由 {count}/{total} 个成员合拢而成', en: 'Currently merged from {count}/{total} members' },
+  scaleInfoTitle: { zh: '尺度对象详情', en: 'Scale object details' },
+  scaleInfoScale: { zh: '尺度', en: 'Scale' },
+  scaleInfoMembers: { zh: '成员', en: 'Members' },
+  scaleInfoOrganization: { zh: '组织依据', en: 'Organising basis' },
+  scaleInfoSource: { zh: '来源', en: 'Source' },
+  scaleInfoEvidence: { zh: '证据状态', en: 'Evidence status' },
+  scaleInfoPrimary: { zh: '显示归属', en: 'Display parent' },
+  scaleInfoCross: { zh: '同时归属', en: 'Also belongs to' },
+  scaleInfoProvisional: { zh: '迁移登记：分类与标题待按六级模型复核。', en: 'Provisional migration record: classification and title still need review against the six-level model.' },
+  scaleInfoMembersList: { zh: '成员名单', en: 'Member list' },
+  scaleInfoNoMembers: { zh: '没有登记成员。', en: 'No registered members.' },
+  scaleLayerSplit: { zh: '分裂', en: 'Split' },
+  scaleLayerCollapse: { zh: '合拢', en: 'Collapse' },
+  scaleLayerMerged: { zh: '{count}/{total} 个成员已合拢', en: '{count}/{total} members merged' },
+  scaleLayerMembers: { zh: '{count}/{total} 个成员', en: '{count}/{total} members' },
+  scaleLayerMembersTotal: { zh: '{count} 个成员', en: '{count} members' },
+  scaleLayerAggregateEdge: { zh: '{count} 条联系 · R∃', en: '{count} links · R∃' },
+  scaleLayerMenuHint: { zh: '左键选中 · 双击展开/合拢 · 右键菜单', en: 'Click to select · double-click to expand/collapse · right-click for menu' },
+  scaleLayerProvisional: { zh: '迁移', en: 'Migration' },
+  nodeMenuSplitMolecule: { zh: '分裂为中心分子', en: 'Split into centre molecule' },
+  nodeMenuMoleculePresent: { zh: '中心分子已在视图中', en: 'Centre molecule already in the view' },
+  nodeMenuMoleculeNone: { zh: '这个节点没有登记中心分子', en: 'No centre molecule is registered for this node' },
+  scaleNoticeSplit: { zh: '已展开「{title}」：新增 {count} 个更小尺度对象。只改本页显示。', en: 'Expanded “{title}”: added {count} smaller-scale objects. This view only.' },
+  scaleNoticeAdded: { zh: '已把「{title}」加入尺度视图。只改本页显示。', en: 'Added “{title}” to the scale view. This view only.' },
+  scaleNoticeCollapsed: { zh: '已合拢「{title}」：隐藏 {count} 个更小尺度对象，展开即回来。', en: 'Collapsed “{title}”: hid {count} smaller-scale objects; expand to restore.' },
+  scaleNoticeRemoved: { zh: '已从视图移出「{title}」（节点仍在本体中）。', en: 'Removed “{title}” from this view (the node stays in the ontology).' },
+  scaleNoticeNoScale: { zh: '尺度登记尚不可用；节点网络照常使用。', en: 'Scale registration is not available yet; the node network still works.' },
+  scaleNoticeStale: { zh: '尺度登记已更新：{count} 个旧对象不在当前计划里，已忽略。', en: 'Scale registration has changed: {count} old objects are not in the current plan and were ignored.' },
   legendHint: { zh: '拖动空白处平移 · 滚轮缩放 · 按住左键看强关联 · 右键节点打开菜单（加入全部硬前置 / 移出视图）· 「重置」只复位视角，「重新布局」才重排卡片（手动摆放保留）', en: 'Drag empty space to pan · scroll to zoom · hold the left button for strongly related nodes · right-click a node for its menu (add all hard prerequisites / remove from the view) · “Reset view” only resets the camera, “Re-layout” re-arranges the cards (manual placements are kept)' },
 } as const;
 
@@ -543,6 +647,7 @@ const PANEL_TEXT_KEYS: Record<PanelId, PageTextKey> = {
   families: 'panelFamilies',
   spec: 'panelSpec',
   views: 'panelViews',
+  scale: 'panelScale',
 };
 
 /** 推荐理由徽标的取词键。 */
@@ -576,17 +681,19 @@ const LAYOUT_MODE_TITLE_KEYS: Record<LayoutMode, PageTextKey> = {
 };
 
 /** 首次访问的引导状态：开着「全部节点」与「推荐加入」，让空网络有明确入口。 */
-const FIRST_VISIT_PANELS: Record<PanelId, boolean> = { list: true, recommend: true, detail: false, families: false, spec: false, views: false };
+const FIRST_VISIT_PANELS: Record<PanelId, boolean> = { list: true, recommend: true, detail: false, families: false, spec: false, views: false, scale: false };
 /**
  * 之后每次访问的默认状态：面板全部收起。
  *
  * 悬浮框是浮在画布上的，左右各开一个就吃掉近一半宽度——适配后网络只能缩到三成，
  * 既看不清也没法读。默认收起，把整块画布还给网络；需要时用 HUD 的开关打开。
  */
-const RETURNING_PANELS: Record<PanelId, boolean> = { list: false, recommend: false, detail: false, families: false, spec: false, views: false };
+const RETURNING_PANELS: Record<PanelId, boolean> = { list: false, recommend: false, detail: false, families: false, spec: false, views: false, scale: false };
 const VISITED_KEY = 'mcs-network-visited-v1';
 /** 手动摆放的节点位置。按节点 id 存，刷新后仍在原处。 */
 const OVERRIDES_KEY = 'mcs-network-positions-v1';
+/** 手动摆放的尺度卡片位置（世界坐标，左上角）。与节点位置分开存，避免 id 命名空间混用。 */
+const SCALE_OVERRIDES_KEY = 'mcs-network-scale-positions-v1';
 /**
  * 自动摆位结果。与手动位置分开存：
  * 手动拖动优先；「重新布局」（HUD 的按钮）只清自动摆位、不动手动位置；
@@ -668,6 +775,7 @@ function topicLegendLabel(title: string): string {
 const FIT_SLACK_REPLAY = 28;
 
 export function NetworkPage() {
+  const { isMaster } = useMasterMode();
   /*
    * 语种与词表：本页只有这一个组件，因此在顶层取一次，往下全部走 `txt` / `labels`。
    *
@@ -677,6 +785,13 @@ export function NetworkPage() {
    */
   const { t, locale, fmtDate, isPending, hrefFor, pick } = useI18n();
   const labels = useLabels();
+  /*
+   * 画布用色板（第一百零九轮）：一次取齐「浅色 / 深色」两套里的当前一套。
+   * 它必须在这里取（而不是在下面十几个回调里各自判断明暗）：那些回调与 `useMemo`
+   * 都闭包住具体色值，分散判断时改一处漏一处，而漏掉的地方在浅色外观下看不出来。
+   * 返回的是模块级常量对象，因此引用只在切换外观时变一次，依赖数组不会每帧抖动。
+   */
+  const palette = useThemePalette();
   const txt = useMemo(() => pageText(locale), [locale]);
   const panelTitles = useMemo(() => {
     const out = {} as Record<PanelId, string>;
@@ -688,7 +803,16 @@ export function NetworkPage() {
     for (const [kind, key] of Object.entries(REASON_TEXT_KEYS) as Array<[ReasonKind, PageTextKey]>) out[kind] = txt[key];
     return out;
   }, [txt]);
-  const publicGraph = useApi<NetworkGraph>('/ontology/graph');
+  const [caseParams]=useSearchParams();
+  const contentCase=caseParams.get('contentCase')==='topology-dg';
+  const graphResponse = useApi<NetworkGraph>(contentCase?(caseParams.get('layer')==='L'?'/learning/network':'/ontology/object-network'):'/ontology/graph');
+  const caseRelation=caseParams.get('relation')??'all';
+  const publicGraph={...graphResponse,data:useMemo(()=>{const g=graphResponse.data;if(!g||!contentCase||caseRelation==='all')return g;return {...g,actions:[],relations:g.relations.filter(r=>(r.kind==='scaling'?`scaling-${r.contentRelation?.strength}`:r.kind)===caseRelation)};},[graphResponse.data,contentCase,caseRelation])};
+  /*
+   * 尺度登记（2026-10-17 加）：与 graph 分开取，因为它是**派生投影**，不进 contentHash。
+   * 失败只影响尺度开关/面板，不影响节点网络。
+   */
+  const publicScale = useApi<ScalePlanResponse>(contentCase?null:'/ontology/scale');
   const workspace = useNetworkWorkspace(publicGraph.data ?? undefined);
   const graph = { ...publicGraph, data: workspace.graph ?? publicGraph.data };
   const [sourceFilter, setSourceFilter] = useState('all');
@@ -900,6 +1024,35 @@ export function NetworkPage() {
   }, []);
 
   /**
+   * 尺度卡片的手动位置（世界坐标左上角，2026-10-17 加）。
+   * 与节点位置分开存：节点用 `overrides`，分子/单元/话题用这份；两者都只属于本页显示。
+   */
+  const [scaleOverrides, setScaleOverrides] = useState<PositionOverrides>(() => {
+    if (typeof localStorage === 'undefined') return {};
+    try {
+      const raw = localStorage.getItem(SCALE_OVERRIDES_KEY);
+      if (!raw) return {};
+      const parsed: unknown = JSON.parse(raw);
+      if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return {};
+      const clean: PositionOverrides = {};
+      for (const [id, value] of Object.entries(parsed as Record<string, unknown>)) {
+        if (value && typeof value === 'object' && Number.isFinite((value as { x?: unknown }).x) && Number.isFinite((value as { y?: unknown }).y)) {
+          clean[id] = { x: Number((value as { x: number }).x), y: Number((value as { y: number }).y) };
+        }
+      }
+      return clean;
+    } catch {
+      return {};
+    }
+  });
+  const persistScaleOverrides = useCallback((next: PositionOverrides) => {
+    try {
+      if (Object.keys(next).length === 0) localStorage.removeItem(SCALE_OVERRIDES_KEY);
+      else localStorage.setItem(SCALE_OVERRIDES_KEY, JSON.stringify(next));
+    } catch { /* 隐私模式：忽略 */ }
+  }, []);
+
+  /**
    * 自动摆位结果：新加入的节点由 `placeNewNodes` 挑一个合适的位置，之后**不再重算**。
    *
    * 为什么需要这份缓存：`layout()` 是全局力导向，每加一个节点都会把所有节点重排一遍，
@@ -942,6 +1095,16 @@ export function NetworkPage() {
   /** 进入回放前暂存的手动位置；退出回放时恢复，见下面的 replay effect。 */
   const overridesSnapshotRef = useRef<PositionOverrides | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
+  /** 选中的尺度对象（与节点选中互斥；详情面板按它切换内容）。 */
+  const [selectedScale, setSelectedScale] = useState<string | null>(null);
+  const [showScaleEdges, setShowScaleEdges] = useState(true);
+  /**
+   * 刚手动展开的父对象：自动合拢在本轮让位，否则在 90%/55%/30% 以下点「分裂」，
+   * 子对象会在同一帧被 LOD 收回去，用户看到的是「点了没反应」。
+   * 用户一动缩放（滚轮/按钮/双指）就清空，之后仍按阈值合拢。
+   */
+  const [manualReveal, setManualReveal] = useState<Set<string>>(new Set());
+  useEffect(() => { if (selected) setSelectedScale(null); }, [selected]);
   const [families, setFamilies] = useState<EdgeFamily[]>(DEFAULT_VISIBLE_FAMILIES);
 
   /**
@@ -998,7 +1161,15 @@ export function NetworkPage() {
     } catch { /* 隐私模式：忽略 */ }
   }, [layoutMode, layoutAnchors]);
   const [viewport, setViewport] = useState<Viewport>({ x: 0, y: 0, scale: 1 });
-  const [nodeShape, setNodeShape] = useState<'card' | 'dot'>('card');
+  /*
+   * 首帧的形状：**圆点**。
+   *
+   * 取「圆点」而不是「卡片」，是因为滞后带里 `nextNodeShape` 保持**上一次**的形状，
+   * 而首帧没有上一次——初值就是那个「上一次」。105% 这种落在带内的比例，
+   * 初值 `card` 会让「只有很大才用方块」这条规则在冷启动时失效（见 `network-workspace.ts` 的阈值表）。
+   * 真有更大的比例（小图自动适配常在 150%+）时，第一帧之后立刻翻成卡片，不会错很久。
+   */
+  const [nodeShape, setNodeShape] = useState<'card' | 'dot'>('dot');
   const [hoverInfo, setHoverInfo] = useState<{ id: string; x: number; y: number } | null>(null);
   const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hideHover = useCallback(() => { if (hoverTimer.current) clearTimeout(hoverTimer.current); setHoverInfo(null); }, []);
@@ -1075,6 +1246,8 @@ export function NetworkPage() {
     spec: useDraggablePanel('spec', { x: 0.015, y: 0.64 }, { topInset: hudSpace }),
     // 与「连接类型」同侧错开，避免两块浮窗完全重叠。
     views: useDraggablePanel('views', { x: 0.755, y: 0.64 }, { topInset: hudSpace }),
+    // 尺度面板与「推荐加入」同侧；同一侧一次只开一个，因此与它错开的位置只用于首次打开。
+    scale: useDraggablePanel('scale', { x: 0.755, y: 0.22 }, { topInset: hudSpace }),
   } satisfies Record<PanelId, ReturnType<typeof useDraggablePanel>>;
 
   const [justAdded, setJustAdded] = useState<Record<string, number>>({});
@@ -1083,7 +1256,12 @@ export function NetworkPage() {
   const refreshKeyRef = useRef(0);
   /** 当前 URL 参数的最新值：`setAdded` 要在保留回放参数时读它，不能进依赖数组（会抖）。 */
   const currentParamsRef = useRef(params);
-  useEffect(() => { const value = new URLSearchParams(params); if (nodeIdsInUrl) value.set('nodes', nodeIdsInUrl); currentParamsRef.current = value; }, [params, nodeIdsInUrl]);
+  useEffect(() => {
+    const value = new URLSearchParams(location.hash.replace(/^#/, ''));
+    for (const [key, item] of params) value.set(key, item);
+    if (nodeIdsInUrl) value.set('nodes', nodeIdsInUrl);
+    currentParamsRef.current = value;
+  }, [params, nodeIdsInUrl, location.hash]);
 
   /* —— 本次学习的暂存（2026-10-13 加） —— */
   /** 这一次挂载是不是从暂存恢复来的：控制提示条，并决定要不要继续更新暂存里的相机。 */
@@ -1131,6 +1309,258 @@ export function NetworkPage() {
   const unresolved = useMemo(() => [...requested].filter((id) => !knownIds.has(id)).sort(), [requested, knownIds]);
   const added = useMemo(() => new Set([...requested].filter((id) => knownIds.has(id))), [requested, knownIds]);
 
+  /*
+   * 尺度视图状态（2026-10-17 加）。
+   *
+   * 与节点集合同一套约定：**URL 是唯一真值**，这里只做解析与存在性过滤。
+   * `addedScale` 只放显式加入的尺度根（话题/单元/分子）；展开的子对象由 `split` 派生，
+   * 不逐个写进 URL——`split` 才是「展开了什么」的账本。
+   */
+  const scaleRaw = networkParam(params, location.hash, 'scales');
+  const scaleLevels = useMemo(() => parseScaleLevels(scaleRaw), [scaleRaw]);
+  const scaleView = scaleLevels.length > 0;
+  const scalePlan = publicScale.data?.scale ?? null;
+  const scaleCatalogue = useMemo(() => buildScaleCatalogue(scalePlan), [scalePlan]);
+  const scaleNodesRaw = networkParam(params, location.hash, 'scaleNodes');
+  const addedScale = useMemo(
+    () => new Set(existingScaleIds(parseScaleIds(scaleNodesRaw), scaleCatalogue)),
+    [scaleNodesRaw, scaleCatalogue],
+  );
+  const splitRaw = networkParam(params, location.hash, 'split');
+  const expandedScale = useMemo(() => new Set(
+    parseScaleIds(splitRaw).filter((id) => scaleCatalogue.byId.has(id) || knownIds.has(id)),
+  ), [splitRaw, scaleCatalogue, knownIds]);
+  const autoMerge = networkParam(params, location.hash, 'merge') !== '0';
+  const scalePlanError = publicScale.error ? formatError(publicScale.error) : null;
+  /** 一次加进来一批节点（硬前置闭包 / 展开单元）时置位：相机改走 fitView，见下面的 effect。 */
+  const fitAfterAddRef = useRef(false);
+  const unknownScaleIds = useMemo(() => {
+    if (publicScale.loading || !scalePlan) return [];
+    const requested = parseScaleIds(scaleNodesRaw);
+    const split = parseScaleIds(splitRaw);
+    return [...new Set([
+      ...requested.filter((id) => !scaleCatalogue.byId.has(id)),
+      ...split.filter((id) => !scaleCatalogue.byId.has(id) && !knownIds.has(id)),
+    ])];
+  }, [publicScale.loading, scalePlan, scaleNodesRaw, splitRaw, scaleCatalogue, knownIds]);
+  useEffect(() => {
+    if (unknownScaleIds.length === 0) return;
+    setNotice(fill(txt.scaleNoticeStale, { count: unknownScaleIds.length }));
+  }, [unknownScaleIds, txt]);
+
+  /** 尺度状态的 URL 写入口：保留节点集合与回放参数，只改传进来的那几个键。 */
+  const updateScaleUrl = useCallback((mutate: (next: URLSearchParams) => void) => {
+    const next = new URLSearchParams(currentParamsRef.current);
+    mutate(next);
+    for (const key of ['scales', 'scaleNodes', 'split', 'merge'] as const) {
+      if (!next.get(key)) next.delete(key);
+    }
+    currentParamsRef.current = new URLSearchParams(next);
+    navigate({ pathname: location.pathname, ...networkUrlParts(next) }, { replace: true });
+  }, [navigate, location.pathname]);
+
+  const setScaleLevels = useCallback((levels: ScaleLevelId[]) => {
+    updateScaleUrl((next) => {
+      const values = SCALE_ORDER.filter((level) => levels.includes(level));
+      if (values.length > 0) next.set('scales', values.join(','));
+      else next.delete('scales');
+    });
+  }, [updateScaleUrl]);
+
+  const setAutoMergeUrl = useCallback((value: boolean) => {
+    updateScaleUrl((next) => { if (value) next.delete('merge'); else next.set('merge', '0'); });
+  }, [updateScaleUrl]);
+
+  const urlIdSet = (next: URLSearchParams, key: string) => new Set(parseScaleIds(next.get(key)));
+  const writeUrlIds = (next: URLSearchParams, key: string, ids: Set<string>) => {
+    if (ids.size > 0) next.set(key, [...ids].sort((a, b) => a.localeCompare(b, 'en')).join(','));
+    else next.delete(key);
+  };
+
+  const addScaleObject = useCallback((id: string) => {
+    const object = scaleCatalogue.byId.get(id);
+    if (!object) return;
+    updateScaleUrl((next) => {
+      const levels = new Set(parseScaleLevels(next.get('scales')));
+      if (levels.size === 0) for (const level of SCALE_ORDER) levels.add(level);
+      levels.add(object.scale);
+      next.set('scales', SCALE_ORDER.filter((level) => levels.has(level)).join(','));
+      const scales = urlIdSet(next, 'scaleNodes'); scales.add(id); writeUrlIds(next, 'scaleNodes', scales);
+      if (object.scale === 'molecule' && object.node) {
+        const nodes = new Set(parseScaleIds(next.get('nodes')));
+        nodes.add(object.node); writeUrlIds(next, 'nodes', nodes);
+        const split = urlIdSet(next, 'split');
+        // 分子要在父节点展开后才显示；把父节点以及已加入的可见祖先一并展开。
+        split.add(object.node);
+        const unitId = scaleCatalogue.primaryParentOfNode.get(object.node) ?? null;
+        if (unitId && scaleCatalogue.byId.has(unitId) && urlIdSet(next, 'scaleNodes').has(unitId)) split.add(unitId);
+        const topicId = unitId ? scaleCatalogue.primaryParentOfUnit.get(unitId) ?? null : null;
+        if (topicId && urlIdSet(next, 'scaleNodes').has(topicId)) split.add(topicId);
+        writeUrlIds(next, 'split', split);
+      }
+    });
+    setManualReveal((current) => new Set(current).add(id));
+    setNotice(fill(txt.scaleNoticeAdded, { title: object.title }));
+  }, [scaleCatalogue, txt, updateScaleUrl]);
+
+  const expandScaleObject = useCallback((id: string) => {
+    const object = scaleCatalogue.byId.get(id);
+    if (!object) return;
+    let addedNodes = 0;
+    updateScaleUrl((next) => {
+      const levels = new Set(parseScaleLevels(next.get('scales')));
+      if (levels.size === 0) for (const level of SCALE_ORDER) levels.add(level);
+      levels.add(object.scale);
+      next.set('scales', SCALE_ORDER.filter((level) => levels.has(level)).join(','));
+      const scales = urlIdSet(next, 'scaleNodes'); scales.add(id); writeUrlIds(next, 'scaleNodes', scales);
+      const split = urlIdSet(next, 'split'); split.add(id);
+      if (object.scale === 'unit') {
+        const nodes = new Set(parseScaleIds(next.get('nodes')));
+        for (const nodeId of object.members) {
+          if (!nodes.has(nodeId)) { nodes.add(nodeId); addedNodes += 1; }
+        }
+        writeUrlIds(next, 'nodes', nodes);
+      }
+      writeUrlIds(next, 'split', split);
+    });
+    if (object.scale === 'unit' || object.scale === 'topic') fitAfterAddRef.current = true;
+    setManualReveal((current) => new Set(current).add(id));
+    setNotice(fill(txt.scaleNoticeSplit, { title: object.title, count: object.scale === 'topic' ? object.members.length : addedNodes }));
+  }, [scaleCatalogue, txt, updateScaleUrl]);
+
+  /**
+   * 「加入节点尺度」：把已加入单元/话题的成员节点放进画布，并展开必要的单元；
+   * 没有任何尺度对象时加入全部节点。这样用户不必先猜「展开单元」才会出现节点。
+   */
+  const addNodeScale = useCallback(() => {
+    const nodeIds = new Set<string>();
+    const splitIds = new Set<string>();
+    for (const id of addedScale) {
+      const object = scaleCatalogue.byId.get(id);
+      if (!object) continue;
+      if (object.scale === 'unit') {
+        splitIds.add(id);
+        for (const nodeId of object.members) nodeIds.add(nodeId);
+      } else if (object.scale === 'topic') {
+        splitIds.add(id);
+        for (const unitId of object.members) {
+          splitIds.add(unitId);
+          const unit = scaleCatalogue.byId.get(unitId);
+          if (unit?.scale === 'unit') for (const nodeId of unit.members) nodeIds.add(nodeId);
+        }
+      }
+    }
+    if (nodeIds.size === 0) for (const node of nodes) nodeIds.add(node.id);
+    if (nodeIds.size === 0) return;
+    updateScaleUrl((next) => {
+      const levels = new Set(parseScaleLevels(next.get('scales')));
+      for (const level of SCALE_ORDER) levels.add(level);
+      next.set('scales', SCALE_ORDER.filter((level) => levels.has(level)).join(','));
+      const current = new Set(parseScaleIds(next.get('nodes')));
+      for (const nodeId of nodeIds) current.add(nodeId);
+      writeUrlIds(next, 'nodes', current);
+      const split = urlIdSet(next, 'split');
+      for (const id of splitIds) split.add(id);
+      writeUrlIds(next, 'split', split);
+    });
+    setManualReveal((current) => {
+      const next = new Set(current);
+      for (const id of splitIds) next.add(id);
+      return next;
+    });
+    fitAfterAddRef.current = true;
+    setNotice(fill(txt.scaleNoticeNodesAdded, { count: nodeIds.size }));
+  }, [addedScale, nodes, scaleCatalogue, txt, updateScaleUrl]);
+
+  const collapseScaleObject = useCallback((id: string) => {
+    const object = scaleCatalogue.byId.get(id);
+    const hidden = object ? (object.scale === 'topic' ? object.members.length : object.scale === 'unit' ? object.members.length : 0) : 0;
+    updateScaleUrl((next) => {
+      const split = urlIdSet(next, 'split'); split.delete(id); writeUrlIds(next, 'split', split);
+    });
+    setManualReveal((current) => { const next = new Set(current); next.delete(id); return next; });
+    if (object) setNotice(fill(txt.scaleNoticeCollapsed, { title: object.title, count: hidden }));
+  }, [scaleCatalogue, txt, updateScaleUrl]);
+
+  const removeScaleObject = useCallback((id: string) => {
+    const object = scaleCatalogue.byId.get(id);
+    if (!object) return;
+    const removedNodes = object.scale === 'unit'
+      ? object.members
+      : object.scale === 'topic'
+        ? scaleCatalogue.descendantNodeIds.get(object.id) ?? []
+        : [];
+    updateScaleUrl((next) => {
+      const scales = urlIdSet(next, 'scaleNodes'); scales.delete(id);
+      const split = urlIdSet(next, 'split'); split.delete(id);
+      if (object.scale === 'topic') {
+        for (const unitId of object.members) { scales.delete(unitId); split.delete(unitId); }
+      }
+      writeUrlIds(next, 'scaleNodes', scales); writeUrlIds(next, 'split', split);
+      if (removedNodes.length > 0) {
+        const nodes = new Set(parseScaleIds(next.get('nodes')));
+        for (const nodeId of removedNodes) nodes.delete(nodeId);
+        writeUrlIds(next, 'nodes', nodes);
+      }
+    });
+    setManualReveal((current) => { const next = new Set(current); next.delete(id); return next; });
+    setSelectedScale((current) => (current === id ? null : current));
+    setScaleOverrides((current) => {
+      if (!(id in current)) return current;
+      const next = { ...current };
+      delete next[id];
+      persistScaleOverrides(next);
+      return next;
+    });
+    setNotice(fill(txt.scaleNoticeRemoved, { title: object.title }));
+  }, [persistScaleOverrides, scaleCatalogue, txt, updateScaleUrl]);
+
+  const toggleScaleObject = useCallback((id: string) => {
+    if (expandedScale.has(id)) collapseScaleObject(id);
+    else expandScaleObject(id);
+  }, [collapseScaleObject, expandScaleObject, expandedScale]);
+
+  const startScaleDrag = useCallback((id: string, anchor: Point) => {
+    setDraggingScale(id);
+    setScaleDragPosition(anchor);
+    setNodeMenu(null);
+    setScaleMenu(null);
+  }, []);
+
+  const moveScaleDrag = useCallback((id: string, point: Point) => {
+    setDraggingScale((current) => (current === id ? current : id));
+    setScaleDragPosition(point);
+  }, []);
+
+  const endScaleDrag = useCallback((id: string, point: Point | null, moved: boolean) => {
+    if (moved && point) {
+      setScaleOverrides((current) => {
+        const next = { ...current, [id]: point };
+        persistScaleOverrides(next);
+        return next;
+      });
+    }
+    setDraggingScale(null);
+    setScaleDragPosition(null);
+  }, [persistScaleOverrides]);
+
+  const moleculeOfNode = useCallback((nodeId: string) => scaleCatalogue.moleculeOfNode.get(nodeId)?.[0] ?? null, [scaleCatalogue]);
+
+  const splitNodeToMolecule = useCallback((nodeId: string) => {
+    const moleculeId = moleculeOfNode(nodeId);
+    if (!moleculeId) return;
+    updateScaleUrl((next) => {
+      const levels = new Set(parseScaleLevels(next.get('scales')));
+      if (levels.size === 0) for (const level of SCALE_ORDER) levels.add(level);
+      levels.add('molecule');
+      next.set('scales', SCALE_ORDER.filter((level) => levels.has(level)).join(','));
+      const split = urlIdSet(next, 'split'); split.add(nodeId); writeUrlIds(next, 'split', split);
+    });
+    setManualReveal((current) => new Set(current).add(nodeId));
+    const molecule = scaleCatalogue.byId.get(moleculeId);
+    setNotice(fill(txt.scaleNoticeSplit, { title: molecule?.title ?? moleculeId, count: 1 }));
+  }, [moleculeOfNode, scaleCatalogue, txt, updateScaleUrl]);
+
   const setAdded = useCallback((next: Set<string>) => {
     if (next.size > 2000) { setNotice(locale === 'en' ? 'A view supports at most 2,000 nodes.' : '每张视图最多 2,000 个节点。'); return; }
     const sorted = [...next].filter((id) => knownIds.has(id) || decodeNoteKey(id)).sort((a, b) => a.localeCompare(b, 'en'));
@@ -1147,12 +1577,36 @@ export function NetworkPage() {
      * `stages`（多程合一图的程边界）也在保留之列：它决定「这一步属于哪一程」，
      * 与 `path` 是一件事的两半——漏掉它，回放照旧放得出来，但程名与程的起点标记会静默消失。
      */
-    for (const key of ['play', 'entry', 'path', 'goal', 'route', 'stages']) {
+    for (const key of ['play', 'entry', 'path', 'goal', 'route', 'stages', 'scales', 'scaleNodes', 'split', 'merge']) {
       const value = currentParamsRef.current.get(key);
       if (value !== null) params.set(key, value);
     }
+    currentParamsRef.current = new URLSearchParams(params);
     navigate({ pathname: location.pathname, ...networkUrlParts(params) }, { replace: true });
   }, [knownIds, navigate, location.pathname, locale]);
+
+  /**
+   * 一次写入「节点集合 + 尺度状态」的导航（载入命名视图时用）。
+   *
+   * 与 `setAdded` 的分工：`setAdded` 只改节点，**保留**当前尺度状态；
+   * 载入快照要按快照整体替换，因此尺度字段也必须一起写（没有尺度字段的旧快照 = 清空）。
+   */
+  const navigateCanvas = useCallback((nodeIds: string[], scale: {
+    levels: string[]; added: string[]; split: string[]; autoMerge: boolean;
+  } | null) => {
+    const next = new URLSearchParams(currentParamsRef.current);
+    for (const key of ['nodes', 'scales', 'scaleNodes', 'split', 'merge']) next.delete(key);
+    const sorted = [...new Set(nodeIds)].filter((id) => knownIds.has(id) || decodeNoteKey(id)).sort((a, b) => a.localeCompare(b, 'en'));
+    if (sorted.length) next.set('nodes', sorted.join(','));
+    if (scale && scale.levels.length) {
+      next.set('scales', SCALE_ORDER.filter((level) => scale.levels.includes(level)).join(','));
+      if (scale.added.length) next.set('scaleNodes', [...new Set(scale.added)].sort((a, b) => a.localeCompare(b, 'en')).join(','));
+      if (scale.split.length) next.set('split', [...new Set(scale.split)].sort((a, b) => a.localeCompare(b, 'en')).join(','));
+      if (!scale.autoMerge) next.set('merge', '0');
+    }
+    currentParamsRef.current = new URLSearchParams(next);
+    navigate({ pathname: location.pathname, ...networkUrlParts(next) }, { replace: true });
+  }, [knownIds, navigate, location.pathname]);
 
   useEffect(() => {
     if (!replayPlan) return;
@@ -1175,7 +1629,7 @@ export function NetworkPage() {
      * 回放要看清「谁先出现、箭头接到谁身上」，而左侧的全部节点列表与右侧的推荐面板
      * 正好压在画布两边。这里只收起、不记住——退出回放后学习者可以自己再打开。
      */
-    setOpen({ list: false, recommend: false, detail: false, families: false, spec: false, views: false });
+    setOpen({ list: false, recommend: false, detail: false, families: false, spec: false, views: false, scale: false });
     /*
      * 回放使用独立布局：进入时把学习者手动摆放的位置暂存到内存，回放期间用算法布局，
      * 退出回放后原样恢复。
@@ -1282,7 +1736,11 @@ export function NetworkPage() {
      */
     previousIdsRef.current = new Set(known);
     refreshKeyRef.current = knownIds.size;
-    setAdded(new Set(known));
+    navigateCanvas(known, draft.scale ?? null);
+    if (draft.scale?.positions) {
+      setScaleOverrides(draft.scale.positions);
+      persistScaleOverrides(draft.scale.positions);
+    }
     if (draft.placements) { setPlacements(draft.placements); persistPlacements(draft.placements); }
     if (draft.layout) { setLayoutMode(draft.layout.mode); setLayoutAnchors(draft.layout.anchors); }
 
@@ -1313,7 +1771,7 @@ export function NetworkPage() {
      * `knownIds`、`requested` 都是 memo，`rawIds` 与 `routeSearch` 跟着 URL 走。
      */
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [knownIds, requested, rawIds, routeSearch]);
+  }, [knownIds, requested, rawIds, routeSearch, navigateCanvas, persistScaleOverrides]);
 
   /**
    * 写暂存：只在「这一张图的样子」变了时才写（节点集合或可见边源）。相机另有一支（见下）。
@@ -1353,8 +1811,9 @@ export function NetworkPage() {
       added: [...added],
       families,
       camera: cameraDraftRestoredRef.current ? viewportRef.current : null,
+      ...(scaleView ? { scale: { levels: scaleLevels, added: [...addedScale], split: [...expandedScale], autoMerge, positions: scaleOverrides, version: scalePlan?.version ?? null } } : {}),
     });
-  }, [added, families, replayPlan, rawIds, workspace.snapshot]);
+  }, [added, families, replayPlan, rawIds, workspace.snapshot, scaleView, scaleLevels, addedScale, expandedScale, autoMerge, scaleOverrides, scalePlan, contentCase, caseParams]);
 
   /**
    * 相机也跟着暂存走，但**防抖**（2026-10-13 加）。
@@ -1390,10 +1849,12 @@ export function NetworkPage() {
       if (restoring && Math.abs(current.x - restoring.x) < 0.5
         && Math.abs(current.y - restoring.y) < 0.5 && Math.abs(current.scale - restoring.scale) < 1e-3) return;
       writeNetworkDraft({
-      ...workspace.snapshot([...added]), added: [...added], families, camera: current });
+      ...workspace.snapshot([...added]), added: [...added], families, camera: current,
+      ...(scaleView ? { scale: { levels: scaleLevels, added: [...addedScale], split: [...expandedScale], autoMerge, positions: scaleOverrides, version: scalePlan?.version ?? null } } : {}),
+      });
     }, 400);
     return () => clearTimeout(timer);
-  }, [viewport.scale, viewport.x, viewport.y, added, families, replayPlan]);
+  }, [viewport.scale, viewport.x, viewport.y, added, families, replayPlan, scaleView, scaleLevels, addedScale, expandedScale, autoMerge, scaleOverrides, scalePlan, contentCase, caseParams]);
 
   /** 默认边源（与 `families` 的初值同一处；丢弃暂存时用它把开关归位）。 */
   const defaultFamilies = useMemo(() => [...DEFAULT_VISIBLE_FAMILIES], []);
@@ -1439,15 +1900,17 @@ export function NetworkPage() {
     restoredCameraValueRef.current = null;
     skipAutoFitRef.current = false;
     setDraftRestored(false);
-    setAdded(new Set());
+    navigateCanvas([], null);
     setFamilies(defaultFamilies);
     setOverrides({});
     persistOverrides({});
     setPlacements({});
     persistPlacements({});
+    setScaleOverrides({});
+    persistScaleOverrides({});
     setViewport({ x: 0, y: 0, scale: 1 });
     setNotice(txt.draftDiscarded);
-  }, [defaultFamilies, persistOverrides, persistPlacements, setAdded, setNotice, txt]);
+  }, [defaultFamilies, navigateCanvas, persistOverrides, persistPlacements, persistScaleOverrides, setNotice, txt]);
 
   /**
    * 「刚加入」的节点集合，用于入场动画与新边生成动画。
@@ -1533,6 +1996,32 @@ export function NetworkPage() {
    */
   const [nodeMenu, setNodeMenu] = useState<{ node: string; x: number; y: number } | null>(null);
   const nodeMenuRef = useRef<HTMLDivElement | null>(null);
+  /** 尺度对象的右键菜单（与节点菜单分开：节点菜单的 `data-node` 契约不能被混用）。 */
+  const [scaleMenu, setScaleMenu] = useState<{ id: string; x: number; y: number } | null>(null);
+  const scaleMenuRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => { if (nodeMenu) setScaleMenu(null); }, [nodeMenu]);
+  useEffect(() => { if (scaleMenu) setNodeMenu(null); }, [scaleMenu]);
+  useEffect(() => {
+    if (!scaleMenu) return;
+    const onPointerDown = (event: PointerEvent) => {
+      if (scaleMenuRef.current?.contains(event.target as Node)) return;
+      setScaleMenu(null);
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') { event.preventDefault(); setScaleMenu(null); }
+    };
+    window.addEventListener('pointerdown', onPointerDown, true);
+    window.addEventListener('keydown', onKeyDown);
+    return () => {
+      window.removeEventListener('pointerdown', onPointerDown, true);
+      window.removeEventListener('keydown', onKeyDown);
+    };
+  }, [scaleMenu]);
+  useEffect(() => {
+    if (!scaleMenu) return;
+    const first = scaleMenuRef.current?.querySelector<HTMLButtonElement>('button:not([disabled])');
+    first?.focus();
+  }, [scaleMenu]);
   const [connectionMenu, setConnectionMenu] = useState<{ targets: ConnectionTarget[]; x: number; y: number } | null>(null);
   const closeConnectionMenu = useCallback(() => setConnectionMenu(null), []);
   useEffect(() => { if (nodeMenu) closeConnectionMenu(); }, [nodeMenu, closeConnectionMenu]);
@@ -1610,6 +2099,8 @@ export function NetworkPage() {
 
   /** 「清空」是可撤销的视图操作：清掉的是本页画布，不动本体，也不动学习记录。 */
   const [clearedNodes, setClearedNodes] = useState<Set<string> | null>(null);
+  /** 清空时一并记下尺度状态，撤销要回到同一张图（节点 + 尺度对象）。 */
+  const [clearedScale, setClearedScale] = useState<{ levels: string[]; added: string[]; split: string[]; autoMerge: boolean } | null>(null);
 
   /**
    * 打开面板或改变窗口大小时，把浮窗夹回可见区。
@@ -1867,6 +2358,9 @@ export function NetworkPage() {
    * - `dragPushed`：被斥力挤开的卡片。同样只在拖动期间存在，放手时一次性并入 `overrides`。
    */
   const [draggingNode, setDraggingNode] = useState<string | null>(null);
+  /** 正在拖动的尺度卡片 / 标题：拖动时世界坐标由 `scaleDragPosition` 提供。 */
+  const [draggingScale, setDraggingScale] = useState<string | null>(null);
+  const [scaleDragPosition, setScaleDragPosition] = useState<Point | null>(null);
   const [dragPosition, setDragPosition] = useState<{ x: number; y: number } | null>(null);
   const [dragPushed, setDragPushed] = useState<PositionOverrides>({});
   const dragPushedRef = useRef<PositionOverrides>({});
@@ -2112,7 +2606,7 @@ export function NetworkPage() {
       .map(([title, count]) => {
         const nodeId = view.layout.placed.find((n) => topicColors.title.get(n.id) === title)?.id ?? '';
         const index = topicColors.index.get(nodeId) ?? 0;
-        return { title, count, color: TOPIC_PALETTE[index % TOPIC_PALETTE.length] };
+        return { title, count, color: palette.topicPalette[index % palette.topicPalette.length] };
       })
       .sort((a, b) => b.count - a.count || a.title.localeCompare(b.title, 'zh'));
   }, [topicColors, view]);
@@ -2120,6 +2614,8 @@ export function NetworkPage() {
   // fitView 与宽高比计算需要读最新的 view 与面板占用，但两者都在渲染期产生；
   // 用 ref 承接以免依赖数组抖动。
   const viewRef = useRef<typeof view>(null);
+  /** 尺度视图的当前派生结果：`fitView` 定义在它之前，用 ref 读「最近一次渲染」的结果。 */
+  const scaleDisplayRef = useRef<ScaleDisplay | null>(null);
   useEffect(() => { viewRef.current = view; }, [view]);
   const openStateRef = useRef(open);
   useEffect(() => { openStateRef.current = open; }, [open]);
@@ -2442,16 +2938,27 @@ export function NetworkPage() {
     refreshLocalViews();
   }, [refreshLocalViews]);
 
-  /** 当前网络状态打包成一个视图：已加入的节点、可见边源、手动位置、相机。 */
+  /** 当前网络状态打包成一个视图：已加入的节点、可见边源、手动位置、相机与尺度状态。 */
   const currentViewPayload = useCallback(() => ({
     added: [...added],
     families: [...families],
     positions: overrides,
     camera: viewport,
     ...workspace.snapshot([...added]),
+    ...(contentCase?{contentCase:'topology-dg',contentLayer:caseParams.get('layer')==='L'?'L' as const:'M' as const}:{}),
     placements: Object.fromEntries((view?.layout.placed ?? []).map(n => [n.id, { x: n.x, y: n.y }])),
     layout: { mode: layoutMode, anchors: layoutAnchors },
-  }), [added, families, overrides, viewport, workspace.snapshot, workspace.selected.length, view, layoutMode, layoutAnchors]);
+    ...(scaleView ? {
+      scale: {
+        levels: [...scaleLevels],
+        added: [...addedScale],
+        split: [...expandedScale],
+        autoMerge,
+        positions: scaleOverrides,
+        version: scalePlan?.version ?? null,
+      },
+    } : {}),
+  }), [added, families, overrides, viewport, workspace.snapshot, workspace.selected.length, view, layoutMode, layoutAnchors, scaleView, scaleLevels, addedScale, expandedScale, autoMerge, scaleOverrides, scalePlan, contentCase, caseParams]);
 
   const saveView = useCallback(async (name: string) => {
     const trimmed = name.trim();
@@ -2511,6 +3018,11 @@ export function NetworkPage() {
    * 「下次直接用」的前提是知道这次和上次差在哪。
    */
   const loadView = useCallback((entry: (typeof savedViews)[number]) => {
+    if(entry.payload.contentCase==='topology-dg'&&(!contentCase||(caseParams.get('layer')??'M')!==entry.payload.contentLayer)){
+      try{sessionStorage.setItem('mcs-content-network-view',JSON.stringify(entry));}catch{/* unavailable storage is reported by the existing saved-view controls */}
+      const p=new URLSearchParams({contentCase:'topology-dg',layer:entry.payload.contentLayer??'M',nodes:(entry.payload.added??[]).join(',')});
+      navigate(hrefFor(`/network?${p}`));setNotice(locale==='en'?'Opening the saved case and restoring its camera.':'正在打开对应案例并恢复保存的相机。');return;
+    }
     const known = new Set(nodes.map((node) => node.id));
     workspace.restore(entry.payload);
     const restored = (entry.payload.added ?? []).filter((id) => known.has(id) || decodeNoteKey(id));
@@ -2528,7 +3040,7 @@ export function NetworkPage() {
     cameraDraftRestoredRef.current = false;
     restoredCameraRef.current = null;
     setDraftRestored(false);
-    setAdded(new Set(restored));
+    navigateCanvas(restored, entry.payload.scale ?? null);
     if (entry.payload.placements) { setPlacements(entry.payload.placements); persistPlacements(entry.payload.placements); }
     if (entry.payload.layout) { setLayoutMode(entry.payload.layout.mode); setLayoutAnchors(entry.payload.layout.anchors); }
     if (Array.isArray(entry.payload.families) && entry.payload.families.length > 0) {
@@ -2537,6 +3049,11 @@ export function NetworkPage() {
     if (entry.payload.positions) {
       setOverrides(entry.payload.positions);
       persistOverrides(entry.payload.positions);
+    }
+    if (entry.payload.scale) {
+      const scalePositions = entry.payload.scale.positions ?? {};
+      setScaleOverrides(scalePositions);
+      persistScaleOverrides(scalePositions);
     }
     if (entry.payload.camera) {
       const camera = entry.payload.camera;
@@ -2549,7 +3066,8 @@ export function NetworkPage() {
       positions: Object.keys(entry.payload.positions ?? {}).length,
       missing: missing > 0 ? fill(txt.viewsLoadedMissing, { count: missing }) : '',
     }));
-  }, [nodes, persistOverrides, persistPlacements, setAdded, setFamilies, setNotice, setOverrides, setViewport, txt, workspace.restore]);
+  }, [nodes, persistOverrides, persistPlacements, persistScaleOverrides, navigateCanvas, setFamilies, setNotice, setOverrides, setViewport, txt, workspace.restore,contentCase,caseParams,navigate,hrefFor,locale]);
+  useEffect(()=>{if(!contentCase||!publicGraph.data)return;const expectedSource=caseParams.get('layer')==='L'?'learning-node':'math-object';if(!publicGraph.data.nodes.some(n=>n.contentRefData?.source===expectedSource))return;try{const raw=sessionStorage.getItem('mcs-content-network-view');if(!raw)return;const entry=JSON.parse(raw) as SavedNetworkView;if(entry.payload.contentLayer!==(caseParams.get('layer')??'M'))return;sessionStorage.removeItem('mcs-content-network-view');loadView(entry);}catch{/* retain the independently saved view */}},[contentCase,publicGraph.data?.version,loadView,caseParams]);
 
   const renameView = useCallback(async (entry: (typeof savedViews)[number]) => {
     const name = window.prompt(txt.viewsPromptRename, entry.name)?.trim();
@@ -2809,6 +3327,7 @@ export function NetworkPage() {
       const factor = pinch.startDistance >= PINCH_MIN_SPAN ? distance / pinch.startDistance : 1;
       const scale = Math.min(Math.max(pinch.startViewport.scale * factor, ZOOM_MIN), ZOOM_MAX);
       const mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+      if (Math.abs(scale - pinch.startViewport.scale) > 1e-6) setManualReveal(new Set());
       setViewport(clampCamera({
         scale,
         x: mid.x - pinch.anchorWorld.x * scale,
@@ -2850,6 +3369,7 @@ export function NetworkPage() {
   /** 以屏幕上某点（SVG 用户坐标）为不动点缩放。 */
   const zoomAt = useCallback((factor: number, anchorX: number, anchorY: number) => {
     cancelCameraAnimation('user-zoom');
+    setManualReveal(new Set());
     setViewport((current) => {
       const nextScale = Math.min(Math.max(current.scale * factor, ZOOM_MIN), ZOOM_MAX);
       if (nextScale === current.scale) return current;
@@ -3334,6 +3854,7 @@ export function NetworkPage() {
     const current = viewRef.current;
     const rect = viewportRect();
     if (!rect || !current) return;
+    const scaleFrame = scaleDisplayRef.current;
     /*
      * 空画布：没有内容可适配，「重置」= **回正到默认视角**（原点 + 100%）。
      *
@@ -3342,7 +3863,7 @@ export function NetworkPage() {
      * 空图上还看不出问题，等它触发 `translate(NaN NaN)` 就晚了（点模式补边距那一段会中招）。
      * 直接给默认值：确定、可解释，而且空图上点「重置」本来也只该做这件事。
      */
-    if (current.layout.placed.length === 0) {
+    if (current.layout.placed.length === 0 && (!scaleFrame || scaleFrame.visibleScale.size === 0)) {
       setViewport(clampCamera({ x: 0, y: 0, scale: 1 }));
       return;
     }
@@ -3356,8 +3877,9 @@ export function NetworkPage() {
      * 因此与「步骤切换时镜头不动」的承诺一致，也不会被无关节点拖偏。
      */
     const replayIds = replayPlan ? new Set(replayPlan.all) : null;
-    const framed = replayIds ? current.layout.placed.filter((node) => replayIds.has(node.id)) : current.layout.placed;
-    const box = framed.length > 0 ? framed : current.layout.placed;
+    const scaleVisible = scaleFrame ? current.layout.placed.filter((node) => scaleFrame.visibleNodes.has(node.id)) : current.layout.placed;
+    const framed = replayIds ? scaleVisible.filter((node) => replayIds.has(node.id)) : scaleVisible;
+    const box = framed.length > 0 ? framed : scaleVisible;
     /*
      * 回放控制台也压在画布上，占的高度要一并让出来。
      *
@@ -3374,18 +3896,29 @@ export function NetworkPage() {
     // 用**节点的真实包围盒**，而不是 layout.width/height（那是含外边距的盒子）。
     // 两者不相等：网格布局会在左右各留 (contentW - columns*NODE_W)/2 的空白，
     // 用盒子中心去对准可用区中心，内容就会整体偏（实测偏 47×104px）。
-    const xs = box.map((node) => node.x);
-    const ys = box.map((node) => node.y);
-    const minX = Math.min(...xs);
-    const minY = Math.min(...ys);
-    const maxX = Math.max(...xs) + NODE_W;
-    const maxY = Math.max(...ys) + NODE_H;
+    // 尺度视图开启时再把可见卡片/标题的矩形并进来，否则「重置」会把卡片留在视口外。
+    let minX = box.length > 0 ? Math.min(...box.map((node) => node.x)) : Infinity;
+    let minY = box.length > 0 ? Math.min(...box.map((node) => node.y)) : Infinity;
+    let maxX = box.length > 0 ? Math.max(...box.map((node) => node.x)) + NODE_W : -Infinity;
+    let maxY = box.length > 0 ? Math.max(...box.map((node) => node.y)) + NODE_H : -Infinity;
+    for (const placement of scaleFrame?.visibleScale.values() ?? []) {
+      minX = Math.min(minX, placement.anchor.x);
+      minY = Math.min(minY, placement.anchor.y);
+      maxX = Math.max(maxX, placement.anchor.x + placement.widthWorld);
+      maxY = Math.max(maxY, placement.anchor.y + placement.heightWorld);
+    }
+    if (!Number.isFinite(minX) || !Number.isFinite(minY)) {
+      setViewport(clampCamera({ x: 0, y: 0, scale: 1 }));
+      return;
+    }
     const fitScale = (width: number, height: number) => Math.min(
       Math.max(Math.min(availW / width, availH / height) * 0.94, ZOOM_MIN),
       ZOOM_MAX,
     );
     // 0.94 的留边系数：保证最外圈节点不被视口边缘切掉。
-    let scale = fitScale(maxX - minX, maxY - minY);
+    // 只有尺度卡片、没有节点时用 100%：卡片的屏幕尺寸是常量，放大相机不会让它更「适配」，
+    // 反而会让它的世界包围盒与屏幕尺寸脱节。
+    let scale = box.length === 0 ? 1 : fitScale(maxX - minX, maxY - minY);
     let boxLeft = minX;
     let boxRight = maxX;
     let boxTop = minY;
@@ -3402,11 +3935,12 @@ export function NetworkPage() {
      * 屏幕量是常量，两轮就收敛；卡片模式下这个循环第一轮就退出（差额全为 0）。
      */
     for (let pass = 0; pass < 2; pass += 1) {
+      if (box.length === 0) break;
       if (!(nodeShape === 'dot' || scale < DOT_THRESHOLD)) break;
       const halfX = (NODE_W / 2) * scale;
       const halfY = (NODE_H / 2) * scale;
       const belowPx = dotLabelBaselinePx(DOT_LABEL_FONT_PX, DOT_LABEL_GAP_PX, DOT_RADIUS_PX) + DOT_LABEL_FONT_PX * 0.25;
-      const padX = Math.max((DOT_LABEL_MAX_CHARS * DOT_LABEL_FONT_PX) / 2 - halfX, DOT_RADIUS_PX - halfX, 0) / scale;
+      const padX = Math.max((dotLabelMaxChars(scale) * DOT_LABEL_FONT_PX) / 2 - halfX, DOT_RADIUS_PX - halfX, 0) / scale;
       const padTop = Math.max(DOT_RADIUS_PX - halfY, 0) / scale;
       const padBottom = Math.max(belowPx - halfY, 0) / scale;
       boxLeft = minX - padX;
@@ -3466,6 +4000,8 @@ export function NetworkPage() {
     const manualCount = Object.keys(overrides).length;
     setPlacements({});
     persistPlacements({});
+    setScaleOverrides({});
+    persistScaleOverrides({});
     lastPlacementRef.current = null;
     const modeName = txt[LAYOUT_MODE_TEXT_KEYS[layoutMode]];
     if (!keepManual && manualCount > 0) {
@@ -3492,7 +4028,7 @@ export function NetworkPage() {
     setNotice(manualCount > 0
       ? fill(txt.relayoutDoneManual, { count: manualCount })
       : txt.relayoutDonePlain);
-  }, [keepManual, layoutMode, overrides, persistOverrides, persistPlacements, txt]);
+  }, [keepManual, layoutMode, overrides, persistOverrides, persistPlacements, persistScaleOverrides, txt]);
 
   /**
    * 已加入集合或面板占用变化时自动适配一次。
@@ -3507,8 +4043,6 @@ export function NetworkPage() {
    * `${width}x${height}` 与节点数覆盖，已经足够。
    */
   const lastFitSignature = useRef('');
-  /** 一次加进来一批节点（右键菜单的「加入全部硬前置」）时置位：相机改走 fitView，见下面的 effect。 */
-  const fitAfterAddRef = useRef(false);
   /** 相机 effect 自己的「上次见过的已加入集合」：用来判定这次新加了谁。 */
   const lastSeenIdsRef = useRef<Set<string>>(new Set());
   useEffect(() => {
@@ -3523,7 +4057,8 @@ export function NetworkPage() {
      * 相机也还没落），在这里清就会被那几次空跑吃掉。
      */
     if (skipAutoFitRef.current) return;
-    if (!view || view.layout.placed.length === 0) {
+    const scaleFrame = scaleDisplayRef.current;
+    if (!view || (view.layout.placed.length === 0 && (!scaleFrame || scaleFrame.visibleScale.size === 0))) {
       if (view && view.layout.placed.length === 0) lastFitSignature.current = '';
       return;
     }
@@ -3541,7 +4076,10 @@ export function NetworkPage() {
      * HUD 的高度同样进签名：它是**量出来的**，首帧为 0、量到之后会让可用区变矮，
      * 那时必须按新的高度再适配一次（否则内容顶部仍被 HUD 压着）。
      */
-    const signature = `${view.layout.placed.length}:${ids}:${view.edges.length}:${replayPlan ? `replay:${Math.round(replayHeight)}` : 'free'}:${layoutMode}:${activeAnchor ?? ''}:${Math.round(hudSpace)}`;
+    const scaleSignature = scaleView
+      ? `scale:${scalePlan?.version ?? 'loading'}:${[...addedScale].sort((a, b) => a.localeCompare(b, 'en')).join(',')}:${[...expandedScale].sort((a, b) => a.localeCompare(b, 'en')).join(',')}`
+      : 'scale:off';
+    const signature = `${view.layout.placed.length}:${ids}:${view.edges.length}:${replayPlan ? `replay:${Math.round(replayHeight)}` : 'free'}:${layoutMode}:${activeAnchor ?? ''}:${Math.round(hudSpace)}:${scaleSignature}`;
     if (signature === lastFitSignature.current) return;
     const previousCount = Number(lastFitSignature.current.split(':')[0] ?? 0);
     lastFitSignature.current = signature;
@@ -3581,7 +4119,7 @@ export function NetworkPage() {
       return;
     }
     fitView();
-  }, [view, added, fitView, centerOnNode, recordCamera, layoutMode, activeAnchor, hudSpace]);
+  }, [view, added, fitView, centerOnNode, recordCamera, layoutMode, activeAnchor, hudSpace, scaleView, scalePlan, addedScale, expandedScale]);
 
   const listed = useMemo(() => {
     const trimmed = query.trim();
@@ -3706,6 +4244,69 @@ export function NetworkPage() {
     [drawnEdges],
   );
 
+  /*
+   * 尺度视图的派生状态（2026-10-17 加）。
+   *
+   * - 位置读 `view.layout.placed`（**静态**），不用正在补间的坐标：合拢判定不该被
+   *   相机动画或拖动中的瞬态坐标影响；
+   * - 缩放按 5% 分桶，避免相机补间每帧重算合拢；
+   * - 上一轮合拢集合与锚点放 ref：前者给滞后带，后者让卡片在成员被隐藏时留在原地。
+   */
+  const scalePositions = useMemo(
+    () => new Map((view?.layout.placed ?? []).map((node) => [node.id, { x: node.x, y: node.y }])),
+    [view],
+  );
+  const autoMergedScaleRef = useRef<Set<string>>(new Set());
+  const lastScaleAnchorsRef = useRef<Map<string, Point>>(new Map());
+  const scaleZoomBucket = Math.round(viewport.scale * 20) / 20;
+  const effectiveScaleOverrides = useMemo(() => {
+    const map = new Map<string, Point>(Object.entries(scaleOverrides));
+    if (draggingScale && scaleDragPosition) map.set(draggingScale, scaleDragPosition);
+    return map;
+  }, [scaleOverrides, draggingScale, scaleDragPosition]);
+  const scaleDisplay = useMemo<ScaleDisplay | null>(() => {
+    if (!scaleView || !scalePlan || replayPlan) return null;
+    return resolveScaleDisplay({
+      catalogue: scaleCatalogue,
+      enabled: new Set(scaleLevels),
+      addedNodes: added,
+      addedScale,
+      expanded: expandedScale,
+      autoMerge,
+      zoom: scaleZoomBucket,
+      nodePositions: scalePositions,
+      lastAnchors: lastScaleAnchorsRef.current,
+      previousMerged: autoMergedScaleRef.current,
+      exemptMerges: manualReveal,
+      manualPositions: effectiveScaleOverrides,
+    });
+  }, [scaleView, scalePlan, replayPlan, scaleCatalogue, scaleLevels, added, addedScale, expandedScale, autoMerge, scaleZoomBucket, scalePositions, manualReveal, effectiveScaleOverrides]);
+  useEffect(() => {
+    if (!scaleDisplay) { autoMergedScaleRef.current = new Set(); return; }
+    autoMergedScaleRef.current = new Set(scaleDisplay.autoMerged);
+    const merged = new Map(lastScaleAnchorsRef.current);
+    for (const [id, point] of scaleDisplay.anchors) merged.set(id, point);
+    lastScaleAnchorsRef.current = merged;
+  }, [scaleDisplay]);
+  // 直接写 ref（而不是只在 effect 里写）：上面的相机适配 effect 先于这里执行，
+  // 它必须在本轮就看见「这一帧有哪些尺度对象」，否则首次加载会按空画布回正。
+  scaleDisplayRef.current = replayPlan ? null : scaleDisplay;
+  const scaleVisibleNodes = scaleDisplay?.visibleNodes ?? null;
+  const scaleNodeEdges = useMemo(() => {
+    if (!scaleVisibleNodes) return drawnEdges;
+    return drawnEdges.filter(({ edge }) => scaleVisibleNodes.has(edge.from) && scaleVisibleNodes.has(edge.to));
+  }, [drawnEdges, scaleVisibleNodes]);
+  const scaleProjected = useMemo(() => {
+    if (!scaleDisplay) return null;
+    return projectScaleEdges(view?.edges ?? [], scaleDisplay, visualWeightOf);
+  }, [scaleDisplay, view]);
+
+  /** 画布上真正渲染的节点位置：尺度视图开启时只留可见节点（位置仍来自同一布局）。 */
+  const renderPositions = useMemo(
+    () => (scaleVisibleNodes ? displayPositions.filter((node) => scaleVisibleNodes.has(node.id)) : displayPositions),
+    [displayPositions, scaleVisibleNodes],
+  );
+
   /**
    * 弧线策略：**实在绕不开的边才弯**（穿卡、共线重叠），其余保持直线。
    *
@@ -3716,10 +4317,10 @@ export function NetworkPage() {
    * 在界面上恒为 0（"平行边弯开"那条分支只在直接调用路由器时才用得上，见 edge-routing.ts）。
    */
   const routes = useMemo(() => {
-    const placed = displayPositions;
+    const placed = renderPositions;
     if (placed.length === 0) return { bows: new Map<string, number>(), controls: new Map<string, { cx: number; cy: number }>(), anchorShifts: new Map<string, { dx1: number; dy1: number; dx2: number; dy2: number }>(), stats: null };
     const byId = new Map(placed.map((node) => [node.id, node]));
-    const routeEdgesInput = drawnEdges
+    const routeEdgesInput = scaleNodeEdges
       .map(({ edge }) => {
         const from = byId.get(edge.from); const to = byId.get(edge.to);
         if (!from || !to) return null;
@@ -3730,26 +4331,26 @@ export function NetworkPage() {
     if (typeof window !== 'undefined') {
       (window as unknown as Record<string, unknown>).__mcsRoutes = { stats: result.stats, bows: [...result.bows] };
       (window as unknown as Record<string, unknown>).__mcsEdgeMerge = {
-        drawn: drawnEdges.length,
+        drawn: scaleNodeEdges.length,
         registered: (view?.edges ?? []).length,
         mergedAway: mergedAwayCount,
-        mergedPairs: drawnEdges.filter((item) => item.merged.length > 0)
+        mergedPairs: scaleNodeEdges.filter((item) => item.merged.length > 0)
           .map((item) => ({ kept: item.edge.id, merged: item.merged.map((edge) => edge.id) })),
       };
     }
     return { bows: result.bows, controls: result.controls, anchorShifts: result.anchorShifts, stats: result.stats };
-  }, [view, drawnEdges, mergedAwayCount, displayPositions]);
+  }, [view, scaleNodeEdges, mergedAwayCount, renderPositions]);
 
   const visualOf = useCallback((edge: NetworkEdge): EdgeVisual => {
     if (edge.source === 'relation') {
-      if (edge.origin && edge.witnessStatus === 'NOT-CLAIMED') return { ...edgeVisual('evidence', null, null, THEME.neutral), dash: '4 4' };
-      return edgeVisual('relation', edge.kind, edge.witnessStatus ?? null, RELATION_COLOR[edge.kind] ?? THEME.neutral);
+      if (edge.origin && edge.witnessStatus === 'NOT-CLAIMED') return { ...edgeVisual('evidence', null, null, palette.colors.neutral), dash: '4 4' };
+      return edgeVisual('relation', edge.kind, edge.witnessStatus ?? null, palette.relation[edge.kind] ?? palette.colors.neutral);
     }
     if (edge.source === 'contract') {
-      return edgeVisual('contract', null, null, contractModeColor(edge.mode, THEME.contractEdge), edge.mode);
+      return edgeVisual('contract', null, null, contractModeColor(edge.mode, palette.colors.contractEdge), edge.mode);
     }
-    return edgeVisual(edge.source, null, null, THEME.line);
-  }, []);
+    return edgeVisual(edge.source, null, null, palette.colors.line);
+  }, [palette]);
 
   /**
    * 一条边的**可读描述**：用在「同一对节点上还合并了哪些边」的提示里。
@@ -3774,27 +4375,88 @@ export function NetworkPage() {
    * 输入是**合并后的边**：同一对节点只会出现一次。
    */
   const paintedEdges = useMemo(() => {
-    return [...drawnEdges].sort((left, right) => {
+    return [...scaleNodeEdges].sort((left, right) => {
       const leftSelected = selected !== null && (left.edge.from === selected || left.edge.to === selected);
       const rightSelected = selected !== null && (right.edge.from === selected || right.edge.to === selected);
       if (leftSelected !== rightSelected) return leftSelected ? 1 : -1;
       return visualOf(left.edge).weight - visualOf(right.edge).weight || left.edge.id.localeCompare(right.edge.id, 'en');
     });
-  }, [drawnEdges, selected, visualOf]);
+  }, [scaleNodeEdges, selected, visualOf]);
+
+  const scaleLevelLabels: Record<ScaleLevelId, string> = {
+    molecule: txt.scaleLevelMolecule,
+    node: txt.scaleLevelNode,
+    unit: txt.scaleLevelUnit,
+    topic: txt.scaleLevelTopic,
+  };
+  const scaleLayerText: ScaleLayerText = {
+    scaleLabels: scaleLevelLabels,
+    split: txt.scaleLayerSplit,
+    collapse: txt.scaleLayerCollapse,
+    merged: txt.scaleLayerMerged,
+    members: txt.scaleLayerMembers,
+    membersTotal: txt.scaleLayerMembersTotal,
+    aggregateEdge: txt.scaleLayerAggregateEdge,
+    menuHint: txt.scaleLayerMenuHint,
+    provisional: txt.scaleLayerProvisional,
+  };
+  const scalePanelText: ScalePanelText = {
+    levels: txt.scalePanelLevels,
+    levelLabels: scaleLevelLabels,
+    filterHint: txt.scalePanelFilterHint,
+    search: txt.scalePanelSearch,
+    topics: txt.scalePanelTopics,
+    paths: txt.scalePanelPaths,
+    units: txt.scalePanelUnits,
+    molecules: txt.scalePanelMolecules,
+    ungrouped: txt.scalePanelUngrouped,
+    add: txt.scalePanelAdd,
+    remove: txt.scalePanelRemove,
+    expand: txt.scalePanelExpand,
+    collapse: txt.scalePanelCollapse,
+    autoMerge: txt.scalePanelAutoMerge,
+    autoMergeHint: fill(txt.scalePanelAutoMergeHint, {
+      near: SCALE_LOD.nearPx,
+      hysteresis: SCALE_LOD.hysteresis,
+      molecule: Math.round(SCALE_LOD.molecule * 100),
+      node: Math.round(SCALE_LOD.node * 100),
+      unit: Math.round(SCALE_LOD.unit * 100),
+    }),
+    showEdges: txt.scalePanelShowEdges,
+    nodeScale: txt.scalePanelNodeScale,
+    nodeScaleHint: txt.scalePanelNodeScaleHint,
+    nodeScaleAdd: txt.scalePanelNodeScaleAdd,
+    note: txt.scalePanelNote,
+    empty: txt.scalePanelEmpty,
+    counts: txt.scalePanelCount,
+    nodeCount: txt.scaleCountNodes,
+    unitCount: txt.scaleCountUnits,
+    moleculeCount: txt.scaleCountMolecules,
+    atomCount: txt.scaleCountAtoms,
+    provisional: txt.scalePanelProvisional,
+    noPlan: txt.scalePanelNoPlan,
+  };
+  const selectScaleObject = (id: string) => {
+    setSelectedScale(id);
+    setSelected(null);
+    setScaleMenu(null);
+    setOpen((current) => ({ ...current, detail: true }));
+  };
 
   /**
    * 这条放缩边要不要画「一头粗一头细」的带子；要的话两端宽度、方向与**细端箭头尺寸**一起给出。
    *
    * 三处共用一个判据（marker 清单、`arrowFor`、渲染），因此不会出现「带子画了但箭头没换」这类
-   * 两处不一致：只在**方向已核验**（`edge.scaling`）且本档不是虚线（填充形状画不出虚线）时成立。
+   * 两处不一致：只在有明确显示方向且本档不是虚线（填充形状画不出虚线）时成立。
    */
   const taperOf = useCallback((edge: NetworkEdge, visual: EdgeVisual) => {
-    if (edge.source !== 'relation' || edge.kind !== 'scaling' || !edge.scaling || visual.dash) return null;
-    const widths = scalingTaperWidths(visual.width, edge.scaling.general === edge.from);
+    const direction = scalingDisplayEndpoints(edge);
+    if (!direction || visual.dash) return null;
+    const widths = scalingTaperWidths(visual.width, direction.general === edge.from);
     return {
       ...widths,
-      general: edge.scaling.general,
-      special: edge.scaling.special,
+      general: direction.general,
+      special: direction.special,
       // 细端换小一号的箭头：不换的话固定的 13 单位箭头（横向 10.1px）比粗端还宽，两端看着一样粗。
       arrowSize: scalingTaperArrowWidth(Math.min(widths.startWidth, widths.endWidth)),
     };
@@ -3826,7 +4488,7 @@ export function NetworkPage() {
   if (graph.error) return <div className="page"><p className="error">{formatError(graph.error)}</p></div>;
   if (!graph.data || !view) return null;
 
-  const positionById = new Map(displayPositions.map((node) => [node.id, node]));
+  const positionById = new Map(renderPositions.map((node) => [node.id, node]));
 
   /*
    * 回放里的「路径箭头」（2026-10-15 改版）：
@@ -3895,6 +4557,8 @@ export function NetworkPage() {
   const previewArrow = arrowTrail.find((arrow) => arrow.preview) ?? null;
 
   const selectedNode = selected ? nodes.find((node) => node.id === selected) ?? null : null;
+  const selectedScaleObject = selectedScale ? scaleCatalogue.byId.get(selectedScale) ?? null : null;
+  const selectedScalePlacement = selectedScale && scaleDisplay ? scaleDisplay.visibleScale.get(selectedScale) ?? null : null;
   /** 选中的节点在起始节点里的登记（没有就是 null）：详情面板据此写出可读的判据。 */
   const selectedStarting = selectedNode ? startingReport?.byId.get(selectedNode.id) ?? null : null;
   /**
@@ -3932,12 +4596,29 @@ export function NetworkPage() {
   /** 话题底色：同话题同色；未归入任何话题的用中性色，不硬塞进某个话题。 */
   const topicFillOf = (nodeId: string) => {
     const index = topicColors?.index.get(nodeId);
-    return index === undefined ? TOPIC_NONE_COLOR : TOPIC_PALETTE[index % TOPIC_PALETTE.length];
+    return index === undefined ? palette.topicNone : palette.topicPalette[index % palette.topicPalette.length];
+  };
+  /**
+   * 圆点档的填充色（2026-10-17 加，用户要求「深色模式的时候节点颜色调亮」）。
+   *
+   * 与卡片底**分开取**：卡片底要够深才托得住浅墨字，而圆点上没有字、只要够亮才看得清。
+   * 深色外观下这两条要求在同一格颜色上互斥（深画布上「对画布 ≥3:1」与「对墨色 ≥4.5:1」
+   * 的可行亮度窗口只有千分之一宽，十个话题会塌成一个亮度），因此 `theme-palette.ts` 里
+   * 为圆点单独备了一张表（浅色外观下两张表相同——浅色圆点靠描边与投影成形）。
+   */
+  const dotFillOf = (nodeId: string) => {
+    const index = topicColors?.index.get(nodeId);
+    return index === undefined ? palette.topicNoneDot : palette.topicPaletteDot[index % palette.topicPaletteDot.length];
   };
 
 
-  /** 只有「硬关系」在放大到一定程度后直接标注名字，避免密网里文字糊成一片。 */
-  const showEdgeLabels = nodeShape === 'card' && viewport.scale >= 0.85;
+  /**
+   * 只有「硬关系」在放大到一定程度后直接标注名字，避免密网里文字糊成一片。
+   *
+   * 条件从「卡片档 **且** 比例 ≥ 0.85」简化成「卡片档」：方块现在只在 120% 以上出现
+   * （见 `network-workspace.ts` 的阈值表），那个 0.85 已经被形状规则本身盖住了。
+   */
+  const showEdgeLabels = nodeShape === 'card';
   /**
    * 缩到圆点档时，挂在圆点**正下方**的节点名称。
    *
@@ -3952,7 +4633,7 @@ export function NetworkPage() {
     if (nodeShape !== 'dot') return new Map<string, DotLabel>();
     const margin = 120;
     const nodes: DotLabelNode[] = [];
-    for (const node of displayPositions) {
+    for (const node of renderPositions) {
       if (replayVisible && !replayVisible.has(node.id)) continue;
       const screenX = viewport.x + (node.x + NODE_W / 2) * viewport.scale;
       const screenY = viewport.y + (node.y + NODE_H / 2) * viewport.scale;
@@ -3974,7 +4655,96 @@ export function NetworkPage() {
         weight: view.degree.get(node.id) ?? 0,
       });
     }
-    return dotLabels(nodes);
+    return dotLabels(nodes, { maxChars: dotLabelMaxChars(viewport.scale) });
+  })();
+  /**
+   * 边上的关系文字（圆点档用）。
+   *
+   * - **关系类**：直接写关系名（「强关联」「定义性前置」……）——用户要读的就是这一句；
+   * - **契约类**：卡片档写「{label}：{产出物}」，圆点档只写 {label}。
+   *   名字要短才放得下，而圆点档要回答的是「这是哪一种关系」，不是「产出物叫什么」；
+   * - 合并的同对边在后面如实标「+N」，不悄悄吞掉（与卡片档同一条约定）。
+   */
+  const edgeLabelTextOf = (edge: NetworkEdge, mergedCount: number): string => {
+    const base = edge.source === 'relation'
+      ? labels.relationLabel(edge.kind)
+      : edge.source === 'contract'
+        ? edgeKindLabel('contract', null, edge.mode, locale) ?? ''
+        : '';
+    if (!base) return '';
+    return mergedCount > 0 ? `${base}+${mergedCount}` : base;
+  };
+  /**
+   * 圆点档下**关系线**上的关系名（2026-10-17 加，用户要求：「节点是圆点的时候，要显示关系的文字」）。
+   *
+   * 卡片档一直有边上的关系名（`fontSize={12}`，跟着相机缩放）；圆点档此前一个都没有，
+   * 而圆点档现在是绝大多数视图——于是最常见的样子只有线、没有「这是哪一种关系」。
+   *
+   * 三条取舍（与圆点下方的名字同一套约定，规则见 `web/src/edge-labels.ts`）：
+   * 1. **屏幕恒定字号**：缩到 25% 也要读得出来，因此文字放在反缩放的组里（渲染处 `scale(1/scale)`）；
+   * 2. **贪心放置 + 回避**：不许互相压、不许压圆点、不许压圆点下方已经放好的名字；
+   * 3. **只有带语义的边**才写名字（`visual.label`，即 core/strong/medium 三档）：
+   *    结构骨架（虚线）本来就不标注，密网里它们占大多数，全标会把画面糊掉。
+   *
+   * 优先序按「与选中/悬停节点相连 → 视觉权重大 → 位置靠上」，同分按 id，确定性可测。
+   * 只算视口内的边：画布外的算了也看不见，而回避是两两比较。
+   */
+  const edgeLabelOf = (() => {
+    if (nodeShape !== 'dot') return new Map<string, EdgeLabel>();
+    const focus = hoverInfo?.id ?? selected ?? picker?.sourceId ?? null;
+    const margin = 120;
+    const inputs: EdgeLabelInput[] = [];
+    for (const { edge, merged } of paintedEdges) {
+      if (replayVisible && !(replayVisible.has(edge.from) && replayVisible.has(edge.to))) continue;
+      const visual = visualOf(edge);
+      if (!visual.label) continue;
+      // 焦点之外的边会被淡到 0.08（见渲染处），它们的名字也就别画了。
+      if (focus !== null && edge.from !== focus && edge.to !== focus) continue;
+      const text = edgeLabelTextOf(edge, merged.length);
+      if (!text) continue;
+      const from = positionById.get(edge.from);
+      const to = positionById.get(edge.to);
+      if (!from || !to) continue;
+      const midWorldX = (from.x + to.x) / 2 + NODE_W / 2;
+      const midWorldY = (from.y + to.y) / 2 + NODE_H / 2;
+      const x = viewport.x + midWorldX * viewport.scale;
+      const y = viewport.y + midWorldY * viewport.scale;
+      if (x < -margin || x > stageSize.w + margin) continue;
+      if (y < -margin || y > stageSize.h + margin) continue;
+      inputs.push({
+        id: edge.id,
+        x,
+        y,
+        // 两端也传进去：中点被圆点/名字占掉时，沿线的另外两个点还可以放。
+        ax: viewport.x + (from.x + NODE_W / 2) * viewport.scale,
+        ay: viewport.y + (from.y + NODE_H / 2) * viewport.scale,
+        bx: viewport.x + (to.x + NODE_W / 2) * viewport.scale,
+        by: viewport.y + (to.y + NODE_H / 2) * viewport.scale,
+        text,
+        weight: visual.weight,
+        priority: focus !== null && (edge.from === focus || edge.to === focus) ? 0 : 1,
+      });
+    }
+    /*
+     * 回避对象：所有圆点 + 已经放好的圆点名字。
+     *
+     * 圆点用**命中圈**（r = 8px 屏幕）而不是 22px 的点击热区：文字压在圆点 8px 以外其实看得清，
+     * 按热区回避会让密网里几乎放不下任何名字。
+     */
+    const dots = renderPositions
+      .filter((node) => !replayVisible || replayVisible.has(node.id))
+      .map((node) => ({
+        x: viewport.x + (node.x + NODE_W / 2) * viewport.scale,
+        y: viewport.y + (node.y + NODE_H / 2) * viewport.scale,
+        r: DOT_RADIUS_PX,
+      }));
+    const boxes = [...dotLabelOf.values()].map((label) => ({
+      x: label.x,
+      y: label.y,
+      width: label.width,
+      height: label.height,
+    }));
+    return edgeLabels(inputs, { dots, boxes });
   })();
   /**
    * 箭头表示**方向性**，与视觉权重是两件事：
@@ -3995,6 +4765,7 @@ export function NetworkPage() {
 
   return (
     <div ref={stageRef} className={`network-stage${isFullscreen ? ' is-fullscreen' : ''}${panning ? ' panning' : ''}${picker ? ' is-picking' : ''}`}>
+      {contentCase&&graph.data&&<ContentCaseControls graph={graph.data}/>}
       <div
         ref={attachCanvas}
         className="network-canvas-full"
@@ -4067,7 +4838,7 @@ export function NetworkPage() {
              */
             transform={`translate(${viewport.x} ${viewport.y}) scale(${viewport.scale})`}
           >
-            {view.layout.placed.length === 0 && (
+            {view.layout.placed.length === 0 && (!scaleDisplay || scaleDisplay.visibleScale.size === 0) && (
               <text className="network-stage-hint" x={Math.max(stageSize.w, 1) / 2} y={Math.max(stageSize.h, 1) * 0.46} textAnchor="middle">
                 {txt.emptyHint}
               </text>
@@ -4144,8 +4915,8 @@ export function NetworkPage() {
                * （`strokeOpacity=0`）——箭头由它的 marker 渲染，实测 `stroke-opacity: 0` 不影响 marker
                * 出现（带子在浏览器里量过：只剩箭头的 48 个像素）。
                *
-               * 只在**已知方向**时这么做：`edge.scaling` 为空（11 条未核验的旧记录）或本档带虚线
-               * （填充形状画不出虚线，宁可不改也不丢线型）时，一切照旧。
+               * 只在有明确显示方向时这么做；旧登记的显示方向不改变数学验证状态。
+               * 没有明确方向或本档带虚线（填充形状画不出虚线）时，一切照旧。
                * `control` 直接取路由结果里的那个点——与画出来的曲线是同一个点，带子与线完全重合。
                */
               const taper = taperOf(edge, visual);
@@ -4157,9 +4928,11 @@ export function NetworkPage() {
                     setConnectionMenu({ targets: connectionTargets([edge, ...merged], locale), x: Math.max(8, Math.min(event.clientX - (bounds?.left ?? 0), stageSize.w - 324)), y: Math.max(8, Math.min(event.clientY - (bounds?.top ?? 0), stageSize.h - 360)) });
                   }}>
                   <path className="network-edge-hit" d={pathData} fill="none" stroke="transparent" strokeWidth={16} vectorEffect="non-scaling-stroke"
+                    onClick={event=>{if(contentCase&&edge.source==='relation'){event.stopPropagation();const p=new URLSearchParams(params);p.set('inspect',edge.id);setParams(p);}}}
                     tabIndex={0} role="button" aria-label={`${titleOf(edge.from)} · ${connectionTarget(edge, locale).label} · ${titleOf(edge.to)}`}
                     onPointerDown={event => { if (event.button === 2) event.stopPropagation(); }}
                     onKeyDown={event => {
+                      if(contentCase&&edge.source==='relation'&&['Enter',' '].includes(event.key)){event.preventDefault();const p=new URLSearchParams(params);p.set('inspect',edge.id);setParams(p);return;}
                       if (event.key === 'ContextMenu' || (event.shiftKey && event.key === 'F10') || event.key === 'Enter' || event.key === ' ') {
                         event.preventDefault(); event.stopPropagation(); setNodeMenu(null);
                         const bounds = stageRef.current?.getBoundingClientRect(); const line = event.currentTarget.getBoundingClientRect();
@@ -4246,6 +5019,33 @@ export function NetworkPage() {
                       )}
                     </text>
                   )}
+                  {/*
+                    圆点档的关系文字：**屏幕恒定字号**，因此放在反缩放的组里（同圆点下方的名字）。
+                    位置与取舍由 `web/src/edge-labels.ts` 给定：放不下的那几条这里查不到，就不画。
+                  */}
+                  {nodeShape === 'dot' && (() => {
+                    const label = edgeLabelOf.get(edge.id);
+                    if (!label || dim) return null;
+                    /*
+                     * 这个组在**相机组里面**，因此位移要用世界坐标：`edge-labels.ts` 给的是屏幕坐标，
+                     * 这里反算回去（除以比例、减掉平移），再 `scale(1/scale)` 把字号还原成屏幕恒定。
+                     * 早期版本直接把屏幕坐标塞进 `translate`，文字整体飘到画布左上，压住别的圆点与文字——
+                     * 放置规则本身是对的，错的是坐标系。
+                     */
+                    const scale = Math.max(viewport.scale, 1e-6);
+                    const worldX = (label.anchorX - viewport.x) / scale;
+                    const worldY = (label.anchorY - viewport.y) / scale;
+                    return (
+                      <g
+                        className="network-edge-label-dot"
+                        transform={`translate(${worldX} ${worldY}) scale(${1 / scale})`}
+                      >
+                        <text className="network-edge-label" textAnchor="middle" fill={visual.color} fontSize={10.5}>
+                          {label.text}
+                        </text>
+                      </g>
+                    );
+                  })()}
                   {/* 供测试与可访问性核对：把「这条边多重、为什么」写进 DOM */}
                   <title>
                     {edge.source === 'relation'
@@ -4310,7 +5110,7 @@ export function NetworkPage() {
               );
             })()}
 
-            {displayPositions.filter((node) => !replayVisible || replayVisible.has(node.id)).map((node) => {
+            {renderPositions.filter((node) => !replayVisible || replayVisible.has(node.id)).map((node) => {
             const degree = view.degree.get(node.id) ?? 0;
             const isDragged = Boolean(overrides[node.id]) || draggingNode === node.id;
             const nodeSummary = nodes.find((item) => item.id === node.id);
@@ -4329,6 +5129,7 @@ export function NetworkPage() {
                 className={`network-node${node.connected ? '' : ' isolated'}${selected === node.id ? ' focused' : ''}${isDragged ? ' placed' : ''}${draggingNode === node.id ? ' dragging-node' : ''}${isPathSource ? ' path-source' : ''}${picker?.sourceId === node.id ? ' pick-source' : ''}${startingEntry ? ' starting-node' : ''}`}
                 data-group={group}
                 data-node={node.id}
+                data-scale="node"
                 data-node-shape={nodeShape}
                 data-node-source={decodeNoteKey(node.id) ? 'vault' : 'ontology'}
                 aria-label={node.title}
@@ -4409,7 +5210,7 @@ export function NetworkPage() {
                 <rect
                   width={NODE_W} height={NODE_H} rx="10"
                   fill={topicFillOf(node.id)}
-                  stroke={isDragged ? THEME.inkSoft : node.connected ? THEME.line : THEME.lineIsolated}
+                  stroke={isDragged ? palette.colors.inkSoft : node.connected ? palette.colors.line : palette.colors.lineIsolated}
                   strokeDasharray={isDragged ? '4 3' : undefined}
                 />
                 {/*
@@ -4433,7 +5234,7 @@ export function NetworkPage() {
                 {(group === 'method-local' || group === 'method-global') && (
                   <rect
                     x="0" y="0" width="4" height={NODE_H} rx="2"
-                    fill={group === 'method-local' ? THEME.methodLocal : THEME.methodGlobal}
+                    fill={group === 'method-local' ? palette.colors.methodLocal : palette.colors.methodGlobal}
                   />
                 )}
                 {/* 线索层徽标：话题级条目在卡片上直接标出来（不参与前置计算）。 */}
@@ -4462,7 +5263,7 @@ export function NetworkPage() {
                 )}
                 {/* 被自动加入的节点标一个小圆点，并在 title 里写明原因，便于核对规则。 */}
                 {autoAddedIds.has(node.id) && (
-                  <circle cx={NODE_W - 10} cy={NODE_H - 9} r="4" fill={THEME.autoAdded} />
+                  <circle cx={NODE_W - 10} cy={NODE_H - 9} r="4" fill={palette.colors.autoAdded} />
                 )}
                 <title>
                   {fill(txt.nodeTitle, { title: node.title, id: node.id, degree, group: nodeGroupLabel(group, locale) })
@@ -4476,7 +5277,7 @@ export function NetworkPage() {
                 </g>
                 <g className="network-dot-body" style={{ opacity: nodeShape === 'dot' ? 1 : 0, pointerEvents: nodeShape === 'dot' ? 'auto' : 'none' }} transform={`translate(${NODE_W / 2} ${NODE_H / 2})`}>
                   <circle className="network-dot-hit" r={22 / viewport.scale} fill="transparent" />
-                  <circle className={`network-dot${selected === node.id ? ' selected' : ''}`} r={DOT_RADIUS_PX / viewport.scale} fill={decodeNoteKey(node.id) ? 'var(--accent)' : topicFillOf(node.id)} stroke={decodeNoteKey(node.id) ? 'var(--accent-strong)' : CONSTRUCT_COLOR[nodeSummary?.construct ?? 'Concept']} strokeWidth={2 / viewport.scale} />
+                  <circle className={`network-dot${selected === node.id ? ' selected' : ''}`} r={DOT_RADIUS_PX / viewport.scale} fill={decodeNoteKey(node.id) ? 'var(--accent)' : dotFillOf(node.id)} stroke={decodeNoteKey(node.id) ? 'var(--accent-strong)' : palette.construct[nodeSummary?.construct ?? 'Concept']} strokeWidth={2 / viewport.scale} />
                   {startingEntry && <circle r={11 / viewport.scale} fill="none" stroke="var(--green-line)" strokeWidth={1.5 / viewport.scale} />}
                   {/*
                     名称就写在圆点正下方（`dotLabels` 决定挂哪几个）。
@@ -4499,6 +5300,29 @@ export function NetworkPage() {
               </g>
             );
           })}
+
+            {/*
+              尺度对象层（2026-10-17 加）：画在节点之后，卡片/标题压住节点卡片。
+              它的位置由 `scaleNetwork.ts` 的派生结果给出；节点位置仍由力导向负责。
+            */}
+            {scaleDisplay && (
+              <ScaleLayer
+                display={scaleDisplay}
+                catalogue={scaleCatalogue}
+                nodePositions={scalePositions}
+                zoom={viewport.scale}
+                selectedId={selectedScale}
+                showMembershipEdges={showScaleEdges}
+                text={scaleLayerText}
+                projectedEdges={scaleProjected?.edges ?? []}
+                onSelect={selectScaleObject}
+                onMenu={(id, position) => setScaleMenu({ id, x: position.x, y: position.y })}
+                onToggle={toggleScaleObject}
+                onDragStart={startScaleDrag}
+                onDrag={moveScaleDrag}
+                onDragEnd={endScaleDrag}
+              />
+            )}
 
             {/*
               路径箭头（一步一支，全部保留）排在节点之后，因此压在卡片之上。
@@ -4680,6 +5504,27 @@ export function NetworkPage() {
                 {closure.truncated ? fill(txt.nodeMenuPrereqTruncated, { n: Math.max(total, 1) }) : ''}
               </p>
             )}
+            {(() => {
+              const moleculeId = moleculeOfNode(nodeMenu.node);
+              const already = moleculeId ? addedScale.has(moleculeId) || expandedScale.has(nodeMenu.node) : false;
+              return (
+                <button
+                  type="button"
+                  role="menuitem"
+                  className="node-menu-item"
+                  data-action="split-to-molecule"
+                  disabled={!moleculeId || already}
+                  title={moleculeId ? txt.nodeMenuSplitMolecule : txt.nodeMenuMoleculeNone}
+                  onClick={() => { closeNodeMenu(); splitNodeToMolecule(nodeMenu.node); }}
+                >
+                  {!moleculeId
+                    ? txt.nodeMenuMoleculeNone
+                    : already
+                      ? txt.nodeMenuMoleculePresent
+                      : txt.nodeMenuSplitMolecule}
+                </button>
+              );
+            })()}
             <button
               type="button"
               role="menuitem"
@@ -4691,6 +5536,74 @@ export function NetworkPage() {
             </button>
             <button className="node-menu-item" role="menuitem" data-action="create-relation" disabled={added.size < 2} onClick={() => { setRelationEditor({ from: nodeMenu.node }); closeNodeMenu(); }}>{locale === 'en' ? 'Create a private relation' : '建立私人关系'}</button>
             <p className="node-menu-foot">{txt.nodeMenuHint}</p>
+          </div>
+        );
+      })()}
+      {scaleMenu && (() => {
+        const object = scaleCatalogue.byId.get(scaleMenu.id);
+        if (!object) return null;
+        const placement = scaleDisplay?.visibleScale.get(scaleMenu.id) ?? null;
+        const childCount = object.scale === 'topic' || object.scale === 'unit' ? object.members.length : 0;
+        const isExpanded = expandedScale.has(object.id);
+        const merged = placement?.merged ?? null;
+        return (
+          <div
+            className="node-menu scale-menu"
+            role="menu"
+            aria-label={fill(txt.scaleMenuAria, { title: object.title })}
+            ref={scaleMenuRef}
+            style={{ left: `${scaleMenu.x}px`, top: `${scaleMenu.y}px` }}
+            data-scale-object={object.id}
+            data-scale={object.scale}
+            data-expanded={isExpanded ? '1' : undefined}
+          >
+            <div className="node-menu-head">
+              <strong>{plainMathText(object.title)}</strong>
+              <span className="muted">{scaleLevelLabels[object.scale]} · {object.id}</span>
+            </div>
+            {merged && <p className="node-menu-note">{fill(txt.scaleMenuMerged, { count: merged.count, total: merged.total })}</p>}
+            {isExpanded ? (
+              <button
+                type="button"
+                role="menuitem"
+                className="node-menu-item"
+                data-action="collapse-scale"
+                onClick={() => { setScaleMenu(null); collapseScaleObject(object.id); }}
+              >
+                {fill(txt.scaleMenuCollapse, { count: childCount })}
+              </button>
+            ) : (
+              <button
+                type="button"
+                role="menuitem"
+                className="node-menu-item"
+                data-action="split-scale"
+                disabled={childCount === 0}
+                title={childCount === 0 ? txt.scaleMenuNoChildren : undefined}
+                onClick={() => { setScaleMenu(null); expandScaleObject(object.id); }}
+              >
+                {childCount === 0 ? txt.scaleMenuNoChildren : fill(txt.scaleMenuSplit, { count: childCount })}
+              </button>
+            )}
+            <button
+              type="button"
+              role="menuitem"
+              className="node-menu-item"
+              data-action="info-scale"
+              onClick={() => { setScaleMenu(null); selectScaleObject(object.id); }}
+            >
+              {txt.scaleMenuInfo}
+            </button>
+            <button
+              type="button"
+              role="menuitem"
+              className="node-menu-item"
+              data-action="remove-scale"
+              onClick={() => { setScaleMenu(null); removeScaleObject(object.id); }}
+            >
+              {txt.scaleMenuRemove}
+            </button>
+            <p className="node-menu-foot">{txt.scaleMenuHint}</p>
           </div>
         );
       })()}
@@ -4938,12 +5851,29 @@ export function NetworkPage() {
             「保存」放在最显眼的一排：用户要的是「下次可以直接用」，
             所以除按钮本身，也把入口写进 HUD 提示（见上面的 network-hud-sub）。
           */}
-          <button className="button small" onClick={saveCurrentView} disabled={added.size === 0} title={txt.saveViewTitle}>{txt.saveView}</button>
+          <button className="button small" onClick={saveCurrentView} disabled={added.size === 0 && addedScale.size === 0} title={txt.saveViewTitle}>{txt.saveView}</button>
           {/* 文案不能叫「视图」：它会和「保存视图」互相包含，人和测试都会点错（踩过）。 */}
           <button className="button small" onClick={() => setOpen((current) => ({ ...current, views: !current.views }))}>
             {open.views ? txt.viewsToggleOpen : (savedViews.length > 0 ? fill(txt.viewsToggleCount, { count: savedViews.length }) : txt.viewsToggleClosed)}
           </button>
           <button className="button small" onClick={toggleFullscreen}>{isFullscreen ? txt.fullscreenExit : txt.fullscreenEnter}</button>
+          <label className="network-hud-toggle" title={scalePlanError ?? txt.scaleToggleTitle}>
+            <input
+              type="checkbox"
+              checked={scaleView}
+              aria-label={txt.scaleToggle}
+              disabled={!scalePlan && !scaleView}
+              onChange={(event) => {
+                if (event.target.checked) {
+                  setScaleLevels([...SCALE_ORDER]);
+                  setOpen((current) => ({ ...current, scale: true }));
+                } else {
+                  setScaleLevels([]);
+                }
+              }}
+            />
+            {txt.scaleToggle}
+          </label>
           {PANEL_IDS.map((id) => (
             <label key={id} className="network-hud-toggle">
               <input
@@ -4980,7 +5910,8 @@ export function NetworkPage() {
                */
               clearBlockedRef.current = true;
               setClearedNodes(new Set(added));
-              setAdded(new Set());
+              setClearedScale(scaleView ? { levels: [...scaleLevels], added: [...addedScale], split: [...expandedScale], autoMerge } : null);
+              navigateCanvas([], null);
               setDraftRestored(false);
             }}
           >{txt.clear}</button>
@@ -5029,8 +5960,9 @@ export function NetworkPage() {
           <button className="link-button" onClick={() => {
             /* 撤销清空 = 又一次明确动作，粘性标记照旧留着（这一页本次访问不再自动恢复）。 */
             clearBlockedRef.current = true;
-            setAdded(clearedNodes);
+            navigateCanvas([...clearedNodes], clearedScale);
             setClearedNodes(null);
+            setClearedScale(null);
           }}>{txt.clearedUndo}</button>
         </div>
       )}
@@ -5139,7 +6071,7 @@ export function NetworkPage() {
                     <span className={`network-node-title${isPending(node.title) ? ' i18n-pending' : ''}`} title={isPending(node.title) ? t('i18n.pendingTitle') : undefined}>{node.title}</span>
                   </label>
                   <div className="network-node-meta">
-                    <span className="construct" title={node.construct} style={{ background: CONSTRUCT_COLOR[node.construct] ?? undefined }}>{labels.constructLabel(node.construct)}</span>
+                    <span className="construct" title={node.construct} style={{ background: palette.construct[node.construct] ?? undefined }}>{labels.constructLabel(node.construct)}</span>
                     {node.evidenceStatus && <StatusBadge status={node.evidenceStatus} title={fill(txt.evidenceLevelTitle, { status: node.evidenceStatus })} />}
                     {/*
                       检索命中理由（2026-10-12 加）：命中摘要的条目**必须说出来**——
@@ -5214,7 +6146,7 @@ export function NetworkPage() {
             </p>
             )}
             <div className="card-actions">
-              <button className="button small primary" onClick={saveCurrentView} disabled={added.size === 0}>
+              <button className="button small primary" onClick={saveCurrentView} disabled={added.size === 0 && addedScale.size === 0}>
                 {txt.viewsSaveNow}
               </button>
               {/*
@@ -5237,7 +6169,7 @@ export function NetworkPage() {
                 {txt.viewsCopyLink}
               </button>
             </div>
-            {added.size === 0 && <p className="muted">{txt.viewsEmptyCanvas}</p>}
+            {added.size === 0 && addedScale.size === 0 && <p className="muted">{txt.viewsEmptyCanvas}</p>}
             {/*
               来源要写清楚：选了档案存 E 层（跟着档案走、可导出），没选就只在这台浏览器里。
               不写这句，用户会以为已经存进档案了。
@@ -5414,7 +6346,58 @@ export function NetworkPage() {
         <section ref={panels.detail.handleRef} className={`floating-panel${panels.detail.dragging ? ' dragging' : ''}`} style={styleOf('detail')} aria-label={txt.panelDetail}>
           {headOf('detail', txt.panelDetail)}
           <div className="floating-panel-body">
-            {!selectedNode ? (
+            {selectedScaleObject ? (
+              <div className="scale-detail" data-scale-object={selectedScaleObject.id} data-scale={selectedScaleObject.scale}>
+                <p className="detail-title">{selectedScaleObject.title}</p>
+                <p className="muted">
+                  {txt.scaleInfoScale}：{scaleLevelLabels[selectedScaleObject.scale]} · σ{selectedScaleObject.sigma}
+                  {' · '}<code>{selectedScaleObject.id}</code>
+                </p>
+                {selectedScalePlacement?.merged && (
+                  <p className="muted">{fill(txt.scaleMenuMerged, { count: selectedScalePlacement.merged.count, total: selectedScalePlacement.merged.total })}</p>
+                )}
+                {selectedScaleObject.provisional && <p className="muted">{txt.scaleInfoProvisional}</p>}
+                {selectedScaleObject.organization && (
+                  <>
+                    <h3>{txt.scaleInfoOrganization}</h3>
+                    <p>{selectedScaleObject.organization}</p>
+                  </>
+                )}
+                {selectedScaleObject.source && <p className="muted">{txt.scaleInfoSource}：{selectedScaleObject.source}</p>}
+                {selectedScaleObject.evidenceStatus && <p className="muted">{txt.scaleInfoEvidence}：{selectedScaleObject.evidenceStatus}</p>}
+                {selectedScaleObject.scale === 'molecule' && selectedScaleObject.atoms && (
+                  <>
+                    <h3>{txt.scaleInfoMembers}</h3>
+                    <ul className="scale-detail-members">
+                      {selectedScaleObject.atoms.map((atom) => <li key={atom.label}><code>{atom.label}</code> · {atom.meaning}</li>)}
+                    </ul>
+                    <p className="muted">{selectedScaleObject.expression}</p>
+                  </>
+                )}
+                {selectedScaleObject.scale !== 'molecule' && (
+                  <>
+                    <h3>{fill(txt.scaleInfoMembersList, { count: selectedScaleObject.members.length })}</h3>
+                    {selectedScaleObject.members.length === 0 ? <p className="muted">{txt.scaleInfoNoMembers}</p> : (
+                      <ul className="scale-detail-members">
+                        {selectedScaleObject.members.map((id) => {
+                          const node = nodes.find((item) => item.id === id);
+                          const child = scaleCatalogue.byId.get(id);
+                          return <li key={id}><code>{id}</code>{node ? ` · ${node.title}` : child ? ` · ${child.title}` : ''}</li>;
+                        })}
+                      </ul>
+                    )}
+                  </>
+                )}
+                <div className="card-actions">
+                  {expandedScale.has(selectedScaleObject.id) ? (
+                    <button className="button small" onClick={() => collapseScaleObject(selectedScaleObject.id)}>{txt.scalePanelCollapse}</button>
+                  ) : (
+                    <button className="button small primary" disabled={selectedScaleObject.members.length === 0} onClick={() => expandScaleObject(selectedScaleObject.id)}>{txt.scalePanelExpand}</button>
+                  )}
+                  <button className="button small" onClick={() => removeScaleObject(selectedScaleObject.id)}>{txt.scalePanelRemove}</button>
+                </div>
+              </div>
+            ) : !selectedNode ? (
               <p className="muted">{txt.detailEmpty}</p>
             ) : (
               <>
@@ -5430,7 +6413,7 @@ export function NetworkPage() {
                   卡片上的描边与徽标是「一眼可见」，这里补的是**可读的判据**——
                   它由哪个行动引入、哪些输入已确认，或者它根本没有产出行动。
                 */}
-                {(selectedStarting) && (
+                {(!isMaster && selectedStarting) && (
                   <p className="detail-starting" data-starting={selectedStarting.kind}>
                     <StatusBadge status="known" label={txt.reasonStarting} title={txt.legendStarting} />
                     {/* 徽标已经说了「起始节点」，这里不再重复前缀（见 startingNodeBasis 的 lead）。 */}
@@ -5454,7 +6437,7 @@ export function NetworkPage() {
                     键盘用户从列表跳进来也需要一条不依赖右键的路径。判据与菜单那一项完全同一份
                     `addHardPrereqs`，因此两条入口不会各说各话。
                   */}
-                  {selectedPrereqMissing > 0 && (
+                  {!isMaster && selectedPrereqMissing > 0 && (
                     <button className="button small" data-action="add-hard-prereqs" onClick={() => addHardPrereqs(selectedNode.id, selectedNode.title)}>
                       {fill(txt.nodeMenuPrereqAdd, { missing: selectedPrereqMissing })}
                     </button>
@@ -5489,6 +6472,7 @@ export function NetworkPage() {
                             {edge.scope && <span className="muted">{edge.scope}</span>}
                             {edge.witnessRef && <span className="muted">{locale === 'en' ? 'Witness' : '见证'}：<code>{edge.witnessRef}</code></span>}
                             <ScalingExplanationView relation={edge} />
+                            {contentCase&&graph.data?.relations.find(r=>r.id===edge.id)?.contentRelation&&<ContentRelationDetails relation={graph.data.relations.find(r=>r.id===edge.id)!.contentRelation!}/>}
                           </>
                         ) : familySource === 'contract' ? (
                           <>
@@ -5516,6 +6500,41 @@ export function NetworkPage() {
         </section>
       )}
 
+      {open.scale && (
+        <section ref={panels.scale.handleRef} className={`floating-panel${panels.scale.dragging ? ' dragging' : ''}`} style={styleOf('scale')} aria-label={txt.panelScale}>
+          {headOf('scale', txt.panelScale)}
+          <div className="floating-panel-body">
+            {!scaleView && <p className="muted">{txt.scaleToggleTitle}</p>}
+            <ScalePanel
+              plan={scalePlan}
+              catalogue={scaleCatalogue}
+              enabled={scaleLevels}
+              addedScale={addedScale}
+              expanded={expandedScale}
+              autoMerge={autoMerge}
+              showEdges={showScaleEdges}
+              error={scalePlanError}
+              addedNodeCount={added.size}
+              visibleNodeCount={scaleDisplay ? scaleDisplay.counts.nodesVisible : added.size}
+              text={scalePanelText}
+              onToggleLevel={(level) => {
+                const next = scaleLevels.includes(level)
+                  ? scaleLevels.filter((item) => item !== level)
+                  : [...scaleLevels, level];
+                setScaleLevels(next);
+              }}
+              onToggleAutoMerge={setAutoMergeUrl}
+              onToggleEdges={setShowScaleEdges}
+              onAdd={addScaleObject}
+              onRemove={removeScaleObject}
+              onExpand={expandScaleObject}
+              onCollapse={collapseScaleObject}
+              onAddNodeScale={addNodeScale}
+            />
+          </div>
+        </section>
+      )}
+
       {open.spec && (
         <section ref={panels.spec.handleRef} className={`floating-panel${panels.spec.dragging ? ' dragging' : ''}`} style={styleOf('spec')} aria-label={txt.panelSpec}>
           {headOf('spec', txt.panelSpec)}
@@ -5538,7 +6557,7 @@ export function NetworkPage() {
               {(Object.keys(TIER_STYLE) as RelationTier[]).map((tier) => {
                 const style = TIER_STYLE[tier];
                 const sample = view.edges.map((edge) => visualOf(edge)).filter((visual) => visual.tier === tier);
-                const color = sample[0]?.color ?? THEME.neutral;
+                const color = sample[0]?.color ?? palette.colors.neutral;
                 return (
                   <li key={tier} data-tier={tier}>
                     <div className="tier-head">
@@ -5572,7 +6591,7 @@ export function NetworkPage() {
             <ul className="tier-kinds">
               {view.relations.length === 0 && <li className="muted">{txt.specKindsEmpty}</li>}
               {view.relations.map((kind) => {
-                const visual = edgeVisual('relation', kind, 'PROOF', RELATION_COLOR[kind] ?? THEME.neutral);
+                const visual = edgeVisual('relation', kind, 'PROOF', palette.relation[kind] ?? palette.colors.neutral);
                 const count = view.edges.filter((edge) => edge.source === 'relation' && edge.kind === kind).length;
                 return (
                   <li key={kind}>
@@ -5620,7 +6639,7 @@ export function NetworkPage() {
               {Object.entries(CONTRACT_MODE_LABELS).map(([mode]) => {
                 const weight = CONTRACT_MODE_WEIGHT[mode] ?? 0.18;
                 // 色块与画布同源：契约颜色按 mode 走，条款面板因此和画布一一对应。
-                const visual = edgeVisual('contract', null, null, contractModeColor(mode, THEME.contractEdge), mode);
+                const visual = edgeVisual('contract', null, null, contractModeColor(mode, palette.colors.contractEdge), mode);
                 const count = contractModeCounts.get(mode) ?? 0;
                 return (
                   <li key={mode}>
@@ -5721,7 +6740,7 @@ export function NetworkPage() {
             <svg className="tier-sample-legend" width="26" height="10" aria-hidden="true">
               <line
                 x1="1" y1="5" x2="25" y2="5"
-                stroke={TIER_SAMPLE_COLOR[tier]}
+                stroke={palette.tierSample[tier]}
                 strokeWidth={Math.min(TIER_STYLE[tier].width * 0.8, 4)}
                 strokeDasharray={TIER_STYLE[tier].dash}
                 strokeLinecap="round"
@@ -5774,6 +6793,30 @@ export function NetworkPage() {
             <span className="legend-count">{placedStartingCount}</span>
             <span className="legend-count legend-count-total">/ {startingTotalCount}</span>
           </span>
+        )}
+        {scaleView && scaleDisplay && (
+          <>
+            <span className="legend-divider" aria-hidden="true" />
+            <span className="legend-scale" title={txt.scaleLegendTitle}>
+              <i className="scale-swatch" />
+              {fill(txt.scaleLegendCounts, {
+                topics: scaleDisplay.counts.byScale.topic,
+                units: scaleDisplay.counts.byScale.unit,
+                nodes: scaleDisplay.counts.byScale.node,
+                molecules: scaleDisplay.counts.byScale.molecule,
+              })}
+            </span>
+            {scaleDisplay.counts.merged > 0 && (
+              <span className="legend-scale-merged" title={txt.scaleLegendAggregate}>
+                {fill(txt.scaleLegendMerged, { count: scaleDisplay.counts.merged })}
+              </span>
+            )}
+            {scalePlan && scalePlan.counts.nodesUncovered > 0 && (
+              <span className="legend-scale-uncovered">
+                {fill(txt.scaleLegendUncovered, { count: scalePlan.counts.nodesUncovered })}
+              </span>
+            )}
+          </>
         )}
         <span className="legend-hint">
           {txt.legendHint}

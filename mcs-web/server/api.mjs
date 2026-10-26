@@ -23,6 +23,7 @@ import {
   EDGE_FAMILIES,
 } from '../shared/contracts.mjs';
 import { makePlanner, explainPlanner } from '../core/planner.mjs';
+import {bindContentRequest,selectContentOntology} from '../core/content-case.mjs';
 import { normalizeLearningPlan } from '../shared/learning-plan.mjs';
 import { personalizePlanResult } from '../core/learning-plan.mjs';
 import { makeLocalizer, explainLocalizationFamilies } from '../core/localization.mjs';
@@ -60,7 +61,10 @@ import {
 } from '../data/profile-templates.mjs';
 import { applyProfileTemplate } from './profile-templates.mjs';
 import { registerVaultApi } from './vault-api.mjs';
+import { registerContentApi, legacyContentProjection } from './content-api.mjs';
+import { legacyMaster } from './master-view.mjs';
 import { registerNetworkApi, checkNetworkRefs } from './network-api.mjs';
+import { buildScalePlan } from '../core/scale.mjs';
 import { normalizeNetworkExtras, decodeNoteKey, nodeRefKey } from '../shared/network-workspace.mjs';
 
 const MAX_BODY = 2 * 1024 * 1024;
@@ -91,6 +95,7 @@ function sendJson(res, status, payload) {
 
 function compactNode(ontology, node) {
   return {
+    master: legacyMaster(ontology, node, true),
     id: node.id,
     version: node.version,
     title: node.title,
@@ -177,7 +182,7 @@ async function tryModule(specifier) {
   try { return await optionalModule(specifier); } catch { return null; }
 }
 
-export function createApi({ getOntology, ontology: ontologyRef, db, jobs, leanJobs, tutor, config, ontologySource = null, auth = null }) {
+export function createApi({ getOntology, ontology: ontologyRef, db, jobs, leanJobs, tutor, config, ontologySource = null, auth = null, cloud = null }) {
   /*
    * 本体快照：请求**进入时**取一次，整个请求用同一个实例。
    *
@@ -256,6 +261,27 @@ export function createApi({ getOntology, ontology: ontologyRef, db, jobs, leanJo
       while (derivedCache.size > 2) derivedCache.delete(derivedCache.keys().next().value);
     }
     return entry;
+  };
+  /*
+   * 尺度登记（2026-10-17 加）。
+   *
+   * 它是从 `aggregates` 与 `data/scale.mjs` 构建的**派生投影**，不进 contentHash；
+   * 但同一本体版本下必须得到同一份计划，所以按 `ontology.version` 缓存。
+   * 构建失败是数据缺陷，不是「换个请求就好」：转成 ONTOLOGY_INVALID 并带上逐条问题。
+   */
+  const scalePlanCache = new Map();
+  const scalePlanFor = (current) => {
+    let plan = scalePlanCache.get(current.version);
+    if (!plan) {
+      try {
+        plan = buildScalePlan({ nodes: current.raw.nodes, aggregates: current.raw.aggregates });
+      } catch (error) {
+        throw new McsError(CODES.ONTOLOGY_INVALID, `尺度登记未通过检查：${error.message}`, 500, { problems: error.problems ?? [] });
+      }
+      scalePlanCache.set(current.version, plan);
+      while (scalePlanCache.size > 2) scalePlanCache.delete(scalePlanCache.keys().next().value);
+    }
+    return plan;
   };
   const routes = [];
   const route = (method, pattern, handler) => routes.push({ method, pattern, handler });
@@ -342,6 +368,7 @@ export function createApi({ getOntology, ontology: ontologyRef, db, jobs, leanJo
    * 顺序即优先级：先匹配到的规则生效，所以具体路径写在通配路径前面。
    */
   const POLICY = [
+    { method: 'GET', pattern: /^\/api\/v2\/(ontology\/(objects(\/[^/]+)?|object-scale|object-network|mcs-view)|learning\/(nodes(\/[^/]+)?|network)|content-cases|content-relations\/[^/]+)$/, access: 'public' },
     { method: 'GET', pattern: /^\/api\/v2\/lean\/(capabilities|registrations\/[^/]+)$/, access: 'public' },
     { method: 'POST', pattern: /^\/api\/v2\/lean\/jobs$/, access: 'user' },
     { method: ['GET', 'DELETE'], pattern: /^\/api\/v2\/lean\/jobs\/[^/]+$/, access: 'user' },
@@ -424,8 +451,8 @@ export function createApi({ getOntology, ontology: ontologyRef, db, jobs, leanJo
 
   /** 规划任务归属：任务表在内存里，归属直接记在任务上；不是自己的任务报 404。 */
   const planningOwner = (req, identity) => AUTHENTICATED ? auth.planningOwner(req, identity) : null;
-  function requireJob(identity, id, req) {
-    const job = jobs.get(id);
+  async function requireJob(identity, id, req) {
+    const job = await jobs.get(id);
     if (!AUTHENTICATED) return job;
     if (!['plan', 'review'].includes(job.kind) || job.owner !== planningOwner(req, identity)) {
       throw new McsError(CODES.NOT_FOUND, `无法解析规划任务：${id}`, 404, { job_id: id });
@@ -516,6 +543,19 @@ export function createApi({ getOntology, ontology: ontologyRef, db, jobs, leanJo
       localizationFamilies: explainLocalizationFamilies(),
       planner: explainPlanner(),
       templates: ontology.raw.templates,
+    };
+  });
+
+  route('GET', /^\/api\/v2\/ontology\/scale$/, async ({ ontology }) => {
+    /*
+     * 四层尺度登记（分子/节点/单元/话题）。**只读派生数据**：
+     * 不写 M、不写 E、不改 ontology.contentHash；`version` 是计划自身内容的哈希。
+     */
+    const scale = scalePlanFor(ontology);
+    return {
+      ontologyVersion: ontology.version,
+      version: scale.version,
+      scale,
     };
   });
 
@@ -634,7 +674,7 @@ export function createApi({ getOntology, ontology: ontologyRef, db, jobs, leanJo
     return {
       version: ontology.version,
       requestedId: requested,
-      node,
+      node: { ...legacyContentProjection(node), master: legacyMaster(ontology, node) },
       merge,
       formation: checkFormation(node),
       roles: roleSummary(node),
@@ -675,7 +715,7 @@ export function createApi({ getOntology, ontology: ontologyRef, db, jobs, leanJo
   route('GET', /^\/api\/v2\/ontology\/patterns$/, async ({ ontology }) => ({ version: ontology.version, patterns: ontology.raw.patterns }));
 
   route('GET', /^\/api\/v2\/evidence$/, async ({ ontology }) => ({ version: ontology.version, summary: evidenceSummary(ontology), evidence: ontology.raw.evidence.map(evidenceView) }));
-  route('GET', /^\/api\/v2\/lean\/capabilities$/, async () => ({ ...(await leanCapabilities(config.repoRoot, config.lean ?? {})), queue: leanJobs.stats() }));
+  route('GET', /^\/api\/v2\/lean\/capabilities$/, async () => ({ ...(await (cloud ? leanJobs.capabilities() : leanCapabilities(config.repoRoot, config.lean ?? {}))), queue: await leanJobs.stats() }));
   route('GET', /^\/api\/v2\/lean\/registrations\/([^/]+)$/, async ({ params, query, ontology }) => {
     const id = decodeURIComponent(params[0]);
     const [view, snapshot] = await Promise.all([leanRegistrationView(config.repoRoot, id, query.get('locale')), captureLeanSnapshot(config.repoRoot, id)]);
@@ -697,7 +737,7 @@ export function createApi({ getOntology, ontology: ontologyRef, db, jobs, leanJo
     checkVersion(body, undefined, ontology);
     const record = ontology.evidence(body.evidenceId);
     if (record.kind !== 'machine-certificate') throw new McsError(CODES.EVIDENCE_UNSUPPORTED, `证据 ${record.id} 不是机器证书；展示记录不能冒充证明。`, 422);
-    const result = await replayCertificate(record, { repoRoot: config.repoRoot });
+    const result = cloud ? await cloud.action('evidence-replay', { record }) : await replayCertificate(record, { repoRoot: config.repoRoot });
     return result;
   });
 
@@ -726,6 +766,8 @@ export function createApi({ getOntology, ontology: ontologyRef, db, jobs, leanJo
   };
   route('POST', /^\/api\/v2\/learning-plan-preview$/, async ({ body, ontology, identity, req }) => {
     checkVersion(body, undefined, ontology);
+    body=bindContentRequest(body,config.repoRoot);
+    ontology=selectContentOntology(body,ontology,config.repoRoot);
     const preferences = checkedLearningPlan(body.preferences ?? {}, ontology);
     let background = [];
     if (body.profileId) {
@@ -733,24 +775,26 @@ export function createApi({ getOntology, ontology: ontologyRef, db, jobs, leanJo
       background = adaptWithOntology(ontology, state, { goalId: preferences.primaryGoal }).background;
     }
     // Anonymous previews contain no profile data. All calculations use the bounded worker queue.
-    const job = jobs.run({ preferences, background }, { kind: 'learning', owner: planningOwner(req, identity) });
+    const job = await jobs.run({ preferences, background,...(body.contentCase?{contentCase:body.contentCase,objectVersion:body.objectVersion,learningVersion:body.learningVersion,routeChoices:body.routeChoices}:{}) }, { kind: 'learning', owner: planningOwner(req, identity) });
     return { job, statusUrl: `/api/v2/learning-plan-preview/${job.id}` };
   });
-  const learningJob = (identity, id, req) => {
-    const job = jobs.get(id);
+  const learningJob = async (identity, id, req) => {
+    const job = await jobs.get(id);
     if (job.kind !== 'learning' || (AUTHENTICATED && job.owner !== planningOwner(req, identity))) {
       throw new McsError(CODES.NOT_FOUND, '无法解析学习方案任务', 404);
     }
     const { owner: _owner, ...view } = job;
     return view;
   };
-  route('GET', /^\/api\/v2\/learning-plan-preview\/([^/]+)$/, async ({ params, identity, req }) => ({ job: learningJob(identity, params[0], req) }));
+  route('GET', /^\/api\/v2\/learning-plan-preview\/([^/]+)$/, async ({ params, identity, req }) => ({ job: await learningJob(identity, params[0], req) }));
   route('DELETE', /^\/api\/v2\/learning-plan-preview\/([^/]+)$/, async ({ params, identity, req }) => {
-    learningJob(identity, params[0], req); return jobs.cancel(params[0]);
+    await learningJob(identity, params[0], req); return jobs.cancel(params[0]);
   });
 
   route('POST', /^\/api\/v2\/plans$/, async ({ body, query, ontology, identity, req }) => {
     checkVersion(body, query, ontology);
+    body=bindContentRequest(body,config.repoRoot);
+    ontology=selectContentOntology(body,ontology,config.repoRoot);
     const raw = { ...body };
     if (body.profileId) raw.learningPreferences = await db.getLearningPlan(body.profileId);
     if (body.profileId && !(Array.isArray(body.background) && body.background.length)) {
@@ -766,7 +810,7 @@ export function createApi({ getOntology, ontology: ontologyRef, db, jobs, leanJo
       let result = planner.plan(raw);
       if (body.review) result = planner.withReview(result, body.review);
       if (raw.learningPreferences) result = personalizePlanResult(ontology, result, raw.learningPreferences, raw.background);
-      return result;
+      return {...result,...(ontology.contentVersions??{})};
     }
     const payload = body.review ? { plan: raw, review: body.review } : raw;
     /*
@@ -774,15 +818,15 @@ export function createApi({ getOntology, ontology: ontologyRef, db, jobs, leanJo
      * 「知道 job id 就能读别人的规划结果、还能取消它」。
      */
     normalizePlanRequest(body.review ? payload.plan : payload);
-    const job = jobs.run(payload, { kind: body.review ? 'review' : 'plan', owner: planningOwner(req, identity) });
+    const job = await jobs.run(payload, { kind: body.review ? 'review' : 'plan', owner: planningOwner(req, identity) });
     return { job, statusUrl: `/api/v2/plans/${job.id}` };
   });
   route('GET', /^\/api\/v2\/plans\/([^/]+)$/, async ({ params, identity, req }) => {
-    const job = requireJob(identity, params[0], req);
+    const job = await requireJob(identity, params[0], req);
     return { job: { id: job.id, kind: job.kind, status: job.status, createdAt: job.createdAt, finishedAt: job.finishedAt, queuePosition: job.queuePosition ?? 0 }, result: job.result, error: job.error };
   });
   route('DELETE', /^\/api\/v2\/plans\/([^/]+)$/, async ({ params, identity, req }) => {
-    requireJob(identity, params[0], req);
+    await requireJob(identity, params[0], req);
     return jobs.cancel(params[0]);
   });
 
@@ -923,6 +967,8 @@ export function createApi({ getOntology, ontology: ontologyRef, db, jobs, leanJo
   });
   route('POST', /^\/api\/v2\/profiles\/([^/]+)\/events$/, async ({ params, body, ontology }) => {
     checkVersion(body, undefined, ontology);
+    body=bindContentRequest(body,config.repoRoot);
+    ontology=selectContentOntology(body,ontology,config.repoRoot);
     const profileId = params[0];
     await db.getProfile(profileId);
     const event = normalizeEvent(body.event ?? body, { profileId, ontologyVersion: ontology.version });
@@ -960,7 +1006,7 @@ export function createApi({ getOntology, ontology: ontologyRef, db, jobs, leanJo
     const extras = normalizeNetworkExtras(payload);
     await checkNetworkRefs(extras.refs ?? [], identity.user.id, ontology, db);
     const refKeys = new Set((extras.refs ?? []).map(nodeRefKey));
-    const unknownNodes = (payload.added ?? []).filter((id) => !ontology.maybeNode(id) && !(decodeNoteKey(id) && refKeys.has(id)));
+    const unknownNodes = (payload.added ?? []).filter((id) => !ontology.maybeNode(id) && !refKeys.has(id));
     if (unknownNodes.length > 0) throw new McsError(CODES.BAD_REQUEST, `视图里有 ${unknownNodes.length} 个节点不在本体里：${unknownNodes.slice(0, 3).join('、')}…`, 400, { unknownNodes });
     const knownFamilies = new Set(EDGE_FAMILIES);
     const unknownFamilies = (payload.families ?? []).filter((id) => !knownFamilies.has(id));
@@ -1079,9 +1125,10 @@ export function createApi({ getOntology, ontology: ontologyRef, db, jobs, leanJo
     await claimOwnership(identity, 'profile', result.profile?.id);
     return result;
   });
-  route('POST', /^\/api\/v2\/backup$/, async () => await db.backupTo(config.backupDir));
+  route('POST', /^\/api\/v2\/backup$/, async () => cloud ? cloud.backup() : db.backupTo(config.backupDir));
   route('POST', /^\/api\/v2\/restore$/, async ({ body }) => {
     assert(typeof body.backup === 'string', CODES.BAD_REQUEST, 'restore 需要 backup 路径');
+    if (cloud) return cloud.restore(body.backup);
     const target = resolve(body.backup);
     const allowed = resolve(config.backupDir) + sep;
     if (!target.startsWith(allowed)) throw new McsError(CODES.BAD_REQUEST, '只能从本机备份目录恢复。');
@@ -1188,16 +1235,20 @@ export function createApi({ getOntology, ontology: ontologyRef, db, jobs, leanJo
 
   /** 惰性打开编写数据库：只有真正用到编写功能时才建这份文件。 */
   let authoringHandle = null;
+  let authoringOpening = null;
   async function authoring() {
     if (authoringHandle) return authoringHandle;
-    const mod = await optionalModule('../server/authoring-db.mjs');
-    authoringHandle = new mod.AuthoringDatabase({ file: config.authoringDbFile });
-    return authoringHandle;
+    if (!authoringOpening) authoringOpening = (async () => {
+      const mod = await optionalModule('../server/authoring-db.mjs');
+      authoringHandle = await new mod.AuthoringDatabase({ file: config.authoringDbFile, driver: db.driver?.dialect === 'postgres' ? db.driver : null }).init();
+      return authoringHandle;
+    })().catch(error => { authoringOpening = null; throw error; });
+    return authoringOpening;
   }
 
   route('GET', /^\/api\/v2\/authoring\/drafts$/, async ({ query }) => {
     const store = await authoring();
-    return { drafts: store.listDrafts({ status: query.get('status') ?? 'all', limit: Number(query.get('limit') ?? 100) }) };
+    return { drafts: (await store.listDrafts({ status: query.get('status') ?? 'all', limit: Number(query.get('limit') ?? 100) })) };
   });
 
   route('POST', /^\/api\/v2\/authoring\/drafts$/, async ({ body, req }) => {
@@ -1205,12 +1256,12 @@ export function createApi({ getOntology, ontology: ontologyRef, db, jobs, leanJo
     const store = await authoring();
     // 第三个参数是**本次请求那一份**快照（`checkVersion` 的签名要求显式传入）。
     checkVersion(body, undefined, requestOntology());
-    return { draft: store.createDraft(body ?? {}) };
+    return { draft: (await store.createDraft(body ?? {})) };
   });
 
   route('GET', /^\/api\/v2\/authoring\/drafts\/([^/]+)$/, async ({ params }) => {
     const store = await authoring();
-    return { draft: store.getDraft(decodeURIComponent(params[0])) };
+    return { draft: (await store.getDraft(decodeURIComponent(params[0]))) };
   });
 
   /*
@@ -1232,7 +1283,7 @@ export function createApi({ getOntology, ontology: ontologyRef, db, jobs, leanJo
         expected: ontology.version, received: body.ontologyVersion,
       });
     }
-    return { draft: store.updateDraft(decodeURIComponent(params[0]), body ?? {}, { expectedRevision, ontologyVersion: ontology.version }) };
+    return { draft: (await store.updateDraft(decodeURIComponent(params[0]), body ?? {}, { expectedRevision, ontologyVersion: ontology.version })) };
   });
 
   /* ---------------- 自动发现任务 ---------------- */
@@ -1250,10 +1301,10 @@ export function createApi({ getOntology, ontology: ontologyRef, db, jobs, leanJo
   const activeSettles = new Map();
 
   /** 把一条候选写回任务（逐项保存：不要等全部跑完才写，否则中途刷新页面什么都看不到）。 */
-  function persistCandidate(store, runId, candidate) {
+  async function persistCandidate(store, runId, candidate) {
     if (!candidate || typeof candidate !== 'object') return;
     try {
-      store.saveCandidates(runId, [{ ...candidate, runId }]);
+      (await store.saveCandidates(runId, [{ ...candidate, runId }]));
     } catch {
       // 落库失败不该打断结算；最终整批写回时还会再试一次，并在统计里如实反映。
     }
@@ -1269,12 +1320,12 @@ export function createApi({ getOntology, ontology: ontologyRef, db, jobs, leanJo
    *   具体原因写在 `settleStatus` 与 warnings 里，不靠状态名暗示）；
    * - 被取消 → `cancelled`（不回写成 completed，否则「取消」就成了摆设）。
    */
-  function finalizeSettle(store, runId, settled, controller, background) {
+  async function finalizeSettle(store, runId, settled, controller, background) {
     const candidates = Array.isArray(settled?.candidates) ? settled.candidates : [];
-    try { store.saveCandidates(runId, candidates.map((candidate) => ({ ...candidate, runId }))); } catch { /* 单条写入已经尽力，整批失败也不再抛 */ }
+    try { (await store.saveCandidates(runId, candidates.map((candidate) => ({ ...candidate, runId })))); } catch { /* 单条写入已经尽力，整批失败也不再抛 */ }
     const stats = { ...(settled?.stats ?? {}), background, pendingChecks: candidates.filter((item) => item.pendingCheck).length };
-    if (controller.signal.aborted || store.getRun(runId).status === 'cancelled') {
-      store.updateRun(runId, { status: 'cancelled', stats: { ...stats, settleStatus: 'cancelled' } });
+    if (controller.signal.aborted || (await store.getRun(runId)).status === 'cancelled') {
+      (await store.updateRun(runId, { status: 'cancelled', stats: { ...stats, settleStatus: 'cancelled' } }));
       return;
     }
     if (stats.pendingChecks > 0) {
@@ -1282,13 +1333,13 @@ export function createApi({ getOntology, ontology: ontologyRef, db, jobs, leanJo
       stats.settleStatus = 'timedOut';
       const note = `结算未能在预算内收完：还有 ${stats.pendingChecks} 条候选带 pendingCheck，任务标 interrupted（不是全部有结论）。已完成的候选结果保留，未完成的可稍后重放。`;
       stats.warnings = [...new Set([...(stats.warnings ?? []), note])];
-      store.updateRun(runId, { status: 'interrupted', stats, error: { code: CODES.EVIDENCE_RESOURCE, message: note } });
+      (await store.updateRun(runId, { status: 'interrupted', stats, error: { code: CODES.EVIDENCE_RESOURCE, message: note } }));
       return;
     }
-    store.updateRun(runId, { status: 'completed', stats: { ...stats, settleStatus: 'completed' } });
+    (await store.updateRun(runId, { status: 'completed', stats: { ...stats, settleStatus: 'completed' } }));
   }
 
-  route('POST', /^\/api\/v2\/relation-discovery\/jobs$/, async ({ body, req, ontology }) => {
+  route('POST', /^\/api\/v2\/relation-discovery\/jobs$/, async ({ body, req, ontology, identity }) => {
     assertLocalOrigin(req, config);
     const store = await authoring();
     const discovery = await optionalModule('../core/formal/discovery.mjs');
@@ -1298,7 +1349,7 @@ export function createApi({ getOntology, ontology: ontologyRef, db, jobs, leanJo
 
     const draftId = typeof body?.draftId === 'string' ? body.draftId : null;
     if (draftId) checkVersion(body, undefined, ontology);
-    const draft = draftId ? store.getDraft(draftId) : null;
+    const draft = draftId ? (await store.getDraft(draftId)) : null;
     if (draftId && Number.isInteger(body?.draftRevision) && body.draftRevision !== draft.revision) {
       throw new McsError(CODES.CONFLICT, `草稿修订已变化：期望 ${body.draftRevision}，当前 ${draft.revision}`, 409, {
         expected: draft.revision, received: body.draftRevision,
@@ -1334,55 +1385,66 @@ export function createApi({ getOntology, ontology: ontologyRef, db, jobs, leanJo
       focusSpec,
       backgrounds,
     });
-    const run = store.createRun({
+    const run = (await store.createRun({
       draftId, nodeRef, ontologyVersion: ontology.version,
       background: resolvedBackground.id, budget,
       generatorVersion: discovery.GENERATOR_VERSION,
-    });
-    store.updateRun(run.id, { status: 'running' });
+    }));
+    if (cloud) {
+      try {
+        const job = await jobs.run({ runId: run.id, draft, nodeRef, budget, background: resolvedBackground.id }, { kind: 'discovery', owner: identity?.user?.id ?? 'local', ontologyVersion: ontology.version });
+        await store.updateRun(run.id, { stats: { cloudJobId: job.id, background: resolvedBackground.id } });
+        return { run: await store.getRun(run.id), background: resolvedBackground, settling: true, warnings: [], note: '发现任务已持久排队；离开页面后仍在云端运行，结果写入编写库。' };
+      } catch (error) {
+        await store.updateRun(run.id, { status: 'error', error: { code: error.code ?? CODES.INTERNAL, message: error.message } });
+        throw error;
+      }
+    }
+    (await store.updateRun(run.id, { status: 'running' }));
 
     let outcome;
+    let candidateWrites = Promise.resolve();
     try {
       outcome = discovery.discoverRelations({
         ontology, registry, draft, nodeRef, budget,
         background: resolvedBackground.id,
         deps: { backgrounds },
         // 逐项保存：结算每完成一条就写回，`GET` 任何时刻读到的都是当前最新。
-        onCandidate: (candidate) => persistCandidate(store, run.id, candidate),
+        onCandidate: (candidate) => { const snapshot = structuredClone(candidate); candidateWrites = candidateWrites.then(() => persistCandidate(store, run.id, snapshot)); },
       });
     } catch (error) {
       /*
        * 失败也要留痕：任务状态是「执行错误」而不是「没有候选」。
        * 执行错误**不是**数学判断——候选的 math 状态保持 undecided。
        */
-      store.updateRun(run.id, { status: 'error', error: { code: error.code ?? CODES.INTERNAL, message: error.message } });
+      (await store.updateRun(run.id, { status: 'error', error: { code: error.code ?? CODES.INTERNAL, message: error.message } }));
       throw error;
     }
 
     const controller = new AbortController();
     activeSettles.set(run.id, controller);
     const snapshot = outcome.candidates ?? [];
-    store.saveCandidates(run.id, snapshot.map((candidate) => ({ ...candidate, runId: run.id })));
-    store.updateRun(run.id, { status: 'running', stats: { ...outcome.stats, background: resolvedBackground.id } });
+    (await store.saveCandidates(run.id, snapshot.map((candidate) => ({ ...candidate, runId: run.id }))));
+    (await store.updateRun(run.id, { status: 'running', stats: { ...outcome.stats, background: resolvedBackground.id } }));
 
     /*
      * 后台结算：**不 await**。请求立刻带着「含 pendingCheck 的 run」返回，
      * 结算完成后由 `finalizeSettle` 决定终态，并逐条写回。
      */
     Promise.resolve(outcome)
-      .then((settled) => finalizeSettle(store, run.id, settled, controller, resolvedBackground.id))
-      .catch((error) => {
+      .then(async (settled) => { await candidateWrites; return finalizeSettle(store, run.id, settled, controller, resolvedBackground.id); })
+      .catch(async (error) => {
         try {
-          store.updateRun(run.id, {
+          (await store.updateRun(run.id, {
             status: 'error',
             error: { code: error.code ?? CODES.INTERNAL, message: `结算失败：${error.message}` },
-          });
+          }));
         } catch { /* 落库失败：请求已经返回，只能留给下次读盘 */ }
       })
       .finally(() => activeSettles.delete(run.id));
 
     return {
-      run: store.getRun(run.id),
+      run: (await store.getRun(run.id)),
       background: resolvedBackground,
       settling: true,
       note: '候选已同步生成；机器检查（证书）在后台继续跑，逐条写回。任务只有在所有候选都有结论后才会是 completed。',
@@ -1393,15 +1455,19 @@ export function createApi({ getOntology, ontology: ontologyRef, db, jobs, leanJo
   route('GET', /^\/api\/v2\/relation-discovery\/jobs\/([^/]+)$/, async ({ params }) => {
     const store = await authoring();
     const id = decodeURIComponent(params[0]);
-    const run = store.getRun(id);
+    let run = (await store.getRun(id));
+    if (cloud && run.stats?.cloudJobId && ['queued', 'running'].includes(run.status)) {
+      const job = await jobs.get(run.stats.cloudJobId);
+      if (job.status === 'error' || job.status === 'cancelled') run = await store.updateRun(id, { status: job.status, error: job.error });
+    }
     // `getRun` 读的是库里**当前最新**的候选（结算逐条写回），不是启动时的那份快照。
-    return { ...run, settling: activeSettles.has(id) };
+    return { ...run, settling: cloud ? ['queued', 'running'].includes(run.status) : activeSettles.has(id) };
   });
 
   route('GET', /^\/api\/v2\/relation-discovery\/jobs$/, async ({ query }) => {
     const store = await authoring();
-    const runs = store.listRuns({ limit: Number(query.get('limit') ?? 50) });
-    return { runs: runs.map((run) => ({ ...run, settling: activeSettles.has(run.id) })) };
+    const runs = (await store.listRuns({ limit: Number(query.get('limit') ?? 50) }));
+    return { runs: runs.map((run) => ({ ...run, settling: cloud ? ['queued', 'running'].includes(run.status) : activeSettles.has(run.id) })) };
   });
 
   route('DELETE', /^\/api\/v2\/relation-discovery\/jobs\/([^/]+)$/, async ({ params, req }) => {
@@ -1411,7 +1477,8 @@ export function createApi({ getOntology, ontology: ontologyRef, db, jobs, leanJo
     // 先叫停后台结算，再改状态：顺序反了的话，结算收尾可能把 cancelled 覆盖回 completed。
     const controller = activeSettles.get(id);
     if (controller) controller.abort();
-    const job = store.getRun(id);
+    const job = (await store.getRun(id));
+    if (cloud && job.stats?.cloudJobId) await jobs.cancel(job.stats.cloudJobId);
     const updated = await store.cancelRun(job.id);
     return {
       ...updated,
@@ -1434,7 +1501,7 @@ export function createApi({ getOntology, ontology: ontologyRef, db, jobs, leanJo
     const discovery = await optionalModule('../core/formal/discovery.mjs');
     const registry = await tryModule('../data/formal/registry.mjs');
     const backgrounds = await optionalModule('../core/formal/backgrounds.mjs');
-    const run = store.getRun(decodeURIComponent(params[0]));
+    const run = (await store.getRun(decodeURIComponent(params[0])));
     const wanted = Array.isArray(body?.candidateIds) && body.candidateIds.length
       ? new Set(body.candidateIds)
       : null;
@@ -1445,18 +1512,19 @@ export function createApi({ getOntology, ontology: ontologyRef, db, jobs, leanJo
      * 不带它，指向新节点的候选会在「重新生成目标」这一步找不到形状而报未决——
      * 那是装配缺项，不是数学上的证不出来。
      */
-    const draft = run.draftId ? store.getDraft(run.draftId) : null;
+    const draft = run.draftId ? (await store.getDraft(run.draftId)) : null;
     const inventory = discovery.collectSpecInventory({
       registry, ontology, draft, backgrounds, warnings: [],
     });
     const results = [];
     for (const candidate of selected) {
-      results.push(await discovery.replayCandidate({
+      const args = {
         candidate, registry, ontology, repoRoot: config.repoRoot,
         deps: { specs: inventory.allSpecs, background: run.background ?? null, backgrounds },
-      }));
+      };
+      results.push(cloud ? await cloud.action('replay-candidate', { candidate, specs: inventory.allSpecs, background: run.background ?? null }) : await discovery.replayCandidate(args));
     }
-    store.saveCandidates(run.id, results.map((item) => item.candidate));
+    (await store.saveCandidates(run.id, results.map((item) => item.candidate)));
     return {
       runId: run.id,
       ontologyVersion: ontology.version,
@@ -1482,7 +1550,8 @@ export function createApi({ getOntology, ontology: ontologyRef, db, jobs, leanJo
     const store = await authoring();
     const publication = await optionalModule('../server/publication.mjs');
     const ctx = { dataDir: config.dataDir, extensionsDir: config.extensionsDir, authoring: store, config, ontologySource };
-    return publication.commitPublication(ctx, { ...(body ?? {}), ontologyVersion: ontology.version });
+    const request = { ...(body ?? {}), ontologyVersion: ontology.version };
+    return cloud ? cloud.publish(ctx, request, publication.commitPublication) : publication.commitPublication(ctx, request);
   });
 
   // 入库预览：与提交共用同一段差异计算，**零写入**。
@@ -1505,7 +1574,8 @@ export function createApi({ getOntology, ontology: ontologyRef, db, jobs, leanJo
     const store = await authoring();
     const publication = await optionalModule('../server/publication.mjs');
     const ctx = { dataDir: config.dataDir, extensionsDir: config.extensionsDir, authoring: store, config, ontologySource };
-    const result = await publication.rollbackPublication(ctx, { ...(body ?? {}), ontologyVersion: ontology.version });
+    const request = { ...(body ?? {}), ontologyVersion: ontology.version };
+    const result = cloud ? await cloud.publish(ctx, request, publication.rollbackPublication) : await publication.rollbackPublication(ctx, request);
     /*
      * 回滚是**新的一条版本记录**，不是把历史抹掉：历史包、证据与学习者记录都在。
      * 切换生效索引之后立刻重载快照，让后续请求读到的就是回滚后的本体。
@@ -1515,6 +1585,7 @@ export function createApi({ getOntology, ontology: ontologyRef, db, jobs, leanJo
   });
 
   registerVaultApi({ route, db, config });
+  registerContentApi({ route, config });
   registerNetworkApi({ route, db, jobs, config, authoring, getOntology: resolveOntology });
   const handle = async function handle(req, res) {
     const url = new URL(req.url, `http://${req.headers.host ?? '127.0.0.1'}`);

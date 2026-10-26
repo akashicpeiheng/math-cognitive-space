@@ -4,7 +4,7 @@ import { readVaultFile } from './vault-cloud';
 import { parseVaultNote, resolveVaultLink, safeVaultPath, sha256, validateVaultManifest, VAULT_LIMITS } from '../../shared/vault.mjs';
 import type { Vault, VaultFile } from '../../shared/vault.mjs';
 import { createWritingDocument, documentMetadata, updateDocumentMetadata } from '../../shared/writing-document.mjs';
-import { TEMPLATE_ID, TEMPLATE_VERSION } from '../../shared/writing-template.mjs';
+import { TEMPLATE_ID, TEMPLATE_VERSION, isWritingTemplate } from '../../shared/writing-template.mjs';
 import type { WritingLocale, WritingType, WritingDepth } from '../../shared/writing-template.mjs';
 
 export interface NoteDraft {
@@ -48,7 +48,7 @@ export async function editWritingNote(vault: Vault, file: VaultFile): Promise<No
   const drafts = await listWritingDrafts(), existing = drafts.find(d => d.vaultId === vault.id && d.fileId === file.id);
   if (existing) return existing;
   const markdown = await (await readVaultFile(vault, file)).text();
-  if (documentMetadata(markdown).templateId !== TEMPLATE_ID) return copyWritingNote(vault, file);
+  if (!isWritingTemplate(documentMetadata(markdown).templateId)) return copyWritingNote(vault, file);
   return persistWritingDraft({ id: crypto.randomUUID(), draftRevision: 0, title: parseVaultNote(markdown, file.path).title, markdown, updatedAt: tick(), vaultId: vault.id, fileId: file.id, path: file.path, baseRevision: vault.revision, baseHash: file.sha256, nodeIds: file.nodeIds, activeSection: 'overview', warnings: [], assets: [] });
 }
 
@@ -70,7 +70,8 @@ export async function copyWritingNote(vault: Vault, file: VaultFile, signal?: Ab
   }
   const creation = await getLocalVault(CREATION_VAULT); signal?.throwIfAborted();
   const markdown = updateDocumentMetadata(raw, { 'mcs-source': source, 'mcs-language': metadata.locale,
-    'mcs-template': TEMPLATE_ID, 'mcs-template-version': metadata.templateVersion || TEMPLATE_VERSION, 'mcs-type': metadata.type });
+    'mcs-template': isWritingTemplate(metadata.templateId) ? metadata.templateId : TEMPLATE_ID,
+    'mcs-template-version': isWritingTemplate(metadata.templateId) ? metadata.templateVersion : TEMPLATE_VERSION, 'mcs-type': metadata.type });
   return persistWritingDraft({ id, draftRevision: 0, title, markdown, updatedAt: tick(), vaultId: CREATION_VAULT, fileId: `file-${id}`, path: prefix + file.path, baseRevision: creation?.revision ?? 0, baseHash: '', nodeIds: [...file.nodeIds], activeSection: 'overview', source, warnings: [...new Set(warnings)], assets });
 }
 

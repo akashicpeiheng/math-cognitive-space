@@ -4,12 +4,14 @@ import { join } from 'node:path';
 import { startTestServer } from './helpers.mjs';
 import { CHROME_PATH, PLAYWRIGHT_SPECIFIER } from './browser-runtime.mjs';
 import { exerciseVaultPage } from './vault-page-flow.mjs';
+import { exerciseLegacyTemplate } from './writing-legacy-flow.mjs';
 
 const server = await startTestServer(); let browser;
 const screenshots = join('runtime', 'writing-qa'); mkdirSync(screenshots, { recursive: true });
 try {
   const { chromium } = await import(PLAYWRIGHT_SPECIFIER);
   browser = await chromium.launch({ executablePath: CHROME_PATH ?? undefined, headless: true });
+  await exerciseLegacyTemplate(browser, server.origin);
   const context = await browser.newContext({ viewport: { width: 1500, height: 950 } }), page = await context.newPage();
   const errors = []; page.on('pageerror', e => errors.push(e.message));
   const quiet = async p => { await p.waitForFunction(() => document.querySelector('.writing-autosave')?.textContent.includes('草稿已暂存') || document.querySelector('.writing-autosave')?.textContent.includes('Draft kept')); };

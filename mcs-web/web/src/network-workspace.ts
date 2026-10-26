@@ -4,7 +4,28 @@ import { nodeRefKey, decodeNoteKey, normalizePrivateRelation, relationSignature 
 import type { NetworkNodeRef, PrivateRelation, NetworkExtras } from '../../shared/network-workspace.mjs';
 import type { NetworkGraph, RelationEdge } from './network';
 import type { NodeSummary } from './types';
-export const DOT_THRESHOLD = 0.55, CARD_THRESHOLD = 0.65;
+/**
+ * 什么时候用方块（卡片）、什么时候用圆点。
+ *
+ * ## 现在的规则：**只有放得很大时才用方块**（2026-10-16 用户要求）
+ *
+ * 用户原话：「只有视图很大的时候节点形状用方块，其余视图用圆点。」
+ *
+ * 依据是**卡片上的字能不能读**——卡片里的文字跟着相机一起缩放：
+ *
+ * | 比例 | 标题（12.5 单位） | 节点 id（mono，约 9.5 单位） | 读得出来吗 |
+ * | --- | --- | --- | --- |
+ * | 65%（旧阈值） | 8.1px | 6.2px | 读不出来——旧阈值其实一直在画「看不见字的卡片」 |
+ * | 100% | 12.5px | 9.5px | 标题勉强，id 吃力 |
+ * | 120%（新阈值） | 15px | 11.4px | 两行都舒服 |
+ *
+ * 圆点档不是「信息更少」：圆点 + 正下方的名字是**屏幕恒定**大小（见 `dot-labels.ts`），
+ * 任何比例下都保持 10.5px 字号，所以「其余视图用圆点」反而比旧的中等比例更容易读。
+ *
+ * 两个阈值之间是**滞后带**：在阈值附近来回捏合时不会一格一格地翻形状
+ * （`nextNodeShape` 在带内保持上一次的形状）。
+ */
+export const DOT_THRESHOLD = 1, CARD_THRESHOLD = 1.2;
 /**
  * 圆点的**屏幕**半径（px）。
  *
@@ -50,7 +71,7 @@ export function indexNote(files: VaultFile[], file: VaultFile, text: string): In
 export function noteRef(vault: Vault, file: VaultFile): NetworkNodeRef { return { source: 'vault', storage: vault.storage, vaultId: vault.id, fileId: file.id, revision: vault.revision, sha256: file.sha256 }; }
 export function projectMixedGraph(base: NetworkGraph, vaults: Vault[], indexes: Map<string, IndexedNote>, relations: PrivateRelation[], filters: Required<NetworkExtras>['filters'], requested: string[] = []) {
   const nodes = [...base.nodes], metadata = new Map<string, NoteMeta>(), displayEdges: RelationEdge[] = [];
-  const refs = new Map<string, NetworkNodeRef>(base.nodes.map(n => [n.id, { source: 'ontology', id: n.id, version: n.version }]));
+  const refs = new Map<string, NetworkNodeRef>(base.nodes.map(n => [n.id, n.contentRefData??{ source: 'ontology', id: n.id, version: n.version }]));
   for (const vault of vaults) for (const file of vault.files.filter(f => f.kind === 'note')) {
     const ref = noteRef(vault, file), id = nodeRefKey(ref), indexed = indexes.get(id);
     refs.set(id, ref); metadata.set(id, { ref, vault, file, indexed, unavailable: Boolean(file.missing) });

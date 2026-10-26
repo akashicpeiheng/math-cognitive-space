@@ -1,0 +1,39 @@
+{
+  "schema": "mcs-desktop-delivery/1",
+  "date": "2026-10-18",
+  "scope": "重新生成整合版专稿、TeX/PDF，并更新桌面同名阅读副本；旧桌面副本保留于 before/desktop。",
+  "old_desktop": {
+    "path": "before/desktop/MCS-完整理论专稿.pdf",
+    "bytes": 1022183,
+    "sha256": "e952921beedb59d75f905233d3d91bfa842da138eb26bccf1ead9b0ac57e1c18"
+  },
+  "new_desktop": {
+    "path": "MCS-完整理论专稿.pdf",
+    "bytes": 1010679,
+    "sha256": "ff247ea9d3730eafe2cccf724bb2e3e0f94f796b84b86bf2000b66b42528aba8"
+  },
+  "edition": {
+    "markdown": {
+      "path": "mcs-foundations/edition/MCS-完整理论专稿.md",
+      "bytes": 403583,
+      "sha256": "742a40855c8a7f22f4b0eb72d31405b492de8f4e0c4d72ea8393ded48432237d"
+    },
+    "tex": {
+      "path": "mcs-foundations/edition/MCS-完整理论专稿.tex",
+      "bytes": 444894,
+      "sha256": "4a0d89d58275e6ef3350851f30a70ed06bc06a8d888090fce9c45bbdf9c1c816"
+    },
+    "pdf": {
+      "path": "mcs-foundations/edition/MCS-完整理论专稿.pdf",
+      "bytes": 1010679,
+      "sha256": "ff247ea9d3730eafe2cccf724bb2e3e0f94f796b84b86bf2000b66b42528aba8",
+      "pages": 172
+    },
+    "sources": {
+      "path": "mcs-foundations/edition/sources.json",
+      "sha256": "f77a63e6e583b1f4efe6e6694419db969d01a5fdd55298901f56baa34589d66c"
+    }
+  },
+  "checks": "logs/pdf-checks.json",
+  "unverified": "未新增数学证明或独立审阅；未重建 2026-10-11 发布快照或 arXiv 材料；未更改公网部署。"
+}

@@ -1,0 +1,70 @@
+{
+  "scope": "六级尺度模型的有限实例与文档核验；不替代一般数学证明、机器证明认证或教学效果实证。",
+  "not_claimed": [
+    "一般数学证明",
+    "机器证明认证",
+    "教学效果实证",
+    "无限结构判定",
+    "唯一自然分类"
+  ],
+  "checks": [
+    {
+      "id": "S01_grammar_partition",
+      "status": "passed",
+      "instances": 75,
+      "detail": "66 个良构表达逐一往返解析一致；9 个非法串被拒绝；P 与 And(P,P) 同值不同尺度。"
+    },
+    {
+      "id": "S02_node_records",
+      "status": "passed",
+      "instances": 7,
+      "detail": "2 条有效节点记录通过；5 条缺陷记录分别因缺目标、非法角色、外部状态字段、空内容、中心对象类型被拒。"
+    },
+    {
+      "id": "S03_membership_types_acyclic",
+      "status": "passed",
+      "instances": 12,
+      "detail": "3 层成员关系类型正确；「流形上的积分」节点共享于两个单元；等级函数逐级下降；独立搜索未发现成员环。"
+    },
+    {
+      "id": "S04_flattening",
+      "status": "passed",
+      "instances": 7,
+      "detail": "7 个聚合的展开包含性与封闭形式通过；同一展开集的两个话题保持不同身份。"
+    },
+    {
+      "id": "S05_darboux_sums",
+      "status": "passed",
+      "instances": 219,
+      "detail": "等分 n=1..100 精确分数与单调性通过；15 个任意剖分恒等式通过；5 个阈值判别通过。"
+    },
+    {
+      "id": "S06_adaptation_semantics",
+      "status": "passed",
+      "instances": 4,
+      "detail": "并列最优全部保留；空候选显式报告无方案；全未知保留未知；部分未知不补值。"
+    },
+    {
+      "id": "S07_boundary_witnesses",
+      "status": "passed",
+      "instances": 3,
+      "detail": "同语法两赋值见证良构不等于真值；学习状态变动不改变节点摘要；成员关系与先修关系分离。"
+    },
+    {
+      "id": "S08_determinism",
+      "status": "passed",
+      "instances": 2,
+      "detail": "规范化输出的两次运行摘要一致。"
+    },
+    {
+      "id": "S09_document_integrity",
+      "status": "passed",
+      "instances": 23,
+      "detail": "尺度词序、6 类证据标签、S01–S09 编号、6 条内部链接与 2 条文献 URL 通过。"
+    }
+  ],
+  "artifacts_sha256": {
+    "note": "4040db01782ca5ac62fbfb05de9a27756530b10a2f3c8e8029e488a7229053ce",
+    "script": "2975913efa03a1faef087fe34136055737e7f61ea9ddbaf3628102ca067c0006"
+  }
+}

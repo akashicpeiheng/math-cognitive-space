@@ -32,6 +32,7 @@ export interface NetworkAction {
 }
 
 export interface NetworkRelation {
+  contentRelation?:import('../../shared/content-documents.mjs').ContentRelation;
   id: string;
   kind: string;
   from: string;
@@ -48,7 +49,7 @@ export interface NetworkRelation {
    * 为什么需要它：渲染要表达「泛化方向粗、特化方向细」，而 `from`/`to` 的朝向由
    * `direction.reading` 决定（`contract` = 一般→特殊、`expand` = 特殊→一般），
    * 实测 14 条有方向的放缩关系里两种朝向**各占一半**——按 `from`/`to` 猜会有一半画反。
-   * 未核验的旧记录（11 条）这里是 `null`，渲染不做粗细变化。
+   * 未核验的旧记录（11 条）这里仍是 `null`；显示方向由 `scalingDisplayEndpoints` 单独处理。
    */
   scaling?: { general: string; special: string } | null;
 }
@@ -195,6 +196,24 @@ export interface FamilyEdge {
 }
 
 export type NetworkEdge = ContractEdge | RelationEdge | FamilyEdge;
+
+// 旧登记的 scope 已明确描述以下性质间的泛化方向，仅供连线显示。
+// 不改 scaling / scalingMode，不参与方向锥、证据重放或数学验证。
+const SCALING_DISPLAY_DIRECTIONS: Record<string, { general: string; special: string }> = {
+  'rel-top-compact-locally-compact-generalization': { general: 'top:locally-compact', special: 'top:compactness' },
+  'rel-top-compact-sigma-generalization': { general: 'top:sigma-compact', special: 'top:compactness' },
+  'rel-top-compact-paracompact-generalization': { general: 'top:paracompactness', special: 'top:compactness' },
+};
+
+/** 显式方向优先；旧记录仅使用逐条登记的显示方向，不按箭头朝向猜测。 */
+export function scalingDisplayEndpoints(edge: NetworkEdge) {
+  if (edge.source !== 'relation' || edge.kind !== 'scaling') return null;
+  const direction = edge.scaling ?? SCALING_DISPLAY_DIRECTIONS[edge.id];
+  if (!direction || direction.general === direction.special) return null;
+  const { general, special } = direction;
+  return (general === edge.from && special === edge.to) || (general === edge.to && special === edge.from)
+    ? direction : null;
+}
 
 export type ReasonKind = 'ready' | 'relation' | 'shares-input' | 'thread' | 'same-topic' | 'pattern' | 'background' | 'starting';
 
@@ -1301,6 +1320,51 @@ export const TOPIC_PALETTE = [
 
 /** 未归入任何话题的节点底色：与「未连接」的暖色区分开，这里用中性浅灰紫。 */
 export const TOPIC_NONE_COLOR = '#f2f0f8';
+
+/**
+ * 深色外观下的话题配色（第一百零九轮）。
+ *
+ * 与浅色那张表一一对应（同一顺序、同一话题取同一格），只是把每个色阶压到深底区间：
+ * 卡片文字在深色下是浅墨（`--ink` = `#f2eefb`），浅底会把它吃掉。
+ * 实测 `--ink` 对每个底最低 12.04:1、`--ink-soft` 最低 7.90:1。
+ * 明度压低之外，色相间隔与浅色一致，因此「同一话题同色、换话题能分开」这条性质不变。
+ */
+export const TOPIC_PALETTE_DARK = [
+  '#241c3d', '#1d2740', '#162f2c', '#2a2036', '#2e2438', '#3a2a1c',
+  '#1f2c3a', '#2c1f2a', '#20302a', '#2b2334',
+] as const;
+
+/** 深色下「未归入任何话题」的节点底色：中性深灰紫，与未连接的深暖色区分开。 */
+export const TOPIC_NONE_COLOR_DARK = '#2b2733';
+
+/**
+ * 深色外观下**圆点档专用**的话题配色（2026-10-17 加，第一百一十六轮）。
+ *
+ * 用户原话：「网站里面深色模式的时候节点颜色调亮，现在看不清楚。」
+ *
+ * 为什么要与卡片的那张表分开：两张表服务于**两件不同的事**——
+ *
+ * | 表 | 用途 | 约束 |
+ * | --- | --- | --- |
+ * | `TOPIC_PALETTE_DARK` | 卡片底（上面压 `--ink` 浅墨字） | 底必须够深，`ink` 才能 ≥ 4.5:1 |
+ * | `TOPIC_PALETTE_DOT_DARK` | 圆点填充（**上面没有字**） | 底必须够亮，圆点才能在深画布上看得见 |
+ *
+ * 同一张表同时满足两者是做不到的：深画布 `#191331` 上「对画布 ≥3:1」要求填充亮度 ≥ 0.15，
+ * 而「对 `#f2eefb` 墨色 ≥4.5:1」要求填充亮度 ≤ 0.152——窗口只有千分之一宽，
+ * 十个话题会全部塌到同一个亮度。圆点上没有文字，因此这里只守**可见性**这一条：
+ * 每格都提到对画布 **≥ 4:1**（WCAG 1.4.11 非文字对比度要求 3:1，小记号留一档余量），
+ * 同时保住原来的色相与饱和度，于是「同一话题同色、换话题能分开」这条性质不变。
+ *
+ * 浅色外观不需要这张表：浅色圆点靠「近白填充 + 2px 描边 + 投影」在近白画布上成形，
+ * 而深色下投影本身就看不见了——这正是这一轮要补的那一档。
+ */
+export const TOPIC_PALETTE_DOT_DARK = [
+  '#7f6cbb', '#5d76b6', '#3d837b', '#876ca8', '#876da1', '#996f4a',
+  '#567ba2', '#966a8f', '#568171', '#856f9e',
+] as const;
+
+/** 深色下「未归入任何话题」的圆点填充（同样对画布 ≥ 4:1）。 */
+export const TOPIC_NONE_COLOR_DOT_DARK = '#7e7394';
 
 export interface TopicAssignment {
   /** 节点 id → 话题下标（TOPIC_PALETTE 的索引）。 */

@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useI18n, useLabels } from '../i18n';
-import { THEME } from '../theme';
-import { RELATION_COLOR, plainMathText } from '../labels';
+import { useThemePalette } from '../theme-palette';
+import { plainMathText } from '../labels';
 import { edgeVisual } from '../relation-visual';
 import { ConnectionPairNotes } from './ConnectionPairNotes';
 import { edgeFamilyLabel, type NetworkGraph } from '../network';
@@ -68,6 +68,8 @@ export function ContinueNetwork({
 }) {
   const { locale, hrefFor } = useI18n();
   const labels = useLabels();
+  /* 画布用色板：局部网络图与知识网络页同一套取色规则（见 theme-palette.ts）。 */
+  const palette = useThemePalette();
   const text = COPY[locale];
   const network = buildContinueNetwork(centerId, graph, { confirmed, locale });
   if (!network) return null;
@@ -90,7 +92,7 @@ export function ContinueNetwork({
       >
         <defs>
           <marker id="cn-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-            <path d="M 0 0 L 10 5 L 0 10 z" fill={THEME.neutral} />
+            <path d="M 0 0 L 10 5 L 0 10 z" fill={palette.colors.neutral} />
           </marker>
         </defs>
 
@@ -135,8 +137,8 @@ export function ContinueNetwork({
         {/* 关联线：先画线，节点压在上面。 */}
         {network.nodes.map((item) => {
           const visual = item.family === 'relation'
-            ? edgeVisual('relation', item.kind, item.witnessStatus, RELATION_COLOR[item.kind ?? ''] ?? THEME.neutral)
-            : edgeVisual(item.family, null, null, item.family === 'contract' ? THEME.contractEdge : THEME.line);
+            ? edgeVisual('relation', item.kind, item.witnessStatus, palette.relation[item.kind ?? ''] ?? palette.colors.neutral)
+            : edgeVisual(item.family, null, null, item.family === 'contract' ? palette.colors.contractEdge : palette.colors.line);
           const nx = item.x + CONTINUE_NODE_W / 2;
           const ny = item.y + CONTINUE_NODE_H / 2;
           return (
@@ -164,8 +166,8 @@ export function ContinueNetwork({
             width={CONTINUE_CENTER.w}
             height={CONTINUE_CENTER.h}
             rx="12"
-            fill={THEME.nodeFill}
-            stroke={THEME.inkSoft}
+            fill={palette.colors.nodeFill}
+            stroke={palette.colors.inkSoft}
             strokeWidth="1.6"
           />
           <text className="continue-node-label" x={cx} y={cy - 2} textAnchor="middle" fontSize="13.5">
@@ -184,8 +186,8 @@ export function ContinueNetwork({
               width={CONTINUE_NODE_W}
               height={CONTINUE_NODE_H}
               rx="10"
-              fill={THEME.nodeFill}
-              stroke={THEME.line}
+              fill={palette.colors.nodeFill}
+              stroke={palette.colors.line}
             />
             <text className="continue-node-label" x={item.x + 10} y={item.y + 19} fontSize="12">
               {plainMathText(item.title.length > 13 ? `${item.title.slice(0, 13)}…` : item.title)}
@@ -206,8 +208,8 @@ export function ContinueNetwork({
               className="continue-basis-dot"
               style={{
                 background: item.family === 'relation'
-                  ? RELATION_COLOR[item.kind ?? ''] ?? THEME.neutral
-                  : item.family === 'contract' ? THEME.contractEdge : THEME.line,
+                  ? palette.relation[item.kind ?? ''] ?? palette.colors.neutral
+                  : item.family === 'contract' ? palette.colors.contractEdge : palette.colors.line,
               }}
               title={basisLabel(item.basis, locale)}
             />

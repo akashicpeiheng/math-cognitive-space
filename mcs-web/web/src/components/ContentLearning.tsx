@@ -1,0 +1,38 @@
+import {useEffect,useRef,useState} from 'react';
+import {Link} from 'react-router-dom';
+import {api,formatError,useApi} from '../api';
+import {useI18n} from '../i18n';
+import {useAuth} from '../auth';
+import {useProfileContext} from '../state';
+import {caseNetworkHref} from '../content-case';
+import type {LearningNodeDocument} from '../../../shared/content-documents.mjs';
+import '../content-case.css';
+interface Versions{objectVersion:string;learningVersion:string}
+interface PlanRoute{id:string;events:Array<{id:string;actionId:string;focus:{node:string}}> ;linearExtensions?:string[][]}
+interface Plan{status:string;routes:PlanRoute[]}
+interface Draft{schema:'mcs-case-draft/1';nodeId:string;route:string;plan:Plan|null;read:boolean;mastered:boolean;note:string;versions:Versions}
+export function ContentLearning({node,versions}:{node:LearningNodeDocument;versions:Versions}){
+ const {pick,hrefFor,locale}=useI18n(),auth=useAuth(),{profileId}=useProfileContext();
+ const [route,setRoute]=useState(node.routes?.[0]?.id??''),[plan,setPlan]=useState<Plan|null>(null),[read,setRead]=useState(false),[mastered,setMastered]=useState(false),[note,setNote]=useState(''),[message,setMessage]=useState(''),[busy,setBusy]=useState(false);
+ const controller=useRef<AbortController|null>(null),generation=useRef(0);
+ const catalogue=useApi<{nodes:Array<{id:string;title:string}>}>('/learning/nodes');
+ const title=(id:string)=>catalogue.data?.nodes.find(n=>n.id===id)?.title??id;
+ const account=auth.mode==='local'||Boolean(auth.user),owner=account?`${auth.user?.id??'local'}:${profileId??'no-profile'}`:'guest',storageKey=`mcs-case-draft/1:${owner}:${node.id}`;
+ useEffect(()=>{const run=++generation.current,c=new AbortController();controller.current?.abort();setPlan(null);setRoute(node.routes?.[0]?.id??'');setRead(false);setMastered(false);setNote('');setMessage('');setBusy(false);
+ const restore=async()=>{let raw:string|null=null;if(account&&profileId){const result=await api<{notes:Array<{body:string;tags:string[]}>}>(`/profiles/${profileId}/notes?nodeId=${encodeURIComponent(node.id)}`,{signal:c.signal});raw=result.notes.find(n=>n.tags.includes('mcs-case-draft'))?.body??null;}else raw=localStorage.getItem(storageKey);if(!raw||generation.current!==run)return;const d=JSON.parse(raw) as Draft;if(d.schema!=='mcs-case-draft/1'||d.nodeId!==node.id)return;setNote(d.note??'');setRead(d.read===true);setMastered(d.mastered===true);if(d.versions.objectVersion===versions.objectVersion&&d.versions.learningVersion===versions.learningVersion){if(node.routes?.some(r=>r.id===d.route))setRoute(d.route);setPlan(d.plan);}setMessage(locale==='en'?'Saved progress restored.':'已恢复保存的阅读进度。');};
+ void restore().catch(e=>{if(!c.signal.aborted)setMessage(formatError(e));});return()=>{generation.current++;c.abort();controller.current?.abort();};
+ },[storageKey,node.id,account,profileId,versions.objectVersion,versions.learningVersion]);
+ const request={contentCase:'topology-dg',...versions};
+ const persist=async(nextRead=read,nextMastered=mastered)=>{const d:Draft={schema:'mcs-case-draft/1',nodeId:node.id,route,plan,read:nextRead,mastered:nextMastered,note,versions};if(account&&profileId)await api(`/profiles/${profileId}/notes`,{method:'POST',body:{title:`MCS · ${node.title}`,nodeId:node.id,tags:['mcs-case-draft'],body:JSON.stringify(d)}});else localStorage.setItem(storageKey,JSON.stringify(d));setMessage(pick({zh:account&&profileId?'已保存至个人档案。':'已保存本机草稿。',en:account&&profileId?'Saved to your profile.':'Local draft saved.'}));};
+ const act=async(fn:()=>Promise<void>)=>{if(busy)return;const run=generation.current;setBusy(true);setMessage('');try{await fn();}catch(e){if(generation.current===run)setMessage(formatError(e));}finally{if(generation.current===run)setBusy(false);}};
+ const generate=async()=>{controller.current?.abort();const c=new AbortController();controller.current=c;const started=await api<{job:{id:string}}>('/plans',{method:'POST',body:{...request,goalId:node.id,...(account&&profileId?{profileId}:{}),routeChoices:route?{[node.id]:route}:{},horizon:32,maxCandidates:50000},signal:c.signal});
+ for(let i=0;i<180;i++){if(c.signal.aborted)return;const job=await api<{job:{status:string};result?:Plan;error?:{message:string}}>(`/plans/${started.job.id}`,{signal:c.signal});if(job.result){setPlan(job.result);return;}if(['error','failed','cancelled'].includes(job.job.status))throw new Error(job.error?.message??job.job.status);await new Promise<void>(resolve=>{const done=()=>{c.signal.removeEventListener('abort',abort);resolve();};const timer=window.setTimeout(done,300);const abort=()=>{clearTimeout(timer);done();};c.signal.addEventListener('abort',abort,{once:true});});}throw new Error(pick({zh:'规划仍在进行，请稍后重试。',en:'Planning is taking longer than expected. Please retry.'}));};
+ const mark=async(kind:'view'|'confirmation')=>{if(account&&profileId)await api(`/profiles/${profileId}/events`,{method:'POST',body:{...request,event:{eventId:crypto.randomUUID(),kind,nodeId:node.id,payload:kind==='view'?{readingCompleted:true}:{confirmed:true,resources:['definition','statement'],contentCase:'topology-dg'},source:{kind:'user',ref:'content-reading'}}}});if(kind==='view')setRead(true);else setMastered(true);await persist(kind==='view'||read,kind==='confirmation'||mastered);};
+ return <section className="panel content-route-controls" aria-label={pick({zh:'阅读与学习路线',en:'Reading and learning routes'})}><h2>{pick({zh:'选择构造路线',en:'Choose an introduction route'})}</h2>
+ {node.routes?.length?<><label>{pick({zh:'引入路线',en:'Introduction route'})}<select value={route} onChange={e=>{setRoute(e.target.value);setPlan(null);}}>{node.routes.map((r,i)=><option key={r.id} value={r.id}>{i+1}. {r.title}</option>)}</select></label><p>{pick({zh:'所选路线需要同时理解以下背景；其他路线可替代，不会自动并入必修。',en:'The selected route requires all inputs below. Other routes are alternatives.'})}</p><ul>{node.routes.find(r=>r.id===route)?.inputs.map(i=><li key={i.id}><Link to={hrefFor(`/learning-nodes/${encodeURIComponent(i.id)}`)}>{title(i.id)}</Link></li>)}</ul></>:null}
+ <button className="button" disabled={busy} onClick={()=>void act(generate)}>{pick({zh:'生成学习计划',en:'Generate learning plan'})}</button>
+ {plan&&<div data-content-plan={plan.status}><h3>{pick({zh:'学习计划',en:'Learning plan'})} · {plan.status}</h3>{plan.routes.slice(0,4).map((r,i)=>{const order=r.linearExtensions?.[0]??r.events.map(e=>e.id);return <div key={r.id}><h4>{pick({zh:'可选计划',en:'Alternative plan'})} {i+1}</h4><ol>{order.map(id=>r.events.find(e=>e.id===id)).filter((e):e is PlanRoute['events'][number]=>Boolean(e)).map(e=><li key={e.id}><Link to={hrefFor(`/learning-nodes/${encodeURIComponent(e.focus.node)}`)}>{title(e.focus.node)}</Link><p>{pick({zh:'下一步理由：该行动产出所需定义；其输入由前面的步骤或已声明背景提供。',en:'Why next: this action supplies the required definition from earlier steps or declared background.'})}</p></li>)}</ol></div>;})}</div>}
+ <p><button disabled={busy||read} onClick={()=>void act(()=>mark('view'))}>{pick({zh:read?'已读完':'标记读完',en:read?'Reading completed':'Mark reading complete'})}</button><button disabled={busy||mastered} onClick={()=>void act(()=>mark('confirmation'))}>{pick({zh:mastered?'已确认掌握':'确认掌握',en:mastered?'Mastery confirmed':'Confirm mastery'})}</button></p>
+ <label>{pick({zh:'私人备注',en:'Personal note'})}<textarea value={note} onChange={e=>setNote(e.target.value)} rows={3}/></label><button disabled={busy} onClick={()=>void act(()=>persist())}>{pick({zh:'保存计划与进度',en:'Save plan and progress'})}</button><Link to={hrefFor(caseNetworkHref('L','operators'))}>{pick({zh:'返回学习网络',en:'Return to learning network'})}</Link><p role="status">{message}</p>
+ </section>;
+}

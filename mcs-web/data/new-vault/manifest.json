@@ -1,0 +1,541 @@
+{
+  "schema": "mcs-new-vault/1",
+  "case": "newvault",
+  "title": "新库：简明高等代数笔记",
+  "note": "由 23 篇 Obsidian 数学笔记导入；已迁移到 mcs-learning-node-template@2026-10-19.1。正文逐字保留，仅去掉 frontmatter、标题行、摘要引用与标签行。",
+  "generatedAt": "2026-10-19T11:15:55.484Z",
+  "nodes": [
+    {
+      "id": "newvault:univariate-polynomial",
+      "title": "一元多项式",
+      "titleFull": "一元多项式：形式、除法与分解",
+      "file": "一元多项式.md",
+      "source": "mcs-web/data/new-vault/source/一元多项式.md",
+      "type": "object",
+      "discipline": "域与数系",
+      "evidenceStatus": "DEF",
+      "summary": "一元多项式是域 $K$ 上有限次的系数序列，写成 $\\sum a_ix^i$；它在 $K[x]$ 中可加、可乘、可带余除法，并由根与不可约因子分解刻画。",
+      "tags": [
+        "代数",
+        "多项式",
+        "因式分解",
+        "根"
+      ],
+      "links": [
+        "newvault:field",
+        "newvault:vector-space",
+        "newvault:linear-space",
+        "newvault:matrix",
+        "newvault:determinant"
+      ]
+    },
+    {
+      "id": "newvault:quadratic-form",
+      "title": "二次型",
+      "titleFull": "二次型：平方和、惯性指数与二次曲面",
+      "file": "二次型.md",
+      "source": "mcs-web/data/new-vault/source/二次型.md",
+      "type": "object",
+      "discipline": "线性代数",
+      "evidenceStatus": "DEF",
+      "summary": "二次型是齐二次函数 $Q(x)=x^{\\mathsf T}Ax$（$A$ 对称）；它的极化给出对称双线性型，合同对角化后只留下正、负、零平方的个数。",
+      "tags": [
+        "线性代数",
+        "二次型",
+        "惯性指数",
+        "正定性"
+      ],
+      "links": [
+        "newvault:bilinear-form",
+        "newvault:linear-space",
+        "newvault:vector-space",
+        "newvault:inner-product",
+        "newvault:matrix",
+        "newvault:determinant",
+        "newvault:linear-system",
+        "newvault:linear-substitution"
+      ]
+    },
+    {
+      "id": "newvault:coprime",
+      "title": "互素",
+      "titleFull": "互素：gcd、Bezout 与公共因子",
+      "file": "互素.md",
+      "source": "mcs-web/data/new-vault/source/互素.md",
+      "type": "definition",
+      "discipline": "域与数系",
+      "evidenceStatus": "DEF",
+      "summary": "两个元素互素，指它们的最大公因子是单位；在 $\\mathbb{Z}$ 与 $K[x]$ 这类 PID 中，等价于存在 $u,v$ 使 $ua+vb=1$。",
+      "tags": [
+        "数论",
+        "代数",
+        "互素",
+        "最大公因子"
+      ],
+      "links": [
+        "newvault:univariate-polynomial",
+        "newvault:field",
+        "newvault:linear-system",
+        "newvault:matrix",
+        "newvault:linear-space"
+      ]
+    },
+    {
+      "id": "newvault:fundamental-theorem-algebra",
+      "title": "代数基本定理",
+      "titleFull": "代数基本定理：复系数多项式的根",
+      "file": "代数基本定理.md",
+      "source": "mcs-web/data/new-vault/source/代数基本定理.md",
+      "type": "theorem",
+      "discipline": "域与数系",
+      "evidenceStatus": "PROOF",
+      "summary": "每个次数 $\\ge1$ 的复系数多项式都有复根；等价地，$\\mathbb{C}$ 是代数闭域，$n$ 次复多项式在 $\\mathbb{C}$ 上恰好分解为 $n$ 个一次因子（计重数）。",
+      "tags": [
+        "代数",
+        "复数",
+        "多项式",
+        "代数闭域"
+      ],
+      "links": [
+        "newvault:univariate-polynomial",
+        "newvault:irreducible-polynomial",
+        "newvault:matrix",
+        "newvault:linear-space",
+        "newvault:field"
+      ]
+    },
+    {
+      "id": "newvault:inner-product",
+      "title": "内积",
+      "titleFull": "内积：长度、角度与正交",
+      "file": "内积.md",
+      "source": "mcs-web/data/new-vault/source/内积.md",
+      "type": "definition",
+      "discipline": "线性代数",
+      "evidenceStatus": "DEF",
+      "summary": "内积是把两个向量送成一个标量的正定 Hermitian 型；它给出长度、角度、正交、投影、Riesz 表示与伴随算子。",
+      "tags": [
+        "线性代数",
+        "内积",
+        "正交",
+        "Hilbert空间"
+      ],
+      "links": [
+        "newvault:metric-space",
+        "newvault:vector-space",
+        "newvault:linear-space",
+        "newvault:matrix",
+        "newvault:determinant",
+        "newvault:linear-substitution"
+      ]
+    },
+    {
+      "id": "newvault:bilinear-form",
+      "title": "双线性型",
+      "titleFull": "双线性型：矩阵、合同与惯性",
+      "file": "双线性型.md",
+      "source": "mcs-web/data/new-vault/source/双线性型.md",
+      "type": "object",
+      "discipline": "线性代数",
+      "evidenceStatus": "DEF",
+      "summary": "双线性型是把两个向量送成一个标量、并对每个变量分别线性的映射；它的矩阵在换基下作合同变换，秩不变，实对称情形由惯性指数分类。",
+      "tags": [
+        "线性代数",
+        "双线性型",
+        "二次型",
+        "惯性律"
+      ],
+      "links": [
+        "newvault:inner-product",
+        "newvault:linear-space",
+        "newvault:vector-space",
+        "newvault:matrix",
+        "newvault:determinant",
+        "newvault:metric-space",
+        "newvault:linear-substitution"
+      ]
+    },
+    {
+      "id": "newvault:vector-space",
+      "title": "向量空间",
+      "titleFull": "向量空间：线性结构的公理化",
+      "file": "向量空间.md",
+      "source": "mcs-web/data/new-vault/source/向量空间.md",
+      "type": "object",
+      "discipline": "线性代数",
+      "evidenceStatus": "DEF",
+      "summary": "向量空间是域上带有加法与数乘、并对线性组合封闭的集合；它把“线性组合”提炼为唯一结构，用基与维数刻画大小。",
+      "tags": [
+        "线性代数",
+        "向量空间",
+        "线性组合",
+        "维数"
+      ],
+      "links": [
+        "newvault:linear-substitution",
+        "newvault:linear-system",
+        "newvault:rank",
+        "newvault:matrix",
+        "newvault:field"
+      ]
+    },
+    {
+      "id": "newvault:orthogonalization",
+      "title": "向量空间的正交化",
+      "titleFull": "向量空间的正交化：Gram–Schmidt 与 QR",
+      "file": "向量空间的正交化.md",
+      "source": "mcs-web/data/new-vault/source/向量空间的正交化.md",
+      "type": "technique",
+      "discipline": "线性代数",
+      "evidenceStatus": "DEF",
+      "summary": "正交化是把一组线性无关向量逐步换成同张成空间的 orthonormal 基；Gram–Schmidt 是最直接的算法，矩阵形式就是 QR 分解。",
+      "tags": [
+        "线性代数",
+        "正交化",
+        "GramSchmidt",
+        "QR分解"
+      ],
+      "links": [
+        "newvault:inner-product",
+        "newvault:vector-space",
+        "newvault:linear-space",
+        "newvault:linear-system",
+        "newvault:matrix"
+      ]
+    },
+    {
+      "id": "newvault:field",
+      "title": "域",
+      "titleFull": "域：可除的交换环",
+      "file": "域.md",
+      "source": "mcs-web/data/new-vault/source/域.md",
+      "type": "definition",
+      "discipline": "域与数系",
+      "evidenceStatus": "DEF",
+      "summary": "域是每个非零元素都能当除数的交换环；它把“除以 $a$”改写成“乘以 $a^{-1}$”，让线性方程与多项式运算有一个不做例外的系数环境。",
+      "tags": [
+        "抽象代数",
+        "域论",
+        "代数结构"
+      ],
+      "links": [
+        "newvault:linear-space"
+      ]
+    },
+    {
+      "id": "newvault:duality-identity",
+      "title": "对偶恒等式",
+      "titleFull": "对偶恒等式：格与布尔代数中的镜像",
+      "file": "对偶恒等式.md",
+      "source": "mcs-web/data/new-vault/source/对偶恒等式.md",
+      "type": "definition",
+      "discipline": "数理逻辑",
+      "evidenceStatus": "DEF",
+      "summary": "对偶恒等式是把一个恒等式中的 $\\wedge$ 与 $\\vee$ 互换、$0$ 与 $1$ 互换、$\\le$ 与 $\\ge$ 互换后得到的“镜像”恒等式；在格与布尔代数中，原式成立则对偶式也成立。",
+      "tags": [
+        "代数",
+        "布尔代数",
+        "格",
+        "对偶"
+      ],
+      "links": [
+        "newvault:linear-space",
+        "newvault:inner-product"
+      ]
+    },
+    {
+      "id": "newvault:permutation",
+      "title": "排列",
+      "titleFull": "排列：有限集合的对称与循环",
+      "file": "排列.md",
+      "source": "mcs-web/data/new-vault/source/排列.md",
+      "type": "object",
+      "discipline": "线性代数",
+      "evidenceStatus": "DEF",
+      "summary": "排列是有限集合到自身的双射；它的循环分解记录轨道结构，符号记录奇偶性，循环型决定共轭类。",
+      "tags": [
+        "组合学",
+        "群论",
+        "排列",
+        "对称群"
+      ],
+      "links": [
+        "newvault:determinant",
+        "newvault:matrix",
+        "newvault:equivalence-relation",
+        "newvault:field"
+      ]
+    },
+    {
+      "id": "newvault:irreducible-polynomial",
+      "title": "既约多项式",
+      "titleFull": "既约多项式：不可再分的因子",
+      "file": "既约多项式.md",
+      "source": "mcs-web/data/new-vault/source/既约多项式.md",
+      "type": "definition",
+      "discipline": "域与数系",
+      "evidenceStatus": "DEF",
+      "summary": "既约多项式（不可约多项式）是域 $K$ 上不能写成两个非常数多项式之积的多项式；它是 $K[x]$ 中的“原子”，也是构造扩域的基本积木。",
+      "tags": [
+        "代数",
+        "多项式",
+        "既约多项式",
+        "扩域"
+      ],
+      "links": [
+        "newvault:univariate-polynomial",
+        "newvault:coprime",
+        "newvault:field",
+        "newvault:linear-space",
+        "newvault:matrix"
+      ]
+    },
+    {
+      "id": "newvault:maximal-independent-set",
+      "title": "极大线性无关组",
+      "titleFull": "极大线性无关组：从向量组中取出基",
+      "file": "极大线性无关组.md",
+      "source": "mcs-web/data/new-vault/source/极大线性无关组.md",
+      "type": "definition",
+      "discipline": "线性代数",
+      "evidenceStatus": "DEF",
+      "summary": "极大线性无关组是向量组 $S$ 中“不能再加入 $S$ 的任何向量而保持线性无关”的子集；它恰好是 $\\operatorname{span}(S)$ 的一组基，其大小就是向量组的秩。",
+      "tags": [
+        "线性代数",
+        "极大线性无关组",
+        "基",
+        "秩"
+      ],
+      "links": [
+        "newvault:vector-space",
+        "newvault:linear-space",
+        "newvault:rank",
+        "newvault:matrix",
+        "newvault:linear-system"
+      ]
+    },
+    {
+      "id": "newvault:matrix",
+      "title": "矩阵",
+      "titleFull": "矩阵：从数组到线性映射",
+      "file": "矩阵.md",
+      "source": "mcs-web/data/new-vault/source/矩阵.md",
+      "type": "object",
+      "discipline": "线性代数",
+      "evidenceStatus": "DEF",
+      "summary": "矩阵是有限维线性映射在选定基下的坐标数组；矩阵乘法就是映射复合，因此它结合但不交换。",
+      "tags": [
+        "线性代数",
+        "矩阵",
+        "线性映射",
+        "矩阵乘法"
+      ],
+      "links": [
+        "newvault:linear-system",
+        "newvault:linear-substitution",
+        "newvault:equivalence-relation",
+        "newvault:field"
+      ]
+    },
+    {
+      "id": "newvault:matrix-equivalence",
+      "title": "矩阵相抵",
+      "titleFull": "矩阵相抵：秩的完全分类",
+      "file": "矩阵相抵.md",
+      "source": "mcs-web/data/new-vault/source/矩阵相抵.md",
+      "type": "definition",
+      "discipline": "线性代数",
+      "evidenceStatus": "DEF",
+      "summary": "矩阵相抵是指两个同尺寸矩阵经可逆的左右乘法互相转化；在域上，它完全由秩决定，标准形是 $\\operatorname{diag}(I_r,0)$。",
+      "tags": [
+        "线性代数",
+        "矩阵相抵",
+        "秩",
+        "标准形"
+      ],
+      "links": [
+        "newvault:linear-system",
+        "newvault:rank",
+        "newvault:matrix",
+        "newvault:linear-substitution",
+        "newvault:equivalence-relation",
+        "newvault:field"
+      ]
+    },
+    {
+      "id": "newvault:rank",
+      "title": "秩",
+      "titleFull": "秩：像的维数",
+      "file": "秩.md",
+      "source": "mcs-web/data/new-vault/source/秩.md",
+      "type": "object",
+      "discipline": "线性代数",
+      "evidenceStatus": "DEF",
+      "summary": "秩是线性映射的像的维数；它同时等于矩阵的行秩、列秩、消元主元数与最大非零子式的阶数，衡量“输出能覆盖多少维”。",
+      "tags": [
+        "线性代数",
+        "秩",
+        "线性映射",
+        "矩阵"
+      ],
+      "links": [
+        "newvault:linear-system",
+        "newvault:linear-substitution",
+        "newvault:matrix",
+        "newvault:equivalence-relation",
+        "newvault:field"
+      ]
+    },
+    {
+      "id": "newvault:metric-space",
+      "title": "空间度量",
+      "titleFull": "空间度量：距离的公理化",
+      "file": "空间度量.md",
+      "source": "mcs-web/data/new-vault/source/空间度量.md",
+      "type": "object",
+      "discipline": "拓扑",
+      "evidenceStatus": "DEF",
+      "summary": "空间度量是集合上的距离函数；它把“远近”公理化为三条性质，从而定义开球、开集、收敛、连续与完备性。配备度量的集合称为度量空间。",
+      "tags": [
+        "拓扑学",
+        "度量空间",
+        "距离",
+        "完备性"
+      ],
+      "links": [
+        "newvault:vector-space",
+        "newvault:linear-space"
+      ]
+    },
+    {
+      "id": "newvault:equivalence-relation",
+      "title": "等价关系",
+      "titleFull": "等价关系：把“相同”相对化",
+      "file": "等价关系.md",
+      "source": "mcs-web/data/new-vault/source/等价关系.md",
+      "type": "definition",
+      "discipline": "集合论",
+      "evidenceStatus": "DEF",
+      "summary": "等价关系是按某个标准把对象分到同一类的关系；它把“相等”从逐点相同放宽为同类，从而让分类与商集成为可能。",
+      "tags": [
+        "集合论",
+        "等价关系",
+        "商集",
+        "定义"
+      ],
+      "links": []
+    },
+    {
+      "id": "newvault:linear-substitution",
+      "title": "线性换元",
+      "titleFull": "线性换元：换坐标、化简与不变量",
+      "file": "线性换元.md",
+      "source": "mcs-web/data/new-vault/source/线性换元.md",
+      "type": "technique",
+      "discipline": "线性代数",
+      "evidenceStatus": "DEF",
+      "summary": "线性换元是用可逆线性变换 $x=Py$ 换一组坐标；它把问题改写成更简单的矩阵形式，再用逆变换把答案换回原坐标。",
+      "tags": [
+        "线性代数",
+        "线性换元",
+        "换基",
+        "二次型",
+        "Jacobian"
+      ],
+      "links": [
+        "newvault:equivalence-relation",
+        "newvault:linear-system",
+        "newvault:field"
+      ]
+    },
+    {
+      "id": "newvault:linear-system",
+      "title": "线性方程组",
+      "titleFull": "线性方程组：消元、秩与解集",
+      "file": "线性方程组.md",
+      "source": "mcs-web/data/new-vault/source/线性方程组.md",
+      "type": "object",
+      "discipline": "线性代数",
+      "evidenceStatus": "DEF",
+      "summary": "线性方程组是若干线性条件的联立；它把“求交点、求系数”写成矩阵方程 $Ax=b$，而消元法用可逆的行变换把解集原样保留下来。",
+      "tags": [
+        "线性代数",
+        "线性方程组",
+        "高斯消元",
+        "秩"
+      ],
+      "links": []
+    },
+    {
+      "id": "newvault:linear-space",
+      "title": "线性空间",
+      "titleFull": "线性空间：结构、映射与分解",
+      "file": "线性空间.md",
+      "source": "mcs-web/data/new-vault/source/线性空间.md",
+      "type": "object",
+      "discipline": "线性代数",
+      "evidenceStatus": "DEF",
+      "summary": "线性空间就是向量空间；本篇按“结构与映射”的坐标无关视角组织它——子空间、商空间、直和、对偶与线性算子。",
+      "tags": [
+        "线性代数",
+        "线性空间",
+        "线性映射",
+        "对偶空间"
+      ],
+      "links": [
+        "newvault:vector-space",
+        "newvault:linear-substitution",
+        "newvault:matrix",
+        "newvault:linear-system",
+        "newvault:rank",
+        "newvault:field"
+      ]
+    },
+    {
+      "id": "newvault:determinant",
+      "title": "行列式",
+      "titleFull": "行列式：交替多重线性的体积因子",
+      "file": "行列式.md",
+      "source": "mcs-web/data/new-vault/source/行列式.md",
+      "type": "definition",
+      "discipline": "线性代数",
+      "evidenceStatus": "DEF",
+      "summary": "行列式是方阵的唯一交替多重线性规范函数；它把线性映射的体积缩放与方向符号压缩成一个数，并在方阵上判定可逆性。",
+      "tags": [
+        "线性代数",
+        "行列式",
+        "多重线性",
+        "体积"
+      ],
+      "links": [
+        "newvault:linear-system",
+        "newvault:linear-substitution",
+        "newvault:matrix",
+        "newvault:rank",
+        "newvault:matrix-equivalence",
+        "newvault:field"
+      ]
+    },
+    {
+      "id": "newvault:inversion-number",
+      "title": "逆序数",
+      "titleFull": "逆序数：排列的排序距离与奇偶标签",
+      "file": "逆序数.md",
+      "source": "mcs-web/data/new-vault/source/逆序数.md",
+      "type": "object",
+      "discipline": "线性代数",
+      "evidenceStatus": "DEF",
+      "summary": "逆序数是排列中“前后次序颠倒”的无序对个数；它等于把排列排好序所需的最少相邻交换次数，其奇偶性就是排列的符号。",
+      "tags": [
+        "组合学",
+        "排列",
+        "逆序数",
+        "排序"
+      ],
+      "links": [
+        "newvault:determinant",
+        "newvault:permutation"
+      ]
+    }
+  ]
+}

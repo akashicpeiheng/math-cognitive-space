@@ -7,9 +7,11 @@
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { assertDeploymentSafety, isAllowedHost, checkWriteOrigin, securityHeaders, normalizeHost } from '../server/deployment.mjs';
 import { startServer } from '../server/index.mjs';
-import { loadConfig } from '../server/config.mjs';
+import { loadConfig, MCS_WEB_ROOT } from '../server/config.mjs';
 
 /*
  * 本机模式用 `dev: false`：dev 会跳过来源校验（开发机上的 Vite 跨端口调试需要），
@@ -119,6 +121,19 @@ test('写请求来源：本机只认回环；公网必须带 Origin 且与站点
   assert.throws(() => checkWriteOrigin({ headers: { origin: 'https://evil.example.com' } }, publicConfig()), (error) => error.status === 403);
 });
 
+test('固定部署地址只接受自身同源写入，其他部署与伪造转发头仍拒绝', () => {
+  const deploymentOrigin = 'https://mcs-fixed-123.vercel.app';
+  const config = publicConfig({ deploymentOrigin });
+  assert.equal(checkWriteOrigin({ headers: { origin: deploymentOrigin, host: 'mcs-fixed-123.vercel.app' } }, config), true);
+  for (const headers of [
+    { origin: deploymentOrigin, host: 'mcs.example.com' },
+    { origin: 'https://mcs-other.vercel.app', host: 'mcs-other.vercel.app' },
+    { origin: 'https://evil.example.com', host: 'mcs-fixed-123.vercel.app' },
+    { host: 'mcs-fixed-123.vercel.app' },
+    { origin: deploymentOrigin, host: 'evil.example.com', 'x-forwarded-host': 'mcs-fixed-123.vercel.app' },
+  ]) assert.throws(() => checkWriteOrigin({ headers }, config), error => error.status === 403);
+});
+
 test('安全响应头：生产 CSP 不允许内联脚本，且禁止被 iframe 嵌套', () => {
   const headers = securityHeaders({ dev: false });
   assert.match(headers['Content-Security-Policy'], /script-src 'self';/);
@@ -127,6 +142,22 @@ test('安全响应头：生产 CSP 不允许内联脚本，且禁止被 iframe �
   assert.equal(headers['X-Content-Type-Options'], 'nosniff');
   assert.equal(headers['Referrer-Policy'], 'no-referrer');
   assert.equal(headers['X-Frame-Options'], 'DENY');
+});
+
+/*
+ * 上面那条说的是**响应头**，这一条说的是**页面本身**（2026-10-16 加，第一百零九轮）。
+ *
+ * 两者必须一起成立：CSP 里写着 `script-src 'self'`，而页面里只要有一个内联脚本，
+ * 浏览器就会拒绝执行它——外观的首帧引导脚本（`web/public/theme-boot.js`）正是靠
+ * 「外链 + 同步」绕开这条限制的。因此这里直接读源文件核对：
+ * `web/index.html` 里不许出现没有 `src` 的 `<script>`。
+ */
+test('页面不许有内联脚本（首帧外观引导必须走外链脚本）', () => {
+  const html = readFileSync(resolve(MCS_WEB_ROOT, 'web', 'index.html'), 'utf8');
+  const scripts = [...html.matchAll(/<script\b[^>]*>/gi)].map((match) => match[0]);
+  const inline = scripts.filter((tag) => !/\bsrc\s*=/.test(tag));
+  assert.deepEqual(inline, [], `index.html 里有内联脚本，生产 CSP 会拒绝执行：${inline.join(' ')}`);
+  assert.ok(scripts.some((tag) => tag.includes('/theme-boot.js')), 'index.html 里没有引入外观首帧引导脚本');
 });
 
 /*

@@ -65,6 +65,15 @@ export interface DraftCamera {
   scale: number;
 }
 
+export interface DraftScale {
+  levels: string[];
+  added: string[];
+  split: string[];
+  autoMerge: boolean;
+  positions?: Record<string, { x: number; y: number }>;
+  version: string | null;
+}
+
 export interface NetworkDraft extends NetworkExtras {
   /** 已加入的节点 id，按写入时的次序原样保留。 */
   added: string[];
@@ -72,6 +81,8 @@ export interface NetworkDraft extends NetworkExtras {
   families: string[];
   /** 离开时的相机（平移 + 缩放）；形状不合法时为 `null`，调用方按「没有相机」处理。 */
   camera: DraftCamera | null;
+  /** 尺度视图状态；没有用尺度视图时不写。 */
+  scale?: DraftScale;
   /** 写入时刻（ISO 字符串），供调试与界面说明用。 */
   at: string;
 }
@@ -105,6 +116,34 @@ export function normalizeDraftCamera(value: unknown): DraftCamera | null {
   return { x: camera.x, y: camera.y, scale: camera.scale };
 }
 
+const SCALE_LEVELS = ['molecule', 'node', 'unit', 'topic'];
+const idList = (value: unknown, limit: number) => Array.isArray(value)
+  ? [...new Set(value.filter((id): id is string => typeof id === 'string' && id.length > 0 && id.length <= 300))].slice(0, limit)
+  : [];
+
+/** 只留合法尺度层级与 id 列表；不是对象或缺层级时当作「没有尺度状态」。 */
+export function normalizeDraftScale(value: unknown): DraftScale | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  const record = value as Partial<DraftScale>;
+  const levels = Array.isArray(record.levels) ? SCALE_LEVELS.filter((level) => record.levels!.includes(level)) : [];
+  if (levels.length === 0) return null;
+  const positions: Record<string, { x: number; y: number }> = {};
+  const rawPositions = record.positions && typeof record.positions === 'object' && !Array.isArray(record.positions) ? record.positions : {};
+  for (const [id, point] of Object.entries(rawPositions).slice(0, 500)) {
+    if (!point || typeof point !== 'object' || Array.isArray(point)) continue;
+    const x = Number((point as { x?: unknown }).x); const y = Number((point as { y?: unknown }).y);
+    if (Number.isFinite(x) && Number.isFinite(y)) positions[id] = { x, y };
+  }
+  return {
+    levels,
+    added: idList(record.added, 500),
+    split: idList(record.split, 500),
+    autoMerge: record.autoMerge !== false,
+    ...(Object.keys(positions).length ? { positions } : {}),
+    version: typeof record.version === 'string' ? record.version.slice(0, 120) : null,
+  };
+}
+
 /**
  * 读回暂存。没有、读不出来、形状不对、或节点集合为空时返回 `null`。
  *
@@ -127,6 +166,7 @@ export function readNetworkDraft(): NetworkDraft | null {
       added,
       families: normalizeDraftFamilies(record.families),
       camera: normalizeDraftCamera(record.camera),
+      ...(normalizeDraftScale(record.scale) ? { scale: normalizeDraftScale(record.scale)! } : {}),
       at: typeof record.at === 'string' ? record.at : '',
     };
   } catch {
@@ -139,6 +179,7 @@ export function writeNetworkDraft(draft: NetworkExtras & {
   added: readonly string[];
   families: readonly string[];
   camera?: DraftCamera | null;
+  scale?: DraftScale | null;
 }): void {
   const store = storage();
   if (!store) return;
@@ -148,6 +189,7 @@ export function writeNetworkDraft(draft: NetworkExtras & {
       added: draft.added.filter((id) => typeof id === 'string' && id.length > 0),
       families: normalizeDraftFamilies(draft.families),
       camera: normalizeDraftCamera(draft.camera ?? null),
+      ...(normalizeDraftScale(draft.scale) ? { scale: normalizeDraftScale(draft.scale)! } : {}),
       at: new Date().toISOString(),
     };
     store.setItem(NETWORK_DRAFT_KEY, JSON.stringify(payload));

@@ -1,0 +1,25 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "installCommand": "npm ci --prefix mcs-web",
+  "buildCommand": "npm run build --prefix mcs-web && node mcs-web/scripts/build-vercel-runtime.mjs",
+  "outputDirectory": "mcs-web/web/dist",
+  "regions": ["sin1"],
+  "functions": {
+    "api/index.mjs": { "maxDuration": 300, "memory": 2048, "includeFiles": "mcs-web/dist/**" },
+    "api/queue.mjs": {
+      "maxDuration": 300,
+      "memory": 2048,
+      "includeFiles": "mcs-web/dist/**",
+      "experimentalTriggers": [{ "type": "queue/v2beta", "topic": "mcs-jobs" }]
+    }
+  },
+  "routes": [
+    { "src": "/(.*)", "headers": { "Content-Security-Policy": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob:; font-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'", "Strict-Transport-Security": "max-age=31536000; includeSubDomains", "X-Content-Type-Options": "nosniff", "X-Frame-Options": "DENY", "Referrer-Policy": "strict-origin-when-cross-origin", "Permissions-Policy": "geolocation=(), microphone=(), camera=()", "Cross-Origin-Opener-Policy": "same-origin" }, "continue": true },
+    { "src": "/(.*)", "has": [{ "type": "host", "value": "www.mathcognitivespace.com" }], "dest": "https://mathcognitivespace.com/$1", "status": 308 },
+    { "src": "/(.*)", "has": [{ "type": "host", "value": "mcs.mathcognitivespace.com" }], "dest": "https://mathcognitivespace.com/$1", "status": 308 },
+    { "src": "/api/v2/(.*)", "dest": "/api/index" },
+    { "handle": "filesystem" },
+    { "src": "/(?!api/).*", "dest": "/index.html" }
+  ]
+}

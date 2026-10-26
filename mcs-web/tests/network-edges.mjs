@@ -1,4 +1,4 @@
-import { startTestServer } from './helpers.mjs';
+import { startTestServer, zoomToCardShape, zoomToDotShape, clickInAnimatedPage } from './helpers.mjs';
 
 import { PLAYWRIGHT_SPECIFIER as PLAYWRIGHT, CHROME_PATH as CHROME } from './browser-runtime.mjs';
 
@@ -170,6 +170,15 @@ try {
     await page.locator('button[aria-label="放大"]').click();
     await page.waitForTimeout(250);
   }
+  /*
+   * 2026-10-16：边上直接写名字的条件从「比例 ≥ 0.85」简化成「**方块档**」
+   * （阈值改成 120% 以上才是卡片，见 `network-workspace.ts`）。
+   * 因此两次「＋」不再够（这张视图适配后 0.6691 × 1.5625 ≈ 1.05，仍在圆点档），
+   * 这里显式放大到方块档，否则这条断言测的是「圆点档下没有标签」——正确但跑题。
+   */
+  const reachedCards = await zoomToCardShape(page);
+  check('放大到方块档（边上的名字只在方块档出现）', reachedCards,
+    await page.evaluate(() => document.querySelector('.network-node')?.dataset.nodeShape ?? 'null'));
   const mergeZoom = await page.evaluate(() => document.querySelector('.network-canvas-full')?.getAttribute('data-zoom') ?? null);
   const merge = await page.evaluate(() => {
     const edges = [...document.querySelectorAll('.network-edge')].map((element) => ({
@@ -223,6 +232,13 @@ try {
   await page.goto(server.origin + '/network?nodes=' + encodeURIComponent(NODES), { waitUntil: 'networkidle' });
   await page.waitForSelector('.network-edge');
   await page.waitForTimeout(1200);
+  /*
+   * 弧线只在**方块档**出现（路由器按卡片矩形算障碍；圆点档下卡片不存在，直线更干净，
+   * 也省掉一次没有意义的绕行）。这张视图适配后是圆点档，因此先放大到方块档再量——
+   * 否则「有弧线也有直线」这条断言测不到任何弧线。
+   */
+  check('放大到方块档（弧线只在方块档出现）', await zoomToCardShape(page),
+    await page.evaluate(() => document.querySelector('.network-node')?.dataset.nodeShape ?? 'null'));
   const arcs = await page.evaluate(() => {
     const edges = [...document.querySelectorAll('.network-edge')].map((element) => ({
       from: element.getAttribute('data-from'),
@@ -354,15 +370,25 @@ try {
   await page.goto(server.origin + '/network?nodes=' + encodeURIComponent('top:space,top:continuous-map,top:homeomorphism,top:coordinate-chart,top:atlas'), { waitUntil: 'networkidle' });
   await page.waitForSelector('.network-edge');
   await page.waitForTimeout(1200);
+  /*
+   * 「压卡」是**方块档**才成立的概念（2026-10-16 起方块 = 120% 以上）：圆点档下卡片不可见，
+   * 边直接连圆点，穿过「卡片本会占的那块矩形」什么也遮不住。这一段的判据是拿卡片矩形
+   * (±86, ±29) 去量路径的，因此在圆点档下量出来的数是「边穿过一些看不见的矩形」，
+   * 而页面报告的 `throughCardResidual` 是路由器按弧线算出来的——两者不同源，比出来必然偏大。
+   */
+  check('放大到方块档（压卡判据只对方块档有意义）', await zoomToCardShape(page),
+    await page.evaluate(() => document.querySelector('.network-node')?.dataset.nodeShape ?? 'null'));
   const sparse = await measureOcclusion();
   check('有解的视图上：穿卡规则生效（确实有边被弯），且画布上不再有边压卡',
     sparse.routes?.throughCard >= 1 && sparse.hits.length === 0 && sparse.edgeCount > 0,
     JSON.stringify(sparse));
 
-  // B. 密集视图：残余压卡如实报告，且实测不超过报告值。
+  // B. 密集视图：残余压卡如实报告，且实测不超过报告值（同样先放大到方块档）。
   await page.goto(server.origin + '/network?nodes=' + encodeURIComponent(NODES), { waitUntil: 'networkidle' });
   await page.waitForSelector('.network-edge');
   await page.waitForTimeout(1200);
+  check('放大到方块档（密集视图的压卡判据同理）', await zoomToCardShape(page),
+    await page.evaluate(() => document.querySelector('.network-node')?.dataset.nodeShape ?? 'null'));
   const dense = await measureOcclusion();
   check('密集视图上：残余压卡不超过页面报告的数（页面不假装绕干净了）',
     dense.routes !== null && dense.hitEdges.length <= dense.routes.throughCardResidual,
@@ -540,6 +566,88 @@ try {
   check('方向未核验的旧放缩记录不画带子（不假装知道哪端是泛化端）',
     drawnScaling.some((edge) => !edge.fact.verified) && drawnScaling.filter((edge) => !edge.fact.verified).every((edge) => !edge.hasRibbon),
     JSON.stringify(drawnScaling.filter((edge) => !edge.fact.verified)));
+
+  // 截图回归：旧紧性族的显示方向不依赖形式方向是否已核验。
+  await page.goto(server.origin + '/network?nodes=' + encodeURIComponent('top:compactness,top:paracompactness,top:sigma-compact'), { waitUntil: 'networkidle' });
+  await page.waitForSelector('.network-edge-taper');
+  for (const shape of ['card', 'dot']) {
+    const zoomed = shape === 'card' ? await zoomToCardShape(page) : await zoomToDotShape(page);
+    const compactRibbons = await page.locator('.network-edge-taper').evaluateAll(elements => elements.map(element => {
+      const points = element.getAttribute('d').replace(/^M /, '').replace(/ Z$/, '').split(' L ')
+        .map(pair => pair.split(' ').map(Number));
+      const half = points.length / 2;
+      const widths = points.slice(0, half).map((point, i) => {
+        const opposite = points[points.length - 1 - i];
+        return Math.hypot(point[0] - opposite[0], point[1] - opposite[1]);
+      });
+      return { general: element.dataset.general, special: element.dataset.special,
+        from: element.parentElement.querySelector('.network-edge').dataset.from, widths };
+    }));
+    check(`紧性族在${shape === 'card' ? '卡片' : '圆点'}档沿泛化方向连续渐粗`,
+      zoomed && compactRibbons.length === 2
+        && ['top:paracompactness', 'top:sigma-compact'].every(id => compactRibbons.some(ribbon => ribbon.general === id))
+        && compactRibbons.every(ribbon => ribbon.special === 'top:compactness' && ribbon.from === ribbon.special
+          && ribbon.widths.at(-1) > ribbon.widths[0] * 4
+          && ribbon.widths.every((width, i) => i === 0 || width > ribbon.widths[i - 1])),
+      JSON.stringify(compactRibbons));
+  }
+
+  /*
+   * 圆点档的关系文字（2026-10-17 加，用户要求：「节点是圆点的时候，要显示关系的文字」）。
+   *
+   * 卡片档的标签跟着相机缩放，圆点档要「缩小也读得出」，因此字号是**屏幕恒定**的
+   * （与圆点、圆点下方的名字同一套约定），放置规则在 `web/src/edge-labels.ts`、
+   * 单测在 `tests/edge-labels.test.mjs`。这里量浏览器里真正画出来的那一层：
+   * 有名字、是关系名、字号屏幕恒定、不压圆点、不互相压。
+   */
+  await page.goto(server.origin + '/network?nodes=' + encodeURIComponent(NODES), { waitUntil: 'networkidle' });
+  await page.waitForSelector('.network-edge');
+  await page.waitForTimeout(900);
+  check('缩到圆点档（关系文字只在圆点档才需要额外处理）', await zoomToDotShape(page),
+    await page.evaluate(() => document.querySelector('.network-node')?.dataset.nodeShape ?? 'null'));
+
+  const readDotLabels = () => page.evaluate(() => {
+    const labels = [...document.querySelectorAll('.network-edge-label-dot text')].map((text) => {
+      const box = text.getBoundingClientRect();
+      return { text: text.textContent, fontSize: Number.parseFloat(getComputedStyle(text).fontSize), x: box.x, y: box.y, w: box.width, h: box.height };
+    });
+    const dots = [...document.querySelectorAll('.network-dot')].map((dot) => {
+      const box = dot.getBoundingClientRect();
+      return { x: box.x + box.width / 2, y: box.y + box.height / 2, r: box.width / 2 };
+    });
+    const coversDot = labels.filter((label) => dots.some((dot) => {
+      const dx = Math.max(label.x - dot.x, 0, dot.x - (label.x + label.w));
+      const dy = Math.max(label.y - dot.y, 0, dot.y - (label.y + label.h));
+      return Math.hypot(dx, dy) < dot.r;
+    })).map((label) => label.text);
+    const overlaps = [];
+    for (let i = 0; i < labels.length; i += 1) {
+      for (let j = i + 1; j < labels.length; j += 1) {
+        const a = labels[i]; const b = labels[j];
+        if (a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h) overlaps.push(`${a.text}×${b.text}`);
+      }
+    }
+    return { labels, coversDot, overlaps, zoom: document.querySelector('.network-zoom-value')?.textContent?.trim() };
+  });
+
+  const dotLabels = await readDotLabels();
+  check('圆点档真的画出了关系文字', dotLabels.labels.length >= 1,
+    JSON.stringify({ count: dotLabels.labels.length, zoom: dotLabels.zoom }));
+  check('画出来的是关系名（不是空白或整段标题）',
+    dotLabels.labels.every((label) => label.text.trim().length >= 2 && label.text.length <= 12),
+    JSON.stringify([...new Set(dotLabels.labels.map((label) => label.text))].slice(0, 8)));
+  check('关系文字不压住圆点、也不互相压',
+    dotLabels.coversDot.length === 0 && dotLabels.overlaps.length === 0,
+    JSON.stringify({ coversDot: dotLabels.coversDot, overlaps: dotLabels.overlaps }));
+  // 屏幕恒定：再缩一格，字号与字形盒高度都不变。
+  await clickInAnimatedPage(page, 'button[aria-label="缩小"]', { scroll: false });
+  await page.waitForTimeout(500);
+  const smaller = await readDotLabels();
+  check('关系字号是屏幕恒定的（缩放后不变）',
+    dotLabels.labels.length > 0 && smaller.labels.length > 0
+      && smaller.labels.every((label) => label.fontSize === dotLabels.labels[0].fontSize)
+      && Math.abs(smaller.labels[0].h - dotLabels.labels[0].h) <= 1,
+    JSON.stringify({ before: dotLabels.labels[0], after: smaller.labels[0] }));
 
   check('弧线策略没有控制台错误', consoleErrors.length === 0, consoleErrors.join(' | '));
 } finally {

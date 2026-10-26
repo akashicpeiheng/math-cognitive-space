@@ -4,16 +4,19 @@ import { pathToFileURL } from 'node:url';
 import { resolve } from 'node:path';
 import { MCS_WEB_ROOT } from '../core/ontology.mjs';
 
-const { RELATION_COLOR, CONTRACT_MODE_COLOR, CONTRACT_UNKNOWN_COLOR } = await import(
+const { RELATION_COLOR, RELATION_COLOR_DARK, CONTRACT_MODE_COLOR, CONTRACT_MODE_COLOR_DARK, CONTRACT_UNKNOWN_COLOR, CONTRACT_UNKNOWN_COLOR_DARK, CONSTRUCT_COLOR, CONSTRUCT_COLOR_DARK } = await import(
   pathToFileURL(resolve(MCS_WEB_ROOT, 'web/src/labels.ts')).href
 );
-const { THEME } = await import(pathToFileURL(resolve(MCS_WEB_ROOT, 'web/src/theme.ts')).href);
+const { THEME, THEME_DARK } = await import(pathToFileURL(resolve(MCS_WEB_ROOT, 'web/src/theme.ts')).href);
+const { TOPIC_PALETTE, TOPIC_PALETTE_DARK, TOPIC_NONE_COLOR, TOPIC_NONE_COLOR_DARK, TOPIC_PALETTE_DOT_DARK, TOPIC_NONE_COLOR_DOT_DARK } = await import(
+  pathToFileURL(resolve(MCS_WEB_ROOT, 'web/src/network.ts')).href
+);
 const { TIER_STYLE, RELATION_WEIGHT, CONTRACT_MODE_WEIGHT, SEMANTIC_CONTRACT_MODES, edgeKindLabel, tierOf } = await import(
   pathToFileURL(resolve(MCS_WEB_ROOT, 'web/src/relation-visual.ts')).href
 );
 
 /**
- * 对比度与色觉的**机器校验**（2026-10 加，TODO A3-21）。
+ * 对比度与色觉的**机器校验**（2026-10 加，TODO A3-21；第一百零九轮扩到两套外观）。
  *
  * 第三十八、四十三轮留下的话是：「边的 15 色与拾取高亮的四层强调都没有做 WCAG 比值与色盲模拟。」
  * 这一套把那句话变成两条可以反复跑的断言：
@@ -78,36 +81,122 @@ const deltaE = (a, b) => {
 };
 
 /* ---------- 1. 对比度 ---------- */
-const TEXT_SURFACES = {
-  白底: THEME.surface,
-  浅紫底: THEME.surface2,
-  画布底: THEME.canvas,
-  暖底: '#fdf3ea',
-};
-const TEXT_TOKENS = { ink: THEME.ink, inkSoft: THEME.inkSoft, inkFaint: THEME.inkFaint };
 
-test('文字令牌在每个底色上都达到 WCAG AA（≥ 4.5:1）', () => {
-  const failures = [];
-  for (const [token, color] of Object.entries(TEXT_TOKENS)) {
-    for (const [surfaceName, surface] of Object.entries(TEXT_SURFACES)) {
-      const ratio = contrastRatio(color, surface);
-      if (ratio < 4.5) failures.push(`${token}(${color}) on ${surfaceName}: ${ratio.toFixed(2)}`);
-    }
-  }
-  assert.deepEqual(failures, [], '文字对比度不足 4.5:1：' + failures.join('；'));
-  // 弱化色不能靠「几乎和白底一样」来达标——它仍要明显弱于正文色。
-  assert.ok(contrastRatio(TEXT_TOKENS.ink, THEME.surface) > contrastRatio(TEXT_TOKENS.inkFaint, THEME.surface) * 1.8,
-    'inkFaint 与 ink 的对比度差距太小，弱化的层级看不出来了');
+/**
+ * 两套外观（第一百零九轮）。
+ *
+ * 判据**逐条相同**，只是把同一组断言在两套配色上各跑一遍：深色不是「另一套标准」，
+ * 而是同一套标准下的另一组取值。任何一条在深色下放宽，都等于承认深色版读不清。
+ *
+ * 浅色那一半与从前逐字等价（面值取 `THEME`），因此这条改动不会掩盖浅色的既有回归。
+ */
+const PALETTES = [
+  {
+    name: '浅色',
+    theme: THEME,
+    relation: RELATION_COLOR,
+    contract: CONTRACT_MODE_COLOR,
+    contractUnknown: CONTRACT_UNKNOWN_COLOR,
+    construct: CONSTRUCT_COLOR,
+    topicPalette: TOPIC_PALETTE,
+    topicNone: TOPIC_NONE_COLOR,
+  },
+  {
+    name: '深色',
+    theme: THEME_DARK,
+    relation: RELATION_COLOR_DARK,
+    contract: CONTRACT_MODE_COLOR_DARK,
+    contractUnknown: CONTRACT_UNKNOWN_COLOR_DARK,
+    construct: CONSTRUCT_COLOR_DARK,
+    topicPalette: TOPIC_PALETTE_DARK,
+    topicNone: TOPIC_NONE_COLOR_DARK,
+  },
+];
+
+/** 底色：纸面、卡片、浅卡、画布，以及「未连接」的暖底（节点卡片与徽标的常用底）。 */
+const surfacesOf = (theme) => ({
+  纸面: theme.surface,
+  卡片: theme.surface2,
+  画布: theme.canvas,
+  暖底: theme.nodeFillIsolated,
 });
 
-test('每条关系色/契约色对画布底都有 ≥ 3:1（WCAG 1.4.11 非文字对比度）', () => {
-  const all = { ...RELATION_COLOR, ...CONTRACT_MODE_COLOR, '<未知 mode>': CONTRACT_UNKNOWN_COLOR };
+for (const palette of PALETTES) {
+  const { theme } = palette;
+  const TEXT_SURFACES = surfacesOf(theme);
+  const TEXT_TOKENS = { ink: theme.ink, inkSoft: theme.inkSoft, inkFaint: theme.inkFaint };
+
+  test(`[${palette.name}] 文字令牌在每个底色上都达到 WCAG AA（≥ 4.5:1）`, () => {
+    const failures = [];
+    for (const [token, color] of Object.entries(TEXT_TOKENS)) {
+      for (const [surfaceName, surface] of Object.entries(TEXT_SURFACES)) {
+        const ratio = contrastRatio(color, surface);
+        if (ratio < 4.5) failures.push(`${token}(${color}) on ${surfaceName}: ${ratio.toFixed(2)}`);
+      }
+    }
+    assert.deepEqual(failures, [], '文字对比度不足 4.5:1：' + failures.join('；'));
+    // 弱化色不能靠「几乎和底一样」来达标——它仍要明显弱于正文色。
+    assert.ok(contrastRatio(TEXT_TOKENS.ink, theme.surface) > contrastRatio(TEXT_TOKENS.inkFaint, theme.surface) * 1.8,
+      'inkFaint 与 ink 的对比度差距太小，弱化的层级看不出来了');
+  });
+
+  test(`[${palette.name}] 每条关系色/契约色对画布底都有 ≥ 3:1（WCAG 1.4.11 非文字对比度）`, () => {
+    const all = { ...palette.relation, ...palette.contract, '<未知 mode>': palette.contractUnknown };
+    const failures = [];
+    for (const [name, color] of Object.entries(all)) {
+      const ratio = contrastRatio(color, theme.canvas);
+      if (ratio < 3) failures.push(`${name}(${color}): ${ratio.toFixed(2)}`);
+    }
+    assert.deepEqual(failures, [], '边色在画布上对比度不足 3:1：' + failures.join('；'));
+  });
+
+  /*
+   * 节点卡片与类型徽标：底色来自话题表（图谱上的卡片）与构造表（列表里的徽标），
+   * 上面压的是 `--ink`（卡片标题）与 `--ink-soft`（徽标文字）。深色下这两者都是浅色，
+   * 因此「底够不够深」必须逐格量，而不是只看整体印象。
+   * 这一条在深色下尤其要紧：浅色底 + 浅色字是暗色主题最典型的翻车方式。
+   */
+  test(`[${palette.name}] 话题底与构造底上的墨色都 ≥ 4.5:1`, () => {
+    const failures = [];
+    const surfaces = [
+      ...palette.topicPalette.map((color, index) => [`话题 ${index}`, color]),
+      ['未归入话题', palette.topicNone],
+      ...Object.entries(palette.construct).map(([construct, color]) => [`构造 ${construct}`, color]),
+    ];
+    for (const [name, surface] of surfaces) {
+      for (const [token, ink] of [['ink', theme.ink], ['inkSoft', theme.inkSoft]]) {
+        const ratio = contrastRatio(ink, surface);
+        if (ratio < 4.5) failures.push(`${token}(${ink}) on ${name}(${surface}): ${ratio.toFixed(2)}`);
+      }
+    }
+    assert.deepEqual(failures, [], '节点卡片/类型徽标的文字对比度不足：' + failures.join('；'));
+  });
+}
+
+/*
+ * 深色外观下的**圆点填充**（2026-10-17 加，用户要求「深色模式的时候节点颜色调亮」）。
+ *
+ * 圆点档下「填充就是记号本身」——没有文字压在上面，也没有卡片描边托着，深色下几乎看不见。
+ * 卡片底那张表受「墨色 ≥4.5:1」约束必须够深，两者在同一格颜色上互斥
+ * （深画布上可行亮度窗口只有千分之一宽，十个话题会塌成一个亮度），因此圆点单独一张表。
+ *
+ * 判据取 WCAG 1.4.11 的非文字对比度 3:1；实际表按 4:1 生成，留一档余量给抗锯齿与投影。
+ * 浅色外观不套这一条：浅色圆点靠近白填充 + 描边 + 投影在近白画布上成形，与卡片共用一张表。
+ */
+test('[深色] 圆点填充对画布都 ≥ 3:1（圆点上没有文字，只守可见性）', () => {
+  const canvas = THEME_DARK.canvas;
+  const fills = [
+    ...TOPIC_PALETTE_DOT_DARK.map((color, index) => [`话题 ${index}`, color]),
+    ['未归入话题', TOPIC_NONE_COLOR_DOT_DARK],
+  ];
   const failures = [];
-  for (const [name, color] of Object.entries(all)) {
-    const ratio = contrastRatio(color, THEME.canvas);
+  for (const [name, color] of fills) {
+    const ratio = contrastRatio(color, canvas);
     if (ratio < 3) failures.push(`${name}(${color}): ${ratio.toFixed(2)}`);
   }
-  assert.deepEqual(failures, [], '边色在画布上对比度不足 3:1：' + failures.join('；'));
+  assert.deepEqual(failures, [], '深色圆点在画布上看不清：' + failures.join('；'));
+  // 圆点表与卡片表必须逐格对应（同一话题两边取同一个下标），否则「同话题同色」会错位。
+  assert.equal(TOPIC_PALETTE_DOT_DARK.length, TOPIC_PALETTE_DARK.length, '圆点表与卡片表的话题数必须一致');
 });
 
 /* ---------- 2. 色觉 ---------- */
@@ -138,54 +227,59 @@ function hasRedundantChannel(tableName, leftKey, rightKey) {
 }
 
 const COLOR_TABLES = [
-  { name: '关系色', kind: 'relation', table: RELATION_COLOR },
-  { name: '契约色', kind: 'contract', table: CONTRACT_MODE_COLOR },
+  { name: '关系色', kind: 'relation', key: 'relation' },
+  { name: '契约色', kind: 'contract', key: 'contract' },
 ];
 
-for (const { name, kind, table } of COLOR_TABLES) {
-  test(`${name}在 deuteranopia / protanopia 下两两可分（色差 ≥ 12 或另有冗余通道）`, () => {
-    const keys = Object.keys(table);
-    const unresolved = [];
-    const viaRedundancy = [];
-    for (const simulation of ['deuteranopia', 'protanopia']) {
-      for (let i = 0; i < keys.length; i += 1) {
-        for (let j = i + 1; j < keys.length; j += 1) {
-          const distance = deltaE(simulateColor(table[keys[i]], simulation), simulateColor(table[keys[j]], simulation));
-          if (distance >= 12) continue;
-          const channel = hasRedundantChannel(kind, keys[i], keys[j]);
-          if (channel) viaRedundancy.push(`${simulation}:${keys[i]}|${keys[j]}=${distance.toFixed(1)}(${channel})`);
-          else unresolved.push(`${simulation}:${keys[i]}|${keys[j]} ΔE=${distance.toFixed(1)}`);
+for (const palette of PALETTES) {
+  for (const { name, kind, key } of COLOR_TABLES) {
+    const table = palette[key];
+    test(`[${palette.name}] ${name}在 deuteranopia / protanopia 下两两可分（色差 ≥ 12 或另有冗余通道）`, () => {
+      const keys = Object.keys(table);
+      const unresolved = [];
+      const viaRedundancy = [];
+      for (const simulation of ['deuteranopia', 'protanopia']) {
+        for (let i = 0; i < keys.length; i += 1) {
+          for (let j = i + 1; j < keys.length; j += 1) {
+            const distance = deltaE(simulateColor(table[keys[i]], simulation), simulateColor(table[keys[j]], simulation));
+            if (distance >= 12) continue;
+            const channel = hasRedundantChannel(kind, keys[i], keys[j]);
+            if (channel) viaRedundancy.push(`${simulation}:${keys[i]}|${keys[j]}=${distance.toFixed(1)}(${channel})`);
+            else unresolved.push(`${simulation}:${keys[i]}|${keys[j]} ΔE=${distance.toFixed(1)}`);
+          }
         }
       }
-    }
-    assert.deepEqual(unresolved, [],
-      `${name}在色盲模拟下既分不开、又没有冗余通道：${unresolved.join('；')}`
-      + `\n（只靠冗余通道的对子：${viaRedundancy.join('；') || '无'}）`);
-    // 正常视觉下必须**明显**可分：色相是「是什么关系」的主要通道。
-    for (let i = 0; i < keys.length; i += 1) {
-      for (let j = i + 1; j < keys.length; j += 1) {
-        const distance = deltaE(simulateColor(table[keys[i]], 'normal'), simulateColor(table[keys[j]], 'normal'));
-        assert.ok(distance >= 15, `${keys[i]} 与 ${keys[j]} 在正常视觉下也只差 ΔE=${distance.toFixed(1)}`);
+      assert.deepEqual(unresolved, [],
+        `${name}在色盲模拟下既分不开、又没有冗余通道：${unresolved.join('；')}`
+        + `\n（只靠冗余通道的对子：${viaRedundancy.join('；') || '无'}）`);
+      // 正常视觉下必须**明显**可分：色相是「是什么关系」的主要通道。
+      for (let i = 0; i < keys.length; i += 1) {
+        for (let j = i + 1; j < keys.length; j += 1) {
+          const distance = deltaE(simulateColor(table[keys[i]], 'normal'), simulateColor(table[keys[j]], 'normal'));
+          assert.ok(distance >= 15, `${keys[i]} 与 ${keys[j]} 在正常视觉下也只差 ΔE=${distance.toFixed(1)}`);
+        }
       }
-    }
-    console.log(`  · ${name}：仅靠冗余通道即可区分的对子 ${viaRedundancy.length} 组`
-      + (viaRedundancy.length ? `（${viaRedundancy.slice(0, 4).join('，')}${viaRedundancy.length > 4 ? ' …' : ''}）` : ''));
-  });
+      console.log(`  · [${palette.name}] ${name}：仅靠冗余通道即可区分的对子 ${viaRedundancy.length} 组`
+        + (viaRedundancy.length ? `（${viaRedundancy.slice(0, 4).join('，')}${viaRedundancy.length > 4 ? ' …' : ''}）` : ''));
+    });
+  }
 }
 
-test('两种色盲模拟下，代表「硬关系」的紫与代表「登记关联」的灰仍可分（层级不塌）', () => {
-  for (const simulation of ['deuteranopia', 'protanopia']) {
-    const hard = simulateColor(RELATION_COLOR.hardPrereq, simulation);
-    const soft = simulateColor(THEME.inkFaint, simulation);
-    assert.ok(deltaE(hard, soft) >= 12, `${simulation} 下硬前置与弱化文字色挤在一起`);
-  }
-  // 定义性契约（语义依赖）在两种模拟下都要与最弱的族边灰分开。
-  for (const simulation of ['deuteranopia', 'protanopia']) {
-    const definition = simulateColor(CONTRACT_MODE_COLOR.definition, simulation);
-    const neutral = simulateColor(CONTRACT_UNKNOWN_COLOR, simulation);
-    assert.ok(deltaE(definition, neutral) >= 12, `${simulation} 下 definition 与中性灰挤在一起`);
-  }
-});
+for (const palette of PALETTES) {
+  test(`[${palette.name}] 两种色盲模拟下，「硬关系」的紫与「登记关联」的灰仍可分（层级不塌）`, () => {
+    for (const simulation of ['deuteranopia', 'protanopia']) {
+      const hard = simulateColor(palette.relation.hardPrereq, simulation);
+      const soft = simulateColor(palette.theme.inkFaint, simulation);
+      assert.ok(deltaE(hard, soft) >= 12, `${simulation} 下硬前置与弱化文字色挤在一起`);
+    }
+    // 定义性契约（语义依赖）在两种模拟下都要与最弱的族边灰分开。
+    for (const simulation of ['deuteranopia', 'protanopia']) {
+      const definition = simulateColor(palette.contract.definition, simulation);
+      const neutral = simulateColor(palette.contractUnknown, simulation);
+      assert.ok(deltaE(definition, neutral) >= 12, `${simulation} 下 definition 与中性灰挤在一起`);
+    }
+  });
+}
 
 test('色觉断言的判据本身可用：模拟矩阵不改变灰度（白/黑/中灰保持中性）', () => {
   for (const simulation of ['deuteranopia', 'protanopia']) {
@@ -195,7 +289,9 @@ test('色觉断言的判据本身可用：模拟矩阵不改变灰度（白/黑/
     }
   }
   // 恒定色相检查：把 SEMANTIC_CONTRACT_MODES 用起来，避免表里出现未登记的 mode。
-  for (const mode of SEMANTIC_CONTRACT_MODES) {
-    assert.ok(CONTRACT_MODE_COLOR[mode], `语义 mode ${mode} 没有配色`);
+  for (const palette of PALETTES) {
+    for (const mode of SEMANTIC_CONTRACT_MODES) {
+      assert.ok(palette.contract[mode], `[${palette.name}] 语义 mode ${mode} 没有配色`);
+    }
   }
 });

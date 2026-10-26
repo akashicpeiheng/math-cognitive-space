@@ -1,0 +1,32 @@
+import assert from 'node:assert/strict';
+import {mkdirSync} from 'node:fs';
+import {startTestServer} from './helpers.mjs';
+import {CHROME_PATH,PLAYWRIGHT_SPECIFIER} from './browser-runtime.mjs';
+const app=await startTestServer();let browser;
+try{
+  const {chromium}=await import(PLAYWRIGHT_SPECIFIER);
+  browser=await chromium.launch({executablePath:CHROME_PATH??undefined,headless:true});
+  const page=await browser.newPage({viewport:{width:1440,height:1000}}),errors=[];
+  page.on('pageerror',e=>errors.push(e.message));
+  await page.goto(app.origin+'/objects');
+  await page.getByRole('heading',{name:'M · 五级形式结构'}).waitFor();
+  assert.equal(await page.locator('.content-library h3').count(),5);
+  await page.getByRole('link',{name:'右单位律下的左乘单射性',exact:true}).click();
+  await page.getByRole('heading',{name:'Lean 对应',exact:true}).waitFor();
+  assert(await page.locator('.content-library').innerText().then(t=>t.includes('MCS.Expected.rightUnitInjective')));
+  const readings=page.locator('section').filter({has:page.getByRole('heading',{name:'选择一种讲解'})});
+  assert.equal(await readings.getByRole('link').count(),3);
+  await readings.getByRole('link').nth(0).click();
+  await page.getByRole('heading',{name:'本篇引用的数学对象',exact:true}).waitFor();
+  await page.getByRole('link',{name:'右单位律下的左乘单射性',exact:true}).click();
+  await page.getByRole('heading',{name:'Lean 对应',exact:true}).waitFor();
+  mkdirSync('runtime/content-qa',{recursive:true});
+  await page.screenshot({path:'runtime/content-qa/object-desktop.png',fullPage:true});
+  await page.setViewportSize({width:390,height:844});
+  assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'narrow page overflows');
+  await page.screenshot({path:'runtime/content-qa/object-mobile.png',fullPage:true});
+  await page.goto(app.origin+'/en/objects');
+  await page.getByRole('heading',{name:'M · Five formal scales'}).waitFor();
+  assert.deepEqual(errors,[]);
+  console.log('passed: five scales → object → exact Lean target → reading → object; narrow and English navigation');
+}finally{await browser?.close();await app.cleanup();}

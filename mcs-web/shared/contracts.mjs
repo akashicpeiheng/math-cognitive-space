@@ -245,9 +245,39 @@ export function normalizeNetworkView(raw) {
   const camera = isPlainObject(payload.camera) && Number.isFinite(Number(payload.camera.scale))
     ? { x: Number(payload.camera.x) || 0, y: Number(payload.camera.y) || 0, scale: Number(payload.camera.scale) }
     : null;
+  /*
+   * 尺度视图状态（2026-10-17 加）：只有真的用了尺度视图才写入。
+   *
+   * 不校验 id 是否存在于当前尺度计划——契约层不依赖数据层；页面载入时会用
+   * `existingScaleIds` 过滤并提示。这里只做枚举/长度/类型边界，防止坏快照把页面打崩。
+   */
+  const scaleLevels = ['molecule', 'node', 'unit', 'topic'];
+  let scale = null;
+  if (isPlainObject(payload.scale)) {
+    const levels = Array.isArray(payload.scale.levels) ? payload.scale.levels.filter((id) => scaleLevels.includes(id)).slice(0, 4) : [];
+    const added = Array.isArray(payload.scale.added) ? payload.scale.added.filter((id) => typeof id === 'string' && id.length > 0).slice(0, 500) : [];
+    const split = Array.isArray(payload.scale.split) ? payload.scale.split.filter((id) => typeof id === 'string' && id.length > 0).slice(0, 500) : [];
+    const scalePositions = {};
+    for (const [id, point] of Object.entries(isPlainObject(payload.scale.positions) ? payload.scale.positions : {}).slice(0, 500)) {
+      if (!isPlainObject(point)) continue;
+      const x = Number(point.x); const y = Number(point.y);
+      if (!Number.isFinite(x) || !Number.isFinite(y)) continue;
+      scalePositions[id] = { x: Math.round(x * 100) / 100, y: Math.round(y * 100) / 100 };
+    }
+    if (levels.length > 0) {
+      scale = {
+        levels: [...new Set(levels)],
+        added: [...new Set(added)],
+        split: [...new Set(split)],
+        autoMerge: payload.scale.autoMerge !== false,
+        ...(Object.keys(scalePositions).length ? { positions: scalePositions } : {}),
+        version: typeof payload.scale.version === 'string' ? payload.scale.version.slice(0, 120) : null,
+      };
+    }
+  }
   return {
     name,
-    payload: { added: [...new Set(added)], families: [...new Set(families)], positions, camera, ...normalizeNetworkExtras(payload) },
+    payload: { added: [...new Set(added)], families: [...new Set(families)], positions, camera, ...(scale ? { scale } : {}), ...normalizeNetworkExtras(payload) },
     baseRevision: raw.baseRevision === undefined || raw.baseRevision === null ? null : requireInteger(raw.baseRevision, code, 'baseRevision 必须是非负整数', { min: 0 }),
   };
 }

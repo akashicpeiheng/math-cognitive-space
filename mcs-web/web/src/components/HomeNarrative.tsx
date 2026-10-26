@@ -25,6 +25,7 @@ import {
 import { useI18n } from '../i18n';
 import { SITE } from '../site';
 import { useMediaQuery } from '../useMediaQuery';
+import { useThemePalette } from '../theme-palette';
 import { StoryPortrait } from './StoryPortrait';
 
 const ACT_COUNT = HOME_NARRATIVE_ACTS.length;
@@ -1092,6 +1093,8 @@ interface HomeStorySceneProps {
 
 function HomeStorySceneBase({ scene, local, compact = false, className = '', shown = false }: HomeStorySceneProps) {
   const uid = useId().replace(/:/g, '');
+  /* 幕内插图的两条渐变按外观取色（第一百零九轮）：深色舞台上深紫几乎看不见。 */
+  const palette = useThemePalette();
   const t = clamp(local, 0, 1);
   const content = scene === 'theme'
     ? <ThemeScene t={t} uid={uid} />
@@ -1110,13 +1113,13 @@ function HomeStorySceneBase({ scene, local, compact = false, className = '', sho
       <svg viewBox="0 0 720 560" role="presentation" aria-hidden="true">
         <defs>
           <linearGradient id={`story-brand-${uid}`} x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor="#4c1d95" />
-            <stop offset="52%" stopColor="#7c3aed" />
-            <stop offset="100%" stopColor="#c026d3" />
+            <stop offset="0%" stopColor={palette.colors.storyBrandFrom} />
+            <stop offset="52%" stopColor={palette.colors.storyBrandVia} />
+            <stop offset="100%" stopColor={palette.colors.storyBrandTo} />
           </linearGradient>
           <linearGradient id={`story-cyan-${uid}`} x1="0" y1="1" x2="1" y2="0">
-            <stop offset="0%" stopColor="#0284c7" />
-            <stop offset="100%" stopColor="#67e8f9" />
+            <stop offset="0%" stopColor={palette.colors.storyCyanFrom} />
+            <stop offset="100%" stopColor={palette.colors.storyCyanTo} />
           </linearGradient>
           <filter id={`story-glow-${uid}`} x="-45%" y="-45%" width="190%" height="190%">
             <feGaussianBlur stdDeviation="5" result="blur" />

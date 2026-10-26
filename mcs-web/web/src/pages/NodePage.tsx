@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useMasterMode } from '../master-mode';
+import { MasterNodePage } from '../components/MasterNodePage';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { api, formatError, useApi } from '../api';
 import { useProfileContext } from '../state';
@@ -261,6 +263,11 @@ function fill(template: string, values: Record<string, string | number>): string
 }
 
 export function NodePage() {
+  const { isMaster } = useMasterMode();
+  return isMaster ? <MasterNodePage /> : <NormalNodePage />;
+}
+
+function NormalNodePage() {
   const { nodeId = '' } = useParams();
   /*
    * 深链里的节点 id 要做百分号解码，但它**不保证合法**：`/nodes/100%` 这种地址会让

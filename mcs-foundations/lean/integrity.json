@@ -11,14 +11,17 @@
     "replayModules": [
       "MCS.Definitions",
       "MCS.Expected",
+      "MCS.TopologyTargets",
       "MCS.Proofs.Group",
       "MCS.Proofs.Closure",
+      "MCS.Proofs.Topology",
       "MCS.Verified"
     ],
     "replayMode": "project-modules-sequential-single-process"
   },
   "inputs": {
-    "lean-group-injective": "e8ce12426ed1316fff6bd7eaca71c601492bcbd7a3553b50551d25dacf421fa3",
-    "lean-closure-8-8": "7edcd56250b14f0fc36f8afa0719bdc2b90664252b9fa68ab3051f0d33192a36"
+    "lean-group-injective": "3a9a09b43f3c7afd6e40a3fef7129a0ae93785039d52e89af3857e009d65f2db",
+    "lean-closure-8-8": "6420c35bcba29d53a295c5d23ca200344b765f3b914a67d3f1509d9a655e433f",
+    "lean-topology-dg": "51332aae37816eb65fb3dd6f029977ed54a5a48983ce7d609bca872dfba9e87c"
   }
 }

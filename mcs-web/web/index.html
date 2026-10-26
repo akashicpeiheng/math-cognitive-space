@@ -15,6 +15,14 @@
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/site.webmanifest" />
     <meta name="theme-color" content="#6d28d9" />
+    <!--
+      外观首帧引导（第一百零九轮）：必须在第一帧之前跑完，否则深色用户会看到一闪的浅色。
+      它是**外链的普通脚本**（非 module）而不是内联脚本——生产模式的安全头是
+      `script-src 'self'`（见 server/deployment.mjs），内联脚本会被浏览器拒绝执行。
+      与 `src/theme-mode.ts` 是同一套规则的两份实现，一致性由 tests/theme-tokens.test.mjs 断言。
+      位置在 theme-color 之后：脚本要改写那个 meta 的内容。
+    -->
+    <script src="/theme-boot.js"></script>
     <meta name="apple-mobile-web-app-title" content="MCS" />
     <meta name="application-name" content="数学认知空间 MCS" />
     <!--

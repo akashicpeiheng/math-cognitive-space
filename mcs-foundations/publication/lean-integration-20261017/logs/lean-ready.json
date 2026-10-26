@@ -1,0 +1,56 @@
+{
+  "ready": true,
+  "capabilities": {
+    "backend": "lean4",
+    "expectedVersion": "4.34.1",
+    "mathlibRevision": "d13f23b723b8a846827a245b89c10fc7d3f11612",
+    "registryVersion": "1",
+    "enabled": true,
+    "ready": true,
+    "reason": null,
+    "unavailableReason": null,
+    "registrations": [
+      {
+        "id": "lean-group-injective",
+        "evidenceId": "ev-lean-group-injective",
+        "sealed": true,
+        "inputSha256": "1bbdc2c221ab27928aabf5fe98e4c3afd29b8a38dd088ab4ebc6a1527368e369"
+      },
+      {
+        "id": "lean-closure-8-8",
+        "evidenceId": "ev-lean-closure-8-8",
+        "sealed": true,
+        "inputSha256": "d6702c8dcb350c6bdd5d78674f2870a75c3742161602531a23459f32e4461641"
+      }
+    ],
+    "policy": {
+      "version": "mcs-lean-check/2",
+      "allowedAxioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "module": "MCS.Verified",
+      "replayModules": [
+        "MCS.Definitions",
+        "MCS.Expected",
+        "MCS.Proofs.Group",
+        "MCS.Proofs.Closure",
+        "MCS.Verified"
+      ],
+      "replayMode": "project-modules-sequential-single-process"
+    }
+  },
+  "reports": [
+    {
+      "id": "lean-group-injective",
+      "freshness": "current",
+      "status": "passed"
+    },
+    {
+      "id": "lean-closure-8-8",
+      "freshness": "current",
+      "status": "passed"
+    }
+  ]
+}

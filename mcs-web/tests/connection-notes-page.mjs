@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { join } from 'node:path';
 import { mkdirSync } from 'node:fs';
-import { startTestServer, jsonCall } from './helpers.mjs';
+import { startTestServer, jsonCall, zoomToCardShape } from './helpers.mjs';
 import { PLAYWRIGHT_SPECIFIER, CHROME_PATH } from './browser-runtime.mjs';
 import { buildEdges, DEFAULT_FAMILIES, edgeFamilyLabel } from '../web/src/network.ts';
 import { connectionKeyOf } from '../web/src/connection-display.ts';
@@ -212,6 +212,12 @@ try {
   // A routed arc uses exactly the same hit curve, including weak dashed lines.
   await page.goto(server.origin + '/network?nodes=' + encodeURIComponent('top:homeomorphism,top:topological-manifold,top:space,top:differentiable-manifold,dg:smooth-atlas,top:coordinate-chart,dg:tangent-bundle,dg:tangent-vector-curve,top:atlas,top:compactness,top:continuous-map,dg:metric-space'), { waitUntil: 'networkidle' });
   await page.waitForTimeout(700);
+  /*
+   * 弧线只在方块档出现（2026-10-16 起方块 = 120% 以上，见 `network-workspace.ts` 的阈值表）：
+   * 路由器把卡片矩形当障碍，圆点档下不画弧。这条用例要测的是「弧线的命中区跟着曲线走」，
+   * 因此必须先放大到方块档，否则 `no exposed routed arc` 报的是「没有弧线」而不是命中区的问题。
+   */
+  assert.ok(await zoomToCardShape(page), 'zoomed to the card shape');
   const arcPoint = await page.evaluate(() => {
     for (const path of document.querySelectorAll('.network-edge.curved')) {
       const hit = path.parentElement.querySelector('.network-edge-hit');

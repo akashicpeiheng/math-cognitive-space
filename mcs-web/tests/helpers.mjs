@@ -118,6 +118,45 @@ export async function toggleInAnimatedPage(page, selector, { index = 0, expect }
   return after;
 }
 
+/**
+ * 把网络视图放大到**方块档**（`data-node-shape === 'card'`）。
+ *
+ * 2026-10-16 起形状规则是「只有视图很大（120% 以上）才是卡片，其余一律圆点」
+ * （`web/src/network-workspace.ts` 的阈值表）。好几条验收量的是**卡片档才有**的东西：
+ * 边上直接写名字（`showEdgeLabels = nodeShape === 'card'`）、绕开卡片的弧线
+ * （路由器按卡片矩形算障碍，圆点档下不画弧）。它们的样本视图自动适配后常在 60–90%，
+ * 也就是圆点档——不显式放大，这些断言测的就不是它们声称要测的东西。
+ *
+ * 用工具条上的「放大」而不是滚轮：按钮的步长确定（×1.25），到不到得了阈值可预期；
+ * 滚轮还要求指针真的落在画布上（HUD、悬浮框、图例栏都会挡住）。
+ * 返回是否到达；调用方应当把返回值写进断言，不要静默跳过。
+ */
+export async function zoomToCardShape(page, { maxSteps = 8 } = {}) {
+  const shape = () => page.evaluate(() => document.querySelector('.network-node')?.dataset.nodeShape ?? null);
+  for (let step = 0; step < maxSteps; step += 1) {
+    if (await shape() === 'card') return true;
+    await clickInAnimatedPage(page, 'button[aria-label="放大"]', { scroll: false });
+    await page.waitForTimeout(220);
+  }
+  return await shape() === 'card';
+}
+
+/**
+ * 把网络视图缩到**圆点档**（`data-node-shape === 'dot'`）——`zoomToCardShape` 的反向。
+ *
+ * 圆点档现在是绝大多数视图的常态（100% 以下），顺着它量东西的用例（圆点下方的名字、
+ * 圆点档的关系文字）应当显式缩到这个形状，而不是指望「自动适配的比例恰好很小」。
+ */
+export async function zoomToDotShape(page, { maxSteps = 8 } = {}) {
+  const shape = () => page.evaluate(() => document.querySelector('.network-node')?.dataset.nodeShape ?? null);
+  for (let step = 0; step < maxSteps; step += 1) {
+    if (await shape() === 'dot') return true;
+    await clickInAnimatedPage(page, 'button[aria-label="缩小"]', { scroll: false });
+    await page.waitForTimeout(220);
+  }
+  return await shape() === 'dot';
+}
+
 export async function startTestServer({ staticDir = resolve(MCS_WEB_ROOT, 'web', 'dist'), lean } = {}) {
   // Candidate frontend builds can be tested without replacing the running site's assets.
   staticDir = process.env.MCS_WEB_TEST_STATIC_DIR || staticDir;

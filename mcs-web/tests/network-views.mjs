@@ -92,7 +92,7 @@ try {
   }, profileId);
   check('保存进了学习者档案（E）', afterSave.found && afterSave.count >= 1, JSON.stringify({ count: afterSave.count, found: afterSave.found }));
   check('保存的内容含节点与相机', afterSave.nodes.length === 2 && afterSave.hasCamera, JSON.stringify({ nodes: afterSave.nodes, camera: afterSave.hasCamera }));
-  check('公共节点也保存 v2 来源、逐节点坐标和排法', afterSave.snapshot?.schema === 'mcs-network/2'
+  check('公共节点也保存 v2 来源、逐节点坐标和排法', afterSave.snapshot?.schema === 'mcs-network/3'
     && afterSave.snapshot.refs.length === 2 && afterSave.snapshot.refs.every(ref => ref.source === 'ontology')
     && afterSave.nodes.every(id => Number.isFinite(afterSave.snapshot.placements?.[id]?.x) && Number.isFinite(afterSave.snapshot.placements?.[id]?.y))
     && Boolean(afterSave.snapshot.layout?.mode), JSON.stringify(afterSave.snapshot));

@@ -1,0 +1,3583 @@
+{
+  "schema": "mcs-case-acceptance/1",
+  "id": "topology-dg",
+  "source": "https://chatgpt.com/share/6ad9dd33-d63c-83ee-a37f-70dc8dc7ff4d",
+  "core": [
+    {
+      "item": 1,
+      "title": "拓扑结构",
+      "object": "obj:tdg:topology",
+      "reading": "learn:tdg:topology",
+      "status": "migrated",
+      "humanReview": "pending"
+    },
+    {
+      "item": 2,
+      "title": "第一可数 C₁",
+      "object": "obj:tdg:c1",
+      "reading": "learn:tdg:c1",
+      "status": "migrated",
+      "humanReview": "pending"
+    },
+    {
+      "item": 3,
+      "title": "第二可数 C₂",
+      "object": "obj:tdg:c2",
+      "reading": "learn:tdg:c2",
+      "status": "migrated",
+      "humanReview": "pending"
+    },
+    {
+      "item": 4,
+      "title": "T₁ 空间",
+      "object": "obj:tdg:t1",
+      "reading": "learn:tdg:t1",
+      "status": "migrated",
+      "humanReview": "pending"
+    },
+    {
+      "item": 5,
+      "title": "Hausdorff／T₂ 空间",
+      "object": "obj:tdg:t2",
+      "reading": "learn:tdg:t2",
+      "status": "migrated",
+      "humanReview": "pending"
+    },
+    {
+      "item": 6,
+      "title": "正则 T₁／T₃ 空间",
+      "object": "obj:tdg:t3",
+      "reading": "learn:tdg:t3",
+      "status": "migrated",
+      "humanReview": "pending"
+    },
+    {
+      "item": 7,
+      "title": "正规 T₁／T₄ 空间",
+      "object": "obj:tdg:t4",
+      "reading": "learn:tdg:t4",
+      "status": "migrated",
+      "humanReview": "pending"
+    },
+    {
+      "item": 8,
+      "title": "紧空间",
+      "object": "obj:tdg:compact",
+      "reading": "learn:tdg:compact",
+      "status": "migrated",
+      "humanReview": "pending"
+    },
+    {
+      "item": 9,
+      "title": "仿紧空间",
+      "object": "obj:tdg:paracompact",
+      "reading": "learn:tdg:paracompact",
+      "status": "migrated",
+      "humanReview": "pending"
+    },
+    {
+      "item": 10,
+      "title": "σ 紧空间",
+      "object": "obj:tdg:sigma-compact",
+      "reading": "learn:tdg:sigma-compact",
+      "status": "migrated",
+      "humanReview": "pending"
+    },
+    {
+      "item": 11,
+      "title": "连通空间",
+      "object": "obj:tdg:connected",
+      "reading": "learn:tdg:connected",
+      "status": "migrated",
+      "humanReview": "pending"
+    },
+    {
+      "item": 12,
+      "title": "拓扑流形",
+      "object": "obj:tdg:top-manifold",
+      "reading": "learn:tdg:top-manifold",
+      "status": "migrated",
+      "humanReview": "pending"
+    },
+    {
+      "item": 13,
+      "title": "同胚",
+      "object": "obj:tdg:homeomorphism",
+      "reading": "learn:tdg:homeomorphism",
+      "status": "migrated",
+      "humanReview": "pending"
+    },
+    {
+      "item": 14,
+      "title": "光滑流形",
+      "object": "obj:tdg:smooth-manifold",
+      "reading": "learn:tdg:smooth-manifold",
+      "status": "migrated",
+      "humanReview": "pending"
+    },
+    {
+      "item": 15,
+      "title": "局部坐标图",
+      "object": "obj:tdg:chart",
+      "reading": "learn:tdg:chart",
+      "status": "migrated",
+      "humanReview": "pending"
+    },
+    {
+      "item": 16,
+      "title": "图册",
+      "object": "obj:tdg:atlas",
+      "reading": "learn:tdg:atlas",
+      "status": "migrated",
+      "humanReview": "pending"
+    },
+    {
+      "item": 17,
+      "title": "一元导数",
+      "object": "obj:tdg:derivative",
+      "reading": "learn:tdg:derivative",
+      "status": "migrated",
+      "humanReview": "pending",
+      "disambiguation": {
+        "additionalObject": "obj:tdg:frechet",
+        "reason": "来源中的导数有多元全导数含义；本次将一元导数和 Fréchet 全导数分开，偏导/方向导数路线不强制全可微"
+      }
+    },
+    {
+      "item": 18,
+      "title": "偏导数",
+      "object": "obj:tdg:partial",
+      "reading": "learn:tdg:partial",
+      "status": "migrated",
+      "humanReview": "pending"
+    },
+    {
+      "item": 19,
+      "title": "方向导数",
+      "object": "obj:tdg:directional",
+      "reading": "learn:tdg:directional",
+      "status": "migrated",
+      "humanReview": "pending"
+    },
+    {
+      "item": 20,
+      "title": "梯度",
+      "object": "obj:tdg:gradient",
+      "reading": "learn:tdg:gradient",
+      "status": "migrated",
+      "humanReview": "pending"
+    },
+    {
+      "item": 21,
+      "title": "旋度",
+      "object": "obj:tdg:curl",
+      "reading": "learn:tdg:curl",
+      "status": "migrated",
+      "humanReview": "pending"
+    },
+    {
+      "item": 22,
+      "title": "散度",
+      "object": "obj:tdg:divergence",
+      "reading": "learn:tdg:divergence",
+      "status": "migrated",
+      "humanReview": "pending"
+    },
+    {
+      "item": 23,
+      "title": "外微分 d",
+      "object": "obj:tdg:exterior",
+      "reading": "learn:tdg:exterior",
+      "status": "migrated",
+      "humanReview": "pending"
+    },
+    {
+      "item": 24,
+      "title": "微分形式",
+      "object": "obj:tdg:forms",
+      "reading": "learn:tdg:forms",
+      "status": "migrated",
+      "humanReview": "pending"
+    },
+    {
+      "item": 25,
+      "title": "切空间",
+      "object": "obj:tdg:tangent",
+      "reading": "learn:tdg:tangent",
+      "status": "migrated",
+      "humanReview": "pending"
+    },
+    {
+      "item": 26,
+      "title": "点态张量",
+      "object": "obj:tdg:tensor",
+      "reading": "learn:tdg:tensor",
+      "status": "migrated",
+      "humanReview": "pending"
+    },
+    {
+      "item": 27,
+      "title": "Lie 导数",
+      "object": "obj:tdg:lie",
+      "reading": "learn:tdg:lie",
+      "status": "migrated",
+      "humanReview": "pending"
+    }
+  ],
+  "relations": [
+    {
+      "id": "rel:tdg:analogy-atlas-forms",
+      "kind": "analogy",
+      "strength": null,
+      "sourceList": [
+        "source:6.4:6"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:analogy-c1-c2",
+      "kind": "analogy",
+      "strength": null,
+      "sourceList": [
+        "source:6.4:1"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:analogy-compact-paracompact",
+      "kind": "analogy",
+      "strength": null,
+      "sourceList": [
+        "source:6.4:2"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:analogy-compact-sigma-compact",
+      "kind": "analogy",
+      "strength": null,
+      "sourceList": [
+        "source:6.4:3"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:analogy-curl-divergence",
+      "kind": "analogy",
+      "strength": null,
+      "sourceList": [
+        "source:6.4:4"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:analogy-gradient-curl",
+      "kind": "analogy",
+      "strength": null,
+      "sourceList": [
+        "source:6.4:5"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:apply-atlas-smooth-atlas",
+      "kind": "application",
+      "strength": null,
+      "sourceList": [],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:apply-atlas-smooth-manifold",
+      "kind": "application",
+      "strength": null,
+      "sourceList": [
+        "source:6.3:3"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:apply-chart-partial",
+      "kind": "application",
+      "strength": null,
+      "sourceList": [
+        "source:6.3:2"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:apply-directional-gradient",
+      "kind": "application",
+      "strength": null,
+      "sourceList": [
+        "source:6.3:5"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:apply-exterior-cartan",
+      "kind": "application",
+      "strength": null,
+      "sourceList": [
+        "source:6.3:8"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:apply-exterior-curl",
+      "kind": "application",
+      "strength": null,
+      "sourceList": [
+        "source:6.3:7"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:apply-exterior-curl-grad",
+      "kind": "application",
+      "strength": null,
+      "sourceList": [],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:apply-exterior-div-curl",
+      "kind": "application",
+      "strength": null,
+      "sourceList": [],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:apply-exterior-divergence",
+      "kind": "application",
+      "strength": null,
+      "sourceList": [
+        "source:6.3:7"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:apply-exterior-gradient",
+      "kind": "application",
+      "strength": null,
+      "sourceList": [
+        "source:6.3:7"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:apply-gradient-divergence",
+      "kind": "application",
+      "strength": null,
+      "sourceList": [
+        "source:6.5.2"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:apply-homeomorphism-top-manifold",
+      "kind": "application",
+      "strength": null,
+      "sourceList": [],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:apply-lie-tensor-field",
+      "kind": "application",
+      "strength": null,
+      "sourceList": [
+        "source:6.3:9"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:apply-paracompact-smooth-manifold",
+      "kind": "application",
+      "strength": null,
+      "sourceList": [
+        "source:6.3:4"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:apply-partial-curl",
+      "kind": "application",
+      "strength": null,
+      "sourceList": [
+        "source:6.3:6"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:apply-partial-divergence",
+      "kind": "application",
+      "strength": null,
+      "sourceList": [
+        "source:6.3:6"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:deduce-cartan-exterior",
+      "kind": "deduction",
+      "strength": null,
+      "sourceList": [
+        "source:5:9"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:deduce-cartan-insertion",
+      "kind": "deduction",
+      "strength": null,
+      "sourceList": [
+        "source:5:9"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:deduce-cartan-lie",
+      "kind": "deduction",
+      "strength": null,
+      "sourceList": [
+        "source:5:9"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:deduce-compact-hausdorff-normal-compact",
+      "kind": "deduction",
+      "strength": null,
+      "sourceList": [
+        "source:5:2",
+        "source:7:1"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:deduce-compact-hausdorff-normal-t2",
+      "kind": "deduction",
+      "strength": null,
+      "sourceList": [
+        "source:5:2",
+        "source:7:1"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:deduce-compact-para-compact",
+      "kind": "deduction",
+      "strength": null,
+      "sourceList": [],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:deduce-compact-sigma-compact",
+      "kind": "deduction",
+      "strength": null,
+      "sourceList": [],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:deduce-continuous-connected-connected",
+      "kind": "deduction",
+      "strength": null,
+      "sourceList": [
+        "source:5:4"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:deduce-continuous-connected-continuous",
+      "kind": "deduction",
+      "strength": null,
+      "sourceList": [
+        "source:5:4"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:deduce-curl-grad-curl",
+      "kind": "deduction",
+      "strength": null,
+      "sourceList": [
+        "source:5:6"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:deduce-curl-grad-gradient",
+      "kind": "deduction",
+      "strength": null,
+      "sourceList": [
+        "source:5:6"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:deduce-d-squared-exterior",
+      "kind": "deduction",
+      "strength": null,
+      "sourceList": [
+        "source:5:5"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:deduce-direction-frechet-directional",
+      "kind": "deduction",
+      "strength": null,
+      "sourceList": [
+        "source:5:8",
+        "source:7:6"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:deduce-direction-frechet-frechet",
+      "kind": "deduction",
+      "strength": null,
+      "sourceList": [
+        "source:5:8",
+        "source:7:6"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:deduce-div-curl-curl",
+      "kind": "deduction",
+      "strength": null,
+      "sourceList": [
+        "source:5:7"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:deduce-div-curl-divergence",
+      "kind": "deduction",
+      "strength": null,
+      "sourceList": [
+        "source:5:7"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:deduce-formal-adjoint-divergence",
+      "kind": "deduction",
+      "strength": null,
+      "sourceList": [],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:deduce-formal-adjoint-gradient",
+      "kind": "deduction",
+      "strength": null,
+      "sourceList": [],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:deduce-four-three-t4",
+      "kind": "deduction",
+      "strength": null,
+      "sourceList": [],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:deduce-manifold-countability-local-euclidean",
+      "kind": "deduction",
+      "strength": null,
+      "sourceList": [
+        "source:7:3",
+        "source:7:4",
+        "source:7:5",
+        "source:2.2.equivalence"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:deduce-manifold-countability-paracompact",
+      "kind": "deduction",
+      "strength": null,
+      "sourceList": [
+        "source:7:3",
+        "source:7:4",
+        "source:7:5",
+        "source:2.2.equivalence"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:deduce-manifold-countability-t2",
+      "kind": "deduction",
+      "strength": null,
+      "sourceList": [
+        "source:7:3",
+        "source:7:4",
+        "source:7:5",
+        "source:2.2.equivalence"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:deduce-para-hausdorff-normal-paracompact",
+      "kind": "deduction",
+      "strength": null,
+      "sourceList": [
+        "source:5:3",
+        "source:7:2"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:deduce-para-hausdorff-normal-t2",
+      "kind": "deduction",
+      "strength": null,
+      "sourceList": [
+        "source:5:3",
+        "source:7:2"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:deduce-second-first-c2",
+      "kind": "deduction",
+      "strength": null,
+      "sourceList": [
+        "source:5:1"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:deduce-tangent-dual-cotangent",
+      "kind": "deduction",
+      "strength": null,
+      "sourceList": [],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:deduce-tangent-dual-tangent",
+      "kind": "deduction",
+      "strength": null,
+      "sourceList": [],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:deduce-three-two-t3",
+      "kind": "deduction",
+      "strength": null,
+      "sourceList": [],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:deduce-two-one-t2",
+      "kind": "deduction",
+      "strength": null,
+      "sourceList": [],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:derive-lie-scalar-directional",
+      "kind": "deduction",
+      "strength": null,
+      "sourceList": [],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:derive-lie-scalar-flow",
+      "kind": "deduction",
+      "strength": null,
+      "sourceList": [],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:derive-lie-scalar-lie",
+      "kind": "deduction",
+      "strength": null,
+      "sourceList": [],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:derive-lie-scalar-vector-field",
+      "kind": "deduction",
+      "strength": null,
+      "sourceList": [],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:derive-vector-realization-curl",
+      "kind": "deduction",
+      "strength": null,
+      "sourceList": [],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:derive-vector-realization-divergence",
+      "kind": "deduction",
+      "strength": null,
+      "sourceList": [],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:derive-vector-realization-exterior",
+      "kind": "deduction",
+      "strength": null,
+      "sourceList": [],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:derive-vector-realization-gradient",
+      "kind": "deduction",
+      "strength": null,
+      "sourceList": [],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:derive-vector-realization-hodge",
+      "kind": "deduction",
+      "strength": null,
+      "sourceList": [],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:derive-vector-realization-metric",
+      "kind": "deduction",
+      "strength": null,
+      "sourceList": [],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:hint-c1-c2",
+      "kind": "softPrereq",
+      "strength": null,
+      "sourceList": [
+        "source:6.1:1"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:hint-compact-paracompact",
+      "kind": "softPrereq",
+      "strength": null,
+      "sourceList": [
+        "source:6.1:5"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:hint-connected-top-manifold",
+      "kind": "softPrereq",
+      "strength": null,
+      "sourceList": [
+        "source:6.1:6"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:hint-curl-exterior",
+      "kind": "softPrereq",
+      "strength": null,
+      "sourceList": [
+        "source:6.1:11"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:hint-directional-gradient",
+      "kind": "softPrereq",
+      "strength": null,
+      "sourceList": [
+        "source:6.1:8"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:hint-divergence-exterior",
+      "kind": "softPrereq",
+      "strength": null,
+      "sourceList": [
+        "source:6.1:12"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:hint-gradient-forms",
+      "kind": "softPrereq",
+      "strength": null,
+      "sourceList": [
+        "source:6.1:10"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:hint-homeomorphism-smooth-manifold",
+      "kind": "softPrereq",
+      "strength": null,
+      "sourceList": [
+        "source:6.1:7"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:hint-partial-exterior",
+      "kind": "softPrereq",
+      "strength": null,
+      "sourceList": [
+        "source:6.1:9"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:hint-t1-t2",
+      "kind": "softPrereq",
+      "strength": null,
+      "sourceList": [
+        "source:6.1:2"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:hint-t2-t3",
+      "kind": "softPrereq",
+      "strength": null,
+      "sourceList": [
+        "source:6.1:3"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:hint-t3-t4",
+      "kind": "softPrereq",
+      "strength": null,
+      "sourceList": [
+        "source:6.1:4"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:hint-tensor-lie",
+      "kind": "softPrereq",
+      "strength": null,
+      "sourceList": [
+        "source:6.1:13"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:invariant-c1",
+      "kind": "application",
+      "strength": null,
+      "sourceList": [
+        "source:6.3:1"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:invariant-c2",
+      "kind": "application",
+      "strength": null,
+      "sourceList": [
+        "source:6.3:1"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:invariant-compact",
+      "kind": "application",
+      "strength": null,
+      "sourceList": [
+        "source:6.3:1"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:invariant-connected",
+      "kind": "application",
+      "strength": null,
+      "sourceList": [
+        "source:6.3:1"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:invariant-paracompact",
+      "kind": "application",
+      "strength": null,
+      "sourceList": [
+        "source:6.3:1"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:invariant-sigma-compact",
+      "kind": "application",
+      "strength": null,
+      "sourceList": [
+        "source:6.3:1"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:invariant-t1",
+      "kind": "application",
+      "strength": null,
+      "sourceList": [
+        "source:6.3:1"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:invariant-t2",
+      "kind": "application",
+      "strength": null,
+      "sourceList": [
+        "source:6.3:1"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:invariant-t3",
+      "kind": "application",
+      "strength": null,
+      "sourceList": [
+        "source:6.3:1"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:invariant-t4",
+      "kind": "application",
+      "strength": null,
+      "sourceList": [
+        "source:6.3:1"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:linear-dual",
+      "kind": "duality",
+      "strength": null,
+      "sourceList": [
+        "source:6.5.1"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:prereq-atlas-1-chart",
+      "kind": "hardPrereq",
+      "strength": null,
+      "sourceList": [
+        "source:3.1:9"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:prereq-c1-1-topology",
+      "kind": "hardPrereq",
+      "strength": null,
+      "sourceList": [
+        "source:3.1:1"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:prereq-c2-1-topology",
+      "kind": "hardPrereq",
+      "strength": null,
+      "sourceList": [
+        "source:3.1:1"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:prereq-cartan-1-exterior",
+      "kind": "hardPrereq",
+      "strength": null,
+      "sourceList": [],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:prereq-cartan-1-insertion",
+      "kind": "hardPrereq",
+      "strength": null,
+      "sourceList": [],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:prereq-cartan-1-lie",
+      "kind": "hardPrereq",
+      "strength": null,
+      "sourceList": [],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:prereq-chart-1-homeomorphism",
+      "kind": "hardPrereq",
+      "strength": null,
+      "sourceList": [
+        "source:3.1:8"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:prereq-chart-1-topology",
+      "kind": "hardPrereq",
+      "strength": null,
+      "sourceList": [
+        "source:3.1:8"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:prereq-compact-1-topology",
+      "kind": "hardPrereq",
+      "strength": null,
+      "sourceList": [
+        "source:3.1:3"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:prereq-compact-hausdorff-normal-1-compact",
+      "kind": "hardPrereq",
+      "strength": null,
+      "sourceList": [
+        "source:3.1:3"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:prereq-compact-hausdorff-normal-1-t2",
+      "kind": "hardPrereq",
+      "strength": null,
+      "sourceList": [
+        "source:3.1:3"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:prereq-compact-para-1-compact",
+      "kind": "hardPrereq",
+      "strength": null,
+      "sourceList": [
+        "source:3.1:3"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:prereq-compact-sigma-1-compact",
+      "kind": "hardPrereq",
+      "strength": null,
+      "sourceList": [
+        "source:3.1:3"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:prereq-connected-1-topology",
+      "kind": "hardPrereq",
+      "strength": null,
+      "sourceList": [
+        "source:3.1:6"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:prereq-continuous-1-topology",
+      "kind": "hardPrereq",
+      "strength": null,
+      "sourceList": [],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:prereq-continuous-connected-1-connected",
+      "kind": "hardPrereq",
+      "strength": null,
+      "sourceList": [],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:prereq-continuous-connected-1-continuous",
+      "kind": "hardPrereq",
+      "strength": null,
+      "sourceList": [],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:prereq-cotangent-1-tangent",
+      "kind": "hardPrereq",
+      "strength": null,
+      "sourceList": [],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:prereq-curl-1-partial",
+      "kind": "hardPrereq",
+      "strength": null,
+      "sourceList": [
+        "source:3.2:5"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:prereq-curl-grad-1-curl",
+      "kind": "hardPrereq",
+      "strength": null,
+      "sourceList": [
+        "source:3.2:5"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:prereq-curl-grad-1-gradient",
+      "kind": "hardPrereq",
+      "strength": null,
+      "sourceList": [
+        "source:3.2:5"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:prereq-d-squared-1-exterior",
+      "kind": "hardPrereq",
+      "strength": null,
+      "sourceList": [],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:prereq-direction-frechet-1-directional",
+      "kind": "hardPrereq",
+      "strength": null,
+      "sourceList": [],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:prereq-direction-frechet-1-frechet",
+      "kind": "hardPrereq",
+      "strength": null,
+      "sourceList": [],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:prereq-directional-1-derivative",
+      "kind": "hardPrereq",
+      "strength": null,
+      "sourceList": [
+        "source:3.2:2"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:prereq-div-curl-1-curl",
+      "kind": "hardPrereq",
+      "strength": null,
+      "sourceList": [],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:prereq-div-curl-1-divergence",
+      "kind": "hardPrereq",
+      "strength": null,
+      "sourceList": [],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:prereq-divergence-1-partial",
+      "kind": "hardPrereq",
+      "strength": null,
+      "sourceList": [
+        "source:3.2:6"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:prereq-exterior-1-forms",
+      "kind": "hardPrereq",
+      "strength": null,
+      "sourceList": [
+        "source:3.2:10"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:prereq-exterior-1-smooth-manifold",
+      "kind": "hardPrereq",
+      "strength": null,
+      "sourceList": [
+        "source:3.2:10"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:prereq-flow-1-frechet",
+      "kind": "hardPrereq",
+      "strength": null,
+      "sourceList": [],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:prereq-flow-1-vector-field",
+      "kind": "hardPrereq",
+      "strength": null,
+      "sourceList": [],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:prereq-formal-adjoint-1-divergence",
+      "kind": "hardPrereq",
+      "strength": null,
+      "sourceList": [],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:prereq-formal-adjoint-1-gradient",
+      "kind": "hardPrereq",
+      "strength": null,
+      "sourceList": [],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:prereq-forms-1-cotangent",
+      "kind": "hardPrereq",
+      "strength": null,
+      "sourceList": [
+        "source:3.2:9"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:prereq-forms-1-tensor-field",
+      "kind": "hardPrereq",
+      "strength": null,
+      "sourceList": [
+        "source:3.2:9"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:prereq-forms-2-cotangent",
+      "kind": "hardPrereq",
+      "strength": null,
+      "sourceList": [
+        "source:3.2:9"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:prereq-forms-2-smooth-manifold",
+      "kind": "hardPrereq",
+      "strength": null,
+      "sourceList": [
+        "source:3.2:9"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:prereq-four-three-1-t4",
+      "kind": "hardPrereq",
+      "strength": null,
+      "sourceList": [],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:prereq-frechet-1-derivative",
+      "kind": "hardPrereq",
+      "strength": null,
+      "sourceList": [],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:prereq-gradient-1-metric",
+      "kind": "hardPrereq",
+      "strength": null,
+      "sourceList": [
+        "source:3.2:3",
+        "source:3.2:4"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:prereq-gradient-1-partial",
+      "kind": "hardPrereq",
+      "strength": null,
+      "sourceList": [
+        "source:3.2:3",
+        "source:3.2:4"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:prereq-gradient-2-frechet",
+      "kind": "hardPrereq",
+      "strength": null,
+      "sourceList": [
+        "source:3.2:3",
+        "source:3.2:4"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:prereq-gradient-2-metric",
+      "kind": "hardPrereq",
+      "strength": null,
+      "sourceList": [
+        "source:3.2:3",
+        "source:3.2:4"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:prereq-hodge-1-forms",
+      "kind": "hardPrereq",
+      "strength": null,
+      "sourceList": [],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:prereq-hodge-1-metric",
+      "kind": "hardPrereq",
+      "strength": null,
+      "sourceList": [],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:prereq-homeomorphism-1-continuous",
+      "kind": "hardPrereq",
+      "strength": null,
+      "sourceList": [
+        "source:3.1:7"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:prereq-insertion-1-forms",
+      "kind": "hardPrereq",
+      "strength": null,
+      "sourceList": [],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:prereq-insertion-1-vector-field",
+      "kind": "hardPrereq",
+      "strength": null,
+      "sourceList": [],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:prereq-lie-1-flow",
+      "kind": "hardPrereq",
+      "strength": null,
+      "sourceList": [
+        "source:3.2:11",
+        "source:3.2:12",
+        "source:7:7"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:prereq-lie-1-tensor-field",
+      "kind": "hardPrereq",
+      "strength": null,
+      "sourceList": [
+        "source:3.2:11",
+        "source:3.2:12",
+        "source:7:7"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:prereq-lie-scalar-1-directional",
+      "kind": "hardPrereq",
+      "strength": null,
+      "sourceList": [
+        "source:3.2:11",
+        "source:3.2:12",
+        "source:7:7"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:prereq-lie-scalar-1-flow",
+      "kind": "hardPrereq",
+      "strength": null,
+      "sourceList": [
+        "source:3.2:11",
+        "source:3.2:12",
+        "source:7:7"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:prereq-lie-scalar-1-lie",
+      "kind": "hardPrereq",
+      "strength": null,
+      "sourceList": [
+        "source:3.2:11",
+        "source:3.2:12",
+        "source:7:7"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:prereq-lie-scalar-1-vector-field",
+      "kind": "hardPrereq",
+      "strength": null,
+      "sourceList": [
+        "source:3.2:11",
+        "source:3.2:12",
+        "source:7:7"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:prereq-local-euclidean-1-chart",
+      "kind": "hardPrereq",
+      "strength": null,
+      "sourceList": [],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:prereq-manifold-countability-1-local-euclidean",
+      "kind": "hardPrereq",
+      "strength": null,
+      "sourceList": [],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:prereq-manifold-countability-1-paracompact",
+      "kind": "hardPrereq",
+      "strength": null,
+      "sourceList": [],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:prereq-manifold-countability-1-t2",
+      "kind": "hardPrereq",
+      "strength": null,
+      "sourceList": [],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:prereq-para-hausdorff-normal-1-paracompact",
+      "kind": "hardPrereq",
+      "strength": null,
+      "sourceList": [],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:prereq-para-hausdorff-normal-1-t2",
+      "kind": "hardPrereq",
+      "strength": null,
+      "sourceList": [],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:prereq-paracompact-1-topology",
+      "kind": "hardPrereq",
+      "strength": null,
+      "sourceList": [
+        "source:3.1:4"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:prereq-partial-1-derivative",
+      "kind": "hardPrereq",
+      "strength": null,
+      "sourceList": [
+        "source:3.2:1"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:prereq-second-first-1-c2",
+      "kind": "hardPrereq",
+      "strength": null,
+      "sourceList": [],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:prereq-sigma-compact-1-compact",
+      "kind": "hardPrereq",
+      "strength": null,
+      "sourceList": [
+        "source:3.1:5"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:prereq-sigma-compact-1-topology",
+      "kind": "hardPrereq",
+      "strength": null,
+      "sourceList": [
+        "source:3.1:5"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:prereq-smooth-atlas-1-atlas",
+      "kind": "hardPrereq",
+      "strength": null,
+      "sourceList": [],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:prereq-smooth-atlas-1-frechet",
+      "kind": "hardPrereq",
+      "strength": null,
+      "sourceList": [],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:prereq-smooth-manifold-1-smooth-atlas",
+      "kind": "hardPrereq",
+      "strength": null,
+      "sourceList": [
+        "source:3.1:11"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:prereq-smooth-manifold-1-top-manifold",
+      "kind": "hardPrereq",
+      "strength": null,
+      "sourceList": [
+        "source:3.1:11"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:prereq-t1-1-topology",
+      "kind": "hardPrereq",
+      "strength": null,
+      "sourceList": [
+        "source:3.1:2"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:prereq-t2-1-topology",
+      "kind": "hardPrereq",
+      "strength": null,
+      "sourceList": [
+        "source:3.1:2"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:prereq-t3-1-t1",
+      "kind": "hardPrereq",
+      "strength": null,
+      "sourceList": [
+        "source:3.1:2"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:prereq-t3-1-topology",
+      "kind": "hardPrereq",
+      "strength": null,
+      "sourceList": [
+        "source:3.1:2"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:prereq-t4-1-t1",
+      "kind": "hardPrereq",
+      "strength": null,
+      "sourceList": [
+        "source:3.1:2"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:prereq-t4-1-topology",
+      "kind": "hardPrereq",
+      "strength": null,
+      "sourceList": [
+        "source:3.1:2"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:prereq-tangent-1-derivative",
+      "kind": "hardPrereq",
+      "strength": null,
+      "sourceList": [
+        "source:3.2:7"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:prereq-tangent-1-smooth-manifold",
+      "kind": "hardPrereq",
+      "strength": null,
+      "sourceList": [
+        "source:3.2:7"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:prereq-tangent-dual-1-cotangent",
+      "kind": "hardPrereq",
+      "strength": null,
+      "sourceList": [
+        "source:3.2:7"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:prereq-tangent-dual-1-tangent",
+      "kind": "hardPrereq",
+      "strength": null,
+      "sourceList": [
+        "source:3.2:7"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:prereq-tensor-field-1-smooth-manifold",
+      "kind": "hardPrereq",
+      "strength": null,
+      "sourceList": [
+        "source:3.2:8"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:prereq-tensor-field-1-tangent",
+      "kind": "hardPrereq",
+      "strength": null,
+      "sourceList": [
+        "source:3.2:8"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:prereq-tensor-field-1-tensor",
+      "kind": "hardPrereq",
+      "strength": null,
+      "sourceList": [
+        "source:3.2:8"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:prereq-three-two-1-t3",
+      "kind": "hardPrereq",
+      "strength": null,
+      "sourceList": [],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:prereq-top-manifold-1-c2",
+      "kind": "hardPrereq",
+      "strength": null,
+      "sourceList": [
+        "source:3.1:10"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:prereq-top-manifold-1-local-euclidean",
+      "kind": "hardPrereq",
+      "strength": null,
+      "sourceList": [
+        "source:3.1:10"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:prereq-top-manifold-1-t2",
+      "kind": "hardPrereq",
+      "strength": null,
+      "sourceList": [
+        "source:3.1:10"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:prereq-two-one-1-t2",
+      "kind": "hardPrereq",
+      "strength": null,
+      "sourceList": [],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:prereq-vector-field-1-tangent",
+      "kind": "hardPrereq",
+      "strength": null,
+      "sourceList": [],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:prereq-vector-realization-1-curl",
+      "kind": "hardPrereq",
+      "strength": null,
+      "sourceList": [],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:prereq-vector-realization-1-divergence",
+      "kind": "hardPrereq",
+      "strength": null,
+      "sourceList": [],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:prereq-vector-realization-1-exterior",
+      "kind": "hardPrereq",
+      "strength": null,
+      "sourceList": [],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:prereq-vector-realization-1-gradient",
+      "kind": "hardPrereq",
+      "strength": null,
+      "sourceList": [],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:prereq-vector-realization-1-hodge",
+      "kind": "hardPrereq",
+      "strength": null,
+      "sourceList": [],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:prereq-vector-realization-1-metric",
+      "kind": "hardPrereq",
+      "strength": null,
+      "sourceList": [],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:realize-curl",
+      "kind": "scaling",
+      "strength": "hard",
+      "sourceList": [
+        "source:4.2:2",
+        "source:7:8"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:realize-divergence",
+      "kind": "scaling",
+      "strength": "hard",
+      "sourceList": [
+        "source:4.2:3",
+        "source:7:8"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:realize-gradient",
+      "kind": "scaling",
+      "strength": "hard",
+      "sourceList": [
+        "source:4.2:1",
+        "source:7:8"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:scalar-lie-restriction",
+      "kind": "scaling",
+      "strength": "hard",
+      "sourceList": [
+        "source:4.4"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:scale-c1-topology",
+      "kind": "scaling",
+      "strength": "hard",
+      "sourceList": [
+        "source:2.1:7"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:scale-c2-c1",
+      "kind": "scaling",
+      "strength": "hard",
+      "sourceList": [
+        "source:2.1:1"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:scale-chart-homeomorphism",
+      "kind": "scaling",
+      "strength": "hard",
+      "sourceList": [
+        "source:2.2:9"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:scale-compact-paracompact",
+      "kind": "scaling",
+      "strength": "hard",
+      "sourceList": [
+        "source:2.1:6"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:scale-compact-sigma-compact",
+      "kind": "scaling",
+      "strength": "hard",
+      "sourceList": [
+        "source:2.1:5"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:scale-connected-topology",
+      "kind": "scaling",
+      "strength": "hard",
+      "sourceList": [
+        "source:2.1:11"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:scale-forms-tensor-field",
+      "kind": "scaling",
+      "strength": "hard",
+      "sourceList": [
+        "source:4.3"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:scale-paracompact-topology",
+      "kind": "scaling",
+      "strength": "hard",
+      "sourceList": [
+        "source:2.1:10"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:scale-partial-directional",
+      "kind": "scaling",
+      "strength": "hard",
+      "sourceList": [
+        "source:4.1"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:scale-sigma-compact-topology",
+      "kind": "scaling",
+      "strength": "hard",
+      "sourceList": [
+        "source:2.1:9"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:scale-smooth-manifold-top-manifold",
+      "kind": "scaling",
+      "strength": "hard",
+      "sourceList": [
+        "source:2.2:8"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:scale-t1-topology",
+      "kind": "scaling",
+      "strength": "hard",
+      "sourceList": [
+        "source:2.1:8"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:scale-t2-t1",
+      "kind": "scaling",
+      "strength": "hard",
+      "sourceList": [
+        "source:2.1:4"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:scale-t3-t2",
+      "kind": "scaling",
+      "strength": "hard",
+      "sourceList": [
+        "source:2.1:3"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:scale-t4-t3",
+      "kind": "scaling",
+      "strength": "hard",
+      "sourceList": [
+        "source:2.1:2"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:scale-top-manifold-c1",
+      "kind": "scaling",
+      "strength": "hard",
+      "sourceList": [
+        "source:2.2:4"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:scale-top-manifold-c2",
+      "kind": "scaling",
+      "strength": "hard",
+      "sourceList": [
+        "source:2.2:3"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:scale-top-manifold-paracompact",
+      "kind": "scaling",
+      "strength": "hard",
+      "sourceList": [
+        "source:2.2:6"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:scale-top-manifold-sigma-compact",
+      "kind": "scaling",
+      "strength": "hard",
+      "sourceList": [
+        "source:2.2:5"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:scale-top-manifold-t2",
+      "kind": "scaling",
+      "strength": "hard",
+      "sourceList": [
+        "source:2.2:2"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:scale-top-manifold-t4",
+      "kind": "scaling",
+      "strength": "hard",
+      "sourceList": [
+        "source:2.2:7"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:scale-top-manifold-topology",
+      "kind": "scaling",
+      "strength": "hard",
+      "sourceList": [
+        "source:2.2:1"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:soft-scale-curl",
+      "kind": "scaling",
+      "strength": "soft",
+      "sourceList": [
+        "source:6.2:3"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:soft-scale-derivative",
+      "kind": "scaling",
+      "strength": "soft",
+      "sourceList": [
+        "source:6.2:1"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:soft-scale-divergence",
+      "kind": "scaling",
+      "strength": "soft",
+      "sourceList": [
+        "source:6.2:4"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "rel:tdg:soft-scale-gradient",
+      "kind": "scaling",
+      "strength": "soft",
+      "sourceList": [
+        "source:6.2:2"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    }
+  ],
+  "corrections": [
+    {
+      "claim": "拓扑学 = 拓扑结构",
+      "reason": "学科组织与形式结构不同，前者不进入形式对象的同一身份",
+      "status": "corrected-or-excluded"
+    },
+    {
+      "claim": "方向导数 ⇒ 全可微",
+      "reason": "错误：所有方向导数存在不保证线性且一致的 Fréchet 近似",
+      "status": "corrected-or-excluded"
+    },
+    {
+      "claim": "切空间是一般张量的硬先修",
+      "reason": "只在流形张量场路线使用，抽象向量空间张量独立",
+      "status": "corrected-or-excluded"
+    },
+    {
+      "claim": "连通 ⇒ 紧／紧 ⇒ 连通",
+      "reason": "实线连通不紧；两点离散空间紧不连通",
+      "status": "corrected-or-excluded"
+    },
+    {
+      "claim": "点态余切空间 = 全局一形式",
+      "reason": "前者为纤维，后者为随点光滑的截面",
+      "status": "corrected-or-excluded"
+    },
+    {
+      "claim": "梯度与负散度是线性对偶",
+      "reason": "修正为紧支撑条件下的形式伴随",
+      "status": "corrected-or-excluded"
+    },
+    {
+      "claim": "旋度与散度对偶",
+      "reason": "无指定线性对偶构造，改为类比与复形关系",
+      "status": "corrected-or-excluded"
+    },
+    {
+      "claim": "局部欧氏 + 仿紧 ⇒ 第二可数",
+      "reason": "缺少可数分支条件；不可数个 R 的不交并为反例",
+      "status": "corrected-or-excluded"
+    },
+    {
+      "claim": "一般张量场包含于点态张量",
+      "reason": "类型不同，不登记未经基点映射的集合包含",
+      "status": "corrected-or-excluded"
+    },
+    {
+      "claim": "光滑流形 ⇒ 全局流存在",
+      "reason": "缺少完备性，只有局部流",
+      "status": "corrected-or-excluded"
+    },
+    {
+      "claim": "梯度坐标路线只需偏导存在",
+      "reason": "可微假设仍需在定义与应用条件中检查；偏导用于计算而非自动保证可微",
+      "status": "corrected-or-excluded"
+    }
+  ],
+  "verification": {
+    "structure": "passed: FINITE; types, scale, exact references and hashes",
+    "mathematics": "正文证明或引用逐项见源",
+    "kernelReplay": "passed: 7 independent targets; allowed-axiom audit and kernel replay; Lean 4.34.1 / fixed mathlib",
+    "humanCorrespondence": "pending"
+  },
+  "sourceDigest": "fdd97581f52023c6308161123c4cfc618e1e78078fd79d6d4f42ef20f643bd0e",
+  "sourceRelations": [
+    {
+      "id": "source:2.1:1",
+      "section": "2.1",
+      "sourceLine": 62,
+      "sourceLabel": "\\(C_2\\to C_1\\)",
+      "relationIds": [
+        "rel:tdg:scale-c2-c1"
+      ],
+      "status": "represented",
+      "note": "以精确 M/L 端点追踪；定义链可能通过辅助接口实现。",
+      "humanReview": "pending"
+    },
+    {
+      "id": "source:2.1:2",
+      "section": "2.1",
+      "sourceLine": 63,
+      "sourceLabel": "\\(T_4\\to T_3\\)",
+      "relationIds": [
+        "rel:tdg:scale-t4-t3"
+      ],
+      "status": "represented",
+      "note": "以精确 M/L 端点追踪；定义链可能通过辅助接口实现。",
+      "humanReview": "pending"
+    },
+    {
+      "id": "source:2.1:3",
+      "section": "2.1",
+      "sourceLine": 64,
+      "sourceLabel": "\\(T_3\\to T_2\\)",
+      "relationIds": [
+        "rel:tdg:scale-t3-t2"
+      ],
+      "status": "represented",
+      "note": "以精确 M/L 端点追踪；定义链可能通过辅助接口实现。",
+      "humanReview": "pending"
+    },
+    {
+      "id": "source:2.1:4",
+      "section": "2.1",
+      "sourceLine": 65,
+      "sourceLabel": "\\(T_2\\to T_1\\)",
+      "relationIds": [
+        "rel:tdg:scale-t2-t1"
+      ],
+      "status": "represented",
+      "note": "以精确 M/L 端点追踪；定义链可能通过辅助接口实现。",
+      "humanReview": "pending"
+    },
+    {
+      "id": "source:2.1:5",
+      "section": "2.1",
+      "sourceLine": 66,
+      "sourceLabel": "紧 → σ-紧",
+      "relationIds": [
+        "rel:tdg:scale-compact-sigma-compact"
+      ],
+      "status": "represented",
+      "note": "以精确 M/L 端点追踪；定义链可能通过辅助接口实现。",
+      "humanReview": "pending"
+    },
+    {
+      "id": "source:2.1:6",
+      "section": "2.1",
+      "sourceLine": 67,
+      "sourceLabel": "紧 → 仿紧",
+      "relationIds": [
+        "rel:tdg:scale-compact-paracompact"
+      ],
+      "status": "represented",
+      "note": "以精确 M/L 端点追踪；定义链可能通过辅助接口实现。",
+      "humanReview": "pending"
+    },
+    {
+      "id": "source:2.1:7",
+      "section": "2.1",
+      "sourceLine": 68,
+      "sourceLabel": "\\(C_1\\to\\) 拓扑空间",
+      "relationIds": [
+        "rel:tdg:scale-c1-topology"
+      ],
+      "status": "represented",
+      "note": "以精确 M/L 端点追踪；定义链可能通过辅助接口实现。",
+      "humanReview": "pending"
+    },
+    {
+      "id": "source:2.1:8",
+      "section": "2.1",
+      "sourceLine": 69,
+      "sourceLabel": "\\(T_1\\to\\) 拓扑空间",
+      "relationIds": [
+        "rel:tdg:scale-t1-topology"
+      ],
+      "status": "represented",
+      "note": "以精确 M/L 端点追踪；定义链可能通过辅助接口实现。",
+      "humanReview": "pending"
+    },
+    {
+      "id": "source:2.1:9",
+      "section": "2.1",
+      "sourceLine": 70,
+      "sourceLabel": "σ-紧 → 拓扑空间",
+      "relationIds": [
+        "rel:tdg:scale-sigma-compact-topology"
+      ],
+      "status": "represented",
+      "note": "以精确 M/L 端点追踪；定义链可能通过辅助接口实现。",
+      "humanReview": "pending"
+    },
+    {
+      "id": "source:2.1:10",
+      "section": "2.1",
+      "sourceLine": 71,
+      "sourceLabel": "仿紧 → 拓扑空间",
+      "relationIds": [
+        "rel:tdg:scale-paracompact-topology"
+      ],
+      "status": "represented",
+      "note": "以精确 M/L 端点追踪；定义链可能通过辅助接口实现。",
+      "humanReview": "pending"
+    },
+    {
+      "id": "source:2.1:11",
+      "section": "2.1",
+      "sourceLine": 72,
+      "sourceLabel": "连通 → 拓扑空间",
+      "relationIds": [
+        "rel:tdg:scale-connected-topology"
+      ],
+      "status": "represented",
+      "note": "以精确 M/L 端点追踪；定义链可能通过辅助接口实现。",
+      "humanReview": "pending"
+    },
+    {
+      "id": "source:2.2:1",
+      "section": "2.2",
+      "sourceLine": 103,
+      "sourceLabel": "拓扑流形 → 拓扑空间",
+      "relationIds": [
+        "rel:tdg:scale-top-manifold-topology"
+      ],
+      "status": "represented",
+      "note": "以精确 M/L 端点追踪；定义链可能通过辅助接口实现。",
+      "humanReview": "pending"
+    },
+    {
+      "id": "source:2.2:2",
+      "section": "2.2",
+      "sourceLine": 104,
+      "sourceLabel": "拓扑流形 → \\(T_2\\) 空间",
+      "relationIds": [
+        "rel:tdg:scale-top-manifold-t2"
+      ],
+      "status": "represented",
+      "note": "以精确 M/L 端点追踪；定义链可能通过辅助接口实现。",
+      "humanReview": "pending"
+    },
+    {
+      "id": "source:2.2:3",
+      "section": "2.2",
+      "sourceLine": 105,
+      "sourceLabel": "拓扑流形 → \\(C_2\\) 空间",
+      "relationIds": [
+        "rel:tdg:scale-top-manifold-c2"
+      ],
+      "status": "represented",
+      "note": "以精确 M/L 端点追踪；定义链可能通过辅助接口实现。",
+      "humanReview": "pending"
+    },
+    {
+      "id": "source:2.2:4",
+      "section": "2.2",
+      "sourceLine": 106,
+      "sourceLabel": "拓扑流形 → \\(C_1\\) 空间",
+      "relationIds": [
+        "rel:tdg:scale-top-manifold-c1"
+      ],
+      "status": "represented",
+      "note": "以精确 M/L 端点追踪；定义链可能通过辅助接口实现。",
+      "humanReview": "pending"
+    },
+    {
+      "id": "source:2.2:5",
+      "section": "2.2",
+      "sourceLine": 107,
+      "sourceLabel": "拓扑流形 → σ-紧空间",
+      "relationIds": [
+        "rel:tdg:scale-top-manifold-sigma-compact"
+      ],
+      "status": "represented",
+      "note": "以精确 M/L 端点追踪；定义链可能通过辅助接口实现。",
+      "humanReview": "pending"
+    },
+    {
+      "id": "source:2.2:6",
+      "section": "2.2",
+      "sourceLine": 108,
+      "sourceLabel": "拓扑流形 → 仿紧空间",
+      "relationIds": [
+        "rel:tdg:scale-top-manifold-paracompact"
+      ],
+      "status": "represented",
+      "note": "以精确 M/L 端点追踪；定义链可能通过辅助接口实现。",
+      "humanReview": "pending"
+    },
+    {
+      "id": "source:2.2:7",
+      "section": "2.2",
+      "sourceLine": 109,
+      "sourceLabel": "拓扑流形 → \\(T_4\\) 空间",
+      "relationIds": [
+        "rel:tdg:scale-top-manifold-t4"
+      ],
+      "status": "represented",
+      "note": "以精确 M/L 端点追踪；定义链可能通过辅助接口实现。",
+      "humanReview": "pending"
+    },
+    {
+      "id": "source:2.2:8",
+      "section": "2.2",
+      "sourceLine": 110,
+      "sourceLabel": "光滑流形 → 拓扑流形",
+      "relationIds": [
+        "rel:tdg:scale-smooth-manifold-top-manifold"
+      ],
+      "status": "represented",
+      "note": "以精确 M/L 端点追踪；定义链可能通过辅助接口实现。",
+      "humanReview": "pending"
+    },
+    {
+      "id": "source:2.2:9",
+      "section": "2.2",
+      "sourceLine": 111,
+      "sourceLabel": "图卡 → 同胚",
+      "relationIds": [
+        "rel:tdg:scale-chart-homeomorphism"
+      ],
+      "status": "represented",
+      "note": "以精确 M/L 端点追踪；定义链可能通过辅助接口实现。",
+      "humanReview": "pending"
+    },
+    {
+      "id": "source:3.1:1",
+      "section": "3.1",
+      "sourceLine": 154,
+      "sourceLabel": "\\(C_1,C_2\\)",
+      "relationIds": [
+        "rel:tdg:prereq-c1-1-topology",
+        "rel:tdg:prereq-c2-1-topology"
+      ],
+      "status": "represented",
+      "note": "以精确 M/L 端点追踪；定义链可能通过辅助接口实现。",
+      "humanReview": "pending"
+    },
+    {
+      "id": "source:3.1:2",
+      "section": "3.1",
+      "sourceLine": 155,
+      "sourceLabel": "\\(T_1,T_2,T_3,T_4\\)",
+      "relationIds": [
+        "rel:tdg:prereq-t1-1-topology",
+        "rel:tdg:prereq-t2-1-topology",
+        "rel:tdg:prereq-t3-1-t1",
+        "rel:tdg:prereq-t3-1-topology",
+        "rel:tdg:prereq-t4-1-t1",
+        "rel:tdg:prereq-t4-1-topology"
+      ],
+      "status": "represented",
+      "note": "以精确 M/L 端点追踪；定义链可能通过辅助接口实现。",
+      "humanReview": "pending"
+    },
+    {
+      "id": "source:3.1:3",
+      "section": "3.1",
+      "sourceLine": 156,
+      "sourceLabel": "紧",
+      "relationIds": [
+        "rel:tdg:prereq-compact-1-topology",
+        "rel:tdg:prereq-compact-hausdorff-normal-1-compact",
+        "rel:tdg:prereq-compact-hausdorff-normal-1-t2",
+        "rel:tdg:prereq-compact-para-1-compact",
+        "rel:tdg:prereq-compact-sigma-1-compact"
+      ],
+      "status": "represented",
+      "note": "以精确 M/L 端点追踪；定义链可能通过辅助接口实现。",
+      "humanReview": "pending"
+    },
+    {
+      "id": "source:3.1:4",
+      "section": "3.1",
+      "sourceLine": 157,
+      "sourceLabel": "仿紧",
+      "relationIds": [
+        "rel:tdg:prereq-paracompact-1-topology"
+      ],
+      "status": "represented",
+      "note": "以精确 M/L 端点追踪；定义链可能通过辅助接口实现。",
+      "humanReview": "pending"
+    },
+    {
+      "id": "source:3.1:5",
+      "section": "3.1",
+      "sourceLine": 158,
+      "sourceLabel": "σ-紧",
+      "relationIds": [
+        "rel:tdg:prereq-sigma-compact-1-compact",
+        "rel:tdg:prereq-sigma-compact-1-topology"
+      ],
+      "status": "represented",
+      "note": "以精确 M/L 端点追踪；定义链可能通过辅助接口实现。",
+      "humanReview": "pending"
+    },
+    {
+      "id": "source:3.1:6",
+      "section": "3.1",
+      "sourceLine": 159,
+      "sourceLabel": "连通",
+      "relationIds": [
+        "rel:tdg:prereq-connected-1-topology"
+      ],
+      "status": "represented",
+      "note": "以精确 M/L 端点追踪；定义链可能通过辅助接口实现。",
+      "humanReview": "pending"
+    },
+    {
+      "id": "source:3.1:7",
+      "section": "3.1",
+      "sourceLine": 160,
+      "sourceLabel": "同胚",
+      "relationIds": [
+        "rel:tdg:prereq-homeomorphism-1-continuous"
+      ],
+      "status": "represented",
+      "note": "以精确 M/L 端点追踪；定义链可能通过辅助接口实现。",
+      "humanReview": "pending"
+    },
+    {
+      "id": "source:3.1:8",
+      "section": "3.1",
+      "sourceLine": 161,
+      "sourceLabel": "图卡",
+      "relationIds": [
+        "rel:tdg:prereq-chart-1-homeomorphism",
+        "rel:tdg:prereq-chart-1-topology"
+      ],
+      "status": "represented",
+      "note": "以精确 M/L 端点追踪；定义链可能通过辅助接口实现。",
+      "humanReview": "pending"
+    },
+    {
+      "id": "source:3.1:9",
+      "section": "3.1",
+      "sourceLine": 162,
+      "sourceLabel": "图册",
+      "relationIds": [
+        "rel:tdg:prereq-atlas-1-chart"
+      ],
+      "status": "represented",
+      "note": "以精确 M/L 端点追踪；定义链可能通过辅助接口实现。",
+      "humanReview": "pending"
+    },
+    {
+      "id": "source:3.1:10",
+      "section": "3.1",
+      "sourceLine": 163,
+      "sourceLabel": "拓扑流形",
+      "relationIds": [
+        "rel:tdg:prereq-top-manifold-1-c2",
+        "rel:tdg:prereq-top-manifold-1-local-euclidean",
+        "rel:tdg:prereq-top-manifold-1-t2"
+      ],
+      "status": "represented",
+      "note": "以精确 M/L 端点追踪；定义链可能通过辅助接口实现。",
+      "humanReview": "pending"
+    },
+    {
+      "id": "source:3.1:11",
+      "section": "3.1",
+      "sourceLine": 164,
+      "sourceLabel": "光滑流形",
+      "relationIds": [
+        "rel:tdg:prereq-smooth-manifold-1-smooth-atlas",
+        "rel:tdg:prereq-smooth-manifold-1-top-manifold"
+      ],
+      "status": "represented",
+      "note": "以精确 M/L 端点追踪；定义链可能通过辅助接口实现。",
+      "humanReview": "pending"
+    },
+    {
+      "id": "source:3.2:1",
+      "section": "3.2",
+      "sourceLine": 178,
+      "sourceLabel": "偏导数",
+      "relationIds": [
+        "rel:tdg:prereq-partial-1-derivative"
+      ],
+      "status": "disambiguated-route",
+      "note": "一元导数/全导数、抽象张量/张量场及标量/一般场分别登记；硬先修只绑定所选路线。",
+      "humanReview": "pending"
+    },
+    {
+      "id": "source:3.2:2",
+      "section": "3.2",
+      "sourceLine": 179,
+      "sourceLabel": "方向导数",
+      "relationIds": [
+        "rel:tdg:prereq-directional-1-derivative"
+      ],
+      "status": "disambiguated-route",
+      "note": "一元导数/全导数、抽象张量/张量场及标量/一般场分别登记；硬先修只绑定所选路线。",
+      "humanReview": "pending"
+    },
+    {
+      "id": "source:3.2:3",
+      "section": "3.2",
+      "sourceLine": 180,
+      "sourceLabel": "梯度",
+      "relationIds": [
+        "rel:tdg:prereq-gradient-1-metric",
+        "rel:tdg:prereq-gradient-1-partial",
+        "rel:tdg:prereq-gradient-2-frechet",
+        "rel:tdg:prereq-gradient-2-metric"
+      ],
+      "status": "disambiguated-route",
+      "note": "一元导数/全导数、抽象张量/张量场及标量/一般场分别登记；硬先修只绑定所选路线。",
+      "humanReview": "pending"
+    },
+    {
+      "id": "source:3.2:4",
+      "section": "3.2",
+      "sourceLine": 181,
+      "sourceLabel": "梯度",
+      "relationIds": [
+        "rel:tdg:prereq-gradient-1-metric",
+        "rel:tdg:prereq-gradient-1-partial",
+        "rel:tdg:prereq-gradient-2-frechet",
+        "rel:tdg:prereq-gradient-2-metric"
+      ],
+      "status": "disambiguated-route",
+      "note": "一元导数/全导数、抽象张量/张量场及标量/一般场分别登记；硬先修只绑定所选路线。",
+      "humanReview": "pending"
+    },
+    {
+      "id": "source:3.2:5",
+      "section": "3.2",
+      "sourceLine": 182,
+      "sourceLabel": "旋度",
+      "relationIds": [
+        "rel:tdg:prereq-curl-1-partial",
+        "rel:tdg:prereq-curl-grad-1-curl",
+        "rel:tdg:prereq-curl-grad-1-gradient"
+      ],
+      "status": "disambiguated-route",
+      "note": "一元导数/全导数、抽象张量/张量场及标量/一般场分别登记；硬先修只绑定所选路线。",
+      "humanReview": "pending"
+    },
+    {
+      "id": "source:3.2:6",
+      "section": "3.2",
+      "sourceLine": 183,
+      "sourceLabel": "散度",
+      "relationIds": [
+        "rel:tdg:prereq-divergence-1-partial"
+      ],
+      "status": "disambiguated-route",
+      "note": "一元导数/全导数、抽象张量/张量场及标量/一般场分别登记；硬先修只绑定所选路线。",
+      "humanReview": "pending"
+    },
+    {
+      "id": "source:3.2:7",
+      "section": "3.2",
+      "sourceLine": 184,
+      "sourceLabel": "切空间",
+      "relationIds": [
+        "rel:tdg:prereq-tangent-1-derivative",
+        "rel:tdg:prereq-tangent-1-smooth-manifold",
+        "rel:tdg:prereq-tangent-dual-1-cotangent",
+        "rel:tdg:prereq-tangent-dual-1-tangent"
+      ],
+      "status": "disambiguated-route",
+      "note": "一元导数/全导数、抽象张量/张量场及标量/一般场分别登记；硬先修只绑定所选路线。",
+      "humanReview": "pending"
+    },
+    {
+      "id": "source:3.2:8",
+      "section": "3.2",
+      "sourceLine": 185,
+      "sourceLabel": "张量",
+      "relationIds": [
+        "rel:tdg:prereq-tensor-field-1-smooth-manifold",
+        "rel:tdg:prereq-tensor-field-1-tangent",
+        "rel:tdg:prereq-tensor-field-1-tensor"
+      ],
+      "status": "disambiguated-route",
+      "note": "一元导数/全导数、抽象张量/张量场及标量/一般场分别登记；硬先修只绑定所选路线。",
+      "humanReview": "pending"
+    },
+    {
+      "id": "source:3.2:9",
+      "section": "3.2",
+      "sourceLine": 186,
+      "sourceLabel": "微分形式",
+      "relationIds": [
+        "rel:tdg:prereq-forms-1-cotangent",
+        "rel:tdg:prereq-forms-1-tensor-field",
+        "rel:tdg:prereq-forms-2-cotangent",
+        "rel:tdg:prereq-forms-2-smooth-manifold"
+      ],
+      "status": "disambiguated-route",
+      "note": "一元导数/全导数、抽象张量/张量场及标量/一般场分别登记；硬先修只绑定所选路线。",
+      "humanReview": "pending"
+    },
+    {
+      "id": "source:3.2:10",
+      "section": "3.2",
+      "sourceLine": 187,
+      "sourceLabel": "外微分",
+      "relationIds": [
+        "rel:tdg:prereq-exterior-1-forms",
+        "rel:tdg:prereq-exterior-1-smooth-manifold"
+      ],
+      "status": "disambiguated-route",
+      "note": "一元导数/全导数、抽象张量/张量场及标量/一般场分别登记；硬先修只绑定所选路线。",
+      "humanReview": "pending"
+    },
+    {
+      "id": "source:3.2:11",
+      "section": "3.2",
+      "sourceLine": 188,
+      "sourceLabel": "李导数",
+      "relationIds": [
+        "rel:tdg:prereq-lie-1-flow",
+        "rel:tdg:prereq-lie-1-tensor-field",
+        "rel:tdg:prereq-lie-scalar-1-directional",
+        "rel:tdg:prereq-lie-scalar-1-flow",
+        "rel:tdg:prereq-lie-scalar-1-lie",
+        "rel:tdg:prereq-lie-scalar-1-vector-field"
+      ],
+      "status": "disambiguated-route",
+      "note": "一元导数/全导数、抽象张量/张量场及标量/一般场分别登记；硬先修只绑定所选路线。",
+      "humanReview": "pending"
+    },
+    {
+      "id": "source:3.2:12",
+      "section": "3.2",
+      "sourceLine": 189,
+      "sourceLabel": "李导数",
+      "relationIds": [
+        "rel:tdg:prereq-lie-1-flow",
+        "rel:tdg:prereq-lie-1-tensor-field",
+        "rel:tdg:prereq-lie-scalar-1-directional",
+        "rel:tdg:prereq-lie-scalar-1-flow",
+        "rel:tdg:prereq-lie-scalar-1-lie",
+        "rel:tdg:prereq-lie-scalar-1-vector-field"
+      ],
+      "status": "disambiguated-route",
+      "note": "一元导数/全导数、抽象张量/张量场及标量/一般场分别登记；硬先修只绑定所选路线。",
+      "humanReview": "pending"
+    },
+    {
+      "id": "source:4.2:1",
+      "section": "4.2",
+      "sourceLine": 257,
+      "sourceLabel": "梯度 → 外微分",
+      "relationIds": [
+        "rel:tdg:realize-gradient"
+      ],
+      "status": "represented",
+      "note": "以精确 M/L 端点追踪；定义链可能通过辅助接口实现。",
+      "humanReview": "pending"
+    },
+    {
+      "id": "source:4.2:2",
+      "section": "4.2",
+      "sourceLine": 258,
+      "sourceLabel": "旋度 → 外微分",
+      "relationIds": [
+        "rel:tdg:realize-curl"
+      ],
+      "status": "represented",
+      "note": "以精确 M/L 端点追踪；定义链可能通过辅助接口实现。",
+      "humanReview": "pending"
+    },
+    {
+      "id": "source:4.2:3",
+      "section": "4.2",
+      "sourceLine": 259,
+      "sourceLabel": "散度 → 外微分",
+      "relationIds": [
+        "rel:tdg:realize-divergence"
+      ],
+      "status": "represented",
+      "note": "以精确 M/L 端点追踪；定义链可能通过辅助接口实现。",
+      "humanReview": "pending"
+    },
+    {
+      "id": "source:5:1",
+      "section": "5",
+      "sourceLine": 322,
+      "sourceLabel": "第二可数蕴含第一可数",
+      "relationIds": [
+        "rel:tdg:deduce-second-first-c2"
+      ],
+      "status": "represented",
+      "note": "以精确 M/L 端点追踪；定义链可能通过辅助接口实现。",
+      "humanReview": "pending"
+    },
+    {
+      "id": "source:5:2",
+      "section": "5",
+      "sourceLine": 323,
+      "sourceLabel": "紧 Hausdorff 推出正规",
+      "relationIds": [
+        "rel:tdg:deduce-compact-hausdorff-normal-compact",
+        "rel:tdg:deduce-compact-hausdorff-normal-t2"
+      ],
+      "status": "represented",
+      "note": "以精确 M/L 端点追踪；定义链可能通过辅助接口实现。",
+      "humanReview": "pending"
+    },
+    {
+      "id": "source:5:3",
+      "section": "5",
+      "sourceLine": 324,
+      "sourceLabel": "仿紧 Hausdorff 推出正规",
+      "relationIds": [
+        "rel:tdg:deduce-para-hausdorff-normal-paracompact",
+        "rel:tdg:deduce-para-hausdorff-normal-t2"
+      ],
+      "status": "represented",
+      "note": "以精确 M/L 端点追踪；定义链可能通过辅助接口实现。",
+      "humanReview": "pending"
+    },
+    {
+      "id": "source:5:4",
+      "section": "5",
+      "sourceLine": 325,
+      "sourceLabel": "连通空间的连续像连通",
+      "relationIds": [
+        "rel:tdg:deduce-continuous-connected-connected",
+        "rel:tdg:deduce-continuous-connected-continuous"
+      ],
+      "status": "represented",
+      "note": "以精确 M/L 端点追踪；定义链可能通过辅助接口实现。",
+      "humanReview": "pending"
+    },
+    {
+      "id": "source:5:5",
+      "section": "5",
+      "sourceLine": 326,
+      "sourceLabel": "外微分的平方为零",
+      "relationIds": [
+        "rel:tdg:deduce-d-squared-exterior"
+      ],
+      "status": "represented",
+      "note": "以精确 M/L 端点追踪；定义链可能通过辅助接口实现。",
+      "humanReview": "pending"
+    },
+    {
+      "id": "source:5:6",
+      "section": "5",
+      "sourceLine": 327,
+      "sourceLabel": "梯度场无旋",
+      "relationIds": [
+        "rel:tdg:deduce-curl-grad-curl",
+        "rel:tdg:deduce-curl-grad-gradient"
+      ],
+      "status": "represented",
+      "note": "以精确 M/L 端点追踪；定义链可能通过辅助接口实现。",
+      "humanReview": "pending"
+    },
+    {
+      "id": "source:5:7",
+      "section": "5",
+      "sourceLine": 328,
+      "sourceLabel": "旋度场无散",
+      "relationIds": [
+        "rel:tdg:deduce-div-curl-curl",
+        "rel:tdg:deduce-div-curl-divergence"
+      ],
+      "status": "represented",
+      "note": "以精确 M/L 端点追踪；定义链可能通过辅助接口实现。",
+      "humanReview": "pending"
+    },
+    {
+      "id": "source:5:8",
+      "section": "5",
+      "sourceLine": 329,
+      "sourceLabel": "方向导数的全导数表示",
+      "relationIds": [
+        "rel:tdg:deduce-direction-frechet-directional",
+        "rel:tdg:deduce-direction-frechet-frechet"
+      ],
+      "status": "represented",
+      "note": "以精确 M/L 端点追踪；定义链可能通过辅助接口实现。",
+      "humanReview": "pending"
+    },
+    {
+      "id": "source:5:9",
+      "section": "5",
+      "sourceLine": 330,
+      "sourceLabel": "Cartan 公式",
+      "relationIds": [
+        "rel:tdg:deduce-cartan-exterior",
+        "rel:tdg:deduce-cartan-insertion",
+        "rel:tdg:deduce-cartan-lie"
+      ],
+      "status": "represented",
+      "note": "以精确 M/L 端点追踪；定义链可能通过辅助接口实现。",
+      "humanReview": "pending"
+    },
+    {
+      "id": "source:6.1:1",
+      "section": "6.1",
+      "sourceLine": 367,
+      "sourceLabel": "\\(C_1\\to C_2\\)",
+      "relationIds": [
+        "rel:tdg:hint-c1-c2"
+      ],
+      "status": "represented",
+      "note": "以精确 M/L 端点追踪；定义链可能通过辅助接口实现。",
+      "humanReview": "pending"
+    },
+    {
+      "id": "source:6.1:2",
+      "section": "6.1",
+      "sourceLine": 368,
+      "sourceLabel": "\\(T_1\\to T_2\\)",
+      "relationIds": [
+        "rel:tdg:hint-t1-t2"
+      ],
+      "status": "represented",
+      "note": "以精确 M/L 端点追踪；定义链可能通过辅助接口实现。",
+      "humanReview": "pending"
+    },
+    {
+      "id": "source:6.1:3",
+      "section": "6.1",
+      "sourceLine": 369,
+      "sourceLabel": "\\(T_2\\to T_3\\)",
+      "relationIds": [
+        "rel:tdg:hint-t2-t3"
+      ],
+      "status": "represented",
+      "note": "以精确 M/L 端点追踪；定义链可能通过辅助接口实现。",
+      "humanReview": "pending"
+    },
+    {
+      "id": "source:6.1:4",
+      "section": "6.1",
+      "sourceLine": 370,
+      "sourceLabel": "\\(T_3\\to T_4\\)",
+      "relationIds": [
+        "rel:tdg:hint-t3-t4"
+      ],
+      "status": "represented",
+      "note": "以精确 M/L 端点追踪；定义链可能通过辅助接口实现。",
+      "humanReview": "pending"
+    },
+    {
+      "id": "source:6.1:5",
+      "section": "6.1",
+      "sourceLine": 371,
+      "sourceLabel": "紧 → 仿紧",
+      "relationIds": [
+        "rel:tdg:hint-compact-paracompact"
+      ],
+      "status": "represented",
+      "note": "以精确 M/L 端点追踪；定义链可能通过辅助接口实现。",
+      "humanReview": "pending"
+    },
+    {
+      "id": "source:6.1:6",
+      "section": "6.1",
+      "sourceLine": 372,
+      "sourceLabel": "连通 → 拓扑流形",
+      "relationIds": [
+        "rel:tdg:hint-connected-top-manifold"
+      ],
+      "status": "represented",
+      "note": "以精确 M/L 端点追踪；定义链可能通过辅助接口实现。",
+      "humanReview": "pending"
+    },
+    {
+      "id": "source:6.1:7",
+      "section": "6.1",
+      "sourceLine": 373,
+      "sourceLabel": "同胚 → 光滑流形",
+      "relationIds": [
+        "rel:tdg:hint-homeomorphism-smooth-manifold"
+      ],
+      "status": "represented",
+      "note": "以精确 M/L 端点追踪；定义链可能通过辅助接口实现。",
+      "humanReview": "pending"
+    },
+    {
+      "id": "source:6.1:8",
+      "section": "6.1",
+      "sourceLine": 374,
+      "sourceLabel": "方向导数 → 梯度",
+      "relationIds": [
+        "rel:tdg:hint-directional-gradient"
+      ],
+      "status": "represented",
+      "note": "以精确 M/L 端点追踪；定义链可能通过辅助接口实现。",
+      "humanReview": "pending"
+    },
+    {
+      "id": "source:6.1:9",
+      "section": "6.1",
+      "sourceLine": 375,
+      "sourceLabel": "偏导数 → 外微分",
+      "relationIds": [
+        "rel:tdg:hint-partial-exterior"
+      ],
+      "status": "represented",
+      "note": "以精确 M/L 端点追踪；定义链可能通过辅助接口实现。",
+      "humanReview": "pending"
+    },
+    {
+      "id": "source:6.1:10",
+      "section": "6.1",
+      "sourceLine": 376,
+      "sourceLabel": "梯度 → 微分形式",
+      "relationIds": [
+        "rel:tdg:hint-gradient-forms"
+      ],
+      "status": "represented",
+      "note": "以精确 M/L 端点追踪；定义链可能通过辅助接口实现。",
+      "humanReview": "pending"
+    },
+    {
+      "id": "source:6.1:11",
+      "section": "6.1",
+      "sourceLine": 377,
+      "sourceLabel": "旋度 → 外微分",
+      "relationIds": [
+        "rel:tdg:hint-curl-exterior"
+      ],
+      "status": "represented",
+      "note": "以精确 M/L 端点追踪；定义链可能通过辅助接口实现。",
+      "humanReview": "pending"
+    },
+    {
+      "id": "source:6.1:12",
+      "section": "6.1",
+      "sourceLine": 378,
+      "sourceLabel": "散度 → 外微分",
+      "relationIds": [
+        "rel:tdg:hint-divergence-exterior"
+      ],
+      "status": "represented",
+      "note": "以精确 M/L 端点追踪；定义链可能通过辅助接口实现。",
+      "humanReview": "pending"
+    },
+    {
+      "id": "source:6.1:13",
+      "section": "6.1",
+      "sourceLine": 379,
+      "sourceLabel": "张量 → 李导数",
+      "relationIds": [
+        "rel:tdg:hint-tensor-lie"
+      ],
+      "status": "represented",
+      "note": "以精确 M/L 端点追踪；定义链可能通过辅助接口实现。",
+      "humanReview": "pending"
+    },
+    {
+      "id": "source:6.2:1",
+      "section": "6.2",
+      "sourceLine": 389,
+      "sourceLabel": "导数 → 李导数",
+      "relationIds": [
+        "rel:tdg:soft-scale-derivative"
+      ],
+      "status": "represented",
+      "note": "以精确 M/L 端点追踪；定义链可能通过辅助接口实现。",
+      "humanReview": "pending"
+    },
+    {
+      "id": "source:6.2:2",
+      "section": "6.2",
+      "sourceLine": 390,
+      "sourceLabel": "梯度 → 外微分",
+      "relationIds": [
+        "rel:tdg:soft-scale-gradient"
+      ],
+      "status": "represented",
+      "note": "以精确 M/L 端点追踪；定义链可能通过辅助接口实现。",
+      "humanReview": "pending"
+    },
+    {
+      "id": "source:6.2:3",
+      "section": "6.2",
+      "sourceLine": 391,
+      "sourceLabel": "旋度 → 外微分",
+      "relationIds": [
+        "rel:tdg:soft-scale-curl"
+      ],
+      "status": "represented",
+      "note": "以精确 M/L 端点追踪；定义链可能通过辅助接口实现。",
+      "humanReview": "pending"
+    },
+    {
+      "id": "source:6.2:4",
+      "section": "6.2",
+      "sourceLine": 392,
+      "sourceLabel": "散度 → 外微分",
+      "relationIds": [
+        "rel:tdg:soft-scale-divergence"
+      ],
+      "status": "represented",
+      "note": "以精确 M/L 端点追踪；定义链可能通过辅助接口实现。",
+      "humanReview": "pending"
+    },
+    {
+      "id": "source:6.3:1",
+      "section": "6.3",
+      "sourceLine": 400,
+      "sourceLabel": "同胚 → 拓扑性质",
+      "relationIds": [
+        "rel:tdg:invariant-c1",
+        "rel:tdg:invariant-c2",
+        "rel:tdg:invariant-compact",
+        "rel:tdg:invariant-connected",
+        "rel:tdg:invariant-paracompact",
+        "rel:tdg:invariant-sigma-compact",
+        "rel:tdg:invariant-t1",
+        "rel:tdg:invariant-t2",
+        "rel:tdg:invariant-t3",
+        "rel:tdg:invariant-t4"
+      ],
+      "status": "represented",
+      "note": "以精确 M/L 端点追踪；定义链可能通过辅助接口实现。",
+      "humanReview": "pending"
+    },
+    {
+      "id": "source:6.3:2",
+      "section": "6.3",
+      "sourceLine": 401,
+      "sourceLabel": "图卡 → 流形计算",
+      "relationIds": [
+        "rel:tdg:apply-chart-partial"
+      ],
+      "status": "represented",
+      "note": "以精确 M/L 端点追踪；定义链可能通过辅助接口实现。",
+      "humanReview": "pending"
+    },
+    {
+      "id": "source:6.3:3",
+      "section": "6.3",
+      "sourceLine": 402,
+      "sourceLabel": "图册 → 光滑流形",
+      "relationIds": [
+        "rel:tdg:apply-atlas-smooth-manifold"
+      ],
+      "status": "represented",
+      "note": "以精确 M/L 端点追踪；定义链可能通过辅助接口实现。",
+      "humanReview": "pending"
+    },
+    {
+      "id": "source:6.3:4",
+      "section": "6.3",
+      "sourceLine": 403,
+      "sourceLabel": "仿紧 → 光滑流形上的整体构造",
+      "relationIds": [
+        "rel:tdg:apply-paracompact-smooth-manifold"
+      ],
+      "status": "represented",
+      "note": "以精确 M/L 端点追踪；定义链可能通过辅助接口实现。",
+      "humanReview": "pending"
+    },
+    {
+      "id": "source:6.3:5",
+      "section": "6.3",
+      "sourceLine": 404,
+      "sourceLabel": "方向导数 → 梯度",
+      "relationIds": [
+        "rel:tdg:apply-directional-gradient"
+      ],
+      "status": "represented",
+      "note": "以精确 M/L 端点追踪；定义链可能通过辅助接口实现。",
+      "humanReview": "pending"
+    },
+    {
+      "id": "source:6.3:6",
+      "section": "6.3",
+      "sourceLine": 405,
+      "sourceLabel": "偏导数 → 旋度、散度",
+      "relationIds": [
+        "rel:tdg:apply-partial-curl",
+        "rel:tdg:apply-partial-divergence"
+      ],
+      "status": "represented",
+      "note": "以精确 M/L 端点追踪；定义链可能通过辅助接口实现。",
+      "humanReview": "pending"
+    },
+    {
+      "id": "source:6.3:7",
+      "section": "6.3",
+      "sourceLine": 406,
+      "sourceLabel": "外微分 → 梯度、旋度、散度",
+      "relationIds": [
+        "rel:tdg:apply-exterior-gradient",
+        "rel:tdg:apply-exterior-curl",
+        "rel:tdg:apply-exterior-divergence"
+      ],
+      "status": "represented",
+      "note": "以精确 M/L 端点追踪；定义链可能通过辅助接口实现。",
+      "humanReview": "pending"
+    },
+    {
+      "id": "source:6.3:8",
+      "section": "6.3",
+      "sourceLine": 407,
+      "sourceLabel": "外微分 → 李导数",
+      "relationIds": [
+        "rel:tdg:apply-exterior-cartan"
+      ],
+      "status": "represented",
+      "note": "以精确 M/L 端点追踪；定义链可能通过辅助接口实现。",
+      "humanReview": "pending"
+    },
+    {
+      "id": "source:6.3:9",
+      "section": "6.3",
+      "sourceLine": 408,
+      "sourceLabel": "李导数 → 张量场",
+      "relationIds": [
+        "rel:tdg:apply-lie-tensor-field"
+      ],
+      "status": "represented",
+      "note": "以精确 M/L 端点追踪；定义链可能通过辅助接口实现。",
+      "humanReview": "pending"
+    },
+    {
+      "id": "source:6.4:1",
+      "section": "6.4",
+      "sourceLine": 418,
+      "sourceLabel": "\\(C_1\\leftrightarrow C_2\\)",
+      "relationIds": [
+        "rel:tdg:analogy-c1-c2"
+      ],
+      "status": "represented",
+      "note": "以精确 M/L 端点追踪；定义链可能通过辅助接口实现。",
+      "humanReview": "pending"
+    },
+    {
+      "id": "source:6.4:2",
+      "section": "6.4",
+      "sourceLine": 419,
+      "sourceLabel": "紧 ↔ 仿紧",
+      "relationIds": [
+        "rel:tdg:analogy-compact-paracompact"
+      ],
+      "status": "represented",
+      "note": "以精确 M/L 端点追踪；定义链可能通过辅助接口实现。",
+      "humanReview": "pending"
+    },
+    {
+      "id": "source:6.4:3",
+      "section": "6.4",
+      "sourceLine": 420,
+      "sourceLabel": "紧 ↔ σ-紧",
+      "relationIds": [
+        "rel:tdg:analogy-compact-sigma-compact"
+      ],
+      "status": "represented",
+      "note": "以精确 M/L 端点追踪；定义链可能通过辅助接口实现。",
+      "humanReview": "pending"
+    },
+    {
+      "id": "source:6.4:4",
+      "section": "6.4",
+      "sourceLine": 421,
+      "sourceLabel": "旋度 ↔ 散度",
+      "relationIds": [
+        "rel:tdg:analogy-curl-divergence"
+      ],
+      "status": "represented",
+      "note": "以精确 M/L 端点追踪；定义链可能通过辅助接口实现。",
+      "humanReview": "pending"
+    },
+    {
+      "id": "source:6.4:5",
+      "section": "6.4",
+      "sourceLine": 422,
+      "sourceLabel": "梯度 ↔ 旋度",
+      "relationIds": [
+        "rel:tdg:analogy-gradient-curl"
+      ],
+      "status": "represented",
+      "note": "以精确 M/L 端点追踪；定义链可能通过辅助接口实现。",
+      "humanReview": "pending"
+    },
+    {
+      "id": "source:6.4:6",
+      "section": "6.4",
+      "sourceLine": 423,
+      "sourceLabel": "图册 ↔ 微分形式的局部表达",
+      "relationIds": [
+        "rel:tdg:analogy-atlas-forms"
+      ],
+      "status": "represented",
+      "note": "以精确 M/L 端点追踪；定义链可能通过辅助接口实现。",
+      "humanReview": "pending"
+    },
+    {
+      "id": "source:7:1",
+      "section": "7",
+      "sourceLine": 487,
+      "sourceLabel": "紧 + \\(T_2\\)",
+      "relationIds": [
+        "rel:tdg:deduce-compact-hausdorff-normal-compact",
+        "rel:tdg:deduce-compact-hausdorff-normal-t2"
+      ],
+      "status": "represented",
+      "note": "完整组合条件见关系与目标命题；连通情形为可数分支判据的特例。",
+      "humanReview": "pending"
+    },
+    {
+      "id": "source:7:2",
+      "section": "7",
+      "sourceLine": 488,
+      "sourceLabel": "仿紧 + \\(T_2\\)",
+      "relationIds": [
+        "rel:tdg:deduce-para-hausdorff-normal-paracompact",
+        "rel:tdg:deduce-para-hausdorff-normal-t2"
+      ],
+      "status": "represented",
+      "note": "完整组合条件见关系与目标命题；连通情形为可数分支判据的特例。",
+      "humanReview": "pending"
+    },
+    {
+      "id": "source:7:3",
+      "section": "7",
+      "sourceLine": 489,
+      "sourceLabel": "Hausdorff + 局部欧氏 + σ-紧",
+      "relationIds": [
+        "rel:tdg:deduce-manifold-countability-local-euclidean",
+        "rel:tdg:deduce-manifold-countability-paracompact",
+        "rel:tdg:deduce-manifold-countability-t2"
+      ],
+      "status": "represented",
+      "note": "完整组合条件见关系与目标命题；连通情形为可数分支判据的特例。",
+      "humanReview": "pending"
+    },
+    {
+      "id": "source:7:4",
+      "section": "7",
+      "sourceLine": 490,
+      "sourceLabel": "Hausdorff + 局部欧氏 + \\(C_2\\)",
+      "relationIds": [
+        "rel:tdg:deduce-manifold-countability-local-euclidean",
+        "rel:tdg:deduce-manifold-countability-paracompact",
+        "rel:tdg:deduce-manifold-countability-t2"
+      ],
+      "status": "represented",
+      "note": "完整组合条件见关系与目标命题；连通情形为可数分支判据的特例。",
+      "humanReview": "pending"
+    },
+    {
+      "id": "source:7:5",
+      "section": "7",
+      "sourceLine": 491,
+      "sourceLabel": "Hausdorff + 局部欧氏 + 连通 + 仿紧",
+      "relationIds": [
+        "rel:tdg:deduce-manifold-countability-local-euclidean",
+        "rel:tdg:deduce-manifold-countability-paracompact",
+        "rel:tdg:deduce-manifold-countability-t2"
+      ],
+      "status": "represented",
+      "note": "完整组合条件见关系与目标命题；连通情形为可数分支判据的特例。",
+      "humanReview": "pending"
+    },
+    {
+      "id": "source:7:6",
+      "section": "7",
+      "sourceLine": 492,
+      "sourceLabel": "全导数存在 + 指定方向",
+      "relationIds": [
+        "rel:tdg:deduce-direction-frechet-directional",
+        "rel:tdg:deduce-direction-frechet-frechet"
+      ],
+      "status": "represented",
+      "note": "完整组合条件见关系与目标命题；连通情形为可数分支判据的特例。",
+      "humanReview": "pending"
+    },
+    {
+      "id": "source:7:7",
+      "section": "7",
+      "sourceLine": 493,
+      "sourceLabel": "光滑流形 + 光滑向量场 + 流",
+      "relationIds": [
+        "rel:tdg:prereq-lie-1-flow",
+        "rel:tdg:prereq-lie-1-tensor-field",
+        "rel:tdg:prereq-lie-scalar-1-directional",
+        "rel:tdg:prereq-lie-scalar-1-flow",
+        "rel:tdg:prereq-lie-scalar-1-lie",
+        "rel:tdg:prereq-lie-scalar-1-vector-field"
+      ],
+      "status": "represented",
+      "note": "完整组合条件见关系与目标命题；连通情形为可数分支判据的特例。",
+      "humanReview": "pending"
+    },
+    {
+      "id": "source:7:8",
+      "section": "7",
+      "sourceLine": 494,
+      "sourceLabel": "定向三维黎曼结构 + 外微分 + Hodge 星",
+      "relationIds": [
+        "rel:tdg:realize-gradient",
+        "rel:tdg:realize-curl",
+        "rel:tdg:realize-divergence"
+      ],
+      "status": "represented",
+      "note": "完整组合条件见关系与目标命题；连通情形为可数分支判据的特例。",
+      "humanReview": "pending"
+    },
+    {
+      "id": "source:4.1",
+      "section": "4.1",
+      "sourceLabel": "偏导是标准基方向导数",
+      "relationIds": [
+        "rel:tdg:scale-partial-directional"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "source:4.3",
+      "section": "4.3",
+      "sourceLabel": "形式是交替协变张量场",
+      "relationIds": [
+        "rel:tdg:scale-forms-tensor-field"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "source:4.4",
+      "section": "4.4",
+      "sourceLabel": "标量 Lie 导数是沿场的方向微分",
+      "relationIds": [
+        "rel:tdg:scalar-lie-restriction"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "source:6.5.1",
+      "section": "6.5.1",
+      "sourceLabel": "固定点的切/余切线性对偶",
+      "relationIds": [
+        "rel:tdg:linear-dual"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    },
+    {
+      "id": "source:6.5.2",
+      "section": "6.5.2",
+      "sourceLabel": "梯度与负散度的形式伴随",
+      "relationIds": [
+        "rel:tdg:apply-gradient-divergence"
+      ],
+      "status": "corrected-to-formal-adjoint",
+      "humanReview": "pending"
+    },
+    {
+      "id": "source:2.2.equivalence",
+      "section": "2.2.equivalence",
+      "sourceLabel": "Hausdorff 局部欧氏空间上的可数性等价",
+      "relationIds": [
+        "rel:tdg:deduce-manifold-countability-local-euclidean",
+        "rel:tdg:deduce-manifold-countability-paracompact",
+        "rel:tdg:deduce-manifold-countability-t2"
+      ],
+      "status": "represented",
+      "humanReview": "pending"
+    }
+  ]
+}

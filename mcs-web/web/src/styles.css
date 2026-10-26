@@ -40,6 +40,7 @@
  * - nav-badge-pulse：循环装饰；侧栏徽标脉冲（关掉后仍有实心徽标）
  * - tutor-guide-breathe：循环装饰；辅导导览卡的呼吸描边
  * - network-node-enter：一次性入场；节点入场（终态即静止态）
+ * - scale-card-enter：一次性入场；旧尺度卡片淡入（reduce 下直接显示终态）
  * - network-edge-draw：一次性入场；新边的画出动画
  * - network-edge-draw-from-end：一次性入场；新边反向画出（从已在场的节点长向新节点）
  * - network-edge-fade：一次性入场；新边淡入
@@ -65,12 +66,11 @@
   --ink: #1a1330;
   --ink-soft: #4d4470;
   /*
-   * 弱化文字色。2026-10 从 #7d75a0 调深到 #6b6389（TODO A3-21 的对比度断言）：
-   * 旧值在白底上只有 4.26:1、在浅紫底上 3.79:1，都不到 WCAG AA 对小字的 4.5:1；
-   * 新值在白底 5.57、浅紫底 4.95、画布底 5.09——仍是「弱化」，但读得清了。
-   * 改这里要同步 web/src/theme.ts 的 inkFaint（两处必须成对）。
+   * 弱化文字色 `--ink-faint` 的**唯一声明处**在文件后半的「2026-10 交互与视觉整改」那个
+   * `:root` 里（`#6a6292`，0.9 版曾在此处写 `#6b6389`）。留着两份会让「谁是权威」
+   * 只能靠阅读顺序判断；`tests/theme-tokens.test.mjs` 现在断言 JS 镜像与**生效值**一致，
+   * 因此这里不再重复声明，只留这一句指路。
    */
-  --ink-faint: #6b6389;
   --line: #e5dff6;
   --line-strong: #c9c0e8;
 
@@ -276,7 +276,7 @@ li { margin-bottom: 0.25rem; }
   gap: 0.28rem;
   padding: 0.16rem 0.5rem 0.16rem 0.4rem;
   border-radius: 999px;
-  background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+  background: linear-gradient(135deg, var(--accent-fill), var(--accent-fill-strong));
   color: #fff;
   font-size: 0.68rem;
   font-weight: 650;
@@ -465,7 +465,7 @@ li { margin-bottom: 0.25rem; }
   padding: 0.7rem 0.85rem;
   border: 1px solid var(--line);
   border-radius: 0.9rem;
-  background: rgba(255, 255, 255, 0.72);
+  background: color-mix(in srgb, var(--surface) 72%, transparent);
   transition: border-color 160ms ease, box-shadow 160ms ease;
 }
 .start-question[data-current='true'] {
@@ -473,7 +473,7 @@ li { margin-bottom: 0.25rem; }
   box-shadow: 0 8px 24px rgba(109, 40, 217, 0.14);
   background: var(--surface);
 }
-.start-question[data-answered='true'] { background: rgba(255, 255, 255, 0.5); }
+.start-question[data-answered='true'] { background: color-mix(in srgb, var(--surface) 50%, transparent); }
 .start-question-head { display: flex; align-items: baseline; gap: 0.55rem; flex-wrap: wrap; }
 .start-question-head strong { font-size: 1rem; }
 .start-question-head small { flex-basis: 100%; font-size: 0.78rem; color: var(--ink-faint); line-height: 1.5; }
@@ -567,7 +567,7 @@ li { margin-bottom: 0.25rem; }
   padding: 0.7rem 0.85rem;
   border: 1px solid var(--line);
   border-radius: 0.9rem;
-  background: rgba(255, 255, 255, 0.72);
+  background: color-mix(in srgb, var(--surface) 72%, transparent);
 }
 .start-interest .start-option-hint { font-variant-numeric: tabular-nums; }
 .start-interest-note { margin: 0.6rem 0 0; font-size: 0.78rem; color: var(--ink-faint); line-height: 1.55; }
@@ -679,7 +679,7 @@ li { margin-bottom: 0.25rem; }
   padding: 0.6rem 0.75rem;
   border: 1px solid var(--line);
   border-radius: 0.8rem;
-  background: rgba(255, 255, 255, 0.6);
+  background: color-mix(in srgb, var(--surface) 60%, transparent);
 }
 .source-groups > div strong { font-size: 0.9rem; }
 .source-groups > div .muted { font-size: 0.74rem; }
@@ -698,7 +698,7 @@ li { margin-bottom: 0.25rem; }
 .research-list li {
   padding: 0.5rem 0.7rem;
   border-left: 2px solid var(--accent-line);
-  background: rgba(255, 255, 255, 0.55);
+  background: color-mix(in srgb, var(--surface) 55%, transparent);
   border-radius: 0.5rem;
 }
 .research-list li p { margin: 0.2rem 0 0; font-size: 0.8rem; line-height: 1.55; }
@@ -712,7 +712,7 @@ li { margin-bottom: 0.25rem; }
   padding: 0.55rem 0.75rem;
   border: 1px solid var(--line);
   border-radius: 0.7rem;
-  background: rgba(255, 255, 255, 0.62);
+  background: color-mix(in srgb, var(--surface) 62%, transparent);
 }
 .research-tools > li > a { font-weight: 600; }
 .research-tools p { margin: 0.25rem 0 0; font-size: 0.8rem; line-height: 1.55; }
@@ -848,7 +848,7 @@ li { margin-bottom: 0.25rem; }
   padding: 0.55rem 0.7rem;
   border: 1px dashed var(--line-strong);
   border-radius: 0.7rem;
-  background: rgba(255, 255, 255, 0.6);
+  background: color-mix(in srgb, var(--surface) 60%, transparent);
 }
 .tutor-intro-paths strong { font-size: 0.85rem; }
 .tutor-intro-paths span { font-size: 0.8rem; color: var(--ink-soft); line-height: 1.5; }
@@ -918,11 +918,21 @@ li { margin-bottom: 0.25rem; }
 .sidebar-collapsed .nav-icon { width: 1.25rem; height: 1.25rem; }
 
 .main-column { min-width: 0; display: flex; flex-direction: column; }
-.topbar { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: 0.9rem 2rem; border-bottom: 1px solid var(--line); background: rgba(255, 255, 255, 0.78); backdrop-filter: blur(10px); position: sticky; top: 0; z-index: 20; }
+.topbar { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: 0.9rem 2rem; border-bottom: 1px solid var(--line); background: var(--glass); backdrop-filter: blur(10px); position: sticky; top: 0; z-index: 20; }
 .topbar-title { font-family: var(--serif); font-weight: 650; }
 .topbar-sub { display: block; color: var(--ink-faint); font-size: 0.76rem; }
 .profile-picker { display: flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; color: var(--ink-soft); }
 .profile-picker select { max-width: 260px; }
+/*
+ * 外观开关（第一百零九轮）：与 `.profile-picker` 同一套排版语言——它同样是
+ * 「标签 + 下拉」的页面级显示选项，只是它改的是本机外观而不是档案数据。
+ */
+.theme-picker { display: flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; color: var(--ink-soft); }
+.theme-picker select { max-width: 9.5rem; }
+@media (max-width: 640px) {
+  /* 窄屏上两个标签都缩小一档，让下拉本身仍放得下（顶栏这一行本来就会换行）。 */
+  .theme-picker, .profile-picker { font-size: 0.76rem; }
+}
 
 .workspace { padding: 1.8rem 2rem 4rem; max-width: 1500px; width: 100%; }
 /*
@@ -1737,6 +1747,19 @@ label.checkbox { flex-direction: row; align-items: center; gap: 0.4rem; }
 /* 节点可拖动：指针给出明确提示。 */
 .network-node { cursor: grab; touch-action: none; }
 .network-node.dragging-node { cursor: grabbing; }
+.network-node .network-card-body {
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: transform 160ms cubic-bezier(0.22, 1, 0.36, 1), filter 160ms ease;
+}
+.network-node .network-dot-body {
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: transform 160ms cubic-bezier(0.22, 1, 0.36, 1), filter 160ms ease;
+}
+.network-node.dragging-node .network-card-body { transform: scale(1.035); filter: drop-shadow(0 10px 18px rgba(26, 19, 48, 0.22)); }
+.network-node.dragging-node .network-dot-body { transform: scale(1.2); filter: drop-shadow(0 6px 10px rgba(26, 19, 48, 0.25)); }
+.network-node.dragging-node .network-card-body > rect:first-child { stroke-width: 2; }
 .network-node.placed rect { stroke-dasharray: 4 3; }
 
 /* 新加入的边：把线「画」出来。
@@ -1778,6 +1801,8 @@ label.checkbox { flex-direction: row; align-items: center; gap: 0.4rem; }
   .case-card:hover .case-thumbnail-svg { transform: none; }
   .network-edge.growing, .network-edge.growing.from-end { animation: none; }
   .network-node-enter { animation: none; }
+  .network-node .network-card-body, .network-node .network-dot-body, .network-scale-object .scale-card-inner { transition: none; }
+  .network-scale-object .scale-card-inner { animation: none; }
 }
 .network-edge.topic, .network-edge.sharedInput, .network-edge.pattern,
 .network-edge.evidence, .network-edge.support { stroke-linecap: round; }
@@ -1791,7 +1816,7 @@ label.checkbox { flex-direction: row; align-items: center; gap: 0.4rem; }
   font-family: var(--sans);
   font-weight: 600;
   paint-order: stroke;
-  stroke: #ffffff;
+  stroke: var(--edge-label-halo);
   stroke-width: 3.5px;
   stroke-linejoin: round;
 }
@@ -1972,7 +1997,7 @@ label.checkbox { flex-direction: row; align-items: center; gap: 0.4rem; }
 }
 .network-node.starting-node .network-card-body > rect:first-child { stroke: var(--green-line); }
 .network-node.starting-node .network-node-start-ring { stroke-opacity: 0.9; }
-.network-node-start { fill: var(--green); stroke: none; }
+.network-node-start { fill: var(--green-fill); stroke: none; }
 .network-node-start-label { fill: var(--on-accent); font-family: var(--sans); font-weight: 600; letter-spacing: 0.02em; }
 /*
  * 下面几条是**必须写的覆盖**：卡片上的通用规则（悬停改描边、选中加发光、手动摆放改虚线）
@@ -2267,7 +2292,7 @@ label.checkbox { flex-direction: row; align-items: center; gap: 0.4rem; }
   border-radius: 999px; padding: 0.1rem 0.5rem;
 }
 .recommend-filter .chip:hover { border-color: var(--accent); color: var(--ink); }
-.recommend-filter .chip.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+.recommend-filter .chip.on { background: var(--accent-fill); border-color: var(--accent-fill); color: #fff; }
 /* 方法类单独给一个色，与画布上的方法色带呼应。 */
 .recommend-filter .chip.method { border-color: #0d9488; color: #0f766e; }
 .recommend-filter .chip.method.on { background: #0d9488; border-color: #0d9488; color: #fff; }
@@ -2848,14 +2873,14 @@ details summary { cursor: pointer; color: var(--ink-faint); font-size: 0.84rem; 
 }
 .stage-arrow-badge { pointer-events: auto; }
 .stage-arrow-badge circle {
-  fill: var(--accent);
+  fill: var(--accent-fill);
   fill-opacity: 0.92;
   stroke: var(--on-accent);
   stroke-opacity: 0.85;
   stroke-width: 1;
 }
 .stage-arrow-badge text { fill: var(--on-accent); font-family: var(--sans); font-weight: 650; }
-.stage-arrow.is-preview .stage-arrow-badge circle { fill: var(--accent); fill-opacity: 0.62; }
+.stage-arrow.is-preview .stage-arrow-badge circle { fill: var(--accent-fill); fill-opacity: 0.62; }
 /*
  * 多程合一图：每一程的**第一支**箭头，在中点画一圈环，一眼看得出程是从哪儿断开的
  * （步号本身只说明顺序，不说明「换了一程」）。它不挂在徽标里——徽标会被碰撞消隐。
@@ -2874,7 +2899,7 @@ details summary { cursor: pointer; color: var(--ink-faint); font-size: 0.84rem; 
   stroke-dasharray: 8 5;
   animation: stage-target-pulse 2400ms ease-in-out infinite;
 }
-.network-stage-target-badge rect { fill: var(--accent); }
+.network-stage-target-badge rect { fill: var(--accent-fill); }
 .network-stage-target-badge text { fill: var(--on-accent); font-weight: 600; letter-spacing: 0.06em; }
 .network-stage-target-title { fill: var(--ink); font-weight: 600; }
 
@@ -3010,12 +3035,12 @@ button, .button { min-height: 40px; }
   border-radius: 50%; background: var(--surface-2); font-size: 0.75rem;
 }
 .step-rail li.active { border-color: var(--accent-line); color: var(--accent-strong); background: var(--accent-soft); }
-.step-rail li.active span { background: var(--accent); color: var(--on-accent); }
+.step-rail li.active span { background: var(--accent-fill); color: var(--on-accent); }
 .chosen-goal {
   display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.45rem;
   padding: 0.55rem 0.75rem; margin: 0 0 0.3rem; background: var(--accent-soft); border-radius: 10px;
 }
-.chosen-goal code { background: rgba(255, 255, 255, 0.7); }
+.chosen-goal code { background: color-mix(in srgb, var(--surface) 70%, transparent); }
 /*
  * 范例路径（2026-10-13 第二版：压缩态 → 悬浮简介 → 点击展开）。
  *
@@ -3232,7 +3257,7 @@ button, .button { min-height: 40px; }
 .node-toc {
   display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem 0.9rem;
   padding: 0.6rem 0.9rem; position: sticky; top: 4.6rem; z-index: 5;
-  backdrop-filter: blur(8px); background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(8px); background: var(--glass-strong);
 }
 .node-toc-title { font-size: 0.78rem; letter-spacing: 0.06em; color: var(--ink-faint); }
 .node-toc ul { list-style: none; display: flex; flex-wrap: wrap; gap: 0.3rem 0.85rem; margin: 0; padding: 0; }
@@ -3302,7 +3327,7 @@ select, input, textarea { max-width: 100%; }
   background:
     radial-gradient(1000px 620px at 8% 4%, color-mix(in srgb, var(--accent) 18%, transparent), transparent 67%),
     radial-gradient(860px 560px at 96% 17%, color-mix(in srgb, var(--cyan) 14%, transparent), transparent 69%),
-    linear-gradient(180deg, #fefeff 0%, #f4f0ff 48%, #fbfaff 100%);
+    var(--stage-base);
   border-bottom: 1px solid var(--line);
   overflow: clip;
 }
@@ -3525,7 +3550,7 @@ select, input, textarea { max-width: 100%; }
   scroll-margin-top: calc(var(--home-story-top, 64px) + 6px);
   overflow: hidden;
   background:
-    radial-gradient(80% 58% at 50% 48%, rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0.48) 52%, transparent 78%),
+    radial-gradient(80% 58% at 50% 48%, color-mix(in srgb, var(--stage-surface) 92%, transparent), color-mix(in srgb, var(--stage-surface) 48%, transparent) 52%, transparent 78%),
     linear-gradient(180deg, transparent 0%, color-mix(in srgb, var(--act-color) 4%, transparent) 50%, transparent 100%);
 }
 
@@ -3936,8 +3961,8 @@ select, input, textarea { max-width: 100%; }
   letter-spacing: 0.12em;
   white-space: nowrap;
   pointer-events: none;
-  color: #35106e;
-  text-shadow: 0 2px 22px rgba(255, 255, 255, 0.96), 0 1px 3px rgba(255, 255, 255, 0.98), 0 0 28px color-mix(in srgb, var(--act-color) 16%, transparent);
+  color: var(--stage-ink);
+  text-shadow: 0 2px 22px var(--stage-glow), 0 1px 3px var(--stage-glow-strong), 0 0 28px color-mix(in srgb, var(--act-color) 16%, transparent);
   transition: opacity 220ms linear, filter 220ms ease;
   /* 再上一道保险：即使字号被浏览器夹住，也不许越过正文列的边界。 */
   max-width: calc(50% - var(--hs-copy-half, 368px) - 1.6rem);
@@ -4036,13 +4061,13 @@ select, input, textarea { max-width: 100%; }
   width: min(27%, 20rem, calc(38vh - 5rem));
   height: auto;
   pointer-events: none;
-  filter: drop-shadow(0 0 22px rgba(255, 255, 255, 0.9)) drop-shadow(0 20px 34px rgba(76, 29, 149, 0.24));
+  filter: drop-shadow(0 0 22px color-mix(in srgb, var(--stage-surface) 90%, transparent)) drop-shadow(0 20px 34px rgba(76, 29, 149, 0.24));
 }
 .home-story-ghost-number {
   font-size: 0.5em;
   font-weight: 650;
   letter-spacing: 0.18em;
-  color: color-mix(in srgb, var(--act-color) 68%, #35106e);
+  color: color-mix(in srgb, var(--act-color) 68%, var(--stage-ink));
   opacity: 0.9;
 }
 
@@ -4084,13 +4109,13 @@ select, input, textarea { max-width: 100%; }
   font-size: clamp(0.78rem, calc(var(--hs-band-px, 220px) * 0.072), 1.05rem);
   font-weight: 600;
   letter-spacing: 0.06em;
-  color: #35106e;
+  color: var(--stage-ink);
   /* 每条的底色是一层极浅的柔光：带宽很窄时文字仍读得清（宽带上它几乎看不见）。 */
   background: linear-gradient(90deg,
-    rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.62) 72%, rgba(255, 255, 255, 0));
+    color-mix(in srgb, var(--stage-surface) 90%, transparent), color-mix(in srgb, var(--stage-surface) 62%, transparent) 72%, color-mix(in srgb, var(--stage-surface) 0%, transparent));
   border-radius: 999px;
   padding: 0.22rem 0.7rem 0.22rem 0.55rem;
-  box-shadow: 0 1px 12px rgba(255, 255, 255, 0.85);
+  box-shadow: 0 1px 12px color-mix(in srgb, var(--stage-surface) 85%, transparent);
   white-space: nowrap;
   max-width: 100%;
   overflow: hidden;
@@ -4135,12 +4160,12 @@ select, input, textarea { max-width: 100%; }
    */
   background:
     linear-gradient(90deg,
-      rgba(255, 255, 255, 0) 0%,
-      rgba(255, 255, 255, calc(var(--home-story-scrim-alpha) * 0.8)) 6%,
-      rgba(255, 255, 255, var(--home-story-scrim-alpha)) 15%,
-      rgba(255, 255, 255, var(--home-story-scrim-alpha)) 85%,
-      rgba(255, 255, 255, calc(var(--home-story-scrim-alpha) * 0.8)) 94%,
-      rgba(255, 255, 255, 0) 100%);
+      rgb(var(--stage-scrim-rgb) / 0) 0%,
+      rgb(var(--stage-scrim-rgb) / calc(var(--home-story-scrim-alpha) * 0.8)) 6%,
+      rgb(var(--stage-scrim-rgb) / var(--home-story-scrim-alpha)) 15%,
+      rgb(var(--stage-scrim-rgb) / var(--home-story-scrim-alpha)) 85%,
+      rgb(var(--stage-scrim-rgb) / calc(var(--home-story-scrim-alpha) * 0.8)) 94%,
+      rgb(var(--stage-scrim-rgb) / 0) 100%);
 }
 
 /*
@@ -4284,7 +4309,7 @@ select, input, textarea { max-width: 100%; }
   letter-spacing: -0.035em;
   text-wrap: balance;
   color: color-mix(in srgb, var(--act-color) 18%, var(--ink));
-  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.82), 0 18px 42px color-mix(in srgb, var(--act-color) 10%, transparent);
+  text-shadow: 0 1px 0 color-mix(in srgb, var(--stage-surface) 82%, transparent), 0 18px 42px color-mix(in srgb, var(--act-color) 10%, transparent);
 }
 .home-story-act h2::before {
   content: '';
@@ -4349,10 +4374,10 @@ select, input, textarea { max-width: 100%; }
   border-radius: 50%;
   background: var(--accent-soft);
   color: var(--accent-strong);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.58), 0 12px 26px -22px currentColor;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--stage-surface) 58%, transparent), 0 12px 26px -22px currentColor;
   transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 220ms ease;
 }
-.home-story-point:hover .home-story-point-icon { transform: rotate(-4deg) scale(1.06); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.72), 0 14px 30px -18px currentColor; }
+.home-story-point:hover .home-story-point-icon { transform: rotate(-4deg) scale(1.06); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--stage-surface) 72%, transparent), 0 14px 30px -18px currentColor; }
 /* 图标块比文字块矮，放大它不占额外高度——所以这里的尺寸可以给足。 */
 .home-story-point-icon svg { display: block; width: 1.5rem; height: 1.5rem; }
 /* 六张卡各有一个色档：图标底色 + 描边，仍是同一套令牌，不引入新色。 */
@@ -4566,8 +4591,8 @@ select, input, textarea { max-width: 100%; }
 .home-story-actions { margin-top: 1.15rem; }
 .home-story-actions .button:not(.primary) {
   border-color: color-mix(in srgb, var(--act-color) 28%, var(--line));
-  background: rgba(255, 255, 255, 0.64);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75);
+  background: color-mix(in srgb, var(--stage-surface) 64%, transparent);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--stage-surface) 75%, transparent);
   backdrop-filter: blur(8px);
   transition: transform 180ms ease, border-color 180ms ease, background 180ms ease, box-shadow 180ms ease;
 }
@@ -4602,7 +4627,7 @@ select, input, textarea { max-width: 100%; }
   background:
     radial-gradient(540px 360px at 0% 4%, color-mix(in srgb, var(--accent) 15%, transparent), transparent 72%),
     radial-gradient(480px 340px at 100% 26%, color-mix(in srgb, var(--cyan) 10%, transparent), transparent 72%),
-    linear-gradient(180deg, #fefeff 0%, #f3efff 100%);
+    var(--stage-base-flow);
 }
 
 .home-story.is-flow .home-story-sticky {
@@ -4664,7 +4689,7 @@ select, input, textarea { max-width: 100%; }
   padding: 0.4rem;
   border: 1px solid color-mix(in srgb, var(--act-color) 22%, transparent);
   border-radius: 24px;
-  background: linear-gradient(145deg, rgba(255, 255, 255, 0.54), color-mix(in srgb, var(--act-color) 7%, rgba(255, 255, 255, 0.72)));
+  background: linear-gradient(145deg, color-mix(in srgb, var(--stage-surface) 54%, transparent), color-mix(in srgb, var(--act-color) 7%, color-mix(in srgb, var(--stage-surface) 72%, transparent)));
   box-shadow: 0 28px 54px -46px color-mix(in srgb, var(--act-color) 64%, transparent);
   overflow: hidden;
 }
@@ -4755,7 +4780,7 @@ select, input, textarea { max-width: 100%; }
    最小的一档 17 单位 ≈ 屏上 9–12px，标题 30 单位 ≈ 16–21px。
    改动这些数值时请一起量屏上字号（tests/home-narrative.mjs 有断言）。 */
 .story-backdrop {
-  fill: color-mix(in srgb, var(--act-color, var(--accent)) 5%, rgba(255, 255, 255, 0.78));
+  fill: color-mix(in srgb, var(--act-color, var(--accent)) 5%, color-mix(in srgb, var(--stage-surface) 78%, transparent));
   stroke: color-mix(in srgb, var(--act-color, var(--accent)) 24%, var(--line));
   stroke-width: 1;
   filter: drop-shadow(0 24px 34px color-mix(in srgb, var(--act-color, var(--accent)) 10%, transparent));
@@ -4766,7 +4791,7 @@ select, input, textarea { max-width: 100%; }
 .story-centered { text-anchor: middle; }
 .story-caption { fill: var(--ink-soft); font-size: 17px; }
 
-.story-book-cover { fill: rgba(255, 255, 255, 0.88); stroke: color-mix(in srgb, var(--act-color, var(--accent)) 24%, var(--line-strong)); stroke-width: 1.2; }
+.story-book-cover { fill: color-mix(in srgb, var(--stage-surface) 88%, transparent); stroke: color-mix(in srgb, var(--act-color, var(--accent)) 24%, var(--line-strong)); stroke-width: 1.2; }
 .story-book-page { fill: var(--surface-2); }
 .story-book-line { stroke: var(--line-strong); stroke-width: 1.1; stroke-linecap: round; }
 /* 三本教材里同一行内容：重合的部分用同一强调色标出来。 */
@@ -4777,12 +4802,12 @@ select, input, textarea { max-width: 100%; }
 
 .story-route { fill: none; stroke-width: 3; stroke-linecap: round; }
 .story-route-fixed { stroke: var(--line-strong); }
-.story-route-node { fill: rgba(255, 255, 255, 0.92); stroke: color-mix(in srgb, var(--act-color, var(--accent)) 42%, var(--accent-line)); stroke-width: 2; }
+.story-route-node { fill: color-mix(in srgb, var(--stage-surface) 92%, transparent); stroke: color-mix(in srgb, var(--act-color, var(--accent)) 42%, var(--accent-line)); stroke-width: 2; }
 /* 被排在既定顺序后面、学习者却想先弄懂的那一点。 */
 .story-route-node.is-target { fill: var(--warm-soft); stroke: var(--amber-line); stroke-width: 2.6; }
 .story-route-number { fill: var(--ink-soft); font-size: 17px; font-weight: 600; text-anchor: middle; }
 .story-marker-line { fill: none; stroke: var(--accent-line); stroke-width: 1.4; stroke-dasharray: 6 7; }
-.story-personal-marker rect { fill: rgba(255, 255, 255, 0.86); stroke-width: 1.5; }
+.story-personal-marker rect { fill: color-mix(in srgb, var(--stage-surface) 86%, transparent); stroke-width: 1.5; }
 .story-personal-marker text { fill: var(--ink); font-size: 17px; font-weight: 600; }
 .story-personal-marker.is-green rect { stroke: var(--green); }
 .story-personal-marker.is-green text { fill: var(--green); }
@@ -4811,7 +4836,7 @@ select, input, textarea { max-width: 100%; }
 .story-center-title { fill: var(--accent-strong); font-size: 19px; font-weight: 700; }
 .story-center-subtitle { fill: var(--ink-faint); font-size: 17px; }
 
-.story-chain-card { fill: rgba(255, 255, 255, 0.9); stroke: color-mix(in srgb, var(--act-color, var(--accent)) 44%, var(--accent-line)); stroke-width: 1.4; }
+.story-chain-card { fill: color-mix(in srgb, var(--stage-surface) 90%, transparent); stroke: color-mix(in srgb, var(--act-color, var(--accent)) 44%, var(--accent-line)); stroke-width: 1.4; }
 .story-chain-index { fill: var(--accent); font-size: 17px; font-weight: 700; letter-spacing: 0.06em; }
 .story-chain-label { fill: var(--ink); font-size: 24px; font-weight: 650; }
 .story-chain-arrow { fill: none; stroke: var(--accent); stroke-width: 2.6; stroke-linecap: round; }
@@ -4828,7 +4853,7 @@ select, input, textarea { max-width: 100%; }
 .story-bottom-note { fill: var(--accent-strong); font-size: 17px; font-weight: 600; letter-spacing: 0.04em; }
 
 .story-space-edge { stroke: var(--line-strong); stroke-width: 1; }
-.story-space-node { fill: rgba(255, 255, 255, 0.9); stroke: color-mix(in srgb, var(--act-color, var(--accent)) 40%, var(--accent-line)); stroke-width: 1.3; }
+.story-space-node { fill: color-mix(in srgb, var(--stage-surface) 90%, transparent); stroke: color-mix(in srgb, var(--act-color, var(--accent)) 40%, var(--accent-line)); stroke-width: 1.3; }
 .story-study-route { fill: none; stroke-width: 3.2; stroke-linecap: round; }
 .story-study-route.is-brand { stroke: var(--accent); }
 .story-study-route.is-cyan { stroke: var(--cyan); }
@@ -4853,7 +4878,7 @@ select, input, textarea { max-width: 100%; }
   stroke-linecap: round;
 }
 .story-theme-node {
-  fill: rgba(255, 255, 255, 0.92);
+  fill: color-mix(in srgb, var(--stage-surface) 92%, transparent);
   stroke: color-mix(in srgb, var(--act-color, var(--accent)) 52%, var(--accent-line));
   stroke-width: 1.8;
 }
@@ -4915,7 +4940,7 @@ select, input, textarea { max-width: 100%; }
   display: grid; place-items: center; width: 1.4rem; height: 1.4rem; flex: 0 0 auto;
   border-radius: 50%; background: var(--surface-2); color: var(--ink-soft); font-size: 0.76rem;
 }
-.authoring-steps li.active span.authoring-step-index { background: var(--accent); color: var(--on-accent); }
+.authoring-steps li.active span.authoring-step-index { background: var(--accent-fill); color: var(--on-accent); }
 .authoring-steps li span.authoring-step-text {
   display: grid; grid-template-columns: minmax(0, 1fr); gap: 0.05rem; width: auto; height: auto; min-width: 0;
   border-radius: 0; background: transparent; color: inherit; line-height: 1.3;
@@ -5389,7 +5414,7 @@ select, input, textarea { max-width: 100%; }
 }
 .locale-option + .locale-option { border-left: 1px solid var(--line); }
 .locale-option:hover { background: var(--accent-wash); color: var(--accent-strong); }
-.locale-option.active { background: var(--accent); color: #fff; }
+.locale-option.active { background: var(--accent-fill); color: #fff; }
 .locale-option:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
 
 /* ---- 尚未翻译的条目 ---- */
@@ -5562,9 +5587,9 @@ select, input, textarea { max-width: 100%; }
    * 半透明（0.94）还要求逐帧与身后的内容混合；改成不透明就只剩一层实色，
    * 观感几乎一样（0.94 的白本来就看不出透明），但少了一次混合。
    */
-  .topbar { backdrop-filter: none; background: #ffffff; }
+  .topbar { backdrop-filter: none; background: var(--surface); }
   /* 节点页目录条只在宽屏吸顶（窄屏本来就是 static），横屏平板上同样按触屏降级。 */
-  .node-toc { backdrop-filter: none; background: rgba(255, 255, 255, 0.96); }
+  .node-toc { backdrop-filter: none; background: var(--glass-opaque); }
   /*
    * 首页报头：窄屏（flow 形态）本来就是 none；这里补上**宽屏平板**那一档——
    * 它 ≥1200px 宽、走的仍是固定舞台，而报头是吸顶的，于是滚动时逐帧模糊身后内容。
@@ -5672,3 +5697,259 @@ select, input, textarea { max-width: 100%; }
 .related-vault-notes .muted { font-size: .85rem; }
 @media (max-width: 800px) { .library-workspace { grid-template-columns: 1fr; } .library-note-tree { max-height: 30vh; } .library-reader .card-actions { flex-wrap: wrap; } }
 
+/* ==========================================================================
+   第一百零九轮：暗色主题
+   --------------------------------------------------------------------------
+   目标：整站可在**浅色 / 深色 / 跟随系统**三种外观下阅读，浅色外观逐项与从前相同；
+   深色不是「把纸面涂黑」，而是把同一套紫色品牌语言反过来用：浅色是「冷调紫罗兰纸 + 深靛墨」，
+   深色是「深靛纸 + 近白墨」，色相仍锁在紫族，避免变成中性灰的黑。
+
+   三条结构约定（改动这一节前先读）：
+
+   1. **深色只覆盖令牌，不新增颜色体系**。文件名一律与 `:root` 相同；写错的令牌名不会报错、
+      只会静默失效，因此 `tests/theme-tokens.test.mjs` 断言「深色块里的每个令牌名都已在
+      `:root` 里存在」，并断言核心组（纸面 / 墨色 / 线 / 语义 / 阴影 / 渐变）覆盖齐全。
+   2. **`data-theme` 由脚本写在 `<html>` 上**（`web/public/theme-boot.js` 首帧 + `theme-context.tsx`），
+      CSS 只认 `[data-theme='dark']`，**不写 `prefers-color-scheme` 媒体查询**——
+      否则「用户显式选了浅色」和「系统是深色」两套规则会互相打架。
+   3. **`--accent` 在两种外观下都是「文字与描边」色**（深色下必须提亮才读得出来）。
+      凡是拿主题色当**实心底、上面压白字**的地方，一律走 `--accent-fill` / `--accent-fill-strong`；
+      语义色同理：`--green-fill` 专给实心底。混用会让深色下的白字掉到 4.5:1 以下。
+
+   有意**不改**的几处（都不随外观变化，理由各自写在原处）：
+   - `--grad-brand` 与 `--on-accent`：品牌渐变在深底上仍有足够对比，改成浅色反而丢掉层次；
+   - `--radius*` 与字体族：与明暗无关；
+   - 首页报头（`.home-story-masthead` 及其进度条、跳过按钮）：本来就是深色玻璃，两种外观共用；
+   - `button.primary::after` 的高光、徽标描边等**叠在实心品牌底上**的白色半透明层。
+   ========================================================================== */
+
+:root {
+  /* 玻璃底：吸顶栏、目录条这类「浮在内容之上、又透一点底」的面。 */
+  --glass: rgba(255, 255, 255, 0.78);
+  --glass-strong: rgba(255, 255, 255, 0.92);
+  /*
+   * 触屏降级用的近不透明玻璃。它必须与 `--glass-strong` 分开：那一档是**桌面**目录条的
+   * 0.92，而触屏那一档从前的取值是 0.96（目的是少一次逐帧混合，见本文件后半的触屏降级一节）。
+   * 两者合并会把浅色下的取值悄悄改掉，因此各留一个令牌。
+   */
+  --glass-opaque: rgba(255, 255, 255, 0.96);
+  /*
+   * 实心底：主题色与语义色兼任「文字色」与「实心底」两种角色，而两者对明暗的要求相反
+   * （文字要压得住底，实心底要托得住白字）。因此把它们拆开：实心底不随外观变。
+   */
+  --accent-fill: #6d28d9;
+  --accent-fill-strong: #5b21b6;
+  --green-fill: #0f7a52;
+  /* 边标签的描边光晕：让标签在任何底色上都能从线上读出来。 */
+  --edge-label-halo: #ffffff;
+  /*
+   * 首页五幕的「舞台纸」：正文柔光罩、幕内 SVG 卡片、四角标签底，全都由它调透明度得到。
+   * 用 color-mix(in srgb, var(--stage-surface) N%, transparent) 代替写死的 rgba(255,255,255,N)，
+   * 深色下同一个 N 就是「暗色柔光」，不必逐条改规则。
+   */
+  --stage-surface: #ffffff;
+  --stage-glow: rgba(255, 255, 255, 0.96);
+  /* 第二道更实的辉光：幽灵字（.home-story-ghost-word）的两层阴影原来分别是 0.96 / 0.98。 */
+  --stage-glow-strong: rgba(255, 255, 255, 0.98);
+  /* 舞台上的深紫字：幕内 SVG 标签与四角标签用它压在浅色舞台上；深色下正好反过来。 */
+  --stage-ink: #35106e;
+  /*
+   * 柔光罩的通道值：这里的 alpha 由 `--home-story-scrim-alpha` 现场算（0.8× 与 1×），
+   * 所以不能写成固定 alpha 的 color-mix，改成 `rgb(<通道> / <alpha>)`——
+   * 通道是令牌、alpha 是数，两种外观各取一行，测试读到的仍是原来那个数。
+   */
+  --stage-scrim-rgb: 255 255 255;
+  --stage-base: linear-gradient(180deg, #fefeff 0%, #f4f0ff 48%, #fbfaff 100%);
+  --stage-base-flow: linear-gradient(180deg, #fefeff 0%, #f3efff 100%);
+}
+
+html[data-theme='dark'] {
+  color-scheme: dark;
+
+  /* 纸面与墨色：比浅色更深更冷，但仍是紫族；层与层之间靠明度差（bg < canvas < surface < surface-2）。 */
+  --bg: #14101f;
+  --bg-veil-a: rgba(167, 139, 250, 0.10);
+  --bg-veil-b: rgba(56, 189, 248, 0.08);
+  --surface: #1e1830;
+  --surface-2: #272040;
+  --canvas: #191331;
+  --ink: #f2eefb;
+  --ink-soft: #c8c0e0;
+  /*
+   * 弱化文字色：与浅色同一套判据——对四种深色底（纸面 7.48 / 卡片 6.84 / 浅卡 6.14 / 画布 7.13）
+   * 都过 WCAG AA 的 4.5:1，且与 `--ink` 的比值 2.19 ≥ 1.8（弱化的层级仍看得出来）。
+   */
+  --ink-faint: #a79fc4;
+  --line: #332b4d;
+  --line-strong: #4a3f6b;
+
+  /* 品牌主色：深色下是**文字与描边**色，提亮到能在深底上做正文链接（对纸面 6.87、对卡片 6.28）。 */
+  --accent: #a78bfa;
+  --accent-strong: #c4b5fd;
+  --accent-deep: #ded5fe;
+  --accent-soft: #2a2148;
+  --accent-wash: #241c3d;
+  --accent-line: #4a3f6b;
+  --accent-glow: rgba(167, 139, 250, 0.32);
+  --emphasis-bg: var(--accent-wash);
+  --emphasis-ring: var(--accent);
+  /* 深色下浅紫阴影看不见，强调的浮起改由黑色投影承担。 */
+  --emphasis-glow: 0 6px 18px rgba(0, 0, 0, 0.55);
+  --emphasis-ink: var(--accent-strong);
+
+  /* 辅助色：当文字/描边用时都要提亮；`*-soft` 换成暗底水洗，否则会是一块亮斑。 */
+  --cyan: #67e8f9;
+  --cyan-soft: #12303c;
+  --magenta: #f0abfc;
+  --ember: #fdba74;
+  --teal: #5eead4;
+  --warm-soft: #33241c;
+
+  /* 语义色：语义不变，明暗关系反过来——亮字 + 暗底水洗（对卡片底分别 8.31 / 10.24 / 8.74 / 11.21:1）。 */
+  --blue: #93b4ff;
+  --blue-soft: #1d2440;
+  --amber: #fbbf24;
+  --amber-soft: #33270f;
+  --amber-line: #6b5423;
+  --red: #ff9db4;
+  --red-soft: #3a1b28;
+  --red-line: #6d3446;
+  --green: #6ee7b7;
+  --green-soft: #12332a;
+  --green-line: #2f5f4c;
+
+  /* 代码块：深色下要比纸面更深一档，否则和卡片糊在一起（浅色下它本来就是深底）。 */
+  --code-bg: #0e0a18;
+  --code-ink: #e9e3fd;
+
+  /* 阴影：深色下浅紫阴影等于没有，改用黑色。 */
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  --shadow-lift: 0 2px 6px rgba(0, 0, 0, 0.45), 0 22px 48px -28px rgba(0, 0, 0, 0.75);
+
+  /* 玻璃与舞台：不换这两组，吸顶栏、目录条、首页五幕会在暗色站里留下亮块。 */
+  --glass: rgba(30, 24, 48, 0.86);
+  --glass-strong: rgba(30, 24, 48, 0.97);
+  --glass-opaque: rgba(30, 24, 48, 0.98);
+  --edge-label-halo: #191331;
+  --stage-surface: #1b1530;
+  --stage-glow: rgba(10, 7, 20, 0.96);
+  --stage-glow-strong: rgba(10, 7, 20, 0.98);
+  --stage-ink: #ded5fe;
+  --stage-scrim-rgb: 27 21 48;
+  --stage-base: linear-gradient(180deg, #191331 0%, #201839 48%, #171128 100%);
+  --stage-base-flow: linear-gradient(180deg, #191331 0%, #1f1836 100%);
+  /* 首屏（.hero）的浅色底：深色下换成同族的深紫，避免暗色站里留一块亮白的首屏。 */
+  --grad-hero: linear-gradient(135deg, #1e1830 0%, #241d42 52%, #17203a 100%);
+}
+
+/*
+ * 深色下的柔光罩改写规则（而不是把浅色声明换成令牌）。
+ *
+ * 为什么不用令牌一次写完：`tests/home-narrative.mjs` 对正文柔光罩做了**逐字**断言——
+ * 「最后一层雾的不透明度归零」这条判据写的是 `rgba(255, 255, 255, 0)`。把浅色声明换成
+ * `color-mix(... 0%, transparent)` 在视觉上等价，但会让那条既有断言变红；本轮不动浅色断言，
+ * 于是浅色保持原样，深色在这里按同一结构重写一遍。
+ */
+html[data-theme='dark'] .home-story-act-copy {
+  background: radial-gradient(60% 56% at 50% 46%,
+    rgb(var(--stage-scrim-rgb) / 0.94) 0%,
+    rgb(var(--stage-scrim-rgb) / 0.8) 42%,
+    rgb(var(--stage-scrim-rgb) / 0.38) 66%,
+    rgb(var(--stage-scrim-rgb) / 0) 78%);
+}
+
+/* ------------------------------------------------------------------ *
+ * 尺度视图（2026-10-17 加）
+ *
+ * 卡片是**屏幕恒定大小**：外层已经 scale(1/zoom)，这里的 px 就是屏幕 px。
+ * 只用现有主题令牌，不新增颜色；话题/单元/分子的区别靠边框样式 + 徽标文字，
+ * 因此深色模式不需要另写一套颜色。
+ * ------------------------------------------------------------------ */
+.network-scale-object { cursor: grab; outline: none; touch-action: none; }
+.network-scale-object.is-dragging { cursor: grabbing; }
+.network-scale-object .scale-card-inner {
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: transform 160ms cubic-bezier(0.22, 1, 0.36, 1), filter 160ms ease;
+  animation: scale-card-enter 180ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.network-scale-object.is-dragging .scale-card-inner {
+  transform: scale(1.045);
+  filter: drop-shadow(0 10px 20px rgba(26, 19, 48, 0.24));
+}
+.network-scale-object.is-dragging .scale-card { stroke-width: 2.5; }
+@keyframes scale-card-enter {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.network-scale-object:focus-visible .scale-card,
+.network-scale-object:hover .scale-card { stroke: var(--accent); stroke-width: 2; }
+.network-scale-object.selected .scale-card { stroke: var(--accent); stroke-width: 2.5; }
+.scale-card {
+  fill: var(--surface);
+  stroke: var(--line-strong);
+  stroke-width: 1.2;
+  vector-effect: non-scaling-stroke;
+  filter: drop-shadow(0 4px 10px rgba(26, 19, 48, 0.12));
+}
+.form-topic .scale-card { fill: color-mix(in srgb, var(--surface) 88%, var(--accent) 12%); stroke: var(--accent); }
+.form-header .scale-card { fill: color-mix(in srgb, var(--surface) 92%, var(--accent) 8%); stroke: var(--accent); }
+.form-unit .scale-card { stroke-dasharray: 5 3; }
+.form-molecule .scale-card { stroke-dasharray: 2 3; }
+.scale-card-accent { fill: var(--accent); opacity: 0.55; }
+.form-unit .scale-card-accent { fill: var(--ink-faint); }
+.form-molecule .scale-card-accent { fill: var(--line-strong); }
+.scale-badge { fill: var(--ink-faint); font-weight: 700; letter-spacing: 0.04em; }
+.scale-provisional { fill: var(--ink-faint); opacity: 0.8; }
+.scale-title { fill: var(--ink); font-weight: 650; }
+.scale-meta, .scale-atoms { fill: var(--ink-soft); }
+.scale-atoms { opacity: 0.8; }
+.scale-toggle rect { fill: var(--surface); stroke: var(--line); }
+.scale-toggle text { fill: var(--ink); font-weight: 650; }
+.scale-toggle:hover rect { stroke: var(--accent); }
+.scale-membership-edge {
+  stroke: var(--line-strong);
+  stroke-width: 1;
+  stroke-dasharray: 2 4;
+  opacity: 0.55;
+  vector-effect: non-scaling-stroke;
+}
+.scale-projected-edge {
+  stroke: var(--accent);
+  stroke-width: 1.4;
+  stroke-dasharray: 6 4;
+  opacity: 0.6;
+  vector-effect: non-scaling-stroke;
+}
+.scale-edge-badge rect { fill: var(--surface); stroke: var(--line); }
+.scale-edge-badge text { fill: var(--ink-soft); }
+.legend-scale, .legend-scale-merged, .legend-scale-uncovered {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.78rem;
+  color: var(--ink-soft);
+}
+.legend-scale-merged, .legend-scale-uncovered { color: var(--ink-faint); }
+.scale-swatch { width: 14px; height: 10px; border: 1px dashed var(--accent); border-radius: 3px; display: inline-block; }
+.scale-panel { display: flex; flex-direction: column; gap: 0.7rem; }
+.scale-panel-controls { display: flex; flex-direction: column; gap: 0.35rem; }
+.scale-levels { border: 0; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 0.45rem; }
+.scale-levels legend { font-weight: 650; font-size: 0.82rem; margin-bottom: 0.25rem; }
+.scale-level-option, .scale-check { display: inline-flex; align-items: center; gap: 0.3rem; font-size: 0.8rem; }
+.scale-search { width: 100%; }
+.scale-hint { margin: 0.1rem 0; font-size: 0.76rem; }
+.scale-summary { margin: 0; font-size: 0.8rem; color: var(--ink-soft); }
+.scale-section { border-top: 1px solid var(--line); padding-top: 0.4rem; }
+.scale-section > summary { cursor: pointer; font-weight: 650; font-size: 0.86rem; }
+.scale-unit-group h4 { margin: 0.5rem 0 0.25rem; font-size: 0.8rem; color: var(--ink-soft); }
+.scale-row-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.45rem; }
+.scale-row { border: 1px solid var(--line); border-radius: 9px; padding: 0.45rem 0.5rem; }
+.scale-row-head { display: flex; justify-content: space-between; gap: 0.5rem; align-items: baseline; }
+.scale-row-title { font-size: 0.84rem; font-weight: 600; }
+.scale-row-count { font-size: 0.72rem; color: var(--ink-faint); white-space: nowrap; }
+.scale-row-meta { display: flex; flex-wrap: wrap; gap: 0.35rem; align-items: center; font-size: 0.7rem; color: var(--ink-faint); }
+.scale-row-badge { border: 1px dashed var(--line-strong); border-radius: 999px; padding: 0 0.35rem; }
+.scale-row-actions { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.35rem; }
+.scale-detail-members { margin: 0.3rem 0; padding-left: 1.1rem; font-size: 0.8rem; }
+.scale-detail-members code { font-size: 0.72rem; }

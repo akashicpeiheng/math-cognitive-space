@@ -1,0 +1,43 @@
+{
+  "date": "2026-10-17",
+  "desktopPdf": "E:\\OneDrive\\Desktop\\MCS-完整理论专稿.pdf",
+  "pages": 175,
+  "bytes": 1022183,
+  "sha256": "e952921beedb59d75f905233d3d91bfa842da138eb26bccf1ead9b0ac57e1c18",
+  "previousSha256": "01595b35c38df24b9c2fc7ab8c832444cb62b0aa3d1ec1ec703534977af0ef7a",
+  "previousPdfBackup": "E:\\MCS\\mcs-foundations\\publication\\desktop-pdf-20261017\\before\\desktop\\MCS-完整理论专稿.pdf",
+  "sourceManifest": "E:\\MCS\\mcs-foundations\\edition\\sources.json",
+  "sourceCount": 26,
+  "sourceHashesCurrent": true,
+  "compilation": "XeLaTeX, 3 successful passes",
+  "missingCharacters": false,
+  "overfullBoxes": false,
+  "visualReview": {
+    "overviewPages": "1-175",
+    "detailedPages": [
+      73,
+      79,
+      124,
+      140
+    ]
+  },
+  "remainingCompilerWarnings": "PDF bookmark math-token removal and legacy OMS text-symbol font substitution; no missing glyphs or visible layout defects in reviewed pages",
+  "artifacts": [
+    {
+      "path": "E:\\MCS\\mcs-foundations\\edition\\MCS-完整理论专稿.md",
+      "sha256": "5d990f661fda6116042bd4c0a6892a26f327c6f2499b7c7005a398ff4c5bb7f4"
+    },
+    {
+      "path": "E:\\MCS\\mcs-foundations\\edition\\MCS-完整理论专稿.tex",
+      "sha256": "5fd447ab2d75c719bfccddfb99ca7fb83378bbb745ce2e3740a05c756e406934"
+    },
+    {
+      "path": "E:\\MCS\\mcs-foundations\\edition\\MCS-完整理论专稿.pdf",
+      "sha256": "e952921beedb59d75f905233d3d91bfa842da138eb26bccf1ead9b0ac57e1c18"
+    },
+    {
+      "path": "E:\\MCS\\mcs-foundations\\edition\\sources.json",
+      "sha256": "8b302873878fead765382407f89e3538015009551cec34d650c608fc785030d7"
+    }
+  ]
+}

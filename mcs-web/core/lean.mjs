@@ -5,18 +5,22 @@ import { tmpdir } from 'node:os';
 import { createHash } from 'node:crypto';
 import { spawn } from 'node:child_process';
 import { McsError, CODES } from '../shared/errors.mjs';
+import { captureObjectBindings } from './content-lean.mjs';
 
 export const LEAN_VERSION = '4.34.1';
 export const MATHLIB_REV = 'd13f23b723b8a846827a245b89c10fc7d3f11612';
 export const LEAN_PROJECT = 'mcs-foundations/lean';
-export const LEAN_POLICY = Object.freeze({ version: 'mcs-lean-check/2', allowedAxioms: ['propext', 'Classical.choice', 'Quot.sound'], module: 'MCS.Verified', replayModules: ['MCS.Definitions', 'MCS.Expected', 'MCS.Proofs.Group', 'MCS.Proofs.Closure', 'MCS.Verified'], replayMode: 'project-modules-sequential-single-process' });
+export const LEAN_POLICY = Object.freeze({ version: 'mcs-lean-check/2', allowedAxioms: ['propext', 'Classical.choice', 'Quot.sound'], module: 'MCS.Verified', replayModules: ['MCS.Definitions', 'MCS.Expected', 'MCS.TopologyTargets', 'MCS.Proofs.Group', 'MCS.Proofs.Closure', 'MCS.Proofs.Topology', 'MCS.Verified'], replayMode: 'project-modules-sequential-single-process' });
 const LEAN_ENV_KEYS = ['PATH', 'LEAN_PATH', 'LEAN_SRC_PATH', 'LEAN_SYSROOT', 'LEAN', 'LEAN_AR', 'LEAN_CC', 'LEAN_GITHASH', 'LD_LIBRARY_PATH', 'DYLD_LIBRARY_PATH'];
 // This maintainer-owned runner uses exactly the same official replay function as leanchecker.
 // Its source is bound by CHECKER_SOURCE_SHA256; task material cannot select modules or code.
 const REPLAY_RUNNER = `import LeanChecker\n\nunsafe def mcsReplay : IO Unit := do\n  for module in ${JSON.stringify(LEAN_POLICY.replayModules)} do\n    replayFromImports module.toName\n    IO.println ("MCS_KERNEL_REPLAY:" ++ module)\n\n#eval mcsReplay\n`;
-export const LEAN_FILES = Object.freeze(['lean-toolchain', 'lakefile.toml', 'lake-manifest.json', 'registrations.json', 'README.md', 'MCS.lean', 'MCS/Definitions.lean', 'MCS/Expected.lean', 'MCS/Proofs/Group.lean', 'MCS/Proofs/Closure.lean', 'MCS/Verified.lean', 'MCS/Audit.lean']);
+export const LEAN_FILES = Object.freeze(['lean-toolchain', 'lakefile.toml', 'lake-manifest.json', 'registrations.json', 'README.md', 'MCS.lean', 'MCS/Definitions.lean', 'MCS/Expected.lean', 'MCS/TopologyTargets.lean', 'MCS/Proofs/Group.lean', 'MCS/Proofs/Closure.lean', 'MCS/Proofs/Topology.lean', 'MCS/Verified.lean', 'MCS/Audit.lean']);
 export const digest = value => createHash('sha256').update(typeof value === 'string' || Buffer.isBuffer(value) ? value : JSON.stringify(value)).digest('hex');
-const CHECKER_SOURCE_SHA256 = digest(await readFile(new URL('./lean.mjs', import.meta.url)));
+const CHECKER_SOURCE_SHA256 = digest(await Promise.all([
+  './lean.mjs','./content-lean.mjs','./content-library.mjs','../shared/content-documents.mjs','../shared/content-relations.mjs',
+  './formal/codec.mjs','./formal/language.mjs','./formal/terms.mjs',
+].map(async path=>[path,digest(await readFile(new URL(path,import.meta.url)))])));
 const pick = (value, locale) => value?.[locale === 'en' ? 'en' : 'zh'] ?? value;
 const fail = (message, status = 503, code = CODES.EVIDENCE_UNSUPPORTED) => new McsError(code, message, status);
 
@@ -40,11 +44,12 @@ export async function captureLeanSnapshot(repoRoot, id) {
     originals[ref] = digest(await readFile(path));
   }
   const hashes = Object.fromEntries(Object.entries(files).map(([file, content]) => [file, digest(content)]));
-  const inputSha256 = digest({ registration, hashes, originals, policy: LEAN_POLICY, checkerSourceSha256: CHECKER_SOURCE_SHA256 });
+  const objectBindings = captureObjectBindings(repoRoot, registration);
+  const inputSha256 = digest({ registration, hashes, originals, objectBindings, policy: LEAN_POLICY, checkerSourceSha256: CHECKER_SOURCE_SHA256 });
   let integrity = null;
   try { integrity = JSON.parse(await readFile(join(project, 'integrity.json'), 'utf8')); } catch { /* Unsealed material is visible, but not replayable. */ }
   const sealed = integrity?.schema === 'mcs-lean-integrity/1' && integrity.inputs?.[registration.id] === inputSha256;
-  return { registration, files, hashes, originals, inputSha256, sealed, registryVersion: registry.version, checkerSourceSha256: CHECKER_SOURCE_SHA256 };
+  return { registration, files, hashes, originals, objectBindings, inputSha256, sealed, registryVersion: registry.version, checkerSourceSha256: CHECKER_SOURCE_SHA256 };
 }
 
 export async function sealLeanSources(repoRoot) {
@@ -175,7 +180,7 @@ export async function leanRegistrationView(repoRoot, id, locale = 'zh') {
   const freshness = publishedReport ? (s.sealed && publishedReport.inputSha256 === s.inputSha256 && publishedReport.policyVersion === LEAN_POLICY.version ? 'current' : 'stale') : 'not_run';
   const reviewableHashes = Object.fromEntries(Object.entries(s.hashes).filter(([file]) => file !== 'registrations.json'));
   const reviewed = r.correspondence.status === 'reviewed' && Boolean(r.correspondence.reviewer?.trim()) && Number.isFinite(Date.parse(r.correspondence.reviewedAt)) && JSON.stringify(r.correspondence.reviewedSourceHashes) === JSON.stringify(reviewableHashes) && JSON.stringify(r.correspondence.reviewedOriginalHashes) === JSON.stringify(s.originals);
-  return { ...r, registrationVersion: r.version ?? s.registryVersion, title: pick(r.title, locale), statement: pick(r.statement, locale), assumptions: pick(r.assumptions, locale), scope: pick(r.scope, locale), obligations: pick(r.obligations, locale), correspondence: { ...r.correspondence, status: reviewed ? 'reviewed' : 'pending', note: pick(r.correspondence.note, locale) }, inputSha256: s.inputSha256, sealed: s.sealed, freshness, publishedReport, sources: Object.entries(s.files).filter(([file]) => file.endsWith('.lean')).map(([file, content]) => ({ file, sha256: s.hashes[file], content })), policy: LEAN_POLICY };
+  return { ...r, objectBindings: s.objectBindings, registrationVersion: r.version ?? s.registryVersion, title: pick(r.title, locale), statement: pick(r.statement, locale), assumptions: pick(r.assumptions, locale), scope: pick(r.scope, locale), obligations: pick(r.obligations, locale), correspondence: { ...r.correspondence, status: reviewed ? 'reviewed' : 'pending', note: pick(r.correspondence.note, locale) }, inputSha256: s.inputSha256, sealed: s.sealed, freshness, publishedReport, sources: Object.entries(s.files).filter(([file]) => file.endsWith('.lean')).map(([file, content]) => ({ file, sha256: s.hashes[file], content })), policy: LEAN_POLICY };
 }
 
 export function validateLeanAudit(parsed, registry) {
@@ -288,7 +293,7 @@ export async function checkLeanSnapshot(repoRoot, snapshot, { signal, config = {
     await rm(work, { recursive: true, force: true });
   }
   function report(status, audit) {
-    return sealReport({ schema: 'mcs-lean-report/1', backend: 'lean4', status, evidenceId: snapshot.registration.evidenceId, registrationId: snapshot.registration.id, inputSha256: snapshot.inputSha256, sourceHashes: snapshot.hashes, originalHashes: snapshot.originals, policyVersion: LEAN_POLICY.version, checkerSourceSha256: snapshot.checkerSourceSha256, toolchainHashes, checker: `lean-${LEAN_VERSION}/LeanChecker.replayFromImports`, checkerVerified: false, kernelReplayed: status === 'passed', replayMode: LEAN_POLICY.replayMode, leanVersion: LEAN_VERSION, mathlibRevision: MATHLIB_REV, ranAt: new Date().toISOString(), durationMs: Date.now() - started, logsSha256: digest(logs), logs, audit });
+    return sealReport({ schema: 'mcs-lean-report/1', backend: 'lean4', status, evidenceId: snapshot.registration.evidenceId, registrationId: snapshot.registration.id, inputSha256: snapshot.inputSha256, sourceHashes: snapshot.hashes, originalHashes: snapshot.originals, objectBindings: snapshot.objectBindings, policyVersion: LEAN_POLICY.version, checkerSourceSha256: snapshot.checkerSourceSha256, toolchainHashes, checker: `lean-${LEAN_VERSION}/LeanChecker.replayFromImports`, checkerVerified: false, kernelReplayed: status === 'passed', replayMode: LEAN_POLICY.replayMode, leanVersion: LEAN_VERSION, mathlibRevision: MATHLIB_REV, ranAt: new Date().toISOString(), durationMs: Date.now() - started, logsSha256: digest(logs), logs, audit });
   }
   function sealReport(value) { const { receiptSha256: _old, ...receipt } = value; return { ...receipt, receiptSha256: digest(receipt) }; }
 }

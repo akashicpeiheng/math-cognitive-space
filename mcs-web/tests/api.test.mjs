@@ -2,6 +2,7 @@ import { after, before, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { startTestServer, jsonCall } from './helpers.mjs';
 import { fieldEntry } from '../data/field-entry.mjs';
+import { newVault } from '../data/cases/new-vault.mjs';
 
 let server;
 before(async () => { server = await startTestServer(); });
@@ -25,10 +26,10 @@ test('健康检查返回本体、数据库与辅导状态', async () => {
    * （`data/cases/axler.mjs`）的 61 个里程碑 + 4 个方法节点（300 → 365，不进合并表）。
    * 健康检查同时下发合并口径，因此这里两条一起核对：收口后的节点数 + 被吸收的登记数。
    */
-  assert.equal(payload.data.ontology.counts.nodes, 365 + fieldEntry.nodes.length);
+  assert.equal(payload.data.ontology.counts.nodes, 365 + newVault.nodes.length + fieldEntry.nodes.length);
   assert.equal(payload.data.ontology.counts.merges.groups, 31);
   assert.equal(payload.data.ontology.counts.merges.absorbed, 40);
-  assert.equal(payload.data.ontology.counts.nodes + payload.data.ontology.counts.merges.absorbed, 405 + fieldEntry.nodes.length);
+  assert.equal(payload.data.ontology.counts.nodes + payload.data.ontology.counts.merges.absorbed, 405 + newVault.nodes.length + fieldEntry.nodes.length);
   assert.equal(payload.data.tutor.available, false);
   assert.equal(payload.data.tutor.liveVerified, false);
 });

@@ -10,6 +10,7 @@ import { evidenceSummary, evidenceView, replayCertificate } from '../core/eviden
 import { claimsIndex, obligationsIndex, notationIndex } from '../core/research.mjs';
 import { adapt, adaptWithOntology, deriveExternalState, stageOf } from '../core/adaptation.mjs';
 import { fieldEntry } from '../data/field-entry.mjs';
+import { newVault } from '../data/cases/new-vault.mjs';
 
 test('公共本体装配、版本哈希与十二坐标', async () => {
   const ontology = await testOntology();
@@ -39,7 +40,7 @@ test('公共本体装配、版本哈希与十二坐标', async () => {
   // 300 → **365**（2026-10-14）：第十一个案例 Axler《Linear Algebra Done Right》第 4 版
   //   （`data/cases/axler.mjs`）的 61 个里程碑 + 4 个方法节点；同样只挂名字、正文留空，
   //   不进合并表（新增 0 组）。
-  assert.equal(stats.counts.nodes, 365 + fieldEntry.nodes.length);
+  assert.equal(stats.counts.nodes, 365 + newVault.nodes.length + fieldEntry.nodes.length);
   assert.equal(stats.counts.merges.groups, 31);
   assert.equal(stats.counts.merges.absorbed, 40);
   // 215 → 216：2026-10 给背景侧唯一「既无关系也无契约」的方法节点补了一条引入契约
@@ -50,7 +51,7 @@ test('公共本体装配、版本哈希与十二坐标', async () => {
   // 252 → **253**：笔记库案例的 1 条引入契约（a-vault:directional-derivative），输入取背景节点。
   // 253 → **304**（2026-10-13）：《简明高等代数》案例的 51 条契约（47 个里程碑 + 4 个方法节点，一节点一条）。
   // 304 → **369**（2026-10-14）：Axler 案例的 65 条契约（61 个里程碑 + 4 个方法节点，一节点一条）。
-  assert.equal(stats.counts.actions, 369 + fieldEntry.actions.length);
+  assert.equal(stats.counts.actions, 369 + newVault.actions.length + fieldEntry.actions.length);
   assert.equal(stats.counts.localizations, 36);
   assert.equal(stats.counts.templates, 13);
   assert.match(stats.version, /^sha256:[0-9a-f]{64}$/);
@@ -264,10 +265,12 @@ test('关系代数：复合、逆、限制、闭包与包含见证', async () =>
   assert.equal(subrelationCheck({ witness: { type: 'inclusion', status: 'PROOF' } }, {}).status, 'certified');
 });
 
-test('证据索引：四份机器证书、检查状态与开放假设分开呈现', async () => {
+test('证据索引：机器证书、检查状态与开放假设分开呈现', async () => {
   const ontology = await testOntology();
   const summary = evidenceSummary(ontology);
-  assert.equal(summary.machineCertificates.length, 6);
+  const certificates = ontology.raw.evidence.filter(item => item.kind === 'machine-certificate');
+  assert.equal(summary.machineCertificates.length, certificates.length);
+  assert.ok(certificates.some(item => item.backend === 'lean4' && item.id.includes('topology')));
   for (const record of ontology.raw.evidence.filter((item) => item.kind === 'machine-certificate' && item.backend !== 'lean4')) {
     const view = evidenceView(record);
     assert.equal(view.checkerVerified, false);

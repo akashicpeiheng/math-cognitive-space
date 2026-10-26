@@ -14,7 +14,14 @@ elab "mcs_audit" : command => do
     (`MCS.Verified.extensive, `MCS.Expected.extensive),
     (`MCS.Verified.monotone, `MCS.Expected.monotone),
     (`MCS.Verified.idempotent, `MCS.Expected.idempotent),
-    (`MCS.Verified.finitary, `MCS.Expected.finitary)]
+    (`MCS.Verified.finitary, `MCS.Expected.finitary),
+    (`MCS.Verified.secondToFirst, `MCS.Expected.secondToFirst),
+    (`MCS.Verified.t4ToT3, `MCS.Expected.t4ToT3),
+    (`MCS.Verified.t3ToT2, `MCS.Expected.t3ToT2),
+    (`MCS.Verified.t2ToT1, `MCS.Expected.t2ToT1),
+    (`MCS.Verified.compactToParacompact, `MCS.Expected.compactToParacompact),
+    (`MCS.Verified.directionalFderiv, `MCS.Expected.directionalFderiv),
+    (`MCS.Verified.exteriorSquared, `MCS.Expected.exteriorSquared)]
   let mut results : Array Json := #[]
   for (decl, expected) in targets do
     let some info := env.find? decl | throwError "missing registered declaration: {decl}"

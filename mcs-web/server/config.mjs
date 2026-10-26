@@ -58,7 +58,7 @@ export function loadConfig() {
     repoRoot: REPO_ROOT,
     dev: false,
     vaultLimits: { markdownBytes: 2097152, attachmentBytes: 104857600, notes: 10000, vaultBytes: 524288000, ownerBytes: 1073741824, chunkBytes: 524288 },
-    lean: { enabled: true, lakePath: null, leanPath: null, timeoutMs: 120000, maxOutputBytes: 4194304, maxConcurrent: 1, maxQueued: 20 },
+    lean: { enabled: true, lakePath: null, leanPath: null, timeoutMs: 300000, maxOutputBytes: 4194304, maxConcurrent: 1, maxQueued: 20 },
     /*
      * 部署形态（2026-10 发布前加）。
      *

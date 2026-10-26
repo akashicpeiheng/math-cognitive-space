@@ -5,6 +5,8 @@ import { SITE } from '../site';
 import { PressFeedback } from './PressFeedback';
 import { AuthStatus } from './AuthStatus';
 import { LanguageSwitch } from './LanguageSwitch';
+import { ThemeSwitch } from './ThemeSwitch';
+import { ReadingModeSwitch } from './MasterView';
 import { useI18n } from '../i18n';
 import { stripLocale } from '../i18n/paths';
 import type { MessageKey } from '../i18n/messages';
@@ -27,6 +29,7 @@ import type { MessageKey } from '../i18n/messages';
 const NAV: Array<{ to: string; key: MessageKey; icon: string; also?: string[] }> = [
   { to: '/start', key: 'nav.start', icon: 'home' },
   { to: '/nodes', key: 'nav.nodes', icon: 'nodes' },
+  { to: '/mcs', key: 'nav.mcs', icon: 'network' },
   { to: '/network', key: 'nav.network', icon: 'network' },
   { to: '/plan', key: 'nav.plan', icon: 'plan' },
   { to: '/library', key: 'nav.library', icon: 'nodes' },
@@ -36,6 +39,7 @@ const NAV: Array<{ to: string; key: MessageKey; icon: string; also?: string[] }>
 const NAV_SECONDARY: Array<{ to: string; key: MessageKey; icon: string; badge?: { text: string; titleKey: MessageKey } }> = [
   /* 用户手册放「按需查阅」第一位：第一次来的人先看它，再按需要查别的。 */
   { to: '/manual', key: 'nav.manual', icon: 'manual' },
+  { to: '/objects', key: 'nav.formalObjects', icon: 'nodes' },
   { to: '/intro', key: 'nav.intro', icon: 'intro' },
   { to: '/method', key: 'nav.method', icon: 'method' },
   {
@@ -69,6 +73,7 @@ const NAV_SECONDARY: Array<{ to: string; key: MessageKey; icon: string; badge?: 
 function locationKey(pathname: string): MessageKey {
   if (pathname === '/' || pathname === '') return 'topbar.home';
   if (pathname.startsWith('/start')) return 'nav.start';
+  if (pathname.startsWith('/mcs')) return 'nav.mcs';
   if (pathname.startsWith('/nodes')) return 'nav.nodes';
   if (pathname.startsWith('/plan')) return 'nav.plan';
   if (pathname.startsWith('/library')) return 'nav.library';
@@ -76,6 +81,7 @@ function locationKey(pathname: string): MessageKey {
   if (pathname.startsWith('/profile') || pathname.startsWith('/review')) return 'nav.profile';
   if (pathname.startsWith('/intro')) return 'nav.intro';
   if (pathname.startsWith('/manual')) return 'nav.manual';
+  if (pathname.startsWith('/objects') || pathname.startsWith('/learning-nodes')) return 'nav.formalObjects';
   if (pathname.startsWith('/method')) return 'nav.method';
   if (pathname.startsWith('/tutor')) return 'nav.tutor';
   if (pathname.startsWith('/lab') || pathname.startsWith('/research')) return 'nav.lab';
@@ -176,7 +182,7 @@ export function Layout() {
    *    并且页面本身不再滚动。类名而不是内联样式：高度约束还牵扯顶栏、工作区内边距
    *    与窄屏的既有规则（窄屏下画布本来就改成 `46vh` 的普通卡片，那一档保持不变）。
    */
-  const isNetwork = bare === '/network';
+  const isNetwork = bare === '/network' || bare === '/mcs';
   const toggleLabel = isNarrow
     ? (mobileOpen ? t('topbar.collapseNav') : t('topbar.expandNav'))
     : (desktopCollapsed ? t('topbar.expandSidebar') : t('topbar.collapseSidebar'));
@@ -283,6 +289,9 @@ export function Layout() {
           <div className="topbar-side">
             {/* 语言切换按键：放在档案选择器之前，因为它是**页面级**的开关，不是个人数据。 */}
             <LanguageSwitch />
+            {/* 外观（浅色 / 深色 / 跟随系统）与语言同类：页面级显示选项，不写进档案。 */}
+            <ThemeSwitch />
+            <ReadingModeSwitch />
             <div className="profile-picker">
               <label htmlFor="profile-select">{t('profile.pickerLabel')}</label>
               <select
