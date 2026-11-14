@@ -5,16 +5,19 @@ on:
 permissions:
   contents: read
 jobs:
-  verify:
-    runs-on: ubuntu-latest
-    timeout-minutes: 60
+  browser:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
     defaults:
       run:
         working-directory: mcs-web
     env:
       MCS_WEB_REQUIRE_BROWSER: '1'
       MCS_WEB_REQUIRE_TLS: '1'
-      MCS_WEB_TEST_CONCURRENCY: '1'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -24,5 +27,25 @@ jobs:
           cache-dependency-path: mcs-web/package-lock.json
       - run: npm ci --no-audit --no-fund
       - run: npm run build
-      - run: npm run check
+      - run: node tests/browser.mjs
+  remaining:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: mcs-web
+    env:
+      MCS_WEB_REQUIRE_BROWSER: '1'
+      MCS_WEB_REQUIRE_TLS: '1'
+      MCS_WEB_TEST_CONCURRENCY: '1'
+      MCS_WEB_TEST_FROM: '外观：三态切换、持久化、跟随系统与深色画布'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: mcs-web/package-lock.json
+      - run: npm ci --no-audit --no-fund
+      - run: npm run build
       - run: npm test
