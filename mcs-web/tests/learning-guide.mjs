@@ -78,7 +78,7 @@ try {
   const eventsBeforeRead = (await call(`/profiles/${profile.id}/events`)).events.length;
   await page.locator('.learning-plan-summary').getByRole('button', { name: '进入这一步', exact: true }).click();
   await page.waitForURL(/\/nodes\/.*route=/);
-  await page.waitForSelector('.learning-plan-card');
+  await page.waitForFunction(() => document.querySelectorAll('.learning-plan-card').length === 1, null, { timeout: 5000 });
   assert.ok((new URL(page.url())).searchParams.has('route'));
   assert.ok(await page.locator('.learning-plan-card').count() === 1);
   events = (await call(`/profiles/${profile.id}/events`)).events;
