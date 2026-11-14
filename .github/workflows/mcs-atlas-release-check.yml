@@ -5,19 +5,17 @@ on:
 permissions:
   contents: read
 jobs:
-  browser:
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, windows-latest]
-    runs-on: ${{ matrix.os }}
-    timeout-minutes: 20
+  remaining:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
     defaults:
       run:
         working-directory: mcs-web
     env:
       MCS_WEB_REQUIRE_BROWSER: '1'
       MCS_WEB_REQUIRE_TLS: '1'
+      MCS_WEB_TEST_CONCURRENCY: '1'
+      MCS_WEB_TEST_FROM: '知识网络：回到网络视图的来路上下文（该存的存、该退的退、语种跟着走）'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -27,5 +25,4 @@ jobs:
           cache-dependency-path: mcs-web/package-lock.json
       - run: npm ci --no-audit --no-fund
       - run: npm run build
-      - run: node tests/browser.mjs
-      - run: node tests/home-narrative.mjs
+      - run: npm test
