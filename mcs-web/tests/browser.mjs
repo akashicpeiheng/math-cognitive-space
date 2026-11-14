@@ -908,7 +908,7 @@ try {
   await page.evaluate(async () => { if (document.fullscreenElement) await document.exitFullscreen(); });
   await page.waitForTimeout(300);
   await page.click('button:has-text("全屏")');
-  await page.waitForFunction(() => Boolean(document.fullscreenElement), null, { timeout: 5000 }).catch(() => {});
+  await page.waitForFunction(() => Boolean(document.fullscreenElement) && document.querySelector('.network-stage')?.classList.contains('is-fullscreen'), null, { timeout: 5000 }).catch(() => {});
   const fsState = await page.evaluate(() => ({
     fullscreen: Boolean(document.fullscreenElement),
     stageFixed: document.querySelector('.network-stage')?.classList.contains('is-fullscreen') ?? false,
