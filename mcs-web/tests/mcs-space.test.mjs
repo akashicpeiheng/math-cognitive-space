@@ -1,10 +1,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { mcsPresentation, MCS_TOPICS } from '../shared/mcs-presentation.mjs';
 import { loadContentLibrary } from '../core/content-library.mjs';
 import {
-  MCS_STORAGE_KEY, MCS_LOD, defaultMcsState, createMcsLayout, positionedMcsLayout,
+  MCS_STORAGE_KEY, MCS_LOD, mcsOverviewCamera, setMcsLevel, displayedMcsRelations, defaultMcsState, createMcsLayout, positionedMcsLayout,
   filterMcsObjects, visibleMcsBoxes, updateMcsLod, normalizeMcsState,
-  encodeMcsState, decodeMcsState, projectMcsRelations, assignMcsRelationLanes,
+  encodeMcsState, decodeMcsState, projectMcsRelations, assignMcsRelationLanes, resizeMcsCamera,
 } from '../shared/mcs-space.mjs';
 
 const scales = ['atom', 'molecule', 'unit', 'topic', 'subdiscipline'];
@@ -110,12 +111,12 @@ function realData() {
 }
 
 test('exports and defaults are independent, deterministic values', () => {
-  assert.equal(MCS_STORAGE_KEY, 'mcs-view-state-v1');
-  assert.deepEqual(MCS_LOD, { expand: 240, collapse: 180 });
+  assert.equal(MCS_STORAGE_KEY, 'mcs-view-state-v2');
+  assert.deepEqual(MCS_LOD, { enter: [.8, 1.8, 3.6], leave: [.6, 1.4, 2.8] });
   const data = fixture(), first = defaultMcsState(data), second = defaultMcsState(data);
   assert.deepEqual(first, second);
   first.expanded.push('a'); first.filters.groups.push('pair'); first.positions.a = { x: 2, y: 3 };
-  assert.deepEqual(second.expanded, []); assert.deepEqual(second.filters.groups, []);
+  assert.deepEqual(second.expanded, ['s']); assert.deepEqual(second.filters.groups, []);
   assert.deepEqual(second.positions, {});
 });
 
@@ -154,7 +155,7 @@ test('ordinary references/imports never consume member slots or enlarge a single
 
 test('real M data: all objects, declarations, nesting, compact root aspect and colliding network centres', t => {
   const data = freeze(realData());
-  assert.equal(data.objects.length, 65);
+  assert.equal(data.objects.length, loadContentLibrary().objects.length);
   assert.equal(data.groups.find(g => g.id === 'group').objectIds.length, 8);
   const centers = Object.fromEntries(data.objects.map(o => [o.id, { x: 0, y: 0 }]));
   for (const [name, layout] of [['default', createMcsLayout(data)], ['coincident network centres', createMcsLayout(data, centers)]]) {
@@ -165,18 +166,12 @@ test('real M data: all objects, declarations, nesting, compact root aspect and c
     const bounds = rootBounds(layout), aspect = Math.max(bounds.w / bounds.h, bounds.h / bounds.w);
     t.diagnostic(`${name}: ${bounds.w} x ${bounds.h}; aspect=${aspect.toFixed(3)}`);
     assert(aspect < 3, `${name} degenerates into a strip: ${aspect}`);
-    const group = layout.boxes['obj:group:subdiscipline'];
-    const rest = layout.roots.filter(id => id !== group.id).map(id => layout.boxes[id]);
-    assert(group.x + group.w + 96 <= Math.min(...rest.map(b => b.x)) ||
-      group.x >= Math.max(...rest.map(b => b.x + b.w)) + 96 ||
-      group.y + group.h + 96 <= Math.min(...rest.map(b => b.y)) ||
-      group.y >= Math.max(...rest.map(b => b.y + b.h)) + 96, 'large group root belongs at the cluster perimeter');
     assert.deepEqual(createMcsLayout(data, name === 'default' ? undefined : centers), layout);
   }
   const layout = createMcsLayout(data);
   const state = openAll(data);
   const filtered = filterMcsObjects(data, state.filters);
-  assert.equal(filtered.matched.size, 65);
+  assert.equal(filtered.matched.size, data.objects.length);
   const visible = visibleMcsBoxes(data, layout, state, filtered);
   assert.equal(visible.length, Object.keys(layout.boxes).length);
   const projected = projectMcsRelations(data, layout, state, visible, filtered.matched);
@@ -190,27 +185,18 @@ test('real M data: all objects, declarations, nesting, compact root aspect and c
   }
 });
 
-test('real eight-object group hierarchy opens along the focus path at successive zooms', () => {
-  const data = realData(), layout = createMcsLayout(data), state = defaultMcsState(data);
+test('group atoms, molecules and declarations remain reachable at the global expression level', () => {
+  const data = realData(), layout = createMcsLayout(data);
+  const state = setMcsLevel(data, defaultMcsState(data), 3);
   state.filters.groups = ['group'];
-  const leaf = 'obj:group:injective', path = [leaf];
-  while (layout.parents[path[0]]) path.unshift(layout.parents[path[0]]);
-  assert.deepEqual(path, ['obj:group:subdiscipline', 'obj:group:topic', 'obj:group:unit', leaf]);
-  const focus = center(layout.boxes[`${leaf}#claim`]);
-  let current = state;
-  for (const id of path) {
-    const box = layout.boxes[id];
-    current = { ...current, camera: { x: 20, y: -50, scale: 241 / Math.max(box.w, box.h) } };
-    current = updateMcsLod(data, layout, current, focus);
-    assert(current.expanded.includes(id), id);
-  }
-  assert(ids(visibleMcsBoxes(data, layout, current)).includes(`${leaf}#claim`));
+  const visible = ids(visibleMcsBoxes(data, layout, state));
+  for (const id of ['obj:group:mul','obj:group:left-mul','obj:group:injective#claim']) assert(visible.includes(id));
 });
 
-test('filters AND dimensions, OR values, title/id/source queries and owner-local evidence', () => {
+test('filters AND dimensions, OR values, title/id/source queries and registered evidence', () => {
   const data = fixture(), defaults = defaultMcsState(data).filters;
   const evidence = filterMcsObjects(data, { ...defaults, evidence: ['PROOF'] });
-  assert.deepEqual([...evidence.matched], ['a', 'u-a']);
+  assert.deepEqual([...evidence.matched], ['a', 'b', 'c', 'u-a']);
   assert(!evidence.matched.has('u-b')); assert(evidence.context.has('u-b'));
   assert(evidence.context.has('t-b')); assert(evidence.context.has('z-cross'));
   assert(evidence.context.has('s')); assert(!evidence.context.has('a'));
@@ -225,19 +211,64 @@ test('filters AND dimensions, OR values, title/id/source queries and owner-local
   assert.deepEqual(filterMcsObjects(data, { ...defaults, relations: ['deduction'] }), filterMcsObjects(data, defaults));
 });
 
-test('counts use direct member matches and all own declarations; no recursive/reference inflation', () => {
+test('counts propagate unique descendant matches through closed parents', () => {
   const data = fixture(), filters = defaultMcsState(data).filters;
   const all = filterMcsObjects(data, filters);
   assert.deepEqual(all.counts['u-a'], { matched: 4, total: 4 });
   assert.deepEqual(all.counts['u-b'], { matched: 2, total: 2 });
-  assert.deepEqual(all.counts.s, { matched: 1, total: 1 });
+  assert.deepEqual(all.counts.s, { matched: 4, total: 4 });
   const result = filterMcsObjects(data, { ...filters, evidence: ['DEF'] });
-  assert.deepEqual([...result.matched], ['b', 'u-a']);
+  assert.deepEqual([...result.matched], ['b', 'c', 'u-a']);
   assert.deepEqual(result.counts['u-a'], { matched: 3, total: 4 });
   assert.deepEqual(result.counts['u-b'], { matched: 0, total: 2 });
   assert.deepEqual(result.counts.a, { matched: 0, total: 1 });
   assert.deepEqual(result.counts.b, { matched: 1, total: 1 });
-  assert.deepEqual(result.counts.s, { matched: 0, total: 1 });
+  assert.deepEqual(result.counts.s, { matched: 2, total: 4 });
+});
+
+test('evidence includes exact registered M relation participants without rewriting declaration labels', () => {
+  const data = fixture(), filters = { ...defaultMcsState(data).filters, evidence: ['PROOF'] };
+  const before = JSON.stringify(data);
+  const matched = filterMcsObjects(data, filters).matched;
+  assert(matched.has('b'), 'an AND premise with a DEF declaration belongs to a PROOF relation');
+  assert(matched.has('c'), 'a REF declaration may be the conclusion of a PROOF relation');
+  assert(!matched.has('u-b'), 'unrelated REF object is not promoted to PROOF');
+  assert.deepEqual(filterMcsObjects(data, { ...filters, relations: ['duality'] }).matched, matched, 'relation kind never hides objects');
+  data.relations.push({ ...data.relations[0], id: 'invalid-pin', to: { ...ref(data, 'u-b'), formalHash: 'wrong' } });
+  assert(!filterMcsObjects(data, filters).matched.has('u-b'));
+  data.relations.pop();
+  assert.equal(JSON.stringify(data), before, 'registered evidence is not mutated');
+});
+
+test('shared camera adapts to another canvas size while keeping its world centre', () => {
+  const camera = { x: -230, y: 46, scale: .8 }, before = { width: 1200, height: 700 }, after = { width: 390, height: 320 };
+  const resized = resizeMcsCamera(camera, before, after, true);
+  assert.equal(resized.scale, .26);
+  assert(Math.abs((after.width / 2 - resized.x) / resized.scale - (before.width / 2 - camera.x) / camera.scale) < 1e-8);
+  assert(Math.abs((after.height / 2 - resized.y) / resized.scale - (before.height / 2 - camera.y) / camera.scale) < 1e-8);
+  assert.equal(resizeMcsCamera(camera, before, after).scale, camera.scale, 'ordinary sidebar resizing keeps the current zoom');
+  const data = fixture(), state = { ...defaultMcsState(data), camera, viewport: before };
+  assert.deepEqual(decodeMcsState(encodeMcsState(state), data).state, state);
+});
+
+test('extreme shared coordinates are bounded and unsupported schemas do not restore', () => {
+  const data = fixture(), base = defaultMcsState(data);
+  const restored = normalizeMcsState({ ...base, camera: { x: 1e308, y: -1e308, scale: 1e-300 }, positions: { a: { x: 1e308, y: -1e308 } }, viewport: { width: -1, height: 4 } }, data);
+  assert.deepEqual(restored.state.camera, { x: 1e8, y: -1e8, scale: .015 });
+  assert.deepEqual(restored.state.positions.a, { x: 1e6, y: -1e6 });
+  assert.equal(restored.state.viewport, undefined);
+  assert(restored.issues.length >= 6);
+  assert.deepEqual(normalizeMcsState({ ...base, schema: 'future', selected: 'a' }, data).state, base);
+});
+
+test('relation inspection survives sharing and drops only stale relation IDs', () => {
+  const data = fixture(), state = { ...defaultMcsState(data), relationIds: ['r1', 'r2'] };
+  assert.deepEqual(decodeMcsState(encodeMcsState(state), data), { state, issues: [] });
+  const next = { ...data, objectVersion: 'next', relations: data.relations.filter(r => r.id !== 'r2') };
+  const restored = normalizeMcsState(state, next);
+  assert.deepEqual(restored.state.relationIds, ['r1']);
+  assert(restored.issues.some(issue => issue.startsWith('relationIds')));
+  assert.deepEqual(normalizeMcsState({ ...state, selected: 'a' }, data).state.relationIds, []);
 });
 
 test('visibility keeps expanded regions, hides closed descendants, and opens atom/molecule declarations', () => {
@@ -255,22 +286,19 @@ test('visibility keeps expanded regions, hides closed descendants, and opens ato
   assert(visibleMcsBoxes(data, layout, state).every(b => b.objectId === 'c'));
 });
 
-test('LOD hysteresis, frontier expansion, far focus, manual overrides and full shrink', () => {
+test('global LOD crosses levels synchronously, ignores focus, respects hysteresis and fixed levels', () => {
   const data = fixture(), layout = createMcsLayout(data), state = defaultMcsState(data);
-  const root = layout.boxes.s, focus = center(layout.boxes['a#p']);
-  state.camera.scale = 240 / Math.max(root.w, root.h);
-  const first = updateMcsLod(data, layout, freeze(state), focus);
-  assert(first.expanded.includes('s')); assert(!first.expanded.includes('t-a'));
-  assert.equal(first.camera, state.camera);
-  const middle = { ...first, camera: { ...state.camera, scale: 210 / Math.max(root.w, root.h) } };
-  assert(updateMcsLod(data, layout, middle, focus).expanded.includes('s'));
-  assert(!updateMcsLod(data, layout, { ...middle, expanded: [] }, focus).expanded.includes('s'));
-  const small = { ...openAll(data), camera: { x: 10, y: -30, scale: 0.001 }, manual: { a: 'open', c: 'closed' } };
-  const shrunk = updateMcsLod(data, layout, small, { x: 1e6, y: 1e6 });
-  assert.deepEqual(shrunk.expanded, ['a']); assert.deepEqual(shrunk.camera, small.camera);
-  const closed = { ...first, manual: { s: 'closed' } };
-  assert(!updateMcsLod(data, layout, closed, focus).expanded.includes('s'));
-  assert.deepEqual(updateMcsLod(data, layout, state, { x: 1e6, y: 1e6 }).expanded, []);
+  const baseline = mcsOverviewCamera(data, layout).scale;
+  const at = (ratio, previous = state) => ({ ...previous, camera: { ...previous.camera, scale: baseline * ratio } });
+  const first = updateMcsLod(data, layout, at(1.81), { x: 0, y: 0 });
+  assert.equal(first.level, 2); assert(first.expanded.includes('t-a')); assert(first.expanded.includes('t-b'));
+  assert.deepEqual(first, updateMcsLod(data, layout, at(1.81), { x: 1e8, y: -1e8 }));
+  assert.equal(updateMcsLod(data, layout, at(1.5, first)).level, 2);
+  assert.equal(updateMcsLod(data, layout, at(1.39, first)).level, 1);
+  assert.equal(updateMcsLod(data, layout, at(4)).level, 3);
+  assert.equal(updateMcsLod(data, layout, at(.4, first)).level, 0);
+  const fixed = setMcsLevel(data, state, 2);
+  assert.equal(updateMcsLod(data, layout, at(.1, fixed)).level, 2);
 });
 
 test('local drag offsets inherit recursively; expanded enclosures never feed back into the baseline', () => {
@@ -293,20 +321,11 @@ test('local drag offsets inherit recursively; expanded enclosures never feed bac
   assert.deepEqual(positionedMcsLayout(layout, positions), moved);
 });
 
-test('LOD focus uses inherited drag coordinates while threshold uses baseline size', () => {
-  const data = fixture(), layout = createMcsLayout(data), state = openAll(data);
-  state.expanded = ['s', 't-a'];
-  state.positions = { s: { x: 10000, y: 15000 }, 'u-a': { x: 350, y: -250 } };
-  const box = layout.boxes['u-a'];
-  state.camera.scale = 240 / Math.max(box.w, box.h);
-  const focus = { x: box.x + 10000 + 350 + 1, y: box.y + 15000 - 250 + 1 };
-  assert(updateMcsLod(data, layout, state, focus).expanded.includes('u-a'));
-  assert(!updateMcsLod(data, layout, state, center(box)).expanded.includes('u-a'));
-  // A far-dragged declaration massively enlarges the region, but cannot auto-open it at 179px.
-  state.positions['u-a#self-def'] = { x: 1e5, y: 1e5 };
-  state.camera.scale = 179 / Math.max(box.w, box.h);
-  assert(positionedMcsLayout(layout, state.positions).boxes['u-a'].w > box.w);
-  assert(!updateMcsLod(data, layout, { ...state, expanded: [...state.expanded, 'u-a'] }, focus).expanded.includes('u-a'));
+test('dragging cannot change the global zoom baseline or open objects under a pointer', () => {
+  const data = fixture(), layout = createMcsLayout(data), state = defaultMcsState(data);
+  state.camera.scale = mcsOverviewCamera(data, layout).scale * 2;
+  const moved = { ...state, positions: { s: { x: 1e5, y: 1e5 } } };
+  assert.equal(updateMcsLod(data, layout, state).level, updateMcsLod(data, layout, moved).level);
 });
 
 test('normalization validates finite coordinates/controlled filters and retains valid state after a version change', () => {
@@ -323,7 +342,7 @@ test('normalization validates finite coordinates/controlled filters and retains 
   assert.equal(normalized.state.objectVersion, data.objectVersion);
   assert.deepEqual(normalized.state.filters, { groups: ['pair'], scales: ['atom'], relations: ['deduction'], evidence: ['PROOF'], query: '中文 P' });
   assert.deepEqual(normalized.state.camera, { x: 0, y: -12, scale: 1 });
-  assert.deepEqual(normalized.state.expanded, ['a']); assert.deepEqual(normalized.state.manual, { a: 'open' });
+  assert.deepEqual(normalized.state.expanded, ['s']); assert.deepEqual(normalized.state.manual, {});
   assert.equal(normalized.state.selected, null);
   assert.deepEqual(normalized.state.positions, { a: { x: 5, y: -8 }, 'a#p': { x: 0, y: 20 } });
   assert.deepEqual(normalizeMcsState(normalized.state, data), { state: normalized.state, issues: [] });
@@ -333,24 +352,19 @@ test('normalization validates finite coordinates/controlled filters and retains 
   }
 });
 
-test('manual open/closed choices reconcile conflicting expanded fields on restore', () => {
-  const data = fixture(), base = defaultMcsState(data);
-  const opened = normalizeMcsState({ ...base, expanded: ['s', 't-a'], manual: { 'u-a': 'open' } }, data);
-  assert.deepEqual(opened.state.expanded, ['s', 't-a', 'u-a']);
-  assert(opened.issues.some(issue => issue.includes('reconciled')));
-  assert.deepEqual(visibleMcsBoxes(data, createMcsLayout(data), opened.state).map(box => box.id).includes('u-a#self-def'), true);
-
-  const closed = normalizeMcsState({ ...base, expanded: ['s', 't-a', 'u-a'], manual: { 'u-a': 'closed' } }, data);
-  assert.deepEqual(closed.state.expanded, ['s', 't-a']);
-  assert(!visibleMcsBoxes(data, createMcsLayout(data), closed.state).some(box => box.id === 'u-a#self-def'));
-  assert.deepEqual(normalizeMcsState(opened.state, data).issues, []);
+test('legacy expansion choices migrate into one global level and reset old placement', () => {
+ const data=fixture(), base=defaultMcsState(data);
+ const migrated=normalizeMcsState({...base,schema:'mcs-view-state/1',expanded:['s','t-a'],manual:{'u-a':'open'},selected:'a',positions:{a:{x:40,y:30}}},data);
+ assert.equal(migrated.state.level,3); assert.equal(migrated.state.selected,'a');
+ assert.deepEqual(migrated.state.positions,{}); assert.deepEqual(migrated.state.manual,{});
+ assert(migrated.issues.some(i=>i.startsWith('migration:')));
 });
 
 test('share roundtrip supports declaration/reference keys, unicode, old versions and rejects malformed hashes', () => {
   const data = fixture(), layout = createMcsLayout(data), state = defaultMcsState(data);
   const entrance = Object.values(layout.boxes).find(b => b.kind === 'reference').id;
   state.filters.query = '中文 ∀ x #mcs=% &'; state.filters.groups = ['pair']; state.camera = { x: -23, y: 456, scale: 0.37 };
-  state.selected = 'a#p'; state.expanded = ['s', 'a']; state.manual = { a: 'open' };
+  state.selected = 'a#p';
   state.positions = { 'a#p': { x: 3, y: -8 }, [entrance]: { x: 7, y: 1 } };
   const hash = encodeMcsState(freeze(state));
   assert(hash.startsWith('#mcs=%7B'));
@@ -423,8 +437,28 @@ test('filtered/absent AND premises are counted, and an expanded visible parent c
   const allState = openAll(data), all = visibleMcsBoxes(data, layout, allState);
   const hidden = all.filter(b => !['a', 'b'].includes(b.objectId));
   const output = projectMcsRelations(data, layout, allState, hidden, filterMcsObjects(data, allState.filters).matched);
-  assert(!output.edges.some(e => e.relationIds.includes('r1') || e.relationIds.includes('r4')));
+  const missingSource = output.edges.find(e => e.relationIds.includes('r1'));
+  assert.equal(missingSource.from, null, 'hidden source is never replaced by a context parent');
+  assert.equal(missingSource.missingPremises, 2);
+  assert(!output.edges.some(e => e.relationIds.includes('r4')), 'ordinary two-endpoint application is hidden');
   assert.equal(output.edges.find(e => e.relationIds.includes('r5')).from, 'u-a');
+});
+
+test('collapsed internal relations and a conclusion whose entire AND group is filtered remain traceable', () => {
+  const data = fixture(), layout = createMcsLayout(data), state = setMcsLevel(data, defaultMcsState(data), 0);
+  data.relations.push({ ...data.relations[0], id: 'internal', to: ref(data, 'b', 'q') });
+  const closed = projectMcsRelations(data, layout, state, visibleMcsBoxes(data, layout, state), filterMcsObjects(data, state.filters).matched);
+  const internal = closed.edges.find(e => e.relationIds.includes('internal'));
+  assert.equal(internal.from, 's'); assert.equal(internal.to, 's');
+  assert.equal(internal.internal, true); assert.equal(internal.aggregate, true);
+  state.filters.query = '标题 c';
+  const filtered = filterMcsObjects(data, state.filters);
+  const visible = visibleMcsBoxes(data, layout, state, filtered);
+  const result = projectMcsRelations(data, layout, state, visible, filtered.matched);
+  const edge = result.edges.find(e => e.relationIds.includes('r1'));
+  assert.equal(edge.from, null); assert.equal(edge.to, 'c');
+  assert.equal(edge.missingPremises, 2); assert.deepEqual(edge.premises, []);
+  assert.deepEqual(edge.relationIds, ['r1', 'r2']);
 });
 
 test('invalid declaration pins cannot be replaced by guessed owner or ancestor references', () => {
@@ -432,4 +466,49 @@ test('invalid declaration pins cannot be replaced by guessed owner or ancestor r
   data.relations.push({ ...data.relations[0], id: 'bad', from: { ...ref(data, 'a', 'p'), anchor: 'removed' } });
   const projected = projectMcsRelations(data, layout, state, visibleMcsBoxes(data, layout, state), filterMcsObjects(data, state.filters).matched);
   assert(!projected.edges.some(e => e.relationIds.includes('bad')));
+});
+
+
+test('registered topics cover all units; primary presentation and secondary entrances use the same identities', () => {
+ const data=realData(); data.presentation=mcsPresentation(data.objects);
+ const layout=createMcsLayout(data);
+ const initial=visibleMcsBoxes(data,layout,defaultMcsState(data));
+ if (!data.objects.some(object => object.id === 'obj:tdg:topic-local-change')) {
+   assert.equal(Object.values(layout.boxes).filter(box => box.kind === 'object').length, data.objects.length);
+   assert(initial.some(box => box.objectId === 'obj:tdg:derivative'));
+   assert(filterMcsObjects(data, {...defaultMcsState(data).filters, query:'图卡'}).matched.has('obj:tdg:chart'));
+   return;
+ }
+ assert.equal(initial.filter(b=>b.kind==='object'&&!defaultMcsState(data).expanded.includes(b.id)).length,9);
+ assert.equal(layout.roots.length,4);
+ assert.equal(layout.parents['obj:tdg:jacobian'],'obj:tdg:topic-local-change');
+ assert.equal(layout.parents['obj:tdg:homeomorphism'],'obj:tdg:topic-spaces-continuity');
+ const all=setMcsLevel(data,defaultMcsState(data),2);
+ const boxes=visibleMcsBoxes(data,layout,all);
+ assert.equal(boxes.filter(b=>b.kind==='object'&&b.objectId==='obj:tdg:jacobian').length,1);
+ assert(boxes.some(b=>b.kind==='reference'&&b.parent==='obj:tdg:topic-coordinates-manifolds'&&b.target==='obj:tdg:jacobian'));
+ const covered=new Set(MCS_TOPICS.flatMap(t=>data.objects.find(o=>o.id===t.id).members.map(r=>r.id)));
+ for(const object of data.objects.filter(o=>o.id.startsWith('obj:tdg:')&&o.scale==='unit'))assert(covered.has(object.id));
+ const query=filterMcsObjects(data,{...all.filters,query:'图卡'});
+ assert(query.matched.has('obj:tdg:chart'));
+ const folded=visibleMcsBoxes(data,layout,defaultMcsState(data),query);
+ assert(!folded.some(b=>b.id==='obj:tdg:chart'));
+ assert(query.counts['obj:tdg:topic-coordinates-manifolds'].matched>0);
+});
+
+test('link visibility filters drawing only and retains internal relationships and independent AND groups', () => {
+ const data=fixture(),layout=createMcsLayout(data),state=setMcsLevel(data,defaultMcsState(data),2);
+ const boxes=visibleMcsBoxes(data,layout,state),matched=filterMcsObjects(data,state.filters).matched;
+ const full=projectMcsRelations(data,layout,state,boxes,matched);
+ assert.equal(displayedMcsRelations(data,layout,state,full).edges.length,full.edges.filter(e=>!e.internal).length);
+ assert.deepEqual(displayedMcsRelations(data,layout,state,full).emphasizedRelationIds,[]);
+ const selected={...state,selected:'u-a'};
+ const visible=displayedMcsRelations(data,layout,selected,full);
+ assert(visible.edges.length>0);
+ assert(visible.edges.some(e=>e.relationIds.includes('r1'))&&visible.edges.some(e=>e.relationIds.includes('r3')));
+ assert(visible.emphasizedRelationIds.includes('r1')&&visible.emphasizedRelationIds.includes('r3'));
+ const folded=setMcsLevel(data,state,1);
+ assert.equal(displayedMcsRelations(data,layout,folded,full).edges.length,0);
+ assert.equal(displayedMcsRelations(data,layout,{...selected,edgeMode:'none'},full).edges.length,0);
+ assert.equal(displayedMcsRelations(data,layout,{...state,edgeMode:'all'},full).edges.length,full.edges.filter(e=>!e.internal).length);
 });

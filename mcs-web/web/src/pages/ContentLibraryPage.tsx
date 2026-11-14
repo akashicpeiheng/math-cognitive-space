@@ -1,4 +1,4 @@
-import { Link, useParams, useSearchParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { useApi,formatError } from '../api';
 import { useI18n } from '../i18n';
 import { Markdown } from '../components/Markdown';
@@ -12,6 +12,7 @@ import {ContentCaseEntry,ContentRelationDetails} from '../components/ContentCase
 import {ContentLearning} from '../components/ContentLearning';
 import {caseNetworkHref} from '../content-case';
 import {networkReturnHref} from '../network-return';
+import { McsReturnLink } from '../components/McsReturnLink';
 
 const scales=['atom','molecule','unit','topic','subdiscipline'] as const;
 const labels={zh:{atom:'原子',molecule:'分子',unit:'单元',topic:'话题',subdiscipline:'子学科'},en:{atom:'Atom',molecule:'Molecule',unit:'Unit',topic:'Topic',subdiscipline:'Subdiscipline'}};
@@ -21,11 +22,6 @@ interface ObjectDetail {object:MathObjectRecord;master?:MasterView;readings:Lear
 interface NodeDetail {node:LearningNodeDocument;master?:MasterView;objects:MathObjectRecord[];objectVersion:string;learningVersion:string}
 const objectHref=(id:string)=>`/objects/${encodeURIComponent(id)}`;
 const nodeHref=(id:string)=>`/learning-nodes/${encodeURIComponent(id)}`;
-
-function McsReturnLink(){
-  const [params]=useSearchParams(),{pick,hrefFor}=useI18n();
-  return params.get('from')==='mcs'?<p><Link to={hrefFor('/mcs')}>{pick({zh:'← 返回 MCS 视图',en:'← Return to MCS view'})}</Link></p>:null;
-}
 
 export function ContentLibraryPage() {
   const {isMaster}=useMasterMode();

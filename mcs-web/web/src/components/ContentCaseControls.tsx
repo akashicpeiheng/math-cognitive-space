@@ -5,9 +5,9 @@ import {caseNetworkHref} from '../content-case';
 import type {NetworkGraph} from '../network';
 import type {ContentRelation} from '../../../shared/content-documents.mjs';
 export function ContentCaseEntry(){const {pick,hrefFor}=useI18n();return <section className="panel"><h2>{pick({zh:'拓扑—微分几何',en:'Topology and differential geometry'})}</h2><p>{pick({zh:'从拓扑性质，经流形结构，走向微分算子。27 项核心对象，可比较数学条件与学习路线。',en:'Explore topology, manifold structures and differential operators across 27 core objects. The reading text is currently in Chinese.'})}</p><Link className="button" to={hrefFor(caseNetworkHref())}>{pick({zh:'打开局部 MCS',en:'Open the local MCS'})}</Link></section>;}
-export function ContentRelationDetails({relation:r}:{relation:ContentRelation}){
+export function ContentRelationDetails({relation:r,from}:{relation:ContentRelation;from?:'mcs'}){
  const {pick,hrefFor}=useI18n();
- const link=(id:string)=>hrefFor(`/${id.startsWith('obj:')?'objects':'learning-nodes'}/${encodeURIComponent(id)}`);
+ const link=(id:string)=>hrefFor(`/${id.startsWith('obj:')?'objects':'learning-nodes'}/${encodeURIComponent(id)}${from?'?from=mcs':''}`);
  return <details className="content-relation" data-content-relation={r.id}><summary>{r.title} · {r.evidence.status}</summary><p>{r.context}</p><p>{r.witness.statement}</p>{r.premises.length>0&&<div><strong>{pick({zh:'组合前提（同时需要）',en:'Premise group (AND)'})}</strong><ul>{r.premises.map(p=><li key={`${p.id}#${p.anchor}`}><Link to={link(p.id)}>{p.id}#{p.anchor}</Link></li>)}</ul></div>}{r.routeId&&<p>{pick({zh:'行动路线',en:'Action route'})}：{r.routeId}</p>}{r.witness.mapping&&<p>{r.witness.mapping}</p>}{r.witness.differences&&<p>{r.witness.differences}</p>}<p>{pick({zh:'来源',en:'Source'})}：{r.evidence.source}</p><p>{pick({zh:'结构已检查；数学依据按上方标签登记；机器重放见对象的 Lean 证据；人工对应审阅待完成。',en:'Structure checked; mathematical evidence is labeled above. Kernel replay is reported on the object. Human correspondence review is pending.'})}</p><Link to={link(r.from.id)}>{pick({zh:'起点',en:'Source object'})}</Link>{' · '}<Link to={link(r.to.id)}>{pick({zh:'终点／命题',en:'Target / proposition'})}</Link></details>;
 }
 export function ContentCaseControls({graph}:{graph:NetworkGraph}){

@@ -3282,6 +3282,8 @@ export function NetworkPage() {
 
   /** 平移：在画布空白处按下并拖动。用 pointer 事件，触摸与触控笔同样可用。 */
   const onCanvasPointerDown = useCallback((event: React.PointerEvent) => {
+    // Secondary mouse/pen buttons belong to context menus, not canvas panning.
+    if (event.pointerType !== 'touch' && event.button !== 0) return;
     const target = event.target as Element;
     // 点在节点、按钮、链接上不触发平移。
     if (target.closest('.network-node, button, a, input, select, textarea, label')) return;

@@ -23,7 +23,7 @@ import {
   EDGE_FAMILIES,
 } from '../shared/contracts.mjs';
 import { makePlanner, explainPlanner } from '../core/planner.mjs';
-import {bindContentRequest,selectContentOntology} from '../core/content-case.mjs';
+import {bindContentRequest,selectContentOntology,contentCaseLibrary} from '../core/content-case.mjs';
 import { normalizeLearningPlan } from '../shared/learning-plan.mjs';
 import { personalizePlanResult } from '../core/learning-plan.mjs';
 import { makeLocalizer, explainLocalizationFamilies } from '../core/localization.mjs';
@@ -846,7 +846,7 @@ export function createApi({ getOntology, ontology: ontologyRef, db, jobs, leanJo
   route('GET', /^\/api\/v2\/me\/connection-notes$/, async ({ identity }) => ({ ownerId: identity.user.id, notes: await db.listConnectionNotes(identity.user.id) }));
   route('PUT', /^\/api\/v2\/me\/connection-notes\/([^/]+)$/, async ({ params, body, identity, ontology }) => {
     const key = decodeURIComponent(params[0]);
-    if (key.length > 4096 || !connectionExists(ontology.raw, key)) throw new McsError(CODES.NOT_FOUND, '该连接未在当前本体登记', 404);
+    if (key.length > 4096 || !(connectionExists(ontology.raw, key) || connectionExists({ relations: contentCaseLibrary(config.repoRoot).relations, nodes: [], actions: [] }, key))) throw new McsError(CODES.NOT_FOUND, '该连接未在当前本体登记', 404);
     return { note: await db.putConnectionNote(identity.user.id, key, body) };
   });
   route('DELETE', /^\/api\/v2\/me\/connection-notes\/([^/]+)$/, async ({ params, body, identity }) =>
@@ -1640,7 +1640,7 @@ export function createApi({ getOntology, ontology: ontologyRef, db, jobs, leanJo
          * `ontology` 是**该请求语种的那一份视图**（见上面「语种」一节）；`version`
          * 在两种语言下逐字相同，所以版本核对与发布流程不受语言影响。
          */
-        const data = await entry.handler({ params: match.slice(1), query: url.searchParams, body, req, res, ontology: localized, identity });
+        const data = await entry.handler({ params: match.slice(1), query: url.searchParams, body, req, res, ontology: localized, sourceOntology: ontology, identity });
         if (!res.headersSent) sendJson(res, 200, envelope(localized.version, data));
         return true;
       }

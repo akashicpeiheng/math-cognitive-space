@@ -2,6 +2,7 @@ import type { ObjectScale, ObjectRef, FormalDeclaration, ContentRelation } from 
 
 /** Structural input: accepts the richer mcs-view data without coupling to its producer. */
 export interface McsSpaceData {
+  presentation?: import('./mcs-view.mjs').McsPresentation;
   schema: 'mcs-view/1';
   objectVersion: string;
   contentLocale: 'zh';
@@ -18,9 +19,11 @@ export interface McsFilters {
   groups: string[]; scales: ObjectScale[]; relations: string[]; evidence: string[]; query: string;
 }
 export interface McsState {
-  schema: 'mcs-view-state/1'; objectVersion: string; filters: McsFilters;
+  schema: 'mcs-view-state/2'; presentationVersion: string; lodMode: 'auto' | 'fixed'; level: number; edgeMode: 'selected' | 'all' | 'none'; objectVersion: string; filters: McsFilters;
   camera: { x: number; y: number; scale: number };
+  viewport?: { width: number; height: number };
   expanded: string[]; manual: Record<string, 'open' | 'closed'>; selected: string | null;
+  relationIds?: string[];
   /** Local deltas from the original layout, recursively inherited by children. */
   positions: Record<string, { x: number; y: number }>;
 }
@@ -36,20 +39,21 @@ export interface McsLayout {
 }
 export interface McsFilterResult {
   matched: Set<string>; context: Set<string>;
-  /** Direct member objects plus own declarations; declarations follow their owner. */
+  /** Unique descendant matches propagate to folded ancestors; own declarations follow their owner. */
   counts: Record<string, { matched: number; total: number }>;
 }
 export interface McsRelationProjection {
   edges: Array<{
-    id: string; kind: string; from: string; to: string; relationIds: string[];
+    id: string; kind: string; from: string | null; to: string; relationIds: string[];
     missingPremises: number;
     /** Visible box IDs for AND junctions; source premises remain in relationIds. */
-    premises: string[]; aggregate: boolean;
+    premises: string[]; aggregate: boolean; internal: boolean;
   }>;
   structure: Array<{ id: string; kind: 'reference' | 'import'; from: string; to: string }>;
 }
-export const MCS_STORAGE_KEY: 'mcs-view-state-v1';
-export const MCS_LOD: Readonly<{ expand: 240; collapse: 180 }>;
+export const MCS_STORAGE_KEY: 'mcs-view-state-v2';
+export const MCS_LEGACY_STORAGE_KEY: 'mcs-view-state-v1';
+export const MCS_LOD: Readonly<{ enter: readonly number[]; leave: readonly number[] }>;
 export function defaultMcsState(data: McsSpaceData): McsState;
 export function createMcsLayout(data: McsSpaceData, rootCenters?: Record<string, { x: number; y: number }>): McsLayout;
 /** Always pass the original layout. The returned enclosure is unsuitable as an LOD baseline. */
@@ -59,8 +63,13 @@ export function visibleMcsBoxes(data: McsSpaceData, layout: McsLayout, state: Mc
 /** focus is in world coordinates; camera and original layout are unchanged. */
 export function updateMcsLod(data: McsSpaceData, layout: McsLayout, state: McsState, focus: { x: number; y: number }): McsState;
 export function normalizeMcsState(raw: unknown, data: McsSpaceData): { state: McsState; issues: string[] };
+export function resizeMcsCamera(camera: McsState['camera'], before: { width: number; height: number }, after: { width: number; height: number }, fit?: boolean): McsState['camera'];
 export function encodeMcsState(state: McsState): string;
 export function decodeMcsState(hash: string, data: McsSpaceData): { state: McsState; issues: string[] } | null;
 /** Assign stable lanes to projected edges that share kind and endpoints. */
 export function assignMcsRelationLanes(edges: Array<Pick<McsRelationProjection['edges'][number], 'id' | 'kind' | 'from' | 'to'>>): Map<string, { index: number; count: number }>;
 export function projectMcsRelations(data: McsSpaceData, layout: McsLayout, state: McsState, visibleBoxes: Box[], matched: Set<string>): McsRelationProjection;
+
+export function mcsOverviewCamera(data: McsSpaceData, layout: McsLayout, viewport?: { width: number; height: number }): McsState['camera'];
+export function setMcsLevel(data: McsSpaceData, state: McsState, level: number, mode?: 'auto' | 'fixed'): McsState;
+export function displayedMcsRelations(data: McsSpaceData, layout: McsLayout, state: McsState, projection: McsRelationProjection): McsRelationProjection & { internal: McsRelationProjection['edges']; emphasizedRelationIds: string[] };

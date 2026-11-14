@@ -47,11 +47,12 @@ function withStorage(initial = {}) {
 
 const paramsOf = (search) => new URLSearchParams(search);
 
-test('快照只收与图有关的参数：nodes 与回放六件套（含多程合一图的 stages）', () => {
-  const search = networkSearchOf(paramsOf('nodes=a,b&play=1&entry=x&path=p&goal=g&route=r&stages=0:3&from=network&locale=en&foo=bar'));
+test('快照只收图、回放和 M/L 案例参数', () => {
+  const expected = { nodes: 'a,b', play: '1', entry: 'x', path: 'p', goal: 'g', route: 'r', stages: '0:3', contentCase: 'topology-dg', layer: 'M', preset: 'topology', relation: 'deduction' };
+  const search = networkSearchOf(new URLSearchParams({ ...expected, from: 'network', locale: 'en', foo: 'bar' }));
   const kept = new URLSearchParams(search);
   for (const key of NETWORK_PARAM_KEYS) {
-    assert.equal(kept.get(key), { nodes: 'a,b', play: '1', entry: 'x', path: 'p', goal: 'g', route: 'r', stages: '0:3' }[key],
+    assert.equal(kept.get(key), expected[key],
       `${key} 应当进快照`);
   }
   for (const key of ['from', 'locale', 'foo']) {
@@ -78,6 +79,8 @@ test('记住来路 → 读回来；URL 上只带一个短标记', () => {
   // 节点页的地址只带 from，不带图的快照（快照在会话里）。
   const href = networkNodeHref('dg:manifold');
   assert.equal(href, '/nodes/dg%3Amanifold?from=network');
+  assert.equal(networkNodeHref('obj:tdg:gradient'), '/objects/obj%3Atdg%3Agradient?from=network');
+  assert.equal(networkNodeHref('learn:tdg:gradient'), '/learning-nodes/learn%3Atdg%3Agradient?from=network');
   assert.equal(href.includes('nodes='), false, '节点链接里不该出现图的快照');
 
   // 节点页自己的查询参数（路线阅读的 route/step）要保留，`from` 只保留一个。

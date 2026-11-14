@@ -196,7 +196,8 @@ try {
   // Fresh navigation restores the same mixed node set from the session draft.
   await page.goto(server.origin + '/'); await page.goto(server.origin + '/network');
   await page.waitForFunction(count => document.querySelectorAll('.network-node').length === count, ids.length);
-  await page.goto(server.origin + '/en/network?nodes=' + encodeURIComponent(ids.join(',')), { waitUntil: 'networkidle' });
+  await page.goto(server.origin + '/en/network?nodes=' + encodeURIComponent(ids.join(',')), { waitUntil: 'domcontentloaded' });
+  await page.waitForFunction(count => document.querySelectorAll('.network-node').length === count, ids.length);
   await page.locator('.network-node[data-node-source="vault"]').first().focus(); await page.locator('.network-hover-info').waitFor();
   assert.match(await page.locator('.network-hover-info').innerText(), /Meaning in mathematical theory|Links to/);
   assert.deepEqual(errors, []);

@@ -14,6 +14,7 @@ import { StatusBadge } from '../components/StatusBadge';
 import { LeanEvidenceCards } from '../components/LeanEvidence';
 import { LearnerActions } from '../components/LearnerActions';
 import { FROM_NETWORK, FROM_PARAM, networkReturnHref, openInNetworkHref, restoreNetworkReturn } from '../network-return';
+import { McsReturnLink } from '../components/McsReturnLink';
 import { useLearningPlan } from '../useLearningPlan';
 import { LearningPlanCard } from '../components/LearningGuide';
 import { NoteEditor } from '../components/NoteEditor';
@@ -490,6 +491,7 @@ function NormalNodePage() {
   return (
     <div className="page node-page">
       <nav className="breadcrumb"><Link to={hrefFor('/nodes')}>{t('nav.nodes')}</Link><span>/</span><span>{node.id}</span></nav>
+      <McsReturnLink />
 
       {/*
         AI 生成内容声明（2026-10-13 加）：每一个数学对象页都写一遍。
@@ -525,7 +527,7 @@ function NormalNodePage() {
         2. 直接打开这个地址（分享链接、书签、换设备）→ 不编一个假地址，
            退成「在网络视图里打开这个节点」，并把这件事写出来。
       */}
-      <nav className="node-return" aria-label={pick(TEXT.returnAria)}>
+      {searchParams.get(FROM_PARAM) !== 'mcs' ? <nav className="node-return" aria-label={pick(TEXT.returnAria)}>
         {networkBack ? (
           <>
             <Link className="button small" to={hrefFor(networkBack.href)} onClick={() => restoreNetworkReturn(decoded)}>{pick(TEXT.returnNetwork)}</Link>
@@ -537,7 +539,7 @@ function NormalNodePage() {
             <span className="muted">{pick(TEXT.openInNetworkHint)}</span>
           </>
         )}
-      </nav>
+      </nav> : null}
 
       {/* 路线阅读条：按规划器给出的事件顺序走，重复的回看事件也保留在序列里。 */}
       {readingRoute && currentStep && (

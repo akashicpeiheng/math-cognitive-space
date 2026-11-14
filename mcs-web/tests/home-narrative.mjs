@@ -711,13 +711,16 @@ try {
    * 改成「两拍位置与状态都不再变」：断言的意思（点哪一幕就抵达哪一幕）不变，只是不再拿机器速度赌。
    * 这类固定等待的通用修法是 TODO 的 A5-35，这里先修这一处。
    */
-  const readSettledScroll = async () => {
+  const readSettledScroll = async (expected = () => true) => {
     let previous = await readScroll();
-    for (let i = 0; i < 30; i += 1) {
+    let stable = 0;
+    for (let i = 0; i < 60; i += 1) {
       await page.waitForTimeout(120);
       const current = await readScroll();
       if (current.scrollY === previous.scrollY && current.active === previous.active
-        && current.played.join(',') === previous.played.join(',')) return current;
+        && current.played.join(',') === previous.played.join(',') && expected(current)) {
+        if (++stable >= 4) return current;
+      } else stable = 0;
       previous = current;
     }
     return previous;
@@ -752,7 +755,7 @@ try {
 
   await page.mouse.wheel(0, 140);
   // 等滚动与 active 都落定（固定 1100ms 在负载下会采到中途状态）。
-  const jumped = await readSettledScroll();
+  const jumped = await readSettledScroll(state => state.active === '1' && state.scrollY > start.scrollY + page.viewportSize().height * 0.7);
   check('播完之后滚轮才「滚到下一幕」：页面平移约一段、active 前进',
     jumped.scrollY > start.scrollY + page.viewportSize().height * 0.7 && jumped.active === '1',
     JSON.stringify({ start: start.scrollY, ...jumped }));
@@ -780,14 +783,14 @@ try {
     rewound.played[1] === 0 && rewound.scrollY === jumped.scrollY && rewound.active === '1',
     JSON.stringify({ guard, ...rewound }));
   await page.mouse.wheel(0, -140);
-  const back = await readSettledScroll();
+  const back = await readSettledScroll(state => state.active === '0' && state.scrollY < jumped.scrollY * 0.3);
   check('倒到头之后才回到上一段',
     back.active === '0' && back.scrollY < jumped.scrollY * 0.3,
     JSON.stringify(back));
 
   // 顶部幕导航不是装饰：点任一幕都应直接对齐到它，前面的幕记为已播放。
   await page.locator('.home-story-progress button').nth(3).click();
-  const clickedAct = await readSettledScroll();
+  const clickedAct = await readSettledScroll(state => state.active === '3' && state.scrollY > page.viewportSize().height * 2.5);
   check('顶部幕导航可以直接抵达对应段落',
     clickedAct.active === '3'
       && clickedAct.played.slice(0, 3).every((value) => value === 1)
@@ -803,7 +806,7 @@ try {
   const readAt = async (ratio) => {
     const index = Math.round(ratio * (geometry.tops.length - 1));
     await page.evaluate((y) => scrollTo(0, y), geometry.tops[index]);
-    await page.waitForTimeout(220);
+    await page.waitForFunction(expected => document.querySelector('.home-story')?.getAttribute('data-active-act') === String(expected), index, { timeout: 5000 }).catch(() => {});
     return page.evaluate(() => ({
       progress: Number(document.querySelector('.home-story')?.getAttribute('data-story-progress') ?? '0'),
       active: document.querySelector('.home-story')?.getAttribute('data-active-act'),
