@@ -28,3 +28,4 @@ jobs:
       - run: npm ci --no-audit --no-fund
       - run: npm run build
       - run: node tests/browser.mjs
+      - run: node tests/home-narrative.mjs
