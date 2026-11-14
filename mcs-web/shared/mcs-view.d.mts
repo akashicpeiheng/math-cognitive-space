@@ -26,7 +26,18 @@ export interface McsViewGroup {
   objectIds: string[];
 }
 
+export interface McsPresentation {
+  version: string;
+  primaryParents: Record<string, string>;
+  aliases?: Record<string, string[]>;
+  order: string[];
+  summaries: Record<string, { zh: string; en: string }>;
+  titles: Record<string, { zh: string; en: string }>;
+}
 export interface McsViewData {
+  /** Public reading navigation, independent of formal identity and evidence. */
+  notes?: { schema: 'mcs-note-links/1'; byObject: Record<string, McsNoteLink[]> };
+  presentation?: McsPresentation;
   schema: 'mcs-view/1';
   objectVersion: string;
   contentLocale: 'zh';
@@ -36,9 +47,16 @@ export interface McsViewData {
   groups: McsViewGroup[];
 }
 
+export interface McsNoteLink {
+  kind: 'node' | 'learning-node';
+  id: string; title: string; href: string;
+  coverage: 'object' | 'chapter' | 'related';
+}
+
 /** Personal view state belongs to E and is never part of the public M response. */
 export interface McsViewState {
-  schema: 'mcs-view-state/1';
+  schema: 'mcs-view-state/2';
+  presentationVersion: string; lodMode: 'auto' | 'fixed'; level: number; edgeMode: 'selected' | 'all' | 'none';
   objectVersion: string;
   filters: {
     groups: string[];
@@ -48,8 +66,11 @@ export interface McsViewState {
     query: string;
   };
   camera: { x: number; y: number; scale: number };
+  /** Canvas dimensions for proportional restoration on another screen. Older links omit this. */
+  viewport?: { width: number; height: number };
   expanded: string[];
   manual: Record<string, 'open' | 'closed'>;
   selected: string | null;
+  relationIds?: string[];
   positions: Record<string, { x: number; y: number }>;
 }

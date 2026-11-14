@@ -2,8 +2,9 @@
  * MCS 的只读空间投影。无 DOM、I/O、随机数或个人数据依赖；坐标均为世界坐标。
  * 布局始终包含完整成员树及自声明，筛选和 LOD 不重新布局。
  */
-export const MCS_STORAGE_KEY = 'mcs-view-state-v1';
-export const MCS_LOD = Object.freeze({ expand: 240, collapse: 180 });
+export const MCS_STORAGE_KEY = 'mcs-view-state-v2';
+export const MCS_LEGACY_STORAGE_KEY = 'mcs-view-state-v1';
+export const MCS_LOD = Object.freeze({ enter: [.8, 1.8, 3.6], leave: [.6, 1.4, 2.8] });
 
 const SCALES = ['atom', 'molecule', 'unit', 'topic', 'subdiscipline'];
 const EVIDENCE = ['DEF', 'PROOF', 'REF', 'FINITE', 'ILLUSTRATION', 'NOT-CLAIMED'];
@@ -48,7 +49,7 @@ function hierarchy(data) {
   for (const id of ids) {
     const candidates = sorted(allParents.get(id));
     allParents.set(id, candidates);
-    if (candidates.length) parents.set(id, candidates[0]);
+    if (candidates.length) parents.set(id, candidates.includes(data.presentation?.primaryParents?.[id]) ? data.presentation.primaryParents[id] : candidates[0]);
   }
   return { objects, ids, parents, allParents };
 }
@@ -64,20 +65,23 @@ function knownRef(objects, ref) {
 /** Empty filter dimensions mean all; a fresh value is returned on every call. */
 export function defaultMcsState(data) {
   return {
-    schema: 'mcs-view-state/1', objectVersion: data.objectVersion,
+    schema: 'mcs-view-state/2', objectVersion: data.objectVersion,
+    presentationVersion: data.presentation?.version ?? '', lodMode: 'auto', level: 1, edgeMode: 'selected',
     filters: { groups: [], scales: [], relations: [], evidence: [], query: '' },
-    camera: { x: 0, y: 0, scale: 1 }, expanded: [], manual: {}, selected: null, positions: {},
+    camera: { x: 0, y: 0, scale: 1 }, expanded: data.objects.filter(o => o.scale === 'subdiscipline').map(o => o.id).sort(), manual: {}, selected: null, positions: {},
   };
 }
 
 /**
- * Primary ownership is the lexically first parent ID. Every other membership is
+ * Primary ownership uses an explicit display preference, falling back to a stable ID. Other membership is
  * a reference entrance, never a second object identity. Ordinary references and
  * imports are lines only; they never consume member/declaration grid slots.
  * rootCenters are centres; returned boxes use top-left coordinates.
  */
 export function createMcsLayout(data, rootCenters = {}) {
   const { objects, ids, parents } = hierarchy(data);
+  const rank = new Map((data.presentation?.order ?? []).map((id, i) => [id, i]));
+  const displayOrder = (a, b) => (rank.get(a) ?? 1e6) - (rank.get(b) ?? 1e6) || cmp(a,b);
   const boxes = {}, children = {}, boxParents = {}, specs = new Map();
   for (const id of ids) {
     specs.set(id, { id, objectId: id, kind: 'object' });
@@ -105,8 +109,8 @@ export function createMcsLayout(data, rootCenters = {}) {
       add(id, { id: entryKey(id, ref), objectId: ref.id, kind: 'reference', target: ref.id, anchor: ref.anchor });
     }
   }
-  for (const list of Object.values(children)) list.sort(cmp);
-  const roots = ids.filter(id => !parents.has(id));
+  for (const list of Object.values(children)) list.sort(displayOrder);
+  const roots = ids.filter(id => !parents.has(id)).sort(displayOrder);
   const sizes = new Map(), offsets = new Map();
   function measure(id) {
     if (sizes.has(id)) return sizes.get(id);
@@ -245,26 +249,41 @@ function contextFor(tree, matched) {
   return context;
 }
 
-/** Relations do not constrain object matching. Declaration evidence is owner-local. */
+/** Relation kinds filter lines only. Evidence matches declarations or registered M relations. */
 export function filterMcsObjects(data, filters) {
   const tree = hierarchy(data), matched = new Set(), counts = {};
   const groups = filters.groups ?? [], scales = filters.scales ?? [], evidence = filters.evidence ?? [];
   const allGroups = !groups.length || groups.includes('all');
   const groupObjects = new Set(data.groups.filter(g => groups.includes(g.id)).flatMap(g => g.objectIds));
   const query = (filters.query ?? '').trim().toLowerCase();
+  const evidenceObjects = new Set();
+  if (evidence.length) for (const relation of data.relations) {
+    if (relation.layer !== 'M' || !evidence.includes(relation.evidence.status)) continue;
+    for (const ref of [relation.from, relation.to, ...relation.premises]) {
+      if (knownRef(tree.objects, ref)) evidenceObjects.add(ref.id);
+    }
+  }
   for (const id of tree.ids) {
     const object = tree.objects.get(id);
-    const text = [id, object.title, ...object.declarations.map(d => d.source)].join('\n').toLowerCase();
+    const text = [id, object.title, ...Object.values(data.presentation?.titles?.[id] ?? {}), ...(data.presentation?.aliases?.[id] ?? []), ...object.declarations.map(d => d.source)].join('\n').toLowerCase();
     if ((allGroups || groupObjects.has(id)) && (!scales.length || scales.includes(object.scale)) &&
-        (!evidence.length || object.declarations.some(d => evidence.includes(d.status))) &&
+        (!evidence.length || evidenceObjects.has(id) || object.declarations.some(d => evidence.includes(d.status))) &&
         (!query || text.includes(query))) matched.add(id);
   }
   const context = contextFor(tree, matched);
   for (const id of tree.ids) {
     const object = tree.objects.get(id), members = sorted(object.members.map(r => r.id).filter(child => tree.objects.has(child)));
     put(counts, id, {
-      matched: members.filter(child => matched.has(child)).length + (matched.has(id) ? object.declarations.length : 0),
-      total: members.length + object.declarations.length,
+      matched: (() => {
+        const descendants = new Set(), visit = key => { if (descendants.has(key)) return; descendants.add(key); for (const r of tree.objects.get(key)?.members ?? []) visit(r.id); };
+        for (const key of members) visit(key);
+        return [...descendants].filter(key => matched.has(key)).length + (matched.has(id) ? object.declarations.length : 0);
+      })(),
+      total: (() => {
+        const descendants = new Set(), visit = key => { if (descendants.has(key)) return; descendants.add(key); for (const r of tree.objects.get(key)?.members ?? []) visit(r.id); };
+        for (const key of members) visit(key);
+        return descendants.size + object.declarations.length;
+      })(),
     });
   }
   return { matched, context, counts };
@@ -289,38 +308,44 @@ export function visibleMcsBoxes(data, layout, state, filterResult = filterMcsObj
   return visible;
 }
 
-/**
- * focus is a world point. Only currently visible objects auto-open (one frontier
- * per call), within a 48 screen-pixel margin. All small regions auto-close,
- * including hidden descendants; manual choices always win. Camera is untouched.
- */
-export function updateMcsLod(data, layout, state, focus) {
-  const visible = new Set(visibleMcsBoxes(data, layout, state).map(box => box.id));
-  const next = new Set(state.expanded), scale = state.camera.scale;
-  const shifted = translatedBoxes(layout, state.positions);
-  for (const box of Object.values(layout.boxes)) {
-    if (box.kind !== 'object' || !layout.children[box.id]?.length) continue;
-    const manual = state.manual[box.id];
-    if (manual === 'closed') { next.delete(box.id); continue; }
-    if (manual === 'open') { next.add(box.id); continue; }
-    const projection = Math.max(box.w, box.h) * scale;
-    if (projection <= MCS_LOD.collapse) { next.delete(box.id); continue; }
-    const margin = 48 / scale;
-    const positioned = shifted[box.id];
-    if (projection >= MCS_LOD.expand && visible.has(box.id) && point(focus) &&
-        focus.x >= positioned.x - margin && focus.x <= positioned.x + box.w + margin &&
-        focus.y >= positioned.y - margin && focus.y <= positioned.y + box.h + margin) next.add(box.id);
+/** A stable reference zoom, independent of filtering, dragging and pointer position. */
+export function mcsOverviewCamera(data, layout, viewport = { width: 1536, height: 900 }) {
+  const topics = data.objects.filter(o => o.scale === 'topic').map(o => layout.boxes[o.id]);
+  const extras = layout.roots.filter(id => data.objects.find(o => o.id === id)?.scale !== 'subdiscipline').map(id => layout.boxes[id]);
+  const boxes = [...topics, ...extras];
+  if (!boxes.length) boxes.push(...layout.roots.map(id => layout.boxes[id]));
+  if (!boxes.length) return { x: viewport.width / 2, y: viewport.height / 2, scale: 1 };
+  const x = Math.min(...boxes.map(b => b.x)), y = Math.min(...boxes.map(b => b.y));
+  const w = Math.max(...boxes.map(b => b.x + b.w)) - x, h = Math.max(...boxes.map(b => b.y + b.h)) - y;
+  const scale = Math.max(.015, Math.min(6, Math.max(120, viewport.width - 160) / (w + 1), Math.max(120, viewport.height - 180) / (h + 1)));
+  return { x: viewport.width / 2 - (x + w / 2) * scale, y: viewport.height / 2 - (y + h / 2) * scale, scale };
+}
+
+export function setMcsLevel(data, state, level, mode = 'fixed') {
+  level = Math.max(0, Math.min(3, Math.round(level)));
+  const openScales = [[], ['subdiscipline'], ['subdiscipline', 'topic'], SCALES][level];
+  const expanded = data.objects.filter(o => openScales.includes(o.scale)).map(o => o.id).sort();
+  const same = expanded.length === state.expanded.length && expanded.every((id,i) => id === state.expanded[i]);
+  return { ...state, level, lodMode: mode, manual: Object.keys(state.manual).length ? {} : state.manual, expanded: same ? state.expanded : expanded };
+}
+
+/** One global hysteresis state; focus affects the camera only, never the LOD. */
+export function updateMcsLod(data, layout, state, _focus) {
+  let level = state.level ?? 1;
+  if (state.lodMode !== 'fixed') {
+    const ratio = state.camera.scale / mcsOverviewCamera(data, layout, state.viewport).scale;
+    while (level < 3 && ratio >= MCS_LOD.enter[level]) level++;
+    while (level > 0 && ratio <= MCS_LOD.leave[level - 1]) level--;
   }
-  const expanded = sorted(next);
-  return expanded.length === state.expanded.length && expanded.every((id, i) => id === state.expanded[i])
-    ? state : { ...state, expanded };
+  return setMcsLevel(data, state, level, state.lodMode ?? 'auto');
 }
 
 /** Tolerant JSON-state reader: discard stale references, never invent replacements. */
 export function normalizeMcsState(raw, data) {
   const state = defaultMcsState(data), issues = [];
   if (!record(raw)) return { state, issues: ['state: expected an object'] };
-  if (raw.schema !== state.schema) issues.push('schema: unsupported or missing state schema');
+  const legacy = raw.schema === 'mcs-view-state/1';
+  if (!legacy && raw.schema !== state.schema) return { state, issues: ['schema: unsupported or missing state schema'] };
   if (raw.objectVersion !== data.objectVersion) issues.push('objectVersion: changed or missing; retained valid state');
   const readList = (value, valid, path) => {
     if (!Array.isArray(value)) { issues.push(`${path}: expected an array`); return []; }
@@ -347,35 +372,74 @@ export function normalizeMcsState(raw, data) {
       else issues.push(`camera.${key}: invalid finite coordinate or scale`);
     }
   } else issues.push('camera: expected an object');
+  const clamp = (value, min, max, path) => {
+    const safe = Math.max(min, Math.min(max, value));
+    if (safe !== value) issues.push(`${path}: clamped out-of-range value`);
+    return safe;
+  };
+  state.camera.x = clamp(state.camera.x, -1e8, 1e8, 'camera.x');
+  state.camera.y = clamp(state.camera.y, -1e8, 1e8, 'camera.y');
+  state.camera.scale = clamp(state.camera.scale, .015, 24, 'camera.scale');
+  if (raw.viewport !== undefined) {
+    if (record(raw.viewport) && finite(raw.viewport.width) && finite(raw.viewport.height) &&
+        raw.viewport.width >= 1 && raw.viewport.height >= 1 && raw.viewport.width <= 1e5 && raw.viewport.height <= 1e5) {
+      state.viewport = { width: raw.viewport.width, height: raw.viewport.height };
+    } else issues.push('viewport: discarded invalid dimensions');
+  }
   const layout = createMcsLayout(data);
   const known = id => own(layout.boxes, id);
   const expandable = id => known(id) && layout.boxes[id].kind === 'object' && layout.children[id].length > 0;
-  state.expanded = readList(raw.expanded, expandable, 'expanded');
-  if (record(raw.manual)) {
-    for (const [id, value] of Object.entries(raw.manual)) {
-      if (expandable(id) && (value === 'open' || value === 'closed')) {
-        put(state.manual, id, value);
-        // manual is the durable choice; expanded is its display projection.
-        // Repair older or hand-edited snapshots that contain the two conflicting.
-        const expected = value === 'open';
-        const actual = state.expanded.includes(id);
-        if (expected !== actual) {
-          issues.push(`manual.${id}: reconciled conflicting expanded state`);
-          state.expanded = value === 'open' ? sorted([...state.expanded, id]) : state.expanded.filter(item => item !== id);
-        }
-      }
-      else issues.push('manual: discarded invalid reference or mode');
-    }
-  } else issues.push('manual: expected an object');
+  state.lodMode = raw.lodMode === 'fixed' ? 'fixed' : 'auto';
+  state.level = Number.isInteger(raw.level) && raw.level >= 0 && raw.level <= 3 ? raw.level : 1;
+  state.edgeMode = ['selected', 'all', 'none'].includes(raw.edgeMode) ? raw.edgeMode : 'selected';
+  if (legacy) {
+    const opened = [...(Array.isArray(raw.expanded) ? raw.expanded : []), ...Object.entries(raw.manual ?? {}).filter(([, v]) => v === 'open').map(([id]) => id)];
+    const scales = opened.map(id => data.objects.find(o => o.id === id)?.scale);
+    state.level = scales.some(s => ['unit','atom','molecule'].includes(s)) ? 3 : scales.includes('topic') ? 2 : 1;
+    issues.push('migration: local expansion choices converted to a global level; old layout retained in v1 storage');
+  }
   if (raw.selected === null || typeof raw.selected === 'string' && known(raw.selected)) state.selected = raw.selected;
   else issues.push('selected: discarded invalid reference');
+  if (raw.relationIds !== undefined) {
+    const relations = new Set(data.relations.filter(r => r.layer === 'M').map(r => r.id));
+    state.relationIds = readList(raw.relationIds, id => relations.has(id), 'relationIds');
+    if (state.selected && state.relationIds.length) {
+      state.relationIds = [];
+      issues.push('relationIds: discarded conflicting object/relation selection');
+    }
+  }
   if (record(raw.positions)) {
     for (const [id, value] of Object.entries(raw.positions)) {
-      if (known(id) && point(value)) put(state.positions, id, { x: value.x, y: value.y });
+      if (known(id) && point(value)) put(state.positions, id, {
+        x: clamp(value.x, -1e6, 1e6, `positions.${id}.x`),
+        y: clamp(value.y, -1e6, 1e6, `positions.${id}.y`),
+      });
       else issues.push('positions: discarded invalid reference or coordinates');
     }
   } else issues.push('positions: expected an object');
-  return { state, issues };
+  if (legacy || raw.presentationVersion !== state.presentationVersion) {
+    state.positions = {};
+    state.camera = mcsOverviewCamera(data, layout, state.viewport);
+    if (state.level > 1) state.camera.scale *= state.level === 2 ? 2 : 4;
+    const selected = layout.boxes[state.selected];
+    if (selected) {
+      const viewport = state.viewport ?? { width: 1536, height: 900 };
+      state.camera.x = viewport.width / 2 - (selected.x + selected.w / 2) * state.camera.scale;
+      state.camera.y = viewport.height / 2 - (selected.y + selected.h / 2) * state.camera.scale;
+    }
+    issues.push('layout: hierarchy changed; positions reset and camera refitted');
+  }
+  return { state: setMcsLevel(data, state, state.level, state.lodMode), issues };
+}
+
+/** Preserve the world centre across canvas sizes; a shared view fits the new screen. */
+export function resizeMcsCamera(camera, before, after, fit = false) {
+  const scale = fit ? Math.max(.015, Math.min(24, camera.scale * Math.min(after.width / before.width, after.height / before.height))) : camera.scale;
+  return {
+    scale,
+    x: after.width / 2 - (before.width / 2 - camera.x) / camera.scale * scale,
+    y: after.height / 2 - (before.height / 2 - camera.y) / camera.scale * scale,
+  };
 }
 
 export function encodeMcsState(state) {
@@ -386,7 +450,7 @@ export function decodeMcsState(hash, data) {
   if (typeof hash !== 'string' || !hash.startsWith('#mcs=')) return null;
   try {
     const raw = JSON.parse(decodeURIComponent(hash.slice(5)));
-    if (!record(raw) || raw.schema !== 'mcs-view-state/1') return null;
+    if (!record(raw) || !['mcs-view-state/1', 'mcs-view-state/2'].includes(raw.schema)) return null;
     return normalizeMcsState(raw, data);
   } catch { return null; }
 }
@@ -430,22 +494,24 @@ export function projectMcsRelations(data, layout, state, visibleBoxes, matched) 
   for (const relation of [...data.relations].sort((a, b) => cmp(a.id, b.id))) {
     if (relation.layer !== 'M' || kinds.length && !kinds.includes(relation.kind) ||
         evidence.length && !evidence.includes(relation.evidence.status) ||
-        !matched.has(relation.from.id) || !matched.has(relation.to.id)) continue;
-    const from = project(relation.from), to = project(relation.to);
-    if (!from || !to || from === to) continue;
+        !matched.has(relation.to.id) || !knownRef(tree.objects, relation.from)) continue;
+    const from = matched.has(relation.from.id) ? project(relation.from) : null, to = project(relation.to);
+    // A filtered source must not erase an AND derivation's visible conclusion.
+    // Keep an explicit missing source instead of substituting a visible parent.
+    if (!to || (!from && relation.kind !== 'deduction')) continue;
     const originalPremises = sorted(relation.premises.map(refKey));
     const projected = relation.premises.map(ref => matched.has(ref.id) ? project(ref) : null);
     const premises = sorted(projected.filter(Boolean));
-    const id = `@relation:${JSON.stringify([relation.kind, from, to, originalPremises])}`;
+    const id = `@relation:${JSON.stringify([relation.kind, from, to, relation.kind === 'deduction' ? originalPremises : []])}`;
     let edge = edges.get(id);
     if (!edge) {
       edge = { id, kind: relation.kind, from, to, relationIds: [],
-        missingPremises: projected.filter(id => id === null).length,
-        premises, aggregate: false };
+        missingPremises: projected.filter(id => id === null).length + (!from && !originalPremises.includes(refKey(relation.from)) ? 1 : 0),
+        premises, aggregate: false, internal: from === to };
       edges.set(id, edge);
     }
     edge.relationIds.push(relation.id);
-    edge.aggregate ||= refKey(relation.from) !== from || refKey(relation.to) !== to || edge.relationIds.length > 1;
+    edge.aggregate ||= Boolean(from && refKey(relation.from) !== from) || refKey(relation.to) !== to || edge.relationIds.length > 1;
   }
   const addStructure = (owner, ref, kind, entrance = null) => {
     if (!allowed(owner.id) || !allowed(ref.id)) return;
@@ -462,4 +528,23 @@ export function projectMcsRelations(data, layout, state, visibleBoxes, matched) 
     for (const ref of object.imports) addStructure(object, ref, 'import');
   }
   return { edges: [...edges.values()], structure: [...structure.values()].sort((a, b) => cmp(a.id, b.id)) };
+}
+
+/** Filter drawing only; keep complete relation IDs and premise groups for inspection. */
+export function displayedMcsRelations(data, layout, state, projection) {
+  const mode = state.edgeMode ?? 'selected';
+  const selected = layout.boxes[state.selected];
+  const related = new Set();
+  const visit = id => { if (related.has(id)) return; related.add(id); for (const ref of data.objects.find(o => o.id === id)?.members ?? []) visit(ref.id); };
+  if (selected) visit(selected.objectId);
+  const ids = new Set(data.relations.filter(r => [r.from, r.to, ...r.premises].some(ref => related.has(ref.id))).map(r => r.id));
+  for (const id of state.relationIds ?? []) ids.add(id);
+  // Detailed tiers need a network even before selection. Selection emphasizes
+  // exact source relationships; collapsed overviews retain the quiet default.
+  const context = mode === 'selected' && state.level >= 2;
+  const visible = edge => mode === 'all' || context || mode === 'selected' && edge.relationIds.some(id => ids.has(id));
+  return { ...projection, edges: projection.edges.filter(edge => !edge.internal && mode !== 'none' && visible(edge)),
+    structure: projection.structure.filter(edge => mode === 'all' || context || mode === 'selected' && selected && (edge.from === selected.id || edge.to === selected.id)),
+    emphasizedRelationIds: [...ids],
+    internal: projection.edges.filter(edge => edge.internal) };
 }

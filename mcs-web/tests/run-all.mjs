@@ -1,6 +1,10 @@
 import { spawn } from 'node:child_process';
 
 const steps = [
+  ['MCS：数学地图层级、布局及相机', ['node', '--test', 'tests/mcs-atlas.test.mjs']],
+  ['MCS：数学地图桌面、触控及对象网络入口', ['node', 'tests/mcs-atlas-page.mjs']],
+  ['MCS：连续色域、阻尼缩放、惯性和减少动态效果', ['node', 'tests/mcs-atlas-motion-page.mjs']],
+  ['MCS：子级交叉领域朝相邻学科展开', ['node', 'tests/mcs-atlas-crossings-page.mjs']],
   ['MCS：全库只读接口、尺度投影与视图恢复', ['node', '--test', 'tests/mcs-view-api.test.mjs', 'tests/mcs-space.test.mjs']],
   ['MCS：多尺度画布、筛选、拖动与分享贯通', ['node', 'tests/mcs-page.mjs']],
   ['拓扑—微分几何：协议、数学边界、替代路线、版本与工作线程', ['node','--test','tests/topology-content.test.mjs']],

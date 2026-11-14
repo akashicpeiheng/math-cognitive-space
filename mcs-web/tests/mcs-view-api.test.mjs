@@ -7,6 +7,7 @@ import { loadContentLibrary } from '../core/content-library.mjs';
 import { buildMcsView } from '../core/mcs-view.mjs';
 import { REPO_ROOT } from '../core/ontology.mjs';
 import { createApi } from '../server/api.mjs';
+import { MCS_TOPICS } from '../shared/mcs-presentation.mjs';
 import { GROUP_OBJECT_IDS, PRESETS } from '../shared/mcs-groups.mjs';
 import { relationConnectionKey } from '../shared/connection-keys.mjs';
 import { objectMasterView } from '../shared/master-view.mjs';
@@ -20,12 +21,12 @@ const sorted = values => [...values].sort();
 const publicObjectFields = ['id','version','title','scale','formalHash','path','declarations','members','references','imports','exports','assumptions','normalizedContext'];
 
 function checkView(view) {
-  assert.deepEqual(sorted(Object.keys(view)), sorted(['schema','objectVersion','contentLocale','levels','objects','relations','groups']));
+  assert.deepEqual(sorted(Object.keys(view)), sorted(['schema','objectVersion','contentLocale','levels','objects','relations','groups','presentation','notes']));
   assert.equal(view.schema, 'mcs-view/1');
   assert.equal(view.contentLocale, 'zh');
   assert.equal(view.objectVersion, library.objectVersion);
   assert.deepEqual(view.levels, library.scale.levels);
-  assert.equal(view.objects.length, 65);
+  assert.equal(view.objects.length, library.objects.length);
   assert.deepEqual(view.objects.map(object => object.id), library.objects.map(object => object.id));
   for (const object of view.objects) {
     const original = library.objects.find(record => record.id === object.id);
@@ -58,7 +59,7 @@ function checkView(view) {
   assert.equal(exportedClaim.anchor, 'claim');
   assert.notEqual(exportedClaim.formalHash, byId.get(exportedClaim.id).formalHash);
   const groups = new Map(view.groups.map(group => [group.id, group]));
-  assert.deepEqual([...groups.keys()], ['all','group','topology-dg','topology','manifolds','operators']);
+  assert.deepEqual([...groups.keys()], ['all','group','topology-dg','topology','manifolds','operators',...MCS_TOPICS.filter(t=>byId.has(t.id)).map(t=>t.id)]);
   for (const group of groups.values()) {
     assert.deepEqual(sorted(Object.keys(group)), ['id','objectIds','title']);
     assert.deepEqual(sorted(Object.keys(group.title)), ['en','zh']);
@@ -69,7 +70,7 @@ function checkView(view) {
   assert.deepEqual(groups.get('all').objectIds, [...byId.keys()]);
   assert.equal(groups.get('group').objectIds.length, 8);
   assert.deepEqual(sorted(groups.get('group').objectIds), sorted(GROUP_OBJECT_IDS));
-  assert.equal(groups.get('topology-dg').objectIds.length, 57);
+  assert.equal(groups.get('topology-dg').objectIds.length, library.objects.length - GROUP_OBJECT_IDS.length);
   assert.deepEqual(sorted([...groups.get('group').objectIds, ...groups.get('topology-dg').objectIds]), sorted(byId.keys()));
   assert.deepEqual(PRESETS, WEB_PRESETS);
   for (const [id, keys] of Object.entries(WEB_PRESETS)) assert.deepEqual(groups.get(id).objectIds, keys.map(key => `obj:tdg:${key}`));
@@ -186,4 +187,42 @@ test('grouping follows registered IDs and M premises, excluding title guesses an
   for (const group of view.groups.filter(group => group.id !== 'all')) assert(!group.objectIds.includes('obj:group:unregistered'));
   assert(view.relations.some(record => record.id === 'rel:explicit-premise'));
   assert(!view.relations.some(record => record.id === 'rel:reading-only'));
+});
+
+test('MCS notes use explicit public IDs, preserve scope and fall back to pinned readings', async () => {
+  const ontology = await testOntology();
+  const before = JSON.stringify(library);
+  const view = buildMcsView(library, topologyCase, ontology);
+  assert.equal(view.notes.schema, 'mcs-note-links/1');
+  const links = view.notes.byObject;
+  if (!library.objects.some(object => object.id === 'obj:tdg:jacobian')) {
+    assert.deepEqual(Object.keys(links).sort(), library.objects.map(object => object.id).sort());
+    for (const object of view.objects) for (const note of links[object.id]) {
+      if (note.kind === 'node') assert(ontology.node(note.id).contentMarkdown.trim(), note.id);
+      else assert(library.nodes.find(n => n.id === note.id).objects.some(r => r.id === object.id && r.version === object.version));
+    }
+    assert.equal(JSON.stringify(library), before);
+    return;
+  }
+  assert.equal(links['obj:tdg:jacobian'][0].id, 'gt:jacobi-matrix');
+  assert.equal(links['obj:tdg:directional'][0].id, 'vault:directional-derivative');
+  assert.equal(links['obj:tdg:c1'][0].coverage, 'chapter');
+  assert.equal(links['obj:tdg:tensor-field'][0].kind, 'learning-node');
+  assert.equal(links['obj:tdg:tensor-field'].at(-1).coverage, 'related');
+  assert.equal(links['obj:tdg:compact-para'][0].kind, 'learning-node', 'a stronger Hausdorff note must not replace the general claim');
+  for (const object of view.objects) {
+    if (!['topic', 'subdiscipline'].includes(object.scale)) assert(links[object.id].some(n => n.coverage !== 'related'), object.id);
+    assert.equal(new Set(links[object.id].map(n => `${n.kind}:${n.id}`)).size, links[object.id].length);
+    for (const note of links[object.id]) {
+      if (note.kind === 'node') assert(ontology.node(note.id).contentMarkdown.trim(), note.id);
+      else assert(library.nodes.find(n => n.id === note.id).objects.some(r => r.id === object.id));
+      assert.equal(note.href, `/${note.kind === 'node' ? 'nodes' : 'learning-nodes'}/${encodeURIComponent(note.id)}?from=mcs`);
+    }
+  }
+  // A removed or empty legacy note falls back safely, never to a guessed title.
+  const unavailable = buildMcsView(library, topologyCase, { nodes: [{ id: 'unrelated', title: 'Jacobi 矩阵', contentMarkdown: 'same title' }] });
+  assert.equal(unavailable.notes.byObject['obj:tdg:jacobian'][0].kind, 'learning-node');
+  const empty = buildMcsView(library, topologyCase, { nodes: [{ id: 'gt:jacobi-matrix', contentMarkdown: '' }] });
+  assert.equal(empty.notes.byObject['obj:tdg:jacobian'][0].kind, 'learning-node');
+  assert.equal(JSON.stringify(library), before, 'M, L and their hashes stay unchanged');
 });

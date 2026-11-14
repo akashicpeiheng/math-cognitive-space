@@ -1,4 +1,6 @@
 import { GROUP_OBJECT_IDS, MCS_GROUP_TITLES, PRESETS } from '../shared/mcs-groups.mjs';
+import { mcsPresentation, MCS_TOPICS } from '../shared/mcs-presentation.mjs';
+import { mcsNotes } from './mcs-notes.mjs';
 
 /**
  * Read-only D projection of public M. The case manifest supplies identities, never titles.
@@ -6,7 +8,7 @@ import { GROUP_OBJECT_IDS, MCS_GROUP_TITLES, PRESETS } from '../shared/mcs-group
  * @param {{id:string,core:Array<{object:string,disambiguation?:{additionalObject?:string}}>,relations:Array<{id:string}>}} topologyCase
  * @returns {import('../shared/mcs-view.mjs').McsViewData}
  */
-export function buildMcsView(library, topologyCase) {
+export function buildMcsView(library, topologyCase, ontology) {
   if (topologyCase.id !== 'topology-dg') throw new Error('MCS 分组需要 topology-dg 案例清单');
   const relations = library.relations.filter(relation => relation.layer === 'M');
   const ids = library.objects.map(object => object.id), available = new Set(ids);
@@ -14,6 +16,8 @@ export function buildMcsView(library, topologyCase) {
   const topologyIds = new Set(topologyCase.core.flatMap(item => [
     item.object, ...(item.disambiguation?.additionalObject ? [item.disambiguation.additionalObject] : []),
   ]));
+  // Explicit namespace identities include the new formal topic hierarchy.
+  for (const object of library.objects) if (object.id.startsWith('obj:tdg:')) topologyIds.add(object.id);
   for (const relation of relations) {
     if (!registeredRelations.has(relation.id)) continue;
     for (const ref of [relation.from, relation.to, ...relation.premises]) topologyIds.add(ref.id);
@@ -31,6 +35,8 @@ export function buildMcsView(library, topologyCase) {
     schema: 'mcs-view/1',
     objectVersion: library.objectVersion,
     contentLocale: 'zh',
+    presentation: mcsPresentation(library.objects),
+    notes: mcsNotes(library, ontology),
     levels: library.scale.levels,
     objects: library.objects.map(object => ({
       id: object.id,
@@ -56,6 +62,7 @@ export function buildMcsView(library, topologyCase) {
       normalizedContext: object.normalizedContext,
     })),
     relations,
-    groups: Object.entries(MCS_GROUP_TITLES).map(([id, title]) => ({ id, title, objectIds: members[id] })),
+    groups: [...Object.entries(MCS_GROUP_TITLES).map(([id, title]) => ({ id, title, objectIds: members[id] })),
+      ...MCS_TOPICS.filter(t => available.has(t.id)).map(t => ({ id: t.id, title: t.title, objectIds: [t.id, ...library.objects.find(o => o.id === t.id).members.map(r => r.id)] }))],
   };
 }

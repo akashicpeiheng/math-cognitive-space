@@ -11,7 +11,9 @@ const versions=l=>({objectVersion:l.objectVersion,learningVersion:l.learningVers
 const notFound=id=>new McsError(CODES.UNKNOWN_NODE,`文档不存在：${id}`,404);
 export function registerContentApi({route,config}) {
   const library=()=>loadContentLibrary(join(config.repoRoot,'mcs-content'));
-  route('GET',/^\/api\/v2\/ontology\/mcs-view$/,async()=>buildMcsView(library(),JSON.parse(readFileSync(join(config.repoRoot,'mcs-content/cases/topology-dg.json'),'utf8'))));
+  // MCS is a Chinese content projection. Use this request's canonical snapshot
+  // for note labels as well, independent of the UI locale.
+  route('GET',/^\/api\/v2\/ontology\/mcs-view$/,async({sourceOntology,ontology})=>buildMcsView(library(),JSON.parse(readFileSync(join(config.repoRoot,'mcs-content/cases/topology-dg.json'),'utf8')),sourceOntology??ontology));
   route('GET',/^\/api\/v2\/content-cases$/,async()=>({cases:[{id:'topology-dg',title:'拓扑—微分几何',contentLocale:'zh',...contentVersions(library())}]}));
   route('GET',/^\/api\/v2\/ontology\/object-network$/,async()=>contentNetwork(library(),'M'));
   route('GET',/^\/api\/v2\/learning\/network$/,async()=>contentNetwork(library(),'L'));

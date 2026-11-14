@@ -60,6 +60,7 @@ try {
   await page.goto(app.origin + '/objects', {waitUntil:'networkidle'});
   check('形式对象与阅读节点列表均有压缩预览', await page.locator('[data-master-content]').count() === loadContentLibrary().objects.length+loadContentLibrary().nodes.length);
   await page.goto(app.origin + '/objects/obj%3Agroup%3Ainjective#claim', {waitUntil:'networkidle'});
+  await page.locator('#claim .katex').first().waitFor();
   check('形式对象保留准确声明锚点', await page.locator('#claim .katex').count() > 0);
   check('形式对象移除讲解与 Lean 教学面板', !(await page.locator('main.workspace').innerText()).includes('选择一种讲解'));
   await page.goto(app.origin + '/learning-nodes/learn%3Agroup%3Ainjective-proof', {waitUntil:'networkidle'});
