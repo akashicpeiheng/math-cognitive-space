@@ -13,8 +13,6 @@ try {
   browser = await chromium.launch({ executablePath: CHROME_PATH ?? undefined, headless: true });
   const context = await browser.newContext({ viewport: { width: 1450, height: 940 } });
   const page = await context.newPage();
-  page.on('console', message => { if (message.text().startsWith('atlas-ci:')) console.log(message.text()); });
-  await page.addInitScript(() => document.addEventListener('contextmenu', event => console.log('atlas-ci: context target', event.target?.outerHTML?.slice(0, 300)), true));
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
   const call = (path, options) => jsonCall(server.origin, '/api/v2' + path, options);
@@ -45,11 +43,7 @@ try {
       }
       throw new Error('no visible atlas edge hit point');
     });
-    await page.mouse.move(point.x, point.y);
-    console.log('atlas-ci: target before click', JSON.stringify(point), await page.evaluate(p => document.elementFromPoint(p.x, p.y)?.outerHTML?.slice(0, 300), point));
     await page.mouse.click(point.x, point.y, { button: 'right' });
-    await page.waitForTimeout(300);
-    console.log('atlas-ci: menu count', await page.locator('.connection-menu').count());
     await page.waitForSelector('.connection-menu');
   }
   await openMenu();

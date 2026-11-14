@@ -15,7 +15,6 @@ jobs:
       MCS_WEB_REQUIRE_BROWSER: '1'
       MCS_WEB_REQUIRE_TLS: '1'
       MCS_WEB_TEST_CONCURRENCY: '1'
-      MCS_WEB_TEST_FROM: '连接备注交互（右键、合并线、缩放与跨页面）'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
