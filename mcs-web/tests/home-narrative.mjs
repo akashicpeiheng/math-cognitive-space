@@ -713,11 +713,14 @@ try {
    */
   const readSettledScroll = async (expected = () => true) => {
     let previous = await readScroll();
+    let stable = 0;
     for (let i = 0; i < 60; i += 1) {
       await page.waitForTimeout(120);
       const current = await readScroll();
       if (current.scrollY === previous.scrollY && current.active === previous.active
-        && current.played.join(',') === previous.played.join(',') && expected(current)) return current;
+        && current.played.join(',') === previous.played.join(',') && expected(current)) {
+        if (++stable >= 4) return current;
+      } else stable = 0;
       previous = current;
     }
     return previous;
