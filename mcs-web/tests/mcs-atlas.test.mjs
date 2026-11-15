@@ -8,6 +8,16 @@ import { MCS_CROSS_FIELDS } from '../shared/mcs-crossfields.mjs';
 import { atlasFieldAffinity, MCS_ATLAS_AFFINITIES } from '../shared/mcs-atlas-affinity.mjs';
 
 function dataFor(objects) { return { objects, presentation: mcsPresentation(objects) }; }
+test('each central field carries a concise bilingual orientation summary', () => {
+  const atlas = createMcsAtlas(dataFor([]));
+  const cores = atlas.root.children.filter(node => node.id !== 'atlas:collected');
+  assert.equal(cores.length, 8);
+  for (const core of cores) {
+    assert(core.description?.zh && core.description?.en, `${core.id} needs a map summary`);
+    assert(core.description.zh.length <= 70, `${core.id} summary should remain short enough for the central overlay`);
+    assert(core.description.en.length <= 220, `${core.id} English summary should remain short enough for the central overlay`);
+  }
+});
 test('crossing navigation has unique field pairs, real entrances and primary-source links', () => {
   const atlas = createMcsAtlas(dataFor(loadContentLibrary().objects));
   const roots = new Set(atlas.root.children.map(n => n.id)), pairs = new Set(), ids = new Set();

@@ -18,47 +18,47 @@ function navigation() {
       branch('complex-analysis', '复分析', 'Complex analysis'),
       branch('functional-analysis', '泛函分析', 'Functional analysis'),
       branch('differential-equations', '微分方程', 'Differential equations'),
-    ]), color: '#54877d' },
+    ]), description: { zh: '研究变化、逼近与连续性，用极限、导数、积分和方程描述它们。', en: 'Studies change and continuity through limits, derivatives and integrals.' }, color: '#54877d' },
     { ...branch('algebra', '代数', 'Algebra', [
       branch('linear-algebra', '线性代数', 'Linear algebra'),
       branch('group-theory', '群论', 'Group theory', [], 'obj:group:subdiscipline'),
       branch('rings-fields', '环与域', 'Rings and fields'),
       branch('representation-theory', '表示论', 'Representation theory'),
-    ]), color: '#b17e58' },
+    ]), description: { zh: '研究运算与结构，以及保持运算的映射；从方程规律走向群、环、域与表示。', en: 'Studies operations, structures and maps that preserve them.' }, color: '#b17e58' },
     { ...branch('geometry', '几何', 'Geometry', [
       branch('euclidean-geometry', '欧氏几何', 'Euclidean geometry'),
       branch('differential-geometry', '微分几何', 'Differential geometry', [], 'obj:tdg:subdiscipline-geometry'),
       branch('algebraic-geometry', '代数几何', 'Algebraic geometry'),
       branch('convex-geometry', '凸几何', 'Convex geometry'),
-    ]), color: '#7786b5' },
+    ]), description: { zh: '研究空间、形状与变换；用坐标、曲率和不变量连接局部图形与整体结构。', en: 'Studies space and shape, from local features to global structure.' }, color: '#7786b5' },
     { ...branch('topology', '拓扑', 'Topology', [
       branch('point-set-topology', '点集拓扑', 'Point-set topology', [], 'obj:tdg:subdiscipline-topology'),
       branch('algebraic-topology', '代数拓扑', 'Algebraic topology'),
       branch('geometric-topology', '几何拓扑', 'Geometric topology'),
-    ]), color: '#a178a2' },
+    ]), description: { zh: '研究空间的连续结构与同胚下保持的性质，如连通性和紧性。', en: 'Studies spaces, continuity and properties preserved by homeomorphisms.' }, color: '#a178a2' },
     { ...branch('number-theory', '数论', 'Number theory', [
       branch('elementary-number-theory', '初等数论', 'Elementary number theory'),
       branch('analytic-number-theory', '解析数论', 'Analytic number theory'),
       branch('algebraic-number-theory', '代数数论', 'Algebraic number theory'),
       branch('arithmetic-geometry', '算术几何', 'Arithmetic geometry'),
-    ]), color: '#b39a51' },
+    ]), description: { zh: '研究整数及其推广的结构与规律，连接整除、素数、同余、方程与算术几何。', en: 'Studies integers, primes, divisibility and equations.' }, color: '#b39a51' },
     { ...branch('discrete', '离散数学', 'Discrete mathematics', [
       branch('combinatorics', '组合数学', 'Combinatorics'),
       branch('graph-theory', '图论', 'Graph theory'),
       branch('discrete-optimization', '离散优化', 'Discrete optimization'),
-    ]), color: '#6e9aa4' },
+    ]), description: { zh: '研究离散结构及其组合关系，用计数、图、算法与优化处理问题。', en: 'Studies discrete structures through counting, graphs and algorithms.' }, color: '#6e9aa4' },
     { ...branch('probability-statistics', '概率与统计', 'Probability and statistics', [
       branch('probability', '概率论', 'Probability theory'),
       branch('statistics', '数理统计', 'Mathematical statistics'),
       branch('stochastic-processes', '随机过程', 'Stochastic processes'),
-    ]), color: '#ad7b80' },
+    ]), description: { zh: '研究随机现象中的规律与不确定性，连接概率模型、统计推断与随机过程。', en: 'Studies randomness, probability models and statistical inference.' }, color: '#ad7b80' },
     { ...branch('foundations-computation', '基础与计算', 'Foundations and computation', [
       branch('logic', '数理逻辑', 'Mathematical logic'),
       branch('set-theory', '集合论', 'Set theory'),
       branch('category-theory', '范畴论', 'Category theory'),
       branch('computability', '可计算性与复杂性', 'Computability and complexity'),
       branch('numerical-analysis', '数值分析', 'Numerical analysis'),
-    ]), color: '#85897b' },
+    ]), description: { zh: '研究数学的形式描述、证明和计算，连接逻辑、集合、算法与复杂性。', en: 'Studies logic, sets and the methods and limits of computation.' }, color: '#85897b' },
   ];
 }
 

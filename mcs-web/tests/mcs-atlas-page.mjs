@@ -24,6 +24,16 @@ const find = async (page, id, english = false) => {
   await page.locator('.mcs-atlas-results button').first().click();
 };
 const closeEnough = (a, b, epsilon = .02) => assert(Math.abs(a - b) < epsilon, `${a} differs from ${b}`);
+const introductionOverlaps = page => page.evaluate(() => {
+  const intro = document.querySelector('.mcs-atlas-core-intro')?.getBoundingClientRect();
+  if (!intro) return [];
+  return [...document.querySelectorAll('[data-atlas-depth="2"] > .mcs-atlas-label-offset strong')].filter(label => {
+    let opacity = 1;
+    for (let node = label; node && node.tagName.toLowerCase() !== 'svg'; node = node.parentElement) opacity *= Number(getComputedStyle(node).opacity);
+    const rect = label.getBoundingClientRect();
+    return opacity > .2 && rect.width > 0 && rect.height > 0 && rect.left < intro.right && rect.right > intro.left && rect.top < intro.bottom && rect.bottom > intro.top;
+  }).map(label => label.textContent);
+});
 
 try {
   const library = (await (await fetch(app.origin + '/api/v2/ontology/mcs-view')).json()).data;
@@ -36,6 +46,7 @@ try {
   assert.equal(await page.locator('[data-mcs-canvas]').count(), 0, 'fresh route opens the atlas');
   const broad = page.locator('[data-atlas-depth="1"]');
   assert.equal(await broad.count(), 8, 'eight coarse navigation fields at full extent');
+  assert.equal(await page.locator('[data-atlas-core-intro="true"]').count(), 0, 'overview stays uncluttered');
   assert.equal(await page.locator('[data-atlas-depth="2"]').count(), 0, 'small branches stay folded in overview');
   assert.equal(await page.locator('.mcs-atlas-canvas rect').count(), 0, 'the map contains no rectangular territory tiles');
   assert.equal(await page.locator('.mcs-atlas-region').count(), 8, 'continuous fields remain visible');
@@ -47,6 +58,16 @@ try {
   assert.equal(await page.locator('[data-atlas-node="atlas:geometry"]').getAttribute('data-atlas-core'), 'true');
   assert.equal(await page.locator('[data-atlas-depth="2"]').count(), 0, 'recenter stays at the broad overview');
   await page.screenshot({ path: directory + '/geometry-centered.png', fullPage: true });
+  await page.locator('[data-atlas-node="atlas:geometry"] button').click();
+  const geometryCanvas = await page.locator('[data-mcs-atlas]').boundingBox();
+  await page.mouse.move(geometryCanvas.x + geometryCanvas.width / 2, geometryCanvas.y + geometryCanvas.height / 2);
+  await page.mouse.wheel(0, -30);
+  const geometryZoom = Number((await page.locator('.mcs-atlas-tools output').innerText()).replace('%', ''));
+  assert(geometryZoom >= 135 && geometryZoom <= 150, `geometry is shown at the requested scale (${geometryZoom}%)`);
+  assert((await page.locator('[data-atlas-core-intro="true"]').textContent()).includes('研究空间'), 'geometry introduction appears in the central field');
+  assert.deepEqual(await introductionOverlaps(page), [], 'geometry branch titles stay clear of the introduction');
+  await page.screenshot({ path: directory + '/geometry-intro-desktop.png', fullPage: true });
+  await home(page);
   await page.getByRole('button', { name: '交叉学科：代数几何', exact: true }).click();
   const intersection = page.getByRole('complementary', { name: '交叉学科内容' });
   assert((await intersection.innerText()).includes('多项式'));
@@ -60,9 +81,15 @@ try {
   assert((await camera(page)).scale > initial.scale * 1.1);
   assert.equal(await page.locator('[data-atlas-node="atlas:analysis"]').getAttribute('data-expanded'), 'true', 'fitting a field reveals its children');
   assert(await page.locator('[data-atlas-depth="2"] button').count() > 0);
+  assert.equal(await page.locator('[data-atlas-core-intro="true"]').count(), 1, 'field-level zoom shows the central field introduction');
+  assert((await page.locator('[data-atlas-core-intro="true"]').textContent()).includes('研究变化'), 'central introduction names the field idea');
   await page.screenshot({ path: directory + '/analysis-desktop.png', fullPage: true });
   await page.getByRole('button', { name: '返回上层', exact: true }).click();
   assert((await camera(page)).scale < initial.scale * 1.2);
+  assert.equal(await page.locator('[data-atlas-core-intro="true"]').count(), 0, 'returning to overview hides the introduction');
+  for (let i = 0; i < 3; i++) await page.getByRole('button', { name: '放大', exact: true }).click();
+  assert.equal(await page.locator('[data-atlas-core-intro="true"]').count(), 0, 'deeper zoom makes room for branches');
+  await home(page);
   checks.push('coarse fields, proportional zoom, child reveal and parent navigation');
 
   const bounds = await page.locator('[data-mcs-atlas]').boundingBox();
@@ -165,7 +192,32 @@ try {
   await sharedPhone.close(); active = phone;
   await phone.locator('[data-atlas-node="atlas:analysis"] button').tap();
   assert.equal(await phone.locator('[data-atlas-node="atlas:analysis"]').getAttribute('data-expanded'), 'true');
+  assert.equal(await phone.locator('[data-atlas-core-intro="true"]').count(), 1, 'the fitted central field has an introduction on a phone');
   await phone.screenshot({ path: directory + '/analysis-mobile-en.png', fullPage: true });
+  await home(phone);
+  await phone.setViewportSize({ width: 320, height: 844 });
+  const overlapCases = [];
+  for (const core of ['analysis', 'algebra', 'geometry', 'topology', 'number-theory', 'discrete', 'probability-statistics', 'foundations-computation']) {
+    await phone.getByRole('combobox', { name: 'Central field' }).selectOption(`atlas:${core}`);
+    await phone.locator('[data-mcs-atlas]').focus(); await phone.keyboard.press('+');
+    const intro = phone.locator('[data-atlas-core-intro="true"]');
+    assert.equal(await intro.count(), 1, `${core}: 140% shows the introduction at 320px`);
+    assert(await intro.locator('p').evaluate(el => el.scrollHeight <= el.clientHeight + 1), `${core}: English introduction is not truncated`);
+    for (const zoom of [140, 170]) {
+      if (zoom === 170) {
+        const previous = await camera(phone), box = await phone.locator('[data-mcs-atlas]').boundingBox();
+        await phone.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+        await phone.mouse.wheel(0, -48);
+        await phone.waitForFunction(scale => Number(document.querySelector('[data-mcs-atlas]').dataset.zoom) > scale, previous.scale);
+        assert.equal(await intro.count(), 1, `${core}: the introduction remains visible around 170%`);
+      }
+      const labels = await introductionOverlaps(phone);
+      if (labels.length) overlapCases.push({ core, zoom, labels });
+    }
+  }
+  assert.deepEqual(overlapCases, [], 'branch titles should not be hidden behind the introduction');
+  await phone.setViewportSize({ width: 390, height: 844 });
+  await phone.getByRole('combobox', { name: 'Central field' }).selectOption('atlas:analysis');
   await home(phone);
   const touchBounds = await phone.locator('[data-mcs-atlas]').boundingBox();
   const touchCenter = { x: touchBounds.x + touchBounds.width / 2, y: touchBounds.y + touchBounds.height / 2 };

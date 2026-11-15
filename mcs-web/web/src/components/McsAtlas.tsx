@@ -193,6 +193,16 @@ export function McsAtlas({ data, onOpenObject }: { data: McsViewData; onOpenObje
   const isOverview = camera.scale / homeScale <= 1.15;
   const envelope = (node: AtlasNode) => ({ ...node, ...(boxes[node.id] ?? node) });
   const core = envelope(atlas.byId[coreId]);
+  // Show the introduction at field level, then make room for deeper branches.
+  // The card is sized in screen pixels and travels with the field centre.
+  const coreZoom = size.width ? camera.scale / homeScale : 0;
+  const introWidth = portrait ? Math.min(170, size.width * .46) : Math.min(320, Math.max(250, core.w * camera.scale * .22));
+  const introHeight = portrait ? 80 : 116;
+  const coreIntroVisible = Boolean(core.description) && coreZoom >= 1.25 && coreZoom < 1.9
+    && core.w * camera.scale >= introWidth * 1.1 && core.h * camera.scale >= introHeight * 1.1;
+  const coreIntro = coreIntroVisible ? (() => {
+    return { x: (core.x + core.w / 2) * camera.scale + camera.x - introWidth / 2, y: (core.y + core.h / 2) * camera.scale + camera.y - introHeight / 2, width: introWidth, height: introHeight };
+  })() : null;
   const crossing = MCS_CROSS_FIELDS.find(item => item.id === crossingId);
   const crossingAffinity = crossing ? atlasFieldAffinity(...crossing.domains) : null;
   const crossings = MCS_CROSS_FIELDS.filter(item => item.domains.includes(coreId));
@@ -223,11 +233,16 @@ export function McsAtlas({ data, onOpenObject }: { data: McsViewData; onOpenObje
       cy = clamp(cy + dy / length * 24, label.height / 2 + 4, size.height - label.height / 2 - 4);
     }
     const clearOfPath = !peripheral || cy - label.height / 2 >= 54 || cx - label.width / 2 >= size.width * .55;
-    return [node.id, { x: cx - label.width / 2, y: cy - label.height / 2, w: label.width, h: label.height, visible: revealOf(node, box) < .97 && clearOfPath }];
+    // The picker still switches cores on phones; hiding peripheral labels at
+    // this scale gives crossing entrances room beside the central introduction.
+    const clearsIntro = !coreIntro || (node.id !== coreId && !portrait);
+    return [node.id, { x: cx - label.width / 2, y: cy - label.height / 2, w: label.width, h: label.height, visible: revealOf(node, box) < .97 && clearOfPath && clearsIntro }];
   }));
   const occupied = [...rootLabels.values()].filter(label => label.visible).map(({ x, y, w, h }) => ({ x, y, w, h }));
+  if (coreIntro) occupied.push({ x: coreIntro.x, y: coreIntro.y, w: coreIntro.width, h: coreIntro.height });
   const navLabels = occupied.map(label => ({ ...label }));
   navLabels.push({ x: 6, y: 6, w: portrait ? 190 : 300, h: portrait ? 48 : 44 });
+  const reservedLabels = navLabels.map(label => ({ ...label }));
   const crossingLabels = crossings.map(item => {
     const other = envelope(atlas.byId[item.domains.find(id => id !== coreId)!]);
     const anchor = atlasCrossingPoint(core, other);
@@ -276,7 +291,10 @@ export function McsAtlas({ data, onOpenObject }: { data: McsViewData; onOpenObje
     // On a small field overview the crossings carry the orientation. Ordinary
     // branches keep touchable landmarks; their names unfold with further zoom.
     const branchLabelAlpha = portrait && node.depth === 2 && !node.neighbourId ? clamp((camera.scale / homeScale - 1.45) / .25, 0, 1) : 1;
-    const fullWidth = rootLabel?.w ?? (portrait && node.depth === 2 ? clamp(w, 96, 140) : clamp(w * .76, 100, portrait ? 160 : 230));
+    // Leave enough lateral space for a branch beside the introduction on a
+    // narrow phone; otherwise the normal 96px minimum can make avoidance impossible.
+    const branchWidthMax = coreIntro && portrait ? clamp((size.width - coreIntro.width) / 2 - 8, 72, 140) : 140;
+    const fullWidth = rootLabel?.w ?? (portrait && node.depth === 2 ? clamp(w, Math.min(96, branchWidthMax), branchWidthMax) : clamp(w * .76, 100, portrait ? 160 : 230));
     const fullHeight = rootLabel?.h ?? (portrait && node.depth === 2 ? node.neighbourId ? 68 : 60 : 88);
     const labelWidth = 32 + (fullWidth - 32) * branchLabelAlpha, labelHeight = 32 + (fullHeight - 32) * branchLabelAlpha;
     let labelX = rootLabel?.x ?? cx - labelWidth / 2, labelY = rootLabel?.y ?? cy - labelHeight / 2;
@@ -292,11 +310,23 @@ export function McsAtlas({ data, onOpenObject }: { data: McsViewData; onOpenObje
         return dot >= .9 * Math.hypot(dx, dy) * Math.hypot(vx, vy)
           && dot >= .68 * Math.hypot(cx - px, cy - py) * Math.hypot(vx, vy);
       };
-      const label = LABEL_OFFSETS
-        .map(({ dx, dy }) => ({ x: labelX + dx, y: labelY + dy, w: labelWidth, h: labelHeight }))
-        .find(a => a.x >= 4 && a.y >= 4 && a.x + a.w <= size.width - 4 && a.y + a.h <= size.height - 4
-          && keepsDirection(a)
-          && navLabels.every(b => a.x + a.w + 3 <= b.x || b.x + b.w + 3 <= a.x || a.y + a.h + 3 <= b.y || b.y + b.h + 3 <= a.y));
+      const candidates = LABEL_OFFSETS.map(({ dx, dy }) => ({ x: labelX + dx, y: labelY + dy, w: labelWidth, h: labelHeight }));
+      const separated = (a: { x: number; y: number; w: number; h: number }, b: { x: number; y: number; w: number; h: number }) =>
+        a.x + a.w + 3 <= b.x || b.x + b.w + 3 <= a.x || a.y + a.h + 3 <= b.y || b.y + b.h + 3 <= a.y;
+      const inBounds = (a: { x: number; y: number; w: number; h: number }) => a.x >= 4 && a.y >= 4 && a.x + a.w <= size.width - 4 && a.y + a.h <= size.height - 4;
+      let label = candidates.find(a => inBounds(a) && keepsDirection(a) && navLabels.every(b => separated(a, b)));
+      if (!label && coreIntro) {
+        // If the map is crowded, keep the introduction clear even when some
+        // other labels cannot all be separated. Preserve a crossing's direction.
+        const intro = { x: coreIntro.x, y: coreIntro.y, w: coreIntro.width, h: coreIntro.height };
+        const position = (x: number, y: number) => ({ x: clamp(x, 4, size.width - labelWidth - 4), y: clamp(y, 4, size.height - labelHeight - 4), w: labelWidth, h: labelHeight });
+        const offsets = [0, 14, -14, 28, -28, 42, -42, 56, -56, 70, -70, 84, -84, 98, -98, 126, -126, 154, -154];
+        const edges = offsets.flatMap(d => [position(intro.x - labelWidth - 4, labelY + d), position(intro.x + intro.w + 4, labelY + d),
+          position(labelX + d, intro.y - labelHeight - 4), position(labelX + d, intro.y + intro.h + 4)]);
+        label = [...candidates, ...edges].filter(a => inBounds(a) && keepsDirection(a) && reservedLabels.every(other => separated(a, other)))
+          .sort((a, b) => navLabels.filter(other => !separated(a, other)).length - navLabels.filter(other => !separated(b, other)).length
+            || (a.x - labelX) ** 2 + (a.y - labelY) ** 2 - (b.x - labelX) ** 2 - (b.y - labelY) ** 2)[0];
+      }
       if (label) { labelX = label.x; labelY = label.y; }
       navLabels.push({ x: labelX, y: labelY, w: labelWidth, h: labelHeight });
     }
@@ -358,6 +388,13 @@ export function McsAtlas({ data, onOpenObject }: { data: McsViewData; onOpenObje
           </foreignObject>;
         })}</g> : null}
         {size.width > 0 ? atlas.root.children.map(n => draw(n, 'labels')) : null}
+        {coreIntro ? <foreignObject data-atlas-core-intro="true" x={coreIntro.x} y={coreIntro.y} width={coreIntro.width} height={coreIntro.height} opacity={clamp((1.9 - coreZoom) / .15, 0, 1)} pointerEvents="none">
+          <div className="mcs-atlas-core-intro" style={{ '--atlas-color': core.color } as CSSProperties}>
+            <span className="mcs-atlas-core-intro-kicker">{pick({ zh: '核心简介', en: 'Core field' })}</span>
+            <strong>{pick(core.title)}</strong>
+            <p>{pick(core.description!)}</p>
+          </div>
+        </foreignObject> : null}
       </svg>
       <nav className="mcs-atlas-breadcrumbs" aria-label={pick({ zh: '当前位置', en: 'Current location' })}>{path.map((n, i) => <span key={n.id}>{i ? <span aria-hidden="true">/</span> : null}<button type="button" onClick={() => fly(n)}>{n === atlas.root ? pick({ zh: '数学全景', en: 'All mathematics' }) : pick(n.title)}</button></span>)}</nav>
       {search ? <div className="mcs-search-results mcs-atlas-results" aria-label={pick({ zh: '搜索结果', en: 'Search results' })}>{results.length ? results.map(n => <button type="button" key={n.id} onClick={() => fly(n)}>{pick(n.title)}<small>{n.parentId ? pick(atlas.byId[n.parentId].title) : ''}</small></button>) : <p>{pick({ zh: '未找到匹配的分支或对象', en: 'No matching branches or objects' })}</p>}</div> : null}
