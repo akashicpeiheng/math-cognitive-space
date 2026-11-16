@@ -30,7 +30,17 @@
  *      度数与它一起用（同分时度数高的在前），但排序的主判据是前者。
  *    - 圈半径按「同一圈上相邻卡片的**最小弦长**」定容量（`minChord`），
  *      因此同圈与相邻圈都不会压卡片——这是构造上的保证，不靠事后松弛。
- *    - 圈内角度按**内侧邻居的角度重心**排：与内圈谁相连，就转到谁那一侧。
+ *    - **竖向仍然回答「要多少前置」**（2026-10-23 追加，用户要求「排法设为逻辑核心的时候，
+ *      仍然保留把不需要太多前置知识的节点放在视图的上方，需要更多前置知识的节点放在视图
+ *      靠下的位置」）：调用方给出 `relations` 时，圈内节点先按**登记硬前置的传递条数**
+ *      由少到多排序，再沿圆的左右两个半弧从上到下铺开——条数少的一律在上层，多的一律在下层；
+ *      同一高度最多左右两张，左右按内侧邻居的角度重心分（相关节点尽量靠同一侧）。
+ *      因此「从下往上读」在每一圈内仍然是「由深到浅」。核心本身留在圆心，不参与这条排序。
+ *      跨圈时圈半径（核心程度）仍是主轴：外层某个中等前置的节点可以低于内层前置最多的节点。
+ *      这是「同心圆 + 核心在圆心 + 每圈按前置上下」三者的几何取舍，界面只承诺每圈内严格与两端趋势。
+ *      没有给出 `relations` 的旧调用（如 Obsidian 插件）保留原来的圈内角度规则，
+ *      因为那时根本没有「前置多少」这份数据可读——这不是两套判据，是同一判据缺了输入。
+ *    - **旧行为**（未给 `relations` 时）：圈内角度按**内侧邻居的角度重心**排，
  *      于是「天然的逻辑关系」在图上表现为相邻的角扇区，而不是随机散布。
  *
  * ## 三条纪律（与 `network.ts` 的 `layout()` 相同）
@@ -393,6 +403,11 @@ export interface OrderArrangement {
   ranked: number;
   /** 逻辑核心：每个节点的核心程度（0–1）。学习顺序：空表。 */
   scores: Map<string, number>;
+  /**
+   * 逻辑核心：每个节点「需要先会的硬前置」条数（传递闭包大小，0 = 没有登记前置）。
+   * 学习顺序，以及调用方没有提供 `relations` 时为空表（空表 = 没有这份数据，不是「都为 0」）。
+   */
+  prereq: Map<string, number>;
 }
 
 interface OrderInput {
@@ -413,6 +428,11 @@ export interface LearningOrderInput extends OrderInput {
 export interface CoreRingInput extends OrderInput {
   /** 核心节点（必须在这个视图里；不在时退到核心程度最高的那个）。 */
   core: string;
+  /**
+   * 全部已登记的硬前置关系（M 的投影）。给了它，圈内就再按「需要多少前置」
+   * 由少到多、从上往下排；不给则保留原来的圈内角度规则（旧调用没有这份数据）。
+   */
+  relations?: readonly HardPrereqEdge[];
 }
 
 /** 每个节点在当前视图这张图上的邻居（`isolated` 与角度次序都用它）。 */
@@ -472,7 +492,9 @@ function placedNode(id: string, titles: ReadonlyMap<string, string>, x: number, 
 export function learningOrderArrangement(input: LearningOrderInput): OrderArrangement {
   const ids = [...input.ids].sort(cmpId);
   if (ids.length === 0) {
-    return { mode: 'learning', anchor: '', layout: emptyLayout(), bands: [], offPath: [], ranked: 0, scores: new Map() };
+    return {
+      mode: 'learning', anchor: '', layout: emptyLayout(), bands: [], offPath: [], ranked: 0, scores: new Map(), prereq: new Map(),
+    };
   }
   const depthOf = input.start && ids.includes(input.start)
     ? hardPrereqDepths(input.relations, input.start)
@@ -572,6 +594,7 @@ export function learningOrderArrangement(input: LearningOrderInput): OrderArrang
     offPath,
     ranked: onPath.length,
     scores: new Map<string, number>(),
+    prereq: new Map<string, number>(),
   };
 }
 
@@ -585,6 +608,24 @@ export function learningOrderArrangement(input: LearningOrderInput): OrderArrang
 function ringCapacity(radius: number): number {
   const ratio = Math.min(1, ORDER_LAYOUT.minChord / (2 * Math.max(radius, 1)));
   return Math.max(1, Math.floor(Math.PI / Math.asin(ratio)));
+}
+
+/**
+ * 「按前置多少上下排」时的每圈容量。
+ *
+ * 新摆法的最小间距来自同一个高度上的左右两张、以及上下相邻两层（角距都是 π/L，L = 层数），
+ * 因此容量是**偶数优先**：L 层最多 2L 张，条件 2r·sin(π/(2L)) ≥ minChord。
+ * 反推 L ≤ π / (2·asin(minChord/(2r)))，容量取 2·floor(…)。
+ *
+ * 和旧容量（整圈均分）相比通常只少一张（奇数容量会被取成偶数），但最小弦长的保证更紧：
+ * 旧的 13 张在半径 420 时弦长只有 187px（< 200），新摆法的 12 张是 217px。
+ * 半径小到放不下两张时至少留一张，规则不因图小而无解。
+ */
+function depthRingCapacity(radius: number): number {
+  const safe = Math.max(radius, 1);
+  const ratio = ORDER_LAYOUT.minChord / (2 * safe);
+  if (ratio >= 1) return 1;
+  return Math.max(1, 2 * Math.floor(Math.PI / (2 * Math.asin(ratio))));
 }
 
 /** 角度重心：把内侧邻居的角度按单位向量求和再取角，跨 ±π 也不会算错。 */
@@ -601,19 +642,41 @@ function meanAngle(angles: readonly number[]): number {
 /**
  * 逻辑核心的摆位（见文件顶部第 2 条）。
  *
- * @param input.ids   视图里的节点
- * @param input.edges 视图里画出来的边（核心程度与角度次序都只看这张图）
- * @param input.core  核心节点（不在视图里时退到核心程度最高的那个）
+ * 给了 `relations` 时，圈内先按「传递硬前置条数」由少到多排；沿圆的两个半弧从上到下铺：
+ * 同一高度最多左右两张，条数少的一定在上层、多的一定在下层（同层内部允许条数不同）。
+ * 左右由内侧邻居的角度重心分，尽量让相关的节点落在同一侧。
+ *
+ * 没给 `relations` 时走原来的整圈均分 + 角度重心次序（旧调用没有前置数据）。
+ *
+ * @param input.ids       视图里的节点
+ * @param input.edges     视图里画出来的边（核心程度与角度次序都只看这张图）
+ * @param input.core      核心节点（不在视图里时退到核心程度最高的那个）
+ * @param input.relations 全部已登记的硬前置关系；省略时保留旧摆法
  */
 export function coreRingArrangement(input: CoreRingInput): OrderArrangement {
   const ids = [...input.ids].sort(cmpId);
   if (ids.length === 0) {
-    return { mode: 'logic', anchor: '', layout: emptyLayout(), bands: [], offPath: [], ranked: 0, scores: new Map() };
+    return {
+      mode: 'logic', anchor: '', layout: emptyLayout(), bands: [], offPath: [], ranked: 0, scores: new Map(), prereq: new Map(),
+    };
   }
   const scores = coreScores(ids, input.edges);
   const core = ids.includes(input.core)
     ? input.core
     : ([...ids].sort((a, b) => ((scores.get(b) ?? 0) - (scores.get(a) ?? 0)) || cmpId(a, b))[0] ?? '');
+
+  /*
+   * 前置条数只看本体，不只看视图：一个节点的前置哪怕没放进这张图，
+   * 学它之前仍然要先会（与学习顺序「距离按本体算」同一口径）。
+   * 因此这里用全部已登记关系算传递闭包的大小，再拿这个数当竖向次序。
+   */
+  const relations = input.relations;
+  const depthAware = relations !== undefined;
+  const prereq = new Map<string, number>();
+  if (relations) {
+    for (const id of ids) prereq.set(id, hardPrereqAncestorCount(relations, id));
+  }
+  const prereqOf = (id: string): number => prereq.get(id) ?? 0;
 
   const neighbors = neighborMap(ids, input.edges);
   const rank = [...ids]
@@ -626,14 +689,15 @@ export function coreRingArrangement(input: CoreRingInput): OrderArrangement {
   let radius = ORDER_LAYOUT.ringStep;
   let at = 0;
   while (at < rank.length) {
-    const capacity = ringCapacity(radius);
+    // 两种摆法的容量公式不同：上下摆法要保证「同层左右」与「上下相邻层」的弦长都不低于 minChord。
+    const capacity = depthAware ? depthRingCapacity(radius) : ringCapacity(radius);
     const ring = rank.slice(at, at + capacity);
     at += ring.length;
     rings.push(ring);
     radius += ORDER_LAYOUT.ringStep;
   }
 
-  /** 与核心直接相连的边权（第一圈的角度次序用；核心自己没有角度可参考）。 */
+  /** 与核心直接相连的边权（第一圈的次序用；核心自己没有角度可参考）。 */
   const weightToCore = new Map<string, number>();
   for (const edge of input.edges) {
     if (edge.from === edge.to) continue;
@@ -649,7 +713,9 @@ export function coreRingArrangement(input: CoreRingInput): OrderArrangement {
     const ring = rings[index];
     /*
      * 第一圈用「与核心的连边强度」，再往外的圈用「内侧邻居的角度重心」：
-     * 前者在核心周围没有角度可参考，只能按关系强弱排；后者才是「与内圈谁相连就转到谁那一侧」。
+     * 前者在核心周围没有角度可参考，只能按关系强弱排；后者是「与内圈谁相连」的线索。
+     * 新旧两种摆法都拿它当**次序/分边**的判据：旧摆法用它决定整圈角度，
+     * 新摆法用它决定同一高度上谁在左、谁在右。
      */
     const keyed = ring.map((id) => {
       let key: number;
@@ -666,15 +732,83 @@ export function coreRingArrangement(input: CoreRingInput): OrderArrangement {
       }
       return { id, key };
     });
-    keyed.sort((a, b) => (a.key === b.key ? cmpId(a.id, b.id) : a.key - b.key));
-    const total = keyed.length;
-    keyed.forEach((entry, position) => {
-      // 从正上方开始顺时针铺开：与「中心 → 周围」的读图方向一致。
-      const angle = -Math.PI / 2 + (2 * Math.PI * position) / total;
-      angleOf.set(entry.id, angle);
-      ringOf.set(entry.id, index);
-      placeInRing.set(entry.id, position);
-    });
+    const compareKey = (a: { id: string; key: number }, b: { id: string; key: number }) => (
+      a.key === b.key ? cmpId(a.id, b.id) : a.key - b.key
+    );
+
+    if (!depthAware) {
+      keyed.sort(compareKey);
+      const total = keyed.length;
+      keyed.forEach((entry, position) => {
+        // 从正上方开始顺时针铺开：与「中心 → 周围」的读图方向一致。
+        const angle = -Math.PI / 2 + (2 * Math.PI * position) / total;
+        angleOf.set(entry.id, angle);
+        ringOf.set(entry.id, index);
+        placeInRing.set(entry.id, position);
+      });
+      continue;
+    }
+
+    /*
+     * 新摆法：前置少的在前 → 从上往下两两成对铺在左右两个半弧上。
+     *
+     * 每一层的角距取 (level + 0.5) / levels 的 π 倍：u 永远在 (0,1) 内，
+     * 因此上、下顶点不会被两层同时占用；偶数张时整圈仍是等距的（只是转半格），
+     * 奇数张时最下面只剩一张，正好留给前置最多的那个。
+     */
+    keyed.sort((a, b) => (prereqOf(a.id) - prereqOf(b.id)) || compareKey(a, b));
+    /** 内侧邻居在这一侧的分量：正 = 靠右，负 = 靠左，0 = 没有可用的内侧角度。 */
+    const sideHint = (id: string): number => {
+      let sum = 0;
+      let count = 0;
+      for (const other of neighbors.get(id) ?? []) {
+        const angle = angleOf.get(other);
+        if (angle === undefined) continue;
+        sum += Math.cos(angle);
+        count += 1;
+      }
+      return count > 0 ? sum / count : 0;
+    };
+    if (keyed.length === 2) {
+      /*
+       * 只有两张时不摆成「同高左右」：那样竖向次序读不出来。
+       * 浅的一上、深的一下，正好把这条规则表达清楚（圆仍然是圆，只是用了上下两个顶点）。
+       */
+      const [shallow, deep] = keyed;
+      angleOf.set(shallow.id, -Math.PI / 2);
+      angleOf.set(deep.id, Math.PI / 2);
+      ringOf.set(shallow.id, index);
+      ringOf.set(deep.id, index);
+      placeInRing.set(shallow.id, 0);
+      placeInRing.set(deep.id, 1);
+      continue;
+    }
+    const levels = Math.ceil(keyed.length / 2);
+    for (let level = 0; level < levels; level += 1) {
+      const u = (level + 0.5) / levels;
+      const rightAngle = -Math.PI / 2 + Math.PI * u;
+      const leftAngle = -Math.PI / 2 - Math.PI * u;
+      const first = keyed[level * 2];
+      const second = keyed[level * 2 + 1];
+      if (!second) {
+        // 只有一张：按内侧邻居给的那一侧放；没有线索时按层号的奇偶左右交替，避免整条中轴歪向一边。
+        const hint = sideHint(first.id);
+        const angle = hint > 0 || (hint === 0 && level % 2 === 0) ? rightAngle : leftAngle;
+        angleOf.set(first.id, angle);
+        ringOf.set(first.id, index);
+        placeInRing.set(first.id, level * 2);
+        continue;
+      }
+      // 两张：内侧邻居偏右的那张放右边；分不出来时按排序先右后左（确定，不掷骰子）。
+      const right = sideHint(first.id) >= sideHint(second.id) ? first : second;
+      const left = right === first ? second : first;
+      angleOf.set(right.id, rightAngle);
+      angleOf.set(left.id, leftAngle);
+      ringOf.set(right.id, index);
+      ringOf.set(left.id, index);
+      placeInRing.set(first.id, level * 2);
+      placeInRing.set(second.id, level * 2 + 1);
+    }
   }
 
   const placed = ids.map((id) => {
@@ -690,7 +824,7 @@ export function coreRingArrangement(input: CoreRingInput): OrderArrangement {
       ring,
     );
   });
-  // 归一化：把包围盒左上角挪到留白处（核心仍在图的中心，因为每一圈都是整圈）。
+  // 归一化：把包围盒左上角挪到留白处（每一圈仍是以核心为圆心的圆；奇数张的那圈留一个空位）。
   const minX = Math.min(...placed.map((node) => node.x));
   const minY = Math.min(...placed.map((node) => node.y));
   for (const node of placed) {
@@ -706,5 +840,6 @@ export function coreRingArrangement(input: CoreRingInput): OrderArrangement {
     offPath: [],
     ranked: ids.length,
     scores,
+    prereq,
   };
 }

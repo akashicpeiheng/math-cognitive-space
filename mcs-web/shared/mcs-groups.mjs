@@ -14,7 +14,7 @@ export const GROUP_OBJECT_IDS = Object.freeze([
 export const PRESETS = Object.freeze({
   topology: Object.freeze(['topology','c1','c2','t1','t2','t3','t4','compact','paracompact','sigma-compact','connected','second-first','four-three','three-two','two-one','compact-para']),
   manifolds: Object.freeze(['topology','continuous','homeomorphism','chart','atlas','smooth-atlas','local-euclidean','top-manifold','smooth-manifold','manifold-countability']),
-  operators: Object.freeze(['derivative','partial','directional','frechet','gradient','curl','divergence','tangent','cotangent','tensor','tensor-field','forms','exterior','vector-field','flow','lie','metric','hodge','insertion','direction-frechet','d-squared','curl-grad','div-curl','cartan','formal-adjoint']),
+  operators: Object.freeze(['derivative','partial','directional','frechet','jacobian','gradient','curl','divergence','tangent','cotangent','tensor','tensor-field','forms','exterior','vector-field','flow','lie','metric','hodge','insertion','direction-frechet','d-squared','curl-grad','div-curl','cartan','formal-adjoint']),
 });
 
 export const MCS_GROUP_TITLES = Object.freeze({

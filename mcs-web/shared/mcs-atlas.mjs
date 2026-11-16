@@ -6,6 +6,7 @@
 import { MCS_CROSS_FIELDS } from './mcs-crossfields.mjs';
 import { MCS_TOPICS } from './mcs-presentation.mjs';
 import { atlasFieldAffinity } from './mcs-atlas-affinity.mjs';
+import { arrangeConstellation } from './mcs-atlas-relations.mjs';
 const branch = (id, zh, en, children = [], objectId) => ({
   id: `atlas:${id}`, title: { zh, en }, children, ...(objectId ? { objectId } : {}),
 });
@@ -290,13 +291,35 @@ export function createMcsAtlas(data, portrait = false, coreId) {
     root.children.push(extra);
   }
   Object.assign(root, { x: 0, y: 0, w: 1600, h: 1000 });
+  const relations = data.relations ?? [];
   const nodes = [], byId = Object.create(null);
   function place(node, parent) {
     node.depth = parent ? parent.depth + 1 : 0;
     if (parent) { node.parentId = parent.id; node.color = node.color ?? parent.color; }
     nodes.push(node); byId[node.id] = node;
     if (!parent) arrangeFields(node, coreId);
-    else scatter(node, root);
+    else {
+      /*
+       * 对象层的概念星座：只对「子节点全部是正式对象」的父节点计算，
+       * 且必须有可见的主要关系；否则保持原来的留白散布。
+       * 先用 scatter 同一套比例给子节点定尺寸，再让星座改中心位置。
+       */
+      const objectParent = node.children.length >= 2 && node.children.every(child => child.objectId);
+      if (objectParent) {
+        const extent = Math.min(.36, .68 / Math.sqrt(node.children.length));
+        for (const child of node.children) { child.w = node.w * extent; child.h = node.h * extent; }
+      }
+      const constellation = objectParent ? arrangeConstellation(node, node.children, relations) : null;
+      if (constellation) {
+        for (const child of node.children) {
+          const position = constellation.positions.get(child.objectId);
+          if (position) { child.x = position.x; child.y = position.y; }
+        }
+        node.constellation = { core: constellation.core, groups: constellation.groups };
+      } else {
+        scatter(node, root);
+      }
+    }
     for (const child of node.children) place(child, node);
   }
   place(root);

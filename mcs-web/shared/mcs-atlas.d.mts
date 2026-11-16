@@ -1,5 +1,6 @@
 import type { McsViewData } from './mcs-view.mjs';
 import type { AtlasAffinity } from './mcs-atlas-affinity.mjs';
+import type { AtlasConstellationState } from './mcs-atlas-relations.mjs';
 
 export interface AtlasNode {
   id: string;
@@ -17,6 +18,8 @@ export interface AtlasNode {
   crossingId?: string;
   /** The other coarse field; directs the crossing toward that neighbour. */
   neighbourId?: string;
+  /** D navigation only: object constellation selected for a deep-zoom parent. */
+  constellation?: AtlasConstellationState;
 }
 export interface McsAtlas {
   root: AtlasNode;

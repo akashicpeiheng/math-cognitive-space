@@ -8,4 +8,6 @@ export const MCS_SCALES: Record<ObjectScale, { zh: string; en: string }> = {
 export const MCS_RELATIONS: Record<string, { zh: string; en: string }> = {
   deduction: { zh: '推导', en: 'Deduction' }, scaling: { zh: '放缩', en: 'Scaling' },
   application: { zh: '应用', en: 'Application' }, duality: { zh: '对偶', en: 'Duality' },
+  hardPrereq: { zh: '硬先修', en: 'Hard prerequisite' }, softPrereq: { zh: '软先修', en: 'Suggested prerequisite' },
+  analogy: { zh: '类比', en: 'Analogy' },
 };

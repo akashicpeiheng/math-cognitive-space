@@ -3,17 +3,26 @@ import { spawn } from 'node:child_process';
 const steps = [
   ['MCS：数学地图层级、布局及相机', ['node', '--test', 'tests/mcs-atlas.test.mjs']],
   ['MCS：数学地图桌面、触控及对象网络入口', ['node', 'tests/mcs-atlas-page.mjs']],
+  ['MCS：深缩放概念星座、核心选择与主要关系', ['node', '--test', 'tests/mcs-atlas-relations.test.mjs']],
+  ['MCS：概念星座浏览器（核心、分组、关系与手机）', ['node', 'tests/mcs-atlas-relations-page.mjs']],
   ['MCS：连续色域、阻尼缩放、惯性和减少动态效果', ['node', 'tests/mcs-atlas-motion-page.mjs']],
   ['MCS：子级交叉领域朝相邻学科展开', ['node', 'tests/mcs-atlas-crossings-page.mjs']],
-  ['MCS：全库只读接口、尺度投影与视图恢复', ['node', '--test', 'tests/mcs-view-api.test.mjs', 'tests/mcs-space.test.mjs']],
+  ['MCS：框架索引、MSC/arXiv 对照与对象结构', ['node', '--test', 'tests/mcs-framework.test.mjs']],
+  ['MCS：框架抽屉、分类号、筛选与对象结构', ['node', 'tests/mcs-framework-page.mjs']],
+  ['MCS：应用数学索引数据、检索与十二个未映射分类覆盖', ['node', '--test', 'tests/mcs-applied.test.mjs']],
+  ['MCS：应用数学索引桌面、英文、手机与双向链接', ['node', 'tests/mcs-applied-page.mjs']],
+  ['MCS：全库只读接口、尺度投影与视图恢复', ['node', '--test', 'tests/mcs-view-api.test.mjs', 'tests/mcs-space.test.mjs', 'tests/mcs-relations.test.mjs']],
   ['MCS：多尺度画布、筛选、拖动与分享贯通', ['node', 'tests/mcs-page.mjs']],
+  ['MCS：同话题宽箭头、浮动分类与个人备注', ['node', 'tests/mcs-relations-page.mjs']],
+  ['MCS：连续操作、分享返回、跨屏恢复与短屏回归', ['node', 'tests/mcs-review.mjs']],
   ['拓扑—微分几何：协议、数学边界、替代路线、版本与工作线程', ['node','--test','tests/topology-content.test.mjs']],
   ['拓扑—微分几何：桌面、390px 与中英学习闭环', ['node','tests/topology-page.mjs']],
   ['拓扑—微分几何：网络视图恢复、阅读返回与E层隔离', ['node','tests/topology-workspace.mjs']],
   ['Master：全量内容投影、数学边界、版本及个人数据隔离', ['node','--test','tests/master-view.test.mjs']],
   ['Master：全站切换、极简阅读、提示与响应式', ['node','tests/master-page.mjs']],
   ['形式对象与阅读节点浏览器贯通', ['node','tests/content-page.mjs']],
-  ['数学对象与阅读节点协议、五级尺度及隔离', ['node','--test','tests/content-documents.test.mjs','tests/content-api.test.mjs']],
+  ['数学对象与阅读节点协议、五级尺度及隔离', ['node','--test','tests/content-documents.test.mjs','tests/contextual-objects.test.mjs','tests/content-api.test.mjs']],
+  ['语境对象：绑定、构造与窄屏阅读', ['node','tests/contextual-page.mjs']],
   ['准备云端测试运行包（只含公开源码）', ['node', 'scripts/build-vercel-runtime.mjs']],
   ['Master：部署运行包包含当前压缩规则与展示资料', ['node','--test','tests/master-runtime.test.mjs']],
   ['云端持久任务、内容发布、备份与编写库（跨实例、重投、取消、事务隔离）', ['node', '--test', '--test-concurrency=1', 'tests/cloud-jobs.test.mjs', 'tests/cloud-backups.test.mjs', 'tests/cloud-extensions.test.mjs', 'tests/authoring-store.test.mjs']],
@@ -110,11 +119,12 @@ const steps = [
   ['知识网络：保存 / 载入视图（写 E，不改本体）', ['node', 'tests/network-views.mjs']],
   ['知识网络：视图搜索、排序、同名提示与快照边界', ['node', 'tests/network-view-library.mjs']],
   /*
-   * 右键节点菜单（2026-10 加）：一键加入全部硬前置 / 从视图移出。
+   * 右键节点菜单（2026-10 加；2026-10-22 加「一阶」；2026-10-23 加「按关系加入」）：
+   * 一键加入一阶 / 全部硬前置、按关系种类加入对象 / 从视图移出。
    * 单独一步，失败语义与手势那几步不同——它红了说明**从节点出发做事**这条交互坏了
-   * （菜单没开、闭包算错、加进去的集合与本体不一致），而不是候选排序或拖动。
+   * （菜单没开、闭包或关系分组算错、加进去的集合与本体不一致），而不是候选排序或拖动。
    */
-  ['知识网络：右键节点菜单（一键加入全部硬前置）', ['node', 'tests/network-node-menu.mjs']],
+  ['知识网络：右键节点菜单（一阶 / 全部硬前置、按关系加入）', ['node', 'tests/network-node-menu.mjs']],
   /*
    * 尺度视图（2026-10-17 加）：三步分开，失败语义不同。
    * 纯函数那步红了说明映射/可见性/合拢/边投影的判据错了；
@@ -167,6 +177,11 @@ const steps = [
    * 分开列：一条红了说明「哪些边算硬前置」这件事有争议，另一条红了说明「从节点往回收集」算错了。
    */
   ['本体：硬前置闭包（传递、方向、确定性、成环与上限）', ['node', '--test', 'tests/hard-prereq-closure.test.mjs']],
+  /*
+   * 按关系种类收集直接对象（2026-10-23 加）：节点菜单「按关系加入」的算法本体。
+   * 与硬前置闭包分开列：那条红了是「单向 + 传递」算错，这条红了是「双向 + 只走一跳」算错。
+   */
+  ['本体：按关系种类收集直接对象（双向、去重、只走一跳）', ['node', '--test', 'tests/relation-objects.test.mjs']],
   /*
    * 节点合并（2026-10）：同一对象在多处登记过，装配期收口成一个规范节点。
    * 单独一步，是因为它的失败语义不同——它红了说明**身份、内容或改写**有一处不对

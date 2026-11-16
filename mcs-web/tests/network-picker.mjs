@@ -121,13 +121,19 @@ async function openNodeMenu(page, id) {
   return page.evaluate(() => {
     const menu = document.querySelector('.node-menu');
     const item = menu?.querySelector('.node-menu-item[data-action="add-hard-prereqs"]');
+    const direct = menu?.querySelector('.node-menu-item[data-action="add-direct-hard-prereqs"]');
     return {
       node: menu?.getAttribute('data-node') ?? null,
       total: Number(menu?.getAttribute('data-prereq-total') ?? -1),
       missing: Number(menu?.getAttribute('data-prereq-missing') ?? -1),
       depth: Number(menu?.getAttribute('data-prereq-depth') ?? -1),
+      directTotal: Number(menu?.getAttribute('data-prereq-direct-total') ?? -1),
+      directMissing: Number(menu?.getAttribute('data-prereq-direct-missing') ?? -1),
       text: item?.textContent?.trim() ?? '',
       disabled: item?.disabled ?? null,
+      directText: direct?.textContent?.trim() ?? '',
+      directDisabled: direct?.disabled ?? null,
+      items: [...(menu?.querySelectorAll('.node-menu-item') ?? [])].map((entry) => entry.getAttribute('data-action')),
       note: menu?.querySelector('.node-menu-note')?.textContent?.replace(/\s+/g, ' ').trim() ?? '',
     };
   });
@@ -135,14 +141,14 @@ async function openNodeMenu(page, id) {
 
 /**
  * 左键按住节点 → 强关联节点选择器（2026-10 从右键改到左键）；
- * 右键节点 → 节点菜单（2026-10 加：一键加入全部硬前置 / 从视图移出）。
+ * 右键节点 → 节点菜单（2026-10 加；2026-10-22 分「一阶 / 全部硬前置」/「从视图移出」）。
  *
  * 用户要的手势：「长按节点：强调这个节点、虚化其它节点，并在它附近临时摊开与它强关联的节点；
  * 保持按住把鼠标移到某个候选上，松手就把它放进视图。」（2026-10 由右键长按改为**左键长按**。）
  *
  * 另一条要求是「右键点击节点可选择一键添加所有硬前置」——右键因此从「点一下即移出视图」
- * 改成**打开菜单**：菜单里既有新的「加入全部硬前置」（传递闭包，含间接前置），
- * 也有原来的「从视图移出」（旧行为换了个入口，没有丢）。
+ * 改成**打开菜单**：菜单里既有「加入一阶硬前置」（只一层）与「加入全部硬前置」
+ * （传递闭包，含间接前置），也有原来的「从视图移出」（旧行为换了个入口，没有丢）。
  *
  * 这一套按手势的每一步断言：强调与虚化 → 候选从已登记关系/契约来 → 悬停高亮 → 松手加入并落在摊开的位置；
  * 右键菜单按「与本体独立重算的闭包」核对；另外守住四条边界：**右键不再直接改视图**、
@@ -342,7 +348,7 @@ try {
    * ---- 边界一：右键**打开节点菜单**（2026-10 起；原先右键点一下直接移出视图）----
    *
    * 用户的要求是「右键点击节点可选择一键添加所有硬前置」。一个含义的位置放不下第二件事，
-   * 因此右键改成打开菜单：菜单里既有新的「加入全部硬前置」，也有原来的「从视图移出」。
+   * 因此右键改成打开菜单：菜单里既有「一阶 / 全部硬前置」，也有原来的「从视图移出」。
    * 这里核对三件事：右键不再直接动视图、菜单里有那两项、选「移出」仍然真的移出。
    */
   await page.goto(server.origin + '/network?nodes=' + encodeURIComponent(`${source},${second}`), { waitUntil: 'networkidle' });
@@ -366,8 +372,9 @@ try {
   check('右键点一下打开节点菜单，而不是直接改视图',
     quick.menu === quickTarget && quick.nodes === countBeforeQuick && !quick.picking,
     JSON.stringify({ before: countBeforeQuick, after: quick.nodes, menu: quick.menu, target: quickTarget }));
-  check('菜单里有「加入全部硬前置」与「从视图移出」两项',
-    quick.menuItems.includes('add-hard-prereqs') && quick.menuItems.includes('remove-from-view'),
+  check('菜单里有「一阶 / 全部硬前置」与「从视图移出」',
+    quick.menuItems.includes('add-direct-hard-prereqs') && quick.menuItems.includes('add-hard-prereqs')
+      && quick.menuItems.includes('remove-from-view'),
     JSON.stringify(quick.menuItems));
   await page.locator('.node-menu-item[data-action="remove-from-view"]').click();
   await page.waitForTimeout(500);
@@ -381,7 +388,7 @@ try {
     JSON.stringify({ ...quickRemoved, before: countBeforeQuick }));
 
   /*
-   * ---- 新功能（2026-10）：右键 →「加入全部硬前置」 ----
+   * ---- 新功能（2026-10 加；2026-10-22 分一阶 / 全部）：右键 →「加入全部硬前置」 ----
    *
    * 期望值由**测试自己**从本体的关系里算一遍（不 import 被测模块的同一个实现），
    * 逐条核对：菜单报的数量、真正加进来的集合、以及「已经全在视图里」时的禁用文案。
@@ -389,9 +396,14 @@ try {
   await page.goto(server.origin + '/network?nodes=' + encodeURIComponent('top:topological-manifold'), { waitUntil: 'networkidle' });
   await page.waitForSelector('.network-node');
   await page.waitForTimeout(900);
-  const expectedClosure = await page.evaluate(async () => {
+  const expected = await page.evaluate(async () => {
     const graph = await (await fetch('/api/v2/ontology/graph')).json();
     const root = 'top:topological-manifold';
+    const direct = [];
+    for (const relation of graph.data.relations) {
+      if (relation.kind !== 'hardPrereq' || relation.to !== root || relation.from === root) continue;
+      if (!direct.includes(relation.from)) direct.push(relation.from);
+    }
     const found = new Set();
     let frontier = [root];
     while (frontier.length) {
@@ -406,15 +418,18 @@ try {
       }
       frontier = next;
     }
-    return [...found].sort();
+    return { closure: [...found].sort(), direct: [...direct].sort() };
   });
   const prereqMenu = await openNodeMenu(page, 'top:topological-manifold');
-  check('菜单报的硬前置数量与本体一致（含间接前置）',
-    prereqMenu.total === expectedClosure.length && prereqMenu.missing === expectedClosure.length && prereqMenu.depth >= 2,
-    JSON.stringify({ ...prereqMenu, expected: expectedClosure.length }));
-  check('按钮文案写清「还差几个」，并说明含间接前置与不写本体',
-    prereqMenu.text.includes(`（${expectedClosure.length} 个）`) && prereqMenu.disabled === false
-      && prereqMenu.note.includes('间接') && prereqMenu.note.includes('不写本体'),
+  check('菜单报的一阶 / 全部数量与本体一致（含间接前置）',
+    prereqMenu.directTotal === expected.direct.length && prereqMenu.directMissing === expected.direct.length
+      && prereqMenu.total === expected.closure.length && prereqMenu.missing === expected.closure.length
+      && prereqMenu.depth >= 2,
+    JSON.stringify({ ...prereqMenu, expected }));
+  check('按钮文案写清「还差几个」，并说明一阶 / 全部的区别与不写本体',
+    prereqMenu.directText.includes(`（${expected.direct.length} 个）`) && prereqMenu.directDisabled === false
+      && prereqMenu.text.includes(`（${expected.closure.length} 个）`) && prereqMenu.disabled === false
+      && prereqMenu.note.includes('一阶') && prereqMenu.note.includes('间接') && prereqMenu.note.includes('不写本体'),
     JSON.stringify(prereqMenu));
 
   const addedByMenu = page.locator('.node-menu-item[data-action="add-hard-prereqs"]');
@@ -424,20 +439,23 @@ try {
     ids: (new URLSearchParams(location.search).get('nodes') ?? '').split(',').filter(Boolean).sort(),
     canvas: [...document.querySelectorAll('.network-node')].map((node) => node.getAttribute('data-node')).sort(),
     menu: Boolean(document.querySelector('.node-menu')),
-    notice: document.querySelector('.network-notice')?.textContent?.replace(/\s+/g, ' ').trim() ?? '',
+    notice: [...document.querySelectorAll('.network-notice')].map(node => node.textContent.replace(/\s+/g, ' ').trim()).find(text => text.includes('只改本页显示')) ?? '',
   }));
   check('一键加入的正是本体的硬前置闭包（一个不多、一个不少）',
-    JSON.stringify(afterAdd.ids) === JSON.stringify([...expectedClosure, 'top:topological-manifold'].sort())
+    JSON.stringify(afterAdd.ids) === JSON.stringify([...expected.closure, 'top:topological-manifold'].sort())
       && JSON.stringify(afterAdd.canvas) === JSON.stringify(afterAdd.ids),
-    JSON.stringify({ got: afterAdd.ids, expected: expectedClosure.length }));
+    JSON.stringify({ got: afterAdd.ids, expected: expected.closure.length }));
   check('加入后有关闭菜单与说明（数量 + 只改本页显示）',
-    !afterAdd.menu && afterAdd.notice.includes(`${expectedClosure.length} 个硬前置`) && afterAdd.notice.includes('只改本页显示'),
-    afterAdd.notice.slice(0, 160));
+    !afterAdd.menu && afterAdd.notice.includes(`${expected.closure.length} 个硬前置`)
+      && afterAdd.notice.includes('只改本页显示'),
+    afterAdd.notice.slice(0, 200));
 
   // 已经全在视图里：菜单项禁用并说明，而不是点了没反应。
   const allPresent = await openNodeMenu(page, 'top:topological-manifold');
-  check('硬前置都已在视图里时该项禁用并说明',
-    allPresent.disabled === true && allPresent.missing === 0 && allPresent.text.includes('都已在本视图里'),
+  check('硬前置都已在视图里时两项都禁用并说明',
+    allPresent.disabled === true && allPresent.missing === 0 && allPresent.text.includes('都已在本视图里')
+      && allPresent.directDisabled === true && allPresent.directMissing === 0
+      && allPresent.directText.includes('都已在本视图里'),
     JSON.stringify(allPresent));
   await page.keyboard.press('Escape');
   await page.waitForTimeout(200);
@@ -491,8 +509,10 @@ try {
   await page.waitForSelector('.network-node');
   await page.waitForTimeout(800);
   const bare = await openNodeMenu(page, 'bg:set:function');
-  check('没有硬前置的节点：禁用并如实说明',
-    bare.total === 0 && bare.disabled === true && bare.text.includes('没有登记硬前置'),
+  check('没有硬前置的节点：两项都禁用并如实说明',
+    bare.total === 0 && bare.directTotal === 0
+      && bare.disabled === true && bare.text.includes('没有登记硬前置')
+      && bare.directDisabled === true && bare.directText.includes('没有登记一阶硬前置'),
     JSON.stringify(bare));
   // 点画布空白处关闭（不是只有 Esc 一条路）。
   const bareBox = await page.locator('.network-node[data-node="bg:set:function"]').boundingBox();

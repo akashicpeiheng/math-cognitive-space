@@ -7,7 +7,7 @@ import { MCS_WEB_ROOT, loadOntology } from '../core/ontology.mjs';
 /**
  * 硬前置闭包（2026-10 加，`web/src/hard-prereq-closure.ts`）。
  *
- * 网络视图的右键菜单里有一项「加入全部硬前置」——它不是「把所有硬前置边画出来」，
+ * 网络视图的右键菜单里有「加入一阶硬前置」与「加入全部硬前置」——它们不是「把所有硬前置边画出来」，
  * 而是「把这个节点需要先会的对象**一次**放进视图」。这一套把那条算法单独钉住：
  *
  * 1. **方向**：只沿 `to → from` 走；反向的一般化 / 应用 / 跨域边不算前置；
@@ -16,7 +16,7 @@ import { MCS_WEB_ROOT, loadOntology } from '../core/ontology.mjs';
  * 4. **成环也不死**：数据里不该有环，但真出现时按「已访问」停下，不无限展开；
  * 5. **撞上限要如实说**：`truncated` 为 true，界面据此说明「只加了前 N 个」。
  */
-const { hardPrereqClosure, missingFromClosure, HARD_PREREQ_KIND } = await import(
+const { hardPrereqClosure, directHardPrereqClosure, missingFromClosure, HARD_PREREQ_KIND } = await import(
   pathToFileURL(resolve(MCS_WEB_ROOT, 'web/src/hard-prereq-closure.ts')).href
 );
 
@@ -120,6 +120,76 @@ test('合成夹具：成环不死、自环不算前置、上限如实标记', ()
   assert.deepEqual(hardPrereqClosure(mixed, 'a').entries.map((entry) => entry.node), ['z']);
   // 没有硬前置时是空闭包，而不是报错。
   assert.deepEqual(hardPrereqClosure(mixed, 'z').entries, []);
+});
+
+test('真实本体：一阶闭包只收直接指向它的硬前置，不多走一层', () => {
+  const root = 'top:topological-manifold';
+  const full = hardPrereqClosure(relations, root);
+  const direct = directHardPrereqClosure(relations, root);
+
+  // 期望值直接从登记关系里取，不复用算法的 BFS。
+  const fromData = [];
+  const seen = new Set();
+  for (const relation of relations) {
+    if (relation.kind !== HARD_PREREQ_KIND || relation.to !== root || relation.from === root) continue;
+    if (seen.has(relation.from)) continue;
+    seen.add(relation.from);
+    fromData.push(relation.from);
+  }
+
+  assert.deepEqual(direct.entries.map((entry) => entry.node), fromData);
+  assert.ok(direct.entries.length >= 1, '夹具前提：这个节点有直接硬前置');
+  assert.ok(direct.entries.every((entry) => entry.depth === 1), '一阶闭包里出现了更深的条目');
+  assert.equal(direct.maxDepth, 1);
+  assert.equal(direct.truncated, false);
+  // 与「全部闭包按深度 1 过滤」逐字一致：两条口径不是两套算法。
+  assert.deepEqual(
+    direct.entries.map((entry) => entry.node),
+    full.entries.filter((entry) => entry.depth === 1).map((entry) => entry.node),
+  );
+  // 夹具必须有间接前置，否则「一阶 vs 全部」测不出差别。
+  assert.ok(full.entries.some((entry) => entry.depth > 1), '夹具前提：这个节点有间接硬前置');
+  assert.ok(direct.entries.length < full.entries.length, '一阶闭包不应等于全部闭包');
+});
+
+test('maxDepth：到层就停，且不记为截断；direct 包装与 maxDepth=1 逐字相同', () => {
+  const chain = [
+    { kind: HARD_PREREQ_KIND, from: 'b', to: 'a' },
+    { kind: HARD_PREREQ_KIND, from: 'c', to: 'b' },
+    { kind: HARD_PREREQ_KIND, from: 'd', to: 'c' },
+    // 同一层里出现两次的来源只记一次（与全部闭包一致）。
+    { kind: HARD_PREREQ_KIND, from: 'c', to: 'a' },
+  ];
+  const one = hardPrereqClosure(chain, 'a', { maxDepth: 1 });
+  assert.deepEqual(one.entries.map((entry) => entry.node), ['b', 'c']);
+  assert.equal(one.maxDepth, 1);
+  assert.equal(one.truncated, false);
+  assert.deepEqual(directHardPrereqClosure(chain, 'a'), one);
+
+  const two = hardPrereqClosure(chain, 'a', { maxDepth: 2 });
+  assert.deepEqual(two.entries.map((entry) => entry.node), ['b', 'c', 'd']);
+  assert.equal(two.maxDepth, 2);
+
+  const all = hardPrereqClosure(chain, 'a');
+  assert.deepEqual(all.entries.map((entry) => entry.node), ['b', 'c', 'd']);
+  assert.equal(all.maxDepth, 2);
+
+  // 「一阶」撞到节点数上限时仍如实标记（这条不是层数限制）。
+  const limited = directHardPrereqClosure(chain, 'a', { limit: 1 });
+  assert.equal(limited.entries.length, 1);
+  assert.equal(limited.truncated, true);
+});
+
+test('一阶闭包同样只沿 to → from、别的种类不进来', () => {
+  const mixed = [
+    { kind: 'scaling', from: 'x', to: 'a' },
+    { kind: 'application', from: 'y', to: 'a' },
+    { kind: HARD_PREREQ_KIND, from: 'z', to: 'a' },
+    { kind: HARD_PREREQ_KIND, from: 'w', to: 'z' },
+  ];
+  assert.deepEqual(directHardPrereqClosure(mixed, 'a').entries.map((entry) => entry.node), ['z']);
+  // 没有直接硬前置时是空闭包，而不是报错。
+  assert.deepEqual(directHardPrereqClosure(mixed, 'w').entries, []);
 });
 
 test('缺的那些：闭包减去视图里已有的，顺序保持闭包的顺序', () => {

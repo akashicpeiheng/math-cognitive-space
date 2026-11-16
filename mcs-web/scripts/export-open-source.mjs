@@ -71,7 +71,7 @@ const SKIP_DIRS = new Set([
   'release',
 ]);
 /** 复制时要跳过的文件名。 */
-const SKIP_FILES = new Set(['config.local.json', 'credentials.json', '.env']);
+const SKIP_FILES = new Set(['config.local.json', 'credentials.json', '.env', 'supabase密码database.txt']);
 /** 复制时要跳过的后缀。 */
 const SKIP_SUFFIXES = [
   '.sqlite3', '.sqlite3-shm', '.sqlite3-wal', '.log', '.pid', '.pyc', '.pyo',
@@ -350,3 +350,4 @@ function main() {
 }
 
 main();
+

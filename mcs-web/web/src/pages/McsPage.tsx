@@ -11,6 +11,7 @@ import type { McsBox } from '../../../shared/mcs-space.mjs';
 import { McsCanvas } from '../components/McsCanvas';
 import { McsInspector } from '../components/McsInspector';
 import { McsAtlas } from '../components/McsAtlas';
+import { McsApplied } from '../components/McsApplied';
 import { MCS_SCALES, MCS_RELATIONS } from '../mcs-ui';
 import { rememberMcsReturn } from '../mcs-return';
 import '../mcs-space.css';
@@ -44,14 +45,25 @@ function fitBoxes(boxes: McsBox[], size: Size) {
 function toggleValue(values: string[], value: string) { return values.includes(value) ? values.filter(v => v !== value) : [...values, value]; }
 
 export function McsPage() {
-  const result = useApi<McsViewData>('/ontology/mcs-view'), { pick } = useI18n();
   const location = useLocation(), navigate = useNavigate();
+  const { pick } = useI18n();
+  const params = new URLSearchParams(location.search);
+  // app 模式不请求 mcs-view：索引是静态书目录，接口不可用时仍可读。
+  const applied = params.get('view') === 'applied';
+  const result = useApi<McsViewData>(applied ? null : '/ontology/mcs-view');
+  if (applied) return <McsApplied />;
   if (result.error) return <section className="page"><h1>MCS</h1><p role="alert">{formatError(result.error)}</p><button type="button" className="button" onClick={result.reload}>{pick({ zh: '重试', en: 'Retry' })}</button></section>;
   if (!result.data) return <section className="page" role="status">{pick({ zh: '正在读取数学对象空间…', en: 'Loading the mathematical object space…' })}</section>;
-  const params = new URLSearchParams(location.search);
   const objects = params.get('view') === 'objects' || location.hash.startsWith('#mcs=') || Boolean(location.state?.mcsReturn);
+  const openApplied = (target: { entry?: string; branch?: string; msc?: string }) => {
+    const search = new URLSearchParams({ view: 'applied' });
+    if (target.entry) search.set('entry', target.entry);
+    if (target.branch) search.set('branch', target.branch);
+    if (target.msc) search.set('msc', target.msc);
+    navigate(`${location.pathname}?${search.toString()}`);
+  };
   return objects ? <McsWorkspace key={result.data.objectVersion} data={result.data} initialObject={params.get('object')} />
-    : <McsAtlas key={location.key} data={result.data} onOpenObject={id => navigate(`${location.pathname}?view=objects${id ? `&object=${encodeURIComponent(id)}` : ''}`)} />;
+    : <McsAtlas key={location.key} data={result.data} initialBranch={params.get('branch')} onOpenApplied={openApplied} onOpenObject={id => navigate(`${location.pathname}?view=objects${id ? `&object=${encodeURIComponent(id)}` : ''}`)} />;
 }
 
 function McsWorkspace({ data, initialObject }: { data: McsViewData; initialObject: string | null }) {

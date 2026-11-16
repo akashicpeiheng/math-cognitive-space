@@ -168,6 +168,7 @@ test('逻辑核心：核心在中心，其余按核心程度由内到外分圈',
   const distance = (id) => Math.hypot(place.get(id).x + NODE_W / 2 - centre.x, place.get(id).y + NODE_H / 2 - centre.y);
   assert.equal(arrangement.anchor, 'core');
   assert.equal(arrangement.bands[0].nodes[0], 'core');
+  assert.equal(arrangement.prereq.size, 0, '没给前置关系时不假装有这份数据（旧摆法）');
   for (const other of ids.filter((id) => id !== 'core')) {
     assert.ok(distance('core') < distance(other), `核心应当比 ${other} 更靠中心`);
   }
@@ -181,6 +182,50 @@ test('逻辑核心：核心在中心，其余按核心程度由内到外分圈',
   }
   assert.deepEqual(coreRingArrangement({ ids, titles: titlesOf(ids), edges, core: 'core' }),
     coreRingArrangement({ ids, titles: titlesOf(ids), edges, core: 'core' }), '确定性');
+  assert.deepEqual(overlaps(arrangement.layout.placed), []);
+});
+
+test('逻辑核心：给了硬前置关系时，圈内按前置由少到多从上往下排', () => {
+  const ids = ['core', 'a', 'b', 'c', 'd'];
+  const edges = ids.filter((id) => id !== 'core').map((id) => edge('core', id));
+  /*
+   * 前置条数：c=0、d=1、a=2、b=3。四个节点都在第一圈（容量 6），
+   * 因此这条测的是「同一圈里谁上谁下」，不掺分圈。
+   */
+  const relations = [
+    pre('p1', 'a'), pre('p2', 'a'),
+    pre('q1', 'b'), pre('q2', 'b'), pre('q3', 'q1'),
+    pre('r1', 'd'),
+  ];
+  const arrangement = coreRingArrangement({ ids, titles: titlesOf(ids), edges, core: 'core', relations });
+  assert.deepEqual([...arrangement.prereq].sort(), [['a', 2], ['b', 3], ['c', 0], ['core', 0], ['d', 1]]);
+  const place = byId(arrangement.layout);
+  /** 同一个圈里按 y 分组：左右两张同高，因此一层可能有两张。 */
+  const levels = [];
+  const ring = arrangement.bands[1].nodes.map((id) => ({ id, y: place.get(id).y })).sort((left, right) => left.y - right.y);
+  for (const node of ring) {
+    const last = levels.at(-1);
+    if (last && Math.abs(last.y - node.y) < 1e-6) last.ids.push(node.id);
+    else levels.push({ y: node.y, ids: [node.id] });
+  }
+  assert.ok(levels.length >= 2, '构造的图应当至少有两层');
+  for (let index = 0; index + 1 < levels.length; index += 1) {
+    const top = Math.max(...levels[index].ids.map((id) => arrangement.prereq.get(id)));
+    const bottom = Math.min(...levels[index + 1].ids.map((id) => arrangement.prereq.get(id)));
+    assert.ok(top <= bottom, `上层最多的前置 ${top} 不该多于下层最少的前置 ${bottom}`);
+  }
+  assert.ok(levels[0].ids.every((id) => arrangement.prereq.get(id) <= 1), JSON.stringify(levels));
+  assert.ok(levels.at(-1).ids.every((id) => arrangement.prereq.get(id) >= 2), JSON.stringify(levels));
+  assert.deepEqual(overlaps(arrangement.layout.placed), []);
+});
+
+test('逻辑核心：只有两张的圈一上一下，前置少的在上', () => {
+  const ids = ['core', 'shallow', 'deep'];
+  const edges = [edge('core', 'shallow'), edge('core', 'deep')];
+  const relations = [pre('x', 'deep')];
+  const arrangement = coreRingArrangement({ ids, titles: titlesOf(ids), edges, core: 'core', relations });
+  const place = byId(arrangement.layout);
+  assert.equal(place.get('shallow').y < place.get('deep').y, true, '两张时不该摆成同高左右');
   assert.deepEqual(overlaps(arrangement.layout.placed), []);
 });
 
@@ -278,7 +323,7 @@ test('真数据：整库视图在逻辑核心下不重叠、核心在中心、�
   const edges = buildEdges(graph, new Set(allIds), DEFAULT_FAMILIES);
   const core = suggestCoreNode(allIds, edges);
   assert.ok(core, '整库视图里应当能选出一个核心');
-  const input = { ids: allIds, titles: allTitles, edges, core };
+  const input = { ids: allIds, titles: allTitles, edges, core, relations: graph.relations };
   const arrangement = coreRingArrangement(input);
   assert.deepEqual(overlaps(arrangement.layout.placed), [], `节点数 ${allIds.length} 时出现重叠`);
   assert.deepEqual(arrangement, coreRingArrangement(input), '同一输入两次结果必须一样');
@@ -298,7 +343,31 @@ test('真数据：整库视图在逻辑核心下不重叠、核心在中心、�
       assert.ok(radius > ORDER_LAYOUT.ringStep * 0.5, `${id} 与核心的距离（${Math.round(radius)}px）不足以说明它在外圈`);
     }
   }
+  /*
+   * 竖向次序：每一圈按 y 分层后，「上层里前置最多的」不得多于「下层里前置最少的」。
+   * 同一层左右两张允许前置条数不同（它们是一对，详见 `coreRingArrangement` 的说明）。
+   */
+  let levelsChecked = 0;
+  for (const band of arrangement.bands.slice(1)) {
+    const levels = [];
+    const sorted = band.nodes.map((id) => ({ id, y: place.get(id).y })).sort((left, right) => left.y - right.y);
+    for (const node of sorted) {
+      const last = levels.at(-1);
+      if (last && Math.abs(last.y - node.y) < 1e-6) last.ids.push(node.id);
+      else levels.push({ y: node.y, ids: [node.id] });
+    }
+    for (let index = 0; index + 1 < levels.length; index += 1) {
+      const top = Math.max(...levels[index].ids.map((id) => arrangement.prereq.get(id)));
+      const bottom = Math.min(...levels[index + 1].ids.map((id) => arrangement.prereq.get(id)));
+      assert.ok(top <= bottom, `${band.value} 圈的上下次序反了：上层最多 ${top}、下层最少 ${bottom}`);
+    }
+    levelsChecked += levels.length;
+  }
+  assert.ok(levelsChecked >= arrangement.bands.length - 1, '至少每圈都有一层可查');
+  const prereqValues = [...arrangement.prereq.values()];
+  assert.ok(Math.max(...prereqValues) > 0, '真数据里应当存在有硬前置的节点');
   console.log(`  · 逻辑核心：核心 ${core}、${arrangement.bands.length} 圈、核心离几何中心 ${Math.round(coreGap)}px、`
+    + `前置条数 ${Math.min(...prereqValues)}–${Math.max(...prereqValues)}、`
     + `尺寸 ${Math.round(arrangement.layout.width)}×${Math.round(arrangement.layout.height)}`);
 });
 

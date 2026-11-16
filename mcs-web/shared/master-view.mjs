@@ -192,12 +192,13 @@ export function objectMasterView(object, options = {}) {
   view.status = 'NOT-CLAIMED';
   if (context) {
     view.context.push(`${context.bases.join(', ')} · ${context.signature}`);
+    if(context.bound?.length)view.context.push(`${view.locale==='en'?'Inherited binder types (nearest first)':'继承绑定类型（最近者在前）'}: ${context.bound.join(', ')}`);
     view.context.push(...context.constants.map(c => `${c.name}: ${c.type} · ${c.background}`));
   }
   view.context.push(...lines(object.assumptions));
   const declarations = object.declarations.filter(d => anchor === '$' || d.id === anchor);
   view.expressions = declarations.map(d => ({ ...expression(`\u0060${d.source}\u0060`, `${object.path}#${d.id}`), ...(MASTER_OBJECT_PRESENTATIONS[object.id]?.[d.id] ?? {}), id: d.id, status: d.status, source: `${object.path}#${d.id}` }));
-  const refs = anchor === '$' ? [...object.members, ...object.imports, ...object.references, ...object.exports.map(e => e.ref)] : [];
+  const refs = anchor === '$' ? [...object.members, ...object.imports, ...object.references, ...object.exports.map(e => e.ref), ...(object.construction?.inputs??[]).map(i=>i.ref)] : [];
   const seen = new Set();
   for (const ref of refs) {
     const key = `${ref.id}#${ref.anchor}`;

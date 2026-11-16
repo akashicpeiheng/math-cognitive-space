@@ -31,3 +31,6 @@ __pycache__/
 # 编辑器与系统
 .DS_Store
 Thumbs.db
+
+# 本机数据库口令摘记，绝不进入发布包
+mcs-web/supabase密码database.txt

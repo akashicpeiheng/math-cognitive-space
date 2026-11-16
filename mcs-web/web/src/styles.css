@@ -2131,6 +2131,22 @@ label.checkbox { flex-direction: row; align-items: center; gap: 0.4rem; }
 .legend-isolated { color: var(--amber); }
 
 .detail-title { font-family: var(--serif); font-size: 1.05rem; font-weight: 650; margin: 0.2rem 0; }
+/*
+ * 详情面板的「按关系加入」下拉（2026-10-23 加）。
+ * 一行放下：标签 + 下拉 + 按钮；窄面板（约 300px）自动换行，不挤出横向滚动。
+ */
+.detail-relation-add {
+  display: flex; flex-wrap: wrap; gap: 0.45rem; align-items: center;
+  margin: 0.45rem 0 0.3rem; padding-left: 0.55rem;
+  border-left: 3px solid var(--accent-line); font-size: 0.8rem; color: var(--ink-soft);
+}
+.detail-relation-add label { font-size: 0.78rem; color: var(--ink-faint); }
+.detail-relation-add select {
+  flex: 1 1 8rem; min-width: 0; font: inherit; font-size: 0.78rem;
+  padding: 0.28rem 0.4rem; border: 1px solid var(--line-strong); border-radius: 8px;
+  background: var(--surface); color: var(--ink);
+}
+.detail-relation-add .button { flex: 0 0 auto; }
 
 /* ---- 首页「继续学习」的局部网络视图 ---- */
 .continue-network-block { margin: 0.4rem 0 1.1rem; }
@@ -2338,13 +2354,19 @@ label.checkbox { flex-direction: row; align-items: center; gap: 0.4rem; }
 .network-draft-notice button { flex: 0 0 auto; }
 
 /*
- * 右键节点菜单（2026-10 加）：一键加入全部硬前置 / 从视图移出。
+ * 右键节点菜单（2026-10 加；2026-10-22 分一阶 / 全部；2026-10-23 加按关系加入）：
+ * 一键加入直接 / 全部硬前置、按关系种类加入对象 / 从视图移出。
  *
  * 位置由 pointer 在 stage 内的坐标给（`left/top` 由组件写成 px），这里只负责外观。
  * 它是 HTML 而不是 SVG：要能被 Tab 走、要被读屏念出来、要跟系统字号——SVG 里都得另写一遍。
  */
 .node-menu {
   position: absolute; z-index: 12; min-width: 15rem; max-width: 22rem;
+  /*
+   * 2026-10-23：菜单多了「按关系加入对象」（最多四个种类），必须有上限与滚动，
+   * 否则右键靠下的节点时菜单会伸出 stage。位置本身由 NetworkPage 的 layout effect 夹回。
+   */
+  max-height: min(38rem, 70vh); overflow-y: auto; overscroll-behavior: contain;
   background: var(--surface); border: 1px solid var(--line-strong); border-radius: 12px;
   box-shadow: 0 16px 38px -12px rgba(26, 19, 48, 0.38);
   padding: 0.45rem; display: flex; flex-direction: column; gap: 0.2rem;
@@ -2352,6 +2374,10 @@ label.checkbox { flex-direction: row; align-items: center; gap: 0.4rem; }
 .node-menu-head { display: flex; flex-direction: column; gap: 0.05rem; padding: 0.25rem 0.5rem 0.35rem; border-bottom: 1px dashed var(--line); }
 .node-menu-head strong { font-size: 0.9rem; }
 .node-menu-head .muted { font-size: 0.72rem; }
+.node-menu-section {
+  margin: 0.35rem 0.5rem 0.05rem; padding-top: 0.35rem;
+  border-top: 1px dashed var(--line); font-size: 0.72rem; color: var(--ink-faint);
+}
 .node-menu-item {
   display: block; width: 100%; text-align: left; border: none; background: none; cursor: pointer;
   padding: 0.45rem 0.5rem; border-radius: 8px; font-size: 0.86rem; color: var(--ink); font-family: inherit;

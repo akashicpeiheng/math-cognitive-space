@@ -3,8 +3,10 @@ export interface ObjectRef {id:string;version:string;anchor:string;formalHash:st
 export interface LeanBinding {anchor:string;registrationId:string;target:string;mapping:string;review:'pending'}
 export interface FormalDeclaration {id:string;kind:'term'|'formula';source:string;type:string;status:string;formalHash:string;canonical:unknown;constructionCount:number}
 export interface MathObjectRecord {
+  schema?:'mcs-object/2';
   id:string;version:string;title:string;kind:'object';scale:ObjectScale;language:string;grammar:string;
-  normalizedContext:{signature:string;bases:string[];constants:Array<{name:string;type:string;background:string}>};
+  normalizedContext:{signature:string;bases:string[];constants:Array<{name:string;type:string;background:string}>;bound?:string[]};
+  construction?:{kind:string;inputs:Array<{position:'function'|'argument'|'body';ref:ObjectRef}>};
   declarations:FormalDeclaration[];assumptions:string[];references:ObjectRef[];imports:ObjectRef[];members:ObjectRef[];
   exports:Array<{name:string;ref:ObjectRef;type:string}>;links:unknown[];lean:LeanBinding[];
   formalHash:string;bindingHash:string;documentHash:string;path:string;body:string;structuralStatus:'valid';proofStatus:'not-checked';
@@ -19,8 +21,11 @@ export interface ContentLibrary {
 export interface ContentSource {path:string;markdown:string}
 export interface ParsedContentDocument {kind:'object'|'node'|'relation';data:Record<string,any>;body:string;path:string;documentHash:string}
 export const OBJECT_SCHEMA:'mcs-object/1';
+export const CONTEXTUAL_OBJECT_SCHEMA:'mcs-object/2';
 export const NODE_SCHEMA:'mcs-node/1';
 export const GRAMMAR:'mcs-object-grammar/1';
+export const CONTEXTUAL_GRAMMAR:'mcs-object-grammar/2';
+export function contextualTermSource(term:unknown,bound?:string[]):string;
 export const OBJECT_SCALES:readonly ObjectScale[];
 export const SCALE_TITLES:Readonly<Record<ObjectScale,string>>;
 export class ContentDocumentError extends Error {code:string;path:string}

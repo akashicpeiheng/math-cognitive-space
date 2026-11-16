@@ -62,7 +62,9 @@ export function MathObjectPage() {
     <h1>{o.title}</h1><p>{pick(labels)[o.scale]} · {pick({zh:'结构检查通过；数学证据单独查看',en:'Structure checked; mathematical evidence is reported separately'})}</p>
     {o.id.startsWith('obj:tdg:')&&<p><Link to={hrefFor(networkReturnHref(o.id,'zh')??caseNetworkHref())}>{pick({zh:'返回案例网络',en:'Return to the case network'})}</Link></p>}
     <section className="panel"><h2>{pick({zh:'精确内容',en:'Formal content'})}</h2>
+      {o.normalizedContext.bound?.length?<p>{pick({zh:'下列表达保留继承的变量绑定；类型按最近绑定者在前排列。',en:'These expressions retain inherited variable bindings, with the nearest binder first.'})} <code>{o.normalizedContext.bound.join(', ')}</code></p>:null}
       {o.declarations.map(d=><div key={d.id} id={d.id}><h3>{d.id} · {d.type}</h3><pre style={{whiteSpace:'pre-wrap',overflowWrap:'anywhere'}}><code>{d.source}</code></pre><p>{d.status} · {pick({zh:'构造次数',en:'Construction count'})} {d.constructionCount}</p></div>)}
+      {o.construction?<div><h3>{pick({zh:'构造与输入位置',en:'Construction and input positions'})}: {o.construction.kind}</h3><ul>{o.construction.inputs.map(input=><li key={input.position}>{input.position}: <Link to={hrefFor(`${objectHref(input.ref.id)}#${input.ref.anchor}`)}>{input.ref.id}</Link></li>)}</ul></div>:null}
       <details><summary>{pick({zh:'背景、假设与版本',en:'Context, assumptions and version'})}</summary><pre style={{whiteSpace:'pre-wrap',overflowWrap:'anywhere'}}>{JSON.stringify({id:o.id,version:o.version,context:o.normalizedContext,assumptions:o.assumptions,formalHash:o.formalHash},null,2)}</pre></details>
       {o.exports.length?<><h3>{pick({zh:'导出接口',en:'Exports'})}</h3><ul>{o.exports.map(e=><li key={e.name}><Link to={hrefFor(`${objectHref(e.ref.id)}#${e.ref.anchor}`)}>{e.name}: {e.type}</Link></li>)}</ul></>:null}
       {o.members.length?<><h3>{pick({zh:'形式成员',en:'Formal members'})}</h3><ul>{o.members.map(r=><li key={r.id}><Link to={hrefFor(objectHref(r.id))}>{r.id}</Link></li>)}</ul></>:null}

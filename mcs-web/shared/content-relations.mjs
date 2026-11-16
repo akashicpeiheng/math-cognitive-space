@@ -39,6 +39,7 @@ export function compileContentRelations(documents,library,{checkPins=true}={}) {
     const from=resolve(d.from,d.layer),to=resolve(d.to,d.layer),premises=(d.premises??[]).map(r=>resolve(r,'M'));
     if(d.kind==='deduction'){
       need(d.layer==='M'&&premises.length>0,'推导须登记联合前提');
+      for(const r of [from,to,...premises])need(!objects.get(r.id)?.normalizedContext.bound?.length,'语境命题不能作为闭合推导前提或结论；需显式关闭绑定');
       for(const r of [from,to,...premises])need(r.anchor!=='$'&&objects.get(r.id)?.declarations.find(a=>a.id===r.anchor)?.type==='o','推导端点和前提必须是命题声明');
     }
     if(d.kind==='hardPrereq'){

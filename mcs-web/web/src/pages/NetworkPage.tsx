@@ -66,10 +66,16 @@ import {
   deriveStartingNodes, startingNodeBasis, startingNodeIds, type StartingNodeReport,
 } from '../starting-nodes';
 /*
- * 硬前置闭包（2026-10 加）：右键菜单里的「加入全部硬前置」用它。
+ * 硬前置闭包（2026-10 加）：右键菜单与节点详情里的「加入硬前置」用它。
  * 算法与判据在那个叶子模块里（可被 node 直接 import 做单元测试），这里只负责交互与文案。
+ * 2026-10-22：多了「一阶」口径（`directHardPrereqClosure` = `maxDepth: 1`），与「全部」共用同一份实现。
  */
-import { hardPrereqClosure, missingFromClosure } from '../hard-prereq-closure';
+import { HARD_PREREQ_KIND, directHardPrereqClosure, hardPrereqClosure, missingFromClosure } from '../hard-prereq-closure';
+/*
+ * 按关系种类加入对象（2026-10-23 加）：对偶 / 放缩 / 应用等关系的另一端。
+ * 判据是「直接相连、双向、按种类分组」，与硬前置的单向传递闭包分开；算法在叶子模块里。
+ */
+import { relationObjectsByKind } from '../relation-objects';
 /*
  * 两种「重排模式」（2026-10-11 加）：学习顺序（按与起始节点隔了几个硬前置分层）与
  * 逻辑核心（按在视图里的核心程度分圈）。规则本体在 `web/src/network-order.ts`，
@@ -104,7 +110,7 @@ import { routeEdges, ROUTE_DEFAULTS, taperedOutline } from '../edge-routing';
 import { useMediaQuery } from '../useMediaQuery';
 import { useProfileContext } from '../state';
 import {
-  CONTRACT_MODE_LABELS, CONTRACT_MODE_WEIGHT, SEMANTIC_CONTRACT_MODES,
+  CONTRACT_MODE_LABELS, CONTRACT_MODE_WEIGHT, RELATION_WEIGHT, SEMANTIC_CONTRACT_MODES,
   TIER_STYLE,
   ARROW_PATH, TAPER_ARROW_PATH, contractModeLabel, edgeKindLabel, edgeVisual, scalingTaperArrowWidth, scalingTaperWidths, tierLabel, tierNote,
   type EdgeVisual, type RelationTier,
@@ -225,26 +231,60 @@ const PAGE_TEXT = {
   nodeTitleDragged: { zh: ' · 已手动摆放，双击复位', en: ' · Manually placed; double-click to reset' },
   nodeTitleAuto: { zh: ' · 由「局部技巧自动加入」规则加入', en: ' · Added by the “local techniques” rule' },
   nodeTitleHint: { zh: ' · 左键按住看强关联节点 · 右键打开节点菜单', en: ' · Hold the left button for strongly related nodes · right-click for the node menu' },
-  /* —— 右键节点菜单（2026-10 加：一键加入全部硬前置）—— */
+  /* —— 右键节点菜单（2026-10 加：一键加入硬前置；2026-10-22 加「一阶」）—— */
   nodeMenuAria: { zh: '「{title}」的节点菜单', en: 'Node menu for “{title}”' },
   nodeMenuTitle: { zh: '节点菜单', en: 'Node menu' },
   nodeMenuHint: { zh: '右键打开 · Esc 关闭', en: 'Opened by right-click · Esc closes' },
+  nodeMenuPrereqDirectAdd: { zh: '加入一阶硬前置（{missing} 个）', en: 'Add direct hard prerequisites ({missing})' },
+  nodeMenuPrereqDirectAll: { zh: '一阶硬前置都已在本视图里（共 {total} 个）', en: 'All direct hard prerequisites are already in this view ({total})' },
+  nodeMenuPrereqDirectNone: { zh: '这个节点没有登记一阶硬前置', en: 'This node has no registered direct hard prerequisites' },
+  nodeMenuPrereqDirectTitle: {
+    zh: '只加直接指向它的硬前置（共 {total} 个，还差 {missing} 个），不含间接前置。只改本页显示，不写本体、不写学习记录。',
+    en: 'Adds only the hard prerequisites that point directly to it ({total} in total, {missing} still missing), not the indirect ones. This only changes what this page shows; it writes neither the ontology nor your learning record.',
+  },
   nodeMenuPrereqAdd: { zh: '加入全部硬前置（{missing} 个）', en: 'Add all hard prerequisites ({missing})' },
   nodeMenuPrereqAll: { zh: '硬前置都已在本视图里（共 {total} 个）', en: 'All hard prerequisites are already in this view ({total})' },
   nodeMenuPrereqNone: { zh: '这个节点没有登记硬前置', en: 'This node has no registered hard prerequisites' },
   nodeMenuPrereqNote: {
-    zh: '含间接前置：先会它、才会它的前置，一层层都加进来（共 {total} 个、{depth} 层）。只改本页显示，不写本体、不写学习记录。',
-    en: 'Includes indirect prerequisites: whatever must come first, and whatever must come before that ({total} in total, {depth} layers). This only changes what this page shows; it writes neither the ontology nor your learning record.',
+    zh: '「一阶」只加直接指向它的硬前置（共 {direct} 个）；「全部」含间接前置，连前置的前置也一层层加进来（共 {total} 个、{depth} 层）。两者都只改本页显示，不写本体、不写学习记录。',
+    en: '“Direct” adds only the hard prerequisites that point to it ({direct} in total); “all” also includes indirect ones, going through prerequisites of prerequisites ({total} in total, {depth} layers). Both only change what this page shows; neither writes the ontology nor your learning record.',
   },
   nodeMenuPrereqTruncated: { zh: '（前置太多，只加入前 {n} 个）', en: ' (too many prerequisites; only the first {n} were added)' },
+  /*
+   * 按关系种类加入（2026-10-23 加）。
+   *
+   * 与硬前置两项的分工：这两项只沿 to → from 收；下面这组回答「跟它登记了某类关系的都有谁」，
+   * 对偶 / 放缩 / 应用等关系的另一端两个方向都算。菜单只列这个节点真有的种类。
+   */
+  nodeMenuRelationSection: { zh: '按关系加入对象', en: 'Add related objects' },
+  nodeMenuRelationItem: { zh: '加入{relation}对象（{missing} 个）', en: 'Add {relation} objects ({missing})' },
+  nodeMenuRelationAll: { zh: '{relation}对象都已在本视图里（共 {total} 个）', en: 'All {relation} objects are already in this view ({total})' },
+  nodeMenuRelationNote: {
+    zh: '按已登记的公共关系种类加入直接相连的对象（对偶、放缩、应用等；两个方向都算）。只改本页显示，不写本体、不写学习记录。',
+    en: 'Adds directly connected objects by registered public relation kind (duality, scaling, application, and so on; both directions count). This only changes what this page shows; it writes neither the ontology nor your learning record.',
+  },
+  relationAddSection: { zh: '按关系加入', en: 'Add by relation' },
+  relationAddAria: { zh: '关系种类', en: 'Relation kind' },
+  relationAddOption: { zh: '{relation}（{missing} 个）', en: '{relation} ({missing})' },
+  relationAddButton: { zh: '加入{relation}对象（{missing} 个）', en: 'Add {relation} objects ({missing})' },
+  relationAddedNotice: {
+    zh: '已把「{title}」的 {count} 个「{relation}」关系对象加入视图：{list}{more}。它们按已登记关系与它直接相连（两个方向都算），只改本页显示。',
+    en: 'Added objects related to “{title}” by “{relation}” ({count}): {list}{more}. They are directly connected by a registered relation (both directions count); this only changes what this page shows.',
+  },
+  relationAlreadyIn: { zh: '「{title}」的 {count} 个「{relation}」关系对象已经全部在本视图里。', en: 'All {count} objects related to “{title}” by “{relation}” are already in this view.' },
   nodeMenuRemove: { zh: '从视图移出', en: 'Remove from the view' },
   nodeMenuRemovedHint: { zh: '（原来右键点一下就是这一项）', en: ' (this used to be what a plain right-click did)' },
   prereqAddedNotice: {
     zh: '已把「{title}」的 {count} 个硬前置加入视图：{list}{more}。它们是登记关系里的硬前置（含间接），只改本页显示。',
     en: 'Added {count} hard prerequisites of “{title}” to the view: {list}{more}. They are the hard prerequisites recorded in the ontology (indirect ones included); this only changes what this page shows.',
   },
+  prereqDirectAddedNotice: {
+    zh: '已把「{title}」的 {count} 个一阶硬前置加入视图：{list}{more}。它们是直接指向它的硬前置，只加了一层；更早的前置需要时再点「加入全部硬前置」。只改本页显示。',
+    en: 'Added {count} direct hard prerequisites of “{title}” to the view: {list}{more}. They point directly to it, so this is only one layer; use “add all hard prerequisites” when you need the earlier ones. This only changes what this page shows.',
+  },
   prereqAddedMore: { zh: ' 等 {n} 个', en: ' and {n} more' },
   prereqAlreadyIn: { zh: '「{title}」的 {count} 个硬前置已经全部在本视图里。', en: 'All {count} hard prerequisites of “{title}” are already in this view.' },
+  prereqDirectAlreadyIn: { zh: '「{title}」的 {count} 个一阶硬前置已经全部在本视图里。', en: 'All {count} direct hard prerequisites of “{title}” are already in this view.' },
   pickerAria: { zh: '「{title}」的强关联节点', en: 'Nodes strongly related to “{title}”' },
   pickerHint: { zh: '按住左键 —— 把鼠标移到要加入的节点上，松开即加入视图；松在别处或按 Esc 取消。', en: 'Keep holding the left button — move onto the node you want, then release to add it to the view; release elsewhere or press Esc to cancel.' },
   pickerNote: { zh: '　候选来自已登记关系与行动契约，只摊开还没进视图的那些。标着「线索」的是话题级条目：它们是学习线索的名字，不参与前置计算。', en: ' Candidates come from registered relations and action contracts, and only those not yet in the view are laid out. Entries marked “Thread” are topic-level: they name a study thread and are not counted as prerequisites.' },
@@ -322,13 +362,13 @@ const PAGE_TEXT = {
   /* —— 摆位模式与锚点（2026-10-11 加）：都住在 HUD 上「重新布局」旁边 —— */
   layoutModeLabel: { zh: '排法', en: 'Arrangement' },
   layoutModeAria: { zh: '摆位模式（重新布局按它排卡片）', en: 'Arrangement mode (re-layout arranges the cards by it)' },
-  layoutModeTitle: { zh: '摆位模式：自由摆位让相关的节点互相靠近；学习顺序按与起始节点隔了几个硬前置分层；逻辑核心按节点在视图里的核心程度分圈', en: 'Arrangement mode: free places related nodes near each other; learning order layers nodes by how many hard prerequisites away they are from the start node; logical core rings them by how central they are in the view' },
+  layoutModeTitle: { zh: '摆位模式：自由摆位让相关的节点互相靠近；学习顺序按与起始节点隔了几个硬前置分层；逻辑核心按节点在视图里的核心程度分圈，并在圈内按前置多少从上往下排', en: 'Arrangement mode: free places related nodes near each other; learning order layers nodes by how many hard prerequisites away they are from the start node; logical core rings them by how central they are in the view and orders each ring top-down by prerequisite count' },
   layoutModeFree: { zh: '自由摆位', en: 'Free' },
   layoutModeFreeTitle: { zh: '自由摆位（力导向）：斥力 + 按关系强弱的吸力，相关的自然靠近。它不对「谁该在上、谁该在中间」表态', en: 'Free (force-directed): repulsion plus attraction weighted by relation strength, so related nodes end up near each other. It makes no claim about who belongs on top or in the middle' },
   layoutModeLearning: { zh: '学习顺序', en: 'Learning order' },
   layoutModeLearningTitle: { zh: '学习顺序：以你选的起始节点为第 0 层，沿硬前置的正向（前置 → 依赖它的对象）数「隔了几个硬前置」，起始节点在最上面、高阶的节点在下面；不在它下游的节点单独放在最下一层', en: 'Learning order: the start node you pick is layer 0; layers count hardPrereq steps forwards (prerequisite → the object that depends on it). The start node is on top and higher-order nodes below; nodes not downstream of it go in a separate bottom band' },
   layoutModeLogic: { zh: '逻辑核心', en: 'Logical core' },
-  layoutModeLogicTitle: { zh: '逻辑核心：以你选的核心节点为圆心，其余节点按在**当前视图**这张图里的核心程度（加权 PageRank，权重与线宽同一个数）由内到外分圈；圈内角度按内侧邻居排，因此相关的节点落在相邻的角扇区', en: 'Logical core: the core node you pick sits at the centre; the others are ringed outwards by how central they are in the current view (weighted PageRank, using the same weights as line width). Angles follow inner-ring neighbours, so related nodes land in adjacent sectors' },
+  layoutModeLogicTitle: { zh: '逻辑核心：以你选的核心节点为圆心，其余节点按在**当前视图**这张图里的核心程度（加权 PageRank，权重与线宽同一个数）由内到外分圈；圈内再按登记硬前置的传递条数由少到多、从上往下排——不需要太多前置的靠上，需要更多前置的靠下；同一高度左右两张按内侧邻居的角度重心分边', en: 'Logical core: the core node you pick sits at the centre; the others are ringed outwards by how central they are in the current view (weighted PageRank, using the same weights as line width). Inside each ring, nodes run from top to bottom by the number of registered hard prerequisites (fewer on top, more below); the two nodes at the same height are split left/right by their inner-ring neighbour angles' },
   layoutAnchorStartAria: { zh: '起始节点（学习顺序的起点）', en: 'Start node (the anchor of the learning order)' },
   layoutAnchorCoreAria: { zh: '核心节点（逻辑核心的圆心）', en: 'Core node (the centre of the logical core)' },
   layoutAnchorAuto: { zh: '自动：{title}', en: 'Automatic: {title}' },
@@ -340,7 +380,7 @@ const PAGE_TEXT = {
   layoutNoticeFree: { zh: '已切回自由摆位（力导向）：位置按关系强弱重算，规则不对「谁在上、谁在中间」表态。', en: 'Back to free arrangement (force-directed): positions are recomputed from relation strengths; the rule makes no claim about who is on top or in the middle.' },
   layoutNoticeLearning: { zh: '已按「学习顺序」摆位：起始节点「{start}」在最上面，沿硬前置正向共 {layers} 层、{ranked} 个节点{offPath}。位置只由这条规则决定（不写本体、不写档案）。', en: 'Arranged by “learning order”: the start node “{start}” is on top; {layers} layers and {ranked} nodes follow the hardPrereq direction downwards{offPath}. Positions come from this rule alone (nothing is written to the ontology or the profile).' },
   layoutNoticeLearningOffPath: { zh: '；另有 {count} 个节点不在它的下游（它自己的前置，或与本条顺序无关），单独放在最下一层，没有假装它们是后续内容', en: '; another {count} nodes are not downstream of it (its own prerequisites, or unrelated to this order) and sit in a separate bottom band — they are not passed off as what comes next' },
-  layoutNoticeLogic: { zh: '已按「逻辑核心」摆位：核心「{core}」在圆心，其余 {count} 个节点按在视图里的核心程度分成 {rings} 圈，由内到外；圈内角度按内侧邻居排。核心程度只看当前这张图（不写本体、不写档案）。', en: 'Arranged by “logical core”: the core “{core}” sits at the centre and the other {count} nodes are ringed outwards in {rings} rings by their centrality in this view; angles follow inner-ring neighbours. Centrality is read from this view alone (nothing is written to the ontology or the profile).' },
+  layoutNoticeLogic: { zh: '已按「逻辑核心」摆位：核心「{core}」在圆心，其余 {count} 个节点按在视图里的核心程度分成 {rings} 圈，由内到外；圈内按登记硬前置的传递条数由少到多、从上往下排（前置少的靠上，前置多的靠下）。核心程度只看当前这张图，前置条数只看本体；两者都不写本体、不写档案。', en: 'Arranged by “logical core”: the core “{core}” sits at the centre and the other {count} nodes are ringed outwards in {rings} rings by their centrality in this view; inside each ring, nodes run from top to bottom by the number of registered hard prerequisites (fewer above, more below). Centrality is read from this view and the prerequisite count from the ontology; neither is written back (nothing is written to the ontology or the profile).' },
   layoutNoticeManual: { zh: '你手动拖过的 {count} 个节点保持原位。', en: 'The {count} nodes you dragged by hand stay where they are.' },
   layoutOrderedManual: { zh: '已按「{mode}」重排：位置由规则算出（判据见「排法」下拉的说明）；你手动拖过的 {count} 个节点保持原位。', en: 'Re-arranged by “{mode}”: positions come from the rule (its criterion is in the arrangement menu); the {count} nodes you dragged stay where they are.' },
   layoutOrderedPlain: { zh: '已按「{mode}」重排：位置由规则算出（判据见「排法」下拉的说明）。', en: 'Re-arranged by “{mode}”: positions come from the rule (its criterion is in the arrangement menu).' },
@@ -621,7 +661,7 @@ const PAGE_TEXT = {
   scaleNoticeRemoved: { zh: '已从视图移出「{title}」（节点仍在本体中）。', en: 'Removed “{title}” from this view (the node stays in the ontology).' },
   scaleNoticeNoScale: { zh: '尺度登记尚不可用；节点网络照常使用。', en: 'Scale registration is not available yet; the node network still works.' },
   scaleNoticeStale: { zh: '尺度登记已更新：{count} 个旧对象不在当前计划里，已忽略。', en: 'Scale registration has changed: {count} old objects are not in the current plan and were ignored.' },
-  legendHint: { zh: '拖动空白处平移 · 滚轮缩放 · 按住左键看强关联 · 右键节点打开菜单（加入全部硬前置 / 移出视图）· 「重置」只复位视角，「重新布局」才重排卡片（手动摆放保留）', en: 'Drag empty space to pan · scroll to zoom · hold the left button for strongly related nodes · right-click a node for its menu (add all hard prerequisites / remove from the view) · “Reset view” only resets the camera, “Re-layout” re-arranges the cards (manual placements are kept)' },
+  legendHint: { zh: '拖动空白处平移 · 滚轮缩放 · 按住左键看强关联 · 右键节点打开菜单（硬前置 / 按关系加入 / 移出视图）· 「重置」只复位视角，「重新布局」才重排卡片（手动摆放保留）', en: 'Drag empty space to pan · scroll to zoom · hold the left button for strongly related nodes · right-click a node for its menu (prerequisites / add related objects / remove from the view) · “Reset view” only resets the camera, “Re-layout” re-arranges the cards (manual placements are kept)' },
 } as const;
 
 type PageTextKey = keyof typeof PAGE_TEXT;
@@ -785,6 +825,16 @@ export function NetworkPage() {
    */
   const { t, locale, fmtDate, isPending, hrefFor, pick } = useI18n();
   const labels = useLabels();
+  /**
+   * 关系种类的菜单 / 按钮名。
+   *
+   * 中文原样（「放缩」），英文转小写（`Duality` → `duality`），
+   * 这样模板读起来是「Add duality objects」而不是「Add Duality objects」。
+   */
+  const relationObjectLabel = (kind: string) => {
+    const label = labels.relationLabel(kind);
+    return locale === 'en' ? label.toLowerCase() : label;
+  };
   /*
    * 画布用色板（第一百零九轮）：一次取齐「浅色 / 深色」两套里的当前一套。
    * 它必须在这里取（而不是在下面十几个回调里各自判断明暗）：那些回调与 `useMemo`
@@ -1985,16 +2035,19 @@ export function NetworkPage() {
    * 右键节点菜单（2026-10 加）。
    *
    * 为什么要它：右键原先只有「点一下把节点移出视图」一个含义。而用户要的是**从节点出发做事**——
-   * 「一键加入它的全部硬前置」是其中最常被需要的一件（把一个节点需要先会的对象一次放进画布）。
+   * 「一键加入它的硬前置」是其中最常被需要的一件（把一个节点需要先会的对象一次放进画布）。
    * 一个含义的位置放不下第二件事，因此右键改成**打开一张小菜单**：
    *
-   * - 「加入全部硬前置（N）」：一次把传递闭包放进来（N 是还差几个）；
+   * - 「加入一阶硬前置（N）」：只把直接指向它的那一层放进来（N 是还差几个）；
+   * - 「加入全部硬前置（N）」：一次把传递闭包放进来（直接 + 间接）；
    * - 「从视图移出」：原来的右键行为，现在作为菜单项显式留着——不是删掉它，而是把它写出来。
    *
    * 菜单本身是 HTML（不是 SVG）：它要能被键盘 Tab/方向键走、要能读屏、也要能用系统字号，
    * 这三件在 SVG 里都要另写一遍。
    */
   const [nodeMenu, setNodeMenu] = useState<{ node: string; x: number; y: number } | null>(null);
+  /** 详情面板里「按关系加入」当前选中的关系种类（2026-10-23 加）。 */
+  const [relationAddKind, setRelationAddKind] = useState<string | null>(null);
   const nodeMenuRef = useRef<HTMLDivElement | null>(null);
   /** 尺度对象的右键菜单（与节点菜单分开：节点菜单的 `data-node` 契约不能被混用）。 */
   const [scaleMenu, setScaleMenu] = useState<{ id: string; x: number; y: number } | null>(null);
@@ -2037,18 +2090,45 @@ export function NetworkPage() {
     return hardPrereqClosure(relations, nodeId);
   }, [graph.data]);
 
+  /** 一个节点的**一阶**（直接）硬前置。与上面的全部闭包同一份实现，只把收集深度定为 1 层。 */
+  const directPrereqClosureFor = useCallback((nodeId: string) => {
+    const relations = graph.data?.relations ?? [];
+    return directHardPrereqClosure(relations, nodeId);
+  }, [graph.data]);
+
+  /**
+   * 一个节点的**按关系种类**对象分组（直接相连、双向）。
+   *
+   * - `total`：这一种类下与它直接相连的全部对象；
+   * - `missing`：其中还没进视图的——按钮上的数字用它，点下去不会「加了 0 个」。
+   *
+   * 与硬前置的分工：这里不做传递，也不规定方向；对偶、放缩、应用等关系的另一端
+   * 两个方向都算。组按关系权重从硬到软排（放缩 → 应用 → 跨域 → 对偶 → 桥接 → 类比），
+   * 未登记权重的种类（如笔记引用）落在最后。
+   */
+  const relationGroupsFor = useCallback((nodeId: string) => {
+    const relations = graph.data?.relations ?? [];
+    return relationObjectsByKind(relations, nodeId)
+      .filter((group) => group.kind !== HARD_PREREQ_KIND)
+      .map((group) => ({
+        kind: group.kind,
+        total: group.nodes.length,
+        missing: group.nodes.filter((id) => !added.has(id)),
+      }))
+      .sort((left, right) => (RELATION_WEIGHT[right.kind] ?? 0) - (RELATION_WEIGHT[left.kind] ?? 0));
+  }, [added, graph.data]);
+
   /** 关掉右键菜单（点空白、按 Esc、选了任一项之后都走它）。 */
   const closeNodeMenu = useCallback(() => setNodeMenu(null), []);
 
-  /** 把某个节点的全部硬前置加进视图。不做任何写入：只改 URL 里的 `nodes`。 */
-  const addHardPrereqs = useCallback((nodeId: string, title: string) => {
-    const closure = hardPrereqClosure(graph.data?.relations ?? [], nodeId);
-    const missing = missingFromClosure(closure, added);
-    closeNodeMenu();
-    if (missing.length === 0) {
-      setNotice(fill(txt.prereqAlreadyIn, { title, count: closure.entries.length }));
-      return;
-    }
+  /**
+   * 把一批节点真正加入视图（只改 URL 里的 `nodes`，不写本体、不写学习记录）。
+   *
+   * 「一阶 / 全部硬前置」与「按关系种类加入」共用这一段：显式加入的节点要从
+   * 自动加入黑名单里移出，并且一批节点同时进场时相机改走 fitView。
+   */
+  const commitAdded = useCallback((missing: readonly string[]) => {
+    if (missing.length === 0) return;
     const next = new Set(added);
     for (const id of missing) {
       next.add(id);
@@ -2058,19 +2138,79 @@ export function NetworkPage() {
     // 一批节点同时进场：让相机适配整张图（而不是居中某一个），见上面 effect 里的说明。
     fitAfterAddRef.current = true;
     setAdded(next);
+  }, [added, setAdded]);
+
+  /**
+   * 把某个节点的硬前置加进视图。不做任何写入：只改 URL 里的 `nodes`。
+   *
+   * `scope` 只决定收集到哪一层：
+   * - `'direct'` = **一阶**（直接指向它的那些，一层就停）；
+   * - `'all'` = **全部**（直接 + 间接，一直收到不动点）。
+   *
+   * 两者共用 `hard-prereq-closure.ts` 的同一个广度优先实现；按钮上的数量都是
+   * 「还差几个没进视图」，所以点下去不会出现「加了 0 个」。
+   */
+  const addHardPrereqs = useCallback((nodeId: string, title: string, scope: 'direct' | 'all' = 'all') => {
+    const relations = graph.data?.relations ?? [];
+    const directClosure = directHardPrereqClosure(relations, nodeId);
+    const closure = scope === 'direct' ? directClosure : hardPrereqClosure(relations, nodeId);
+    const missing = missingFromClosure(closure, added);
+    closeNodeMenu();
+    if (missing.length === 0) {
+      setNotice(scope === 'direct'
+        ? fill(txt.prereqDirectAlreadyIn, { title, count: closure.entries.length })
+        : fill(txt.prereqAlreadyIn, { title, count: closure.entries.length }));
+      return;
+    }
+    commitAdded(missing);
     const titleOf = (id: string) => nodes.find((node) => node.id === id)?.title ?? id;
     const head = missing.slice(0, 4).map(titleOf).join(txt.joinSeparator);
     setNotice([
-      fill(txt.prereqAddedNotice, {
+      fill(scope === 'direct' ? txt.prereqDirectAddedNotice : txt.prereqAddedNotice, {
         title,
         count: missing.length,
         list: head,
         more: missing.length > 4 ? fill(txt.prereqAddedMore, { n: missing.length - 4 }) : '',
       }),
       closure.truncated ? fill(txt.nodeMenuPrereqTruncated, { n: missing.length }) : '',
-      fill(txt.nodeMenuPrereqNote, { total: closure.entries.length, depth: closure.maxDepth }),
+      // 一阶的说明里已经写清「只加了一层」，不再追加整段菜单解释。
+      scope === 'all'
+        ? fill(txt.nodeMenuPrereqNote, { direct: directClosure.entries.length, total: closure.entries.length, depth: closure.maxDepth })
+        : '',
     ].filter(Boolean).join(' '));
-  }, [added, closeNodeMenu, graph.data, nodes, setAdded, txt]);
+  }, [added, closeNodeMenu, commitAdded, graph.data, nodes, txt]);
+
+  /**
+   * 把某个节点在某一关系种类下的**全部直接对象**加进视图（两个方向都算）。
+   *
+   * 与 `addHardPrereqs` 共用 `commitAdded`：只改本页显示，不写本体、不写学习记录。
+   * 数量同样按「还差几个没进视图」算；已经在视图里的对象不会重复加入。
+   */
+  const addRelationObjects = useCallback((nodeId: string, title: string, kind: string) => {
+    const group = relationObjectsByKind(graph.data?.relations ?? [], nodeId)
+      .find((item) => item.kind === kind);
+    const all = group?.nodes ?? [];
+    const missing = all.filter((id) => !added.has(id));
+    closeNodeMenu();
+    const relation = labels.relationLabel(kind);
+    if (missing.length === 0) {
+      setNotice(fill(txt.relationAlreadyIn, { title, relation, count: all.length }));
+      return;
+    }
+    commitAdded(missing);
+    const titleOf = (id: string) => nodes.find((node) => node.id === id)?.title ?? id;
+    const head = missing.slice(0, 4).map(titleOf).join(txt.joinSeparator);
+    setNotice([
+      fill(txt.relationAddedNotice, {
+        title,
+        relation,
+        count: missing.length,
+        list: head,
+        more: missing.length > 4 ? fill(txt.prereqAddedMore, { n: missing.length - 4 }) : '',
+      }),
+      txt.nodeMenuRelationNote,
+    ].filter(Boolean).join(' '));
+  }, [added, closeNodeMenu, commitAdded, graph.data, labels, nodes, txt]);
 
   /** 菜单打开时：点别处、按 Esc 都关掉；点画布空白也关。 */
   useEffect(() => {
@@ -2095,6 +2235,32 @@ export function NetworkPage() {
     if (!nodeMenu) return;
     const first = nodeMenuRef.current?.querySelector<HTMLButtonElement>('button:not([disabled])');
     first?.focus();
+  }, [nodeMenu]);
+
+  /**
+   * 菜单打开后把它夹回 stage 内（2026-10-23 加）。
+   *
+   * 「按关系加入对象」让菜单变长；右键点在画布靠右 / 靠下的节点时，旧写法会让菜单
+   * 伸出窗口（看得见、点不到）。这里按**实际渲染尺寸**量一次，溢出多少就挪回多少；
+   * 挪到 margin 仍放不下时（菜单比 stage 还高）由下面的 `max-height` 负责滚动。
+   * 只在真的溢出时 setState，避免「调整 → 重排 → 再调整」的死循环。
+   */
+  useLayoutEffect(() => {
+    if (!nodeMenu || !nodeMenuRef.current) return;
+    const stage = stageRef.current;
+    if (!stage) return;
+    const menuRect = nodeMenuRef.current.getBoundingClientRect();
+    const stageRect = stage.getBoundingClientRect();
+    const margin = 8;
+    const overflowX = Math.max(0, menuRect.right - (stageRect.right - margin));
+    const overflowY = Math.max(0, menuRect.bottom - (stageRect.bottom - margin));
+    if (overflowX === 0 && overflowY === 0) return;
+    setNodeMenu((current) => {
+      if (!current) return current;
+      const x = Math.max(margin, current.x - overflowX);
+      const y = Math.max(margin, current.y - overflowY);
+      return x === current.x && y === current.y ? current : { ...current, x, y };
+    });
   }, [nodeMenu]);
 
   /** 「清空」是可撤销的视图操作：清掉的是本页画布，不动本体，也不动学习记录。 */
@@ -2298,7 +2464,9 @@ export function NetworkPage() {
         ids, titles, edges: networkEdges, relations: graph.data.relations, start: activeAnchor,
       });
     }
-    return coreRingArrangement({ ids, titles, edges: networkEdges, core: activeAnchor });
+    return coreRingArrangement({
+      ids, titles, edges: networkEdges, core: activeAnchor, relations: graph.data.relations,
+    });
   }, [layoutMode, graph.data, added, networkEdges, activeAnchor]);
 
   /**
@@ -2503,6 +2671,10 @@ export function NetworkPage() {
         ranked: arrangement.ranked,
         scores: arrangement.mode === 'logic'
           ? Object.fromEntries([...arrangement.scores].map(([id, score]) => [id, Number(score.toFixed(6))]))
+          : null,
+        // 竖向次序的判据：传递硬前置条数（少 = 靠上）。验收据此核对，不靠读坐标猜。
+        prereq: arrangement.mode === 'logic' && arrangement.prereq.size > 0
+          ? Object.fromEntries([...arrangement.prereq].map(([id, count]) => [id, count]))
           : null,
       } : null;
     }
@@ -4103,7 +4275,7 @@ export function NetworkPage() {
     const newIds = [...added].filter((id) => !seen.has(id));
     lastSeenIdsRef.current = new Set(added);
     /*
-     * 一次加进来**一批**节点时（右键菜单的「加入全部硬前置」），相机走 fitView 而不是居中某一个：
+     * 一次加进来**一批**节点时（右键菜单的「加入一阶 / 全部硬前置」），相机走 fitView 而不是居中某一个：
      * 那批节点是「这个目标需要先会的一整片」，居中排序最后的那个会把其余几个甩到视野外，
      * 用户看到的就不是「这批前置与目标的关系」。单个加入仍然按原行为平滑移到它身上。
      */
@@ -4564,14 +4736,30 @@ export function NetworkPage() {
   /** 选中的节点在起始节点里的登记（没有就是 null）：详情面板据此写出可读的判据。 */
   const selectedStarting = selectedNode ? startingReport?.byId.get(selectedNode.id) ?? null : null;
   /**
-   * 选中节点的硬前置里**还不在视图**的数量。
+   * 选中节点的硬前置里**还不在视图**的数量，分两层算：
+   * - `selectedDirectPrereqMissing`：一阶（直接指向它的）还差几个；
+   * - `selectedPrereqMissing`：全部（直接 + 间接）还差几个。
    *
-   * 详情面板据此决定要不要显示「加入全部硬前置（N）」那颗按钮：还差 0 个就不显示
-   * （没有可加的），而右键菜单那一条是**禁用并写明原因**——两处的差别是刻意的：
-   * 菜单是「这个节点能做什么」的完整清单，少一项会让读者以为功能没了；
-   * 详情面板是任务入口，没有可做的事就不占位置。
+   * 详情面板据此决定显示哪些入口：一阶还差就显示「加入一阶硬前置」；间接也还差
+   * （差值 > 0）才再显示「加入全部硬前置」。只差一阶时两个动作会加入同一批节点，
+   * 因此只留一颗按钮——详情面板是任务入口，重复入口不占位置。
+   *
+   * 而右键菜单那一条是**禁用并写明原因**——两处的差别是刻意的：菜单是
+   * 「这个节点能做什么」的完整清单，少一项会让读者以为功能没了。
    */
-  const selectedPrereqMissing = selectedNode ? missingFromClosure(prereqClosureFor(selectedNode.id), added).length : 0;
+  const selectedDirectPrereqClosure = selectedNode ? directPrereqClosureFor(selectedNode.id) : null;
+  const selectedPrereqClosure = selectedNode ? prereqClosureFor(selectedNode.id) : null;
+  const selectedDirectPrereqMissing = selectedDirectPrereqClosure ? missingFromClosure(selectedDirectPrereqClosure, added).length : 0;
+  const selectedPrereqMissing = selectedPrereqClosure ? missingFromClosure(selectedPrereqClosure, added).length : 0;
+  /** 间接前置还差几个：0 表示全部闭包里剩下的都是直接前置。 */
+  const selectedIndirectPrereqMissing = Math.max(0, selectedPrereqMissing - selectedDirectPrereqMissing);
+  /** 详情面板「按关系加入」的候选：只列还有对象没进视图的关系种类。 */
+  const selectedActionableRelations = selectedNode
+    ? relationGroupsFor(selectedNode.id).filter((group) => group.missing.length > 0)
+    : [];
+  const selectedRelationPick = selectedActionableRelations.find((group) => group.kind === relationAddKind)
+    ?? selectedActionableRelations[0]
+    ?? null;
   const selectedEdges = selected ? view.edges.filter((edge) => edge.from === selected || edge.to === selected) : [];
   const contentW = Math.max(view.layout.width, 600);
   const contentH = Math.max(view.layout.height, 400);
@@ -5453,7 +5641,7 @@ export function NetworkPage() {
       )}
 
       {/*
-        右键节点菜单（2026-10 加）：一键加入该节点的全部硬前置（含间接），
+        右键节点菜单（2026-10 加；2026-10-22 分一阶 / 全部）：一键加入该节点的直接硬前置或全部硬前置，
         以及原来的「从视图移出」。用 HTML 而不是 SVG 画：要能被 Tab / 方向键走、要读屏、
         要跟着系统字号，这三件在 SVG 里都得另写一遍。
         位置按 pointer 在 **stage 内**的坐标给（stage 是 position: relative）。
@@ -5466,9 +5654,14 @@ export function NetworkPage() {
         const menuNode = nodes.find((node) => node.id === nodeMenu.node);
         const title = menuNode?.title ?? nodeMenu.node;
         const closure = prereqClosureFor(nodeMenu.node);
+        const directClosure = directPrereqClosureFor(nodeMenu.node);
         const missing = missingFromClosure(closure, added);
+        const directMissing = missingFromClosure(directClosure, added);
         const total = closure.entries.length;
-        const disabled = total === 0 || missing.length === 0;
+        const directTotal = directClosure.entries.length;
+        const directDisabled = directTotal === 0 || directMissing.length === 0;
+        const allDisabled = total === 0 || missing.length === 0;
+        const relationGroups = relationGroupsFor(nodeMenu.node);
         return (
           <div
             className="node-menu"
@@ -5480,19 +5673,42 @@ export function NetworkPage() {
             data-prereq-total={total}
             data-prereq-missing={missing.length}
             data-prereq-depth={closure.maxDepth}
+            data-prereq-direct-total={directTotal}
+            data-prereq-direct-missing={directMissing.length}
+            data-relation-kinds={relationGroups.length}
           >
             <div className="node-menu-head">
               <strong>{plainMathText(title)}</strong>
               <span className="muted">{nodeMenu.node}</span>
             </div>
+            {/*
+              两项按「一阶 → 全部」排列（2026-10-22 加一阶）：先补最小的一层，
+              需要完整背景时再点下面那项。焦点按 DOM 顺序落在第一项，
+              因此键盘用户回车默认只加一层，而不是一次拉进一百多个节点。
+            */}
             <button
               type="button"
               role="menuitem"
               className="node-menu-item"
-              disabled={disabled}
+              disabled={directDisabled}
+              data-action="add-direct-hard-prereqs"
+              title={fill(txt.nodeMenuPrereqDirectTitle, { total: directTotal, missing: directMissing.length })}
+              onClick={() => addHardPrereqs(nodeMenu.node, title, 'direct')}
+            >
+              {directTotal === 0
+                ? txt.nodeMenuPrereqDirectNone
+                : directMissing.length === 0
+                  ? fill(txt.nodeMenuPrereqDirectAll, { total: directTotal })
+                  : fill(txt.nodeMenuPrereqDirectAdd, { missing: directMissing.length })}
+            </button>
+            <button
+              type="button"
+              role="menuitem"
+              className="node-menu-item"
+              disabled={allDisabled}
               data-action="add-hard-prereqs"
-              title={fill(txt.nodeMenuPrereqNote, { total, depth: closure.maxDepth })}
-              onClick={() => addHardPrereqs(nodeMenu.node, title)}
+              title={fill(txt.nodeMenuPrereqNote, { direct: directTotal, total, depth: closure.maxDepth })}
+              onClick={() => addHardPrereqs(nodeMenu.node, title, 'all')}
             >
               {total === 0
                 ? txt.nodeMenuPrereqNone
@@ -5502,9 +5718,43 @@ export function NetworkPage() {
             </button>
             {total > 0 && (
               <p className="node-menu-note">
-                {fill(txt.nodeMenuPrereqNote, { total, depth: closure.maxDepth })}
+                {fill(txt.nodeMenuPrereqNote, { direct: directTotal, total, depth: closure.maxDepth })}
                 {closure.truncated ? fill(txt.nodeMenuPrereqTruncated, { n: Math.max(total, 1) }) : ''}
               </p>
+            )}
+            {/*
+              按关系种类加入（2026-10-23 加）：对偶、放缩、应用、跨域……菜单只列
+              这个节点真有的种类，且每个种类只走一跳、两个方向都算。已经全在视图里时
+              禁用并写清，不装作可点。种类按关系权重排序（见 relationGroupsFor）。
+            */}
+            {relationGroups.length > 0 && (
+              <>
+                <p className="node-menu-section">{txt.nodeMenuRelationSection}</p>
+                {relationGroups.map((group) => {
+                  const disabled = group.missing.length === 0;
+                  const relation = relationObjectLabel(group.kind);
+                  return (
+                    <button
+                      key={group.kind}
+                      type="button"
+                      role="menuitem"
+                      className="node-menu-item"
+                      disabled={disabled}
+                      data-action="add-relation-objects"
+                      data-kind={group.kind}
+                      data-total={group.total}
+                      data-missing={group.missing.length}
+                      title={txt.nodeMenuRelationNote}
+                      onClick={() => addRelationObjects(nodeMenu.node, title, group.kind)}
+                    >
+                      {disabled
+                        ? fill(txt.nodeMenuRelationAll, { relation, total: group.total })
+                        : fill(txt.nodeMenuRelationItem, { relation, missing: group.missing.length })}
+                    </button>
+                  );
+                })}
+                <p className="node-menu-note">{txt.nodeMenuRelationNote}</p>
+              </>
             )}
             {(() => {
               const moleculeId = moleculeOfNode(nodeMenu.node);
@@ -6435,16 +6685,71 @@ export function NetworkPage() {
                     {added.has(selectedNode.id) ? txt.detailRemove : txt.detailAdd}
                   </button>
                   {/*
-                    详情面板里的同一个动作（2026-10 加）：触摸设备没有右键，菜单在那儿打不开；
-                    键盘用户从列表跳进来也需要一条不依赖右键的路径。判据与菜单那一项完全同一份
-                    `addHardPrereqs`，因此两条入口不会各说各话。
+                    详情面板里的同一组动作（2026-10 加；2026-10-22 分一阶 / 全部）：
+                    触摸设备没有右键，菜单在那儿打不开；键盘用户从列表跳进来也需要一条
+                    不依赖右键的路径。判据与菜单里的两项完全同一份 `addHardPrereqs`，
+                    因此几条入口不会各说各话。
                   */}
-                  {!isMaster && selectedPrereqMissing > 0 && (
-                    <button className="button small" data-action="add-hard-prereqs" onClick={() => addHardPrereqs(selectedNode.id, selectedNode.title)}>
+                  {!isMaster && selectedDirectPrereqMissing > 0 && (
+                    <button
+                      className="button small"
+                      data-action="add-direct-hard-prereqs"
+                      title={fill(txt.nodeMenuPrereqDirectTitle, { total: selectedDirectPrereqClosure?.entries.length ?? 0, missing: selectedDirectPrereqMissing })}
+                      onClick={() => addHardPrereqs(selectedNode.id, selectedNode.title, 'direct')}
+                    >
+                      {fill(txt.nodeMenuPrereqDirectAdd, { missing: selectedDirectPrereqMissing })}
+                    </button>
+                  )}
+                  {!isMaster && selectedIndirectPrereqMissing > 0 && (
+                    <button
+                      className="button small"
+                      data-action="add-hard-prereqs"
+                      title={fill(txt.nodeMenuPrereqNote, {
+                        direct: selectedDirectPrereqClosure?.entries.length ?? 0,
+                        total: selectedPrereqClosure?.entries.length ?? 0,
+                        depth: selectedPrereqClosure?.maxDepth ?? 0,
+                      })}
+                      onClick={() => addHardPrereqs(selectedNode.id, selectedNode.title, 'all')}
+                    >
                       {fill(txt.nodeMenuPrereqAdd, { missing: selectedPrereqMissing })}
                     </button>
                   )}
                 </div>
+                {/*
+                  触摸设备没有右键：详情里给同一组「按关系加入」一个下拉入口（2026-10-23 加）。
+                  只列还有对象没进视图的关系种类；选中的那一类用同一份 `addRelationObjects`，
+                  因此菜单与面板不会各算一套。加完后这一种类会自动从下拉里消失。
+                */}
+                {!isMaster && selectedRelationPick && (
+                  <div className="detail-relation-add" data-relation-kind={selectedRelationPick.kind}>
+                    <label htmlFor="network-detail-relation-kind">{txt.relationAddSection}</label>
+                    <select
+                      id="network-detail-relation-kind"
+                      aria-label={txt.relationAddAria}
+                      value={selectedRelationPick.kind}
+                      onChange={(event) => setRelationAddKind(event.target.value)}
+                    >
+                      {selectedActionableRelations.map((group) => (
+                        <option key={group.kind} value={group.kind}>
+                          {fill(txt.relationAddOption, { relation: relationObjectLabel(group.kind), missing: group.missing.length })}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      className="button small"
+                      data-action="add-relation-objects"
+                      data-kind={selectedRelationPick.kind}
+                      data-missing={selectedRelationPick.missing.length}
+                      title={txt.nodeMenuRelationNote}
+                      onClick={() => addRelationObjects(selectedNode.id, selectedNode.title, selectedRelationPick.kind)}
+                    >
+                      {fill(txt.relationAddButton, {
+                        relation: relationObjectLabel(selectedRelationPick.kind),
+                        missing: selectedRelationPick.missing.length,
+                      })}
+                    </button>
+                  </div>
+                )}
                 <h3>{fill(txt.detailEdges, { count: selectedEdges.length })}</h3>
                 {/* 空态这段是多行 JSX 文本（换行会被折叠成空格）：中文原样保留，英文另起一支。 */}
                 {selectedEdges.length === 0 && (

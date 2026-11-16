@@ -258,7 +258,42 @@ try {
   check('锚点下拉换成「核心节点」，并按核心程度由高到低列出',
     logic.anchorSelect !== null && /核心节点/.test(logic.anchorSelect.label) && logic.anchorSelect.groups.length === 1,
     JSON.stringify(logic.anchorSelect));
-  check('提示写清了核心与分圈依据', logic.notice.includes('逻辑核心') && logic.notice.includes('核心程度'), logic.notice);
+  check('提示写清了核心、分圈依据与圈内前置次序',
+    logic.notice.includes('逻辑核心') && logic.notice.includes('核心程度') && logic.notice.includes('硬前置'),
+    logic.notice);
+  /*
+   * 用户 2026-10-23 的要求：排法设为逻辑核心时，前置少的仍要在上方、前置多的在下方。
+   * 判据不靠肉眼：页面把每个节点的传递硬前置条数放在 `__mcsNetworkOrder.prereq`，
+   * 这里按圈把节点按 y 分层，核对「上层最多的前置 ≤ 下层最少的前置」。
+   * 手动拖过的节点位置由人决定，不参与这条规则断言。
+   */
+  const ruleLogic = new Set(logic.placed.filter((node) => !logic.overrides[node.id]).map((node) => node.id));
+  const prereq = logic.order?.prereq ?? null;
+  const orderCheck = (() => {
+    if (!prereq) return { ok: false, reason: '页面没有给出前置条数' };
+    let varied = false;
+    for (const band of (logic.order?.bands ?? []).slice(1)) {
+      const nodes = band.nodes
+        .filter((id) => ruleLogic.has(id))
+        .map((id) => ({ id, y: logicPlace.get(id)?.y ?? Number.NaN }))
+        .sort((left, right) => left.y - right.y);
+      const levels = [];
+      for (const node of nodes) {
+        const last = levels.at(-1);
+        if (last && Math.abs(last.y - node.y) < 0.5) last.ids.push(node.id);
+        else levels.push({ y: node.y, ids: [node.id] });
+      }
+      for (let index = 0; index + 1 < levels.length; index += 1) {
+        const top = Math.max(...levels[index].ids.map((id) => prereq[id] ?? 0));
+        const bottom = Math.min(...levels[index + 1].ids.map((id) => prereq[id] ?? 0));
+        if (top > bottom) return { ok: false, reason: `${band.value} 圈：上层最多 ${top} > 下层最少 ${bottom}` };
+      }
+      if (new Set(nodes.map((node) => prereq[node.id] ?? 0)).size > 1) varied = true;
+    }
+    return { ok: varied, reason: varied ? '' : '这一张图里没有前置条数不同的节点，断言无意义' };
+  })();
+  check('逻辑核心下圈内按前置由少到多、从上往下排（上层的前置不多于下层）',
+    orderCheck.ok, JSON.stringify(orderCheck));
 
   /* —— 手动拖过的节点在换模式之后仍然在原处 —— */
   if (draggable) {

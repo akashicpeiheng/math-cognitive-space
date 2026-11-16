@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useApi, formatError } from '../api';
 import { useI18n } from '../i18n';
 import { objectMasterView } from '../../../shared/master-view.mjs';
+import { objectStructure } from '../../../shared/mcs-framework.mjs';
 import type { McsViewData, McsViewObject } from '../../../shared/mcs-view.mjs';
 import type { LearningNodeDocument } from '../../../shared/content-documents.mjs';
 import { ContentRelationDetails } from './ContentCaseControls';
@@ -20,14 +21,28 @@ export function McsInspector({ data, object, anchor, relationIds, expanded, canE
   const { pick, locale, hrefFor } = useI18n();
   const detail = useApi<{ readings: LearningNodeDocument[] }>(object ? `/ontology/objects/${encodeURIComponent(object.id)}` : null);
   const master = useMemo(() => object ? objectMasterView(object, { objects: data.objects, sourceVersion: data.objectVersion, locale, anchor: anchor ?? '$' }) : null, [object, data, locale, anchor]);
+  const structure = useMemo(() => object ? objectStructure(data, object.id) : null, [data, object]);
   const relations = relationIds.length ? data.relations.filter(r => relationIds.includes(r.id)) : data.relations.filter(r => object && (r.from.id === object.id || r.to.id === object.id || r.premises.some(p => p.id === object.id)));
   const notes = object ? data.notes?.byObject[object.id] ?? [] : [];
   const primary = notes.find(n => n.coverage !== 'related');
+  const structureRelations = structure
+    ? Object.entries(structure.relations.byKind).map(([kind, count]) => `${MCS_RELATIONS[kind] ? pick(MCS_RELATIONS[kind]) : kind} ${count}`).join(' · ')
+    : '';
+  const structureEvidence = structure
+    ? Object.entries(structure.evidence).map(([status, count]) => `${status} ${count}`).join(' · ')
+    : '';
   return <aside className="mcs-inspector" aria-label={pick({ zh: '数学对象详情', en: 'Mathematical object details' })}>
     <div className="mcs-panel-heading"><span className="mcs-eyebrow">{pick({ zh: relationIds.length ? '关系与依据' : '对象与依据', en: relationIds.length ? 'RELATIONS & EVIDENCE' : 'OBJECT & EVIDENCE' })}</span><button type="button" className="mcs-icon-button" onClick={onClose} aria-label={pick({ zh: '关闭详情', en: 'Close details' })}>×</button></div>
     {object ? <>
       <h2 lang="zh" className={locale === 'en' ? 'i18n-pending' : ''}>{object.title}</h2>
       <p className="mcs-meta">{pick(MCS_SCALES[object.scale])} · {object.version}{anchor ? ` · #${anchor}` : ''}</p>
+      {structure ? <p className="mcs-meta mcs-object-structure" data-object-structure>
+        {pick({ zh: '声明', en: 'Declarations' })} {structure.declarations.total}
+        {' · '}
+        {pick({ zh: 'M 关系', en: 'M relations' })} {structure.relations.total}{structureRelations ? <> {locale === 'en' ? `(${structureRelations})` : `（${structureRelations}）`}</> : null}
+        {' · '}
+        {pick({ zh: '证据', en: 'Evidence' })} {structureEvidence || pick({ zh: '无', en: 'none' })}
+      </p> : null}
       {locale === 'en' ? <p className="mcs-meta">{pick({ zh: '正文：中文', en: 'Object content: Chinese · not yet translated' })}</p> : null}
       <div className="mcs-detail-actions">
         {primary ? <Link className="button primary" data-mcs-open-note to={hrefFor(primary.href)}>{pick(primary.kind === 'node' ? primary.coverage === 'chapter' ? { zh: '阅读笔记章节 ↗', en: 'Read note chapter ↗' } : { zh: '打开节点笔记 ↗', en: 'Open node notes ↗' } : { zh: '阅读公共讲解 ↗', en: 'Read public explanation ↗' })}</Link> : null}
