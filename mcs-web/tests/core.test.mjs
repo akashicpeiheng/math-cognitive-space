@@ -420,3 +420,17 @@ test('证书重放：检查器与证书都在时给出真实判定并标明检�
   assert.equal(result.ran, true);
   assert.equal(result.checkerVerified, false);
 });
+
+test('replay follows explicit confirmations at the selected version', async () => {
+  const ontology = await testOntology();
+  const nodeId = 'limit:bridge';
+  const event = (eventId, confirmed, version = ontology.version) => ({ eventId, nodeId, kind:'confirmation', ontologyVersion:version, payload:{confirmed} });
+  const records = [event('a',true), event('b',false), event('stale',true,'previous')];
+  const read = () => adapt(ontology, { id:'fixture', revision:records.length, events:records });
+  assert.equal(read().known.length, 0);
+  assert.equal(read().unknown.length, 1);
+  records.push(event('c',true), {eventId:'d',nodeId,kind:'evaluation',payload:{demonstrated:false}});
+  assert.equal(read().known.length, 1);
+  assert.equal(read().unknown.length, 0);
+  assert.ok(read().boundary.some(item => item.eventId === 'stale'));
+});

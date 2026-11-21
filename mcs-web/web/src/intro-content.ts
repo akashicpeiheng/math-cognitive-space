@@ -60,17 +60,16 @@ export const SITE_INTRO_SECTIONS: IntroSection[] = [
   },
   {
     id: 'boundary',
-    title: '三层分离：M / E / D',
-    lead: '公共数学资源、外部学习者状态、派生结果各占一层，只有 E 接受写入。',
-    paragraphs: [
-      '这是整个项目最基础的一条分界，也是站内每个页面都遵守的约束。它同时解决了两个问题：学习者数据不会污染公共知识，公共知识的修订也不会悄悄改掉某个人的学习记录。',
-    ],
+    title: '公共数学、学习记录与本次路线',
+    lead: '公共数学 M 和阅读 L 各自版本化。学习者只给一个目标，也可以看到候选入口及其背景条件。',
+    paragraphs: ['阅读、作答、背景确认分别记录。基础规划只使用获准的背景。启用预算、排序或排程扩展时，本次请求再提供相应输入。'],
     facts: [
-      { label: 'M · 公共本体', value: '数学对象、关系、行动契约、证据记录', note: '随版本公开修订，用内容哈希固定；本机产品里是只读的' },
-      { label: 'E · 外部模型', value: '你的确认、作答、笔记、误区记录、学习事件', note: '唯一接受写入的一层；换档案即换一套 E，M 不动' },
-      { label: 'D · 派生', value: '视图、路线、推荐、继续学习网络', note: '由 M + E 现算，不落库；刷新后由同样的输入得到同样的输出' },
+      {label:'LearnerRecord', value:'事件与明确声明', note:'确认可用的背景可以撤回'},
+      {label:'PlanContext', value:'目标及本次选择', note:'搜索事件界与时间预算独立'},
+      {label:'ExtensionPackage', value:'可选模型', note:'输出标明来源和依据'},
+      {label:'DerivedResult', value:'候选路线及扩展判断', note:'保存公共版本和输入范围'},
     ],
-    evidence: '论文第 4 节（Public resources and external evaluation）给出只读不变性命题 prop:readonly（PROOF）；本站把它实现为「学习者写入只落 E」。',
+    evidence: '专稿第 7 章、第 12 章。',
   },
   {
     id: 'relations',
@@ -338,17 +337,16 @@ export const SITE_INTRO_SECTIONS_EN: IntroSection[] = [
   },
   {
     id: 'boundary',
-    title: 'Three layers kept apart: M / E / D',
-    lead: 'Public mathematical resources, external learner state and derived results each have their own layer; only E accepts writes.',
-    paragraphs: [
-      'This is the most basic dividing line of the whole project, and every page on the site obeys it. It settles two things at once: learner data does not pollute public knowledge, and revisions of public knowledge do not silently rewrite someone’s learning record.',
-    ],
+    title: 'Public mathematics, learner records and route planning',
+    lead: 'Mathematical objects and readings have separate versions. A goal alone can yield candidate routes with their entry conditions.',
+    paragraphs: ['Reading, answering and confirming a resource are distinct events. Budget checks, ranking and scheduling use inputs supplied for the selected extension.'],
     facts: [
-      { label: 'M · public ontology', value: 'mathematical objects, relations, action contracts, evidence records', note: 'revised and published by version and fixed by a content hash; read-only in the local product' },
-      { label: 'E · external model', value: 'your confirmations, answers, notes, misconception records, learning events', note: 'the only layer that accepts writes; switching profiles switches E, and M does not move' },
-      { label: 'D · derived', value: 'views, routes, recommendations, the continue-learning network', note: 'computed from M + E on demand and not stored; a refresh gives the same output from the same input' },
+      {label:'LearnerRecord', value:'Events and explicit declarations', note:'Confirmed background can be withdrawn'},
+      {label:'PlanContext', value:'Goal and request settings', note:'The search horizon is separate from a time budget'},
+      {label:'ExtensionPackage', value:'Optional models', note:'Outputs identify the model and evidence'},
+      {label:'DerivedResult', value:'Candidates and model outputs', note:'Results refer to the input versions'},
     ],
-    evidence: 'Section 4 of the paper (Public resources and external evaluation) gives the read-only invariance proposition prop:readonly (PROOF); this site implements it as “learner writes land only in E”.',
+    evidence: 'Monograph, chapters 7 and 12.',
   },
   {
     id: 'relations',

@@ -796,10 +796,13 @@ export function createApi({ getOntology, ontology: ontologyRef, db, jobs, leanJo
     body=bindContentRequest(body,config.repoRoot);
     ontology=selectContentOntology(body,ontology,config.repoRoot);
     const raw = { ...body };
-    if (body.profileId) raw.learningPreferences = await db.getLearningPlan(body.profileId);
-    if (body.profileId && !(Array.isArray(body.background) && body.background.length)) {
+    delete raw.learningPreferences;
+    if (body.profileId && (body.extensions === undefined || (Array.isArray(body.extensions) && body.extensions.includes('learning-schedule/1')))) {
+      raw.learningPreferences = await db.getLearningPlan(body.profileId);
+    }
+    if (body.profileId && (body.extensions === undefined ? !(Array.isArray(body.background) && body.background.length) : body.background === undefined)) {
       const state = await profileState(body.profileId);
-      const { background } = adaptWithOntology(ontology, state, { goalId: body.goalId ?? body.goalIds?.[0] ?? null, budget: body.budget ?? null, strategy: body.strategy ?? {} });
+      const { background } = adaptWithOntology(ontology, state, { goalId: body.goalId ?? body.goalIds?.[0] ?? null, budget: body.budget ?? null, strategy: body.strategy ?? {}, includeExplicitUnknown: Array.isArray(body.extensions) });
       raw.background = background;
     }
     if (query.get('sync') === '1' || body.sync === true) {

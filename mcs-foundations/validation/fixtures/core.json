@@ -1,0 +1,136 @@
+{
+  "schema": "mcs-finite-public-fragment/1",
+  "version": "external-state-monograph-2026-09",
+  "nodes": [
+    "Perm",
+    "Sym",
+    "Unit5",
+    "Group",
+    "Quant",
+    "Dist",
+    "Seq",
+    "LimitED",
+    "LimitSeq",
+    "LimitBridge",
+    "Basis",
+    "Multilin",
+    "Tensor",
+    "Bundle",
+    "TensorField",
+    "SmoothAtlas",
+    "CkAtlas"
+  ],
+  "actions": [
+    {
+      "id": "g_perm",
+      "inputs": [
+        "Perm"
+      ],
+      "outputs": [
+        "Group"
+      ],
+      "mode": "presentation-contract"
+    },
+    {
+      "id": "g_sym",
+      "inputs": [
+        "Sym"
+      ],
+      "outputs": [
+        "Group"
+      ],
+      "mode": "presentation-contract"
+    },
+    {
+      "id": "g_units",
+      "inputs": [
+        "Unit5"
+      ],
+      "outputs": [
+        "Group"
+      ],
+      "mode": "presentation-contract"
+    },
+    {
+      "id": "l_ed",
+      "inputs": [
+        "Quant",
+        "Dist"
+      ],
+      "outputs": [
+        "LimitED"
+      ],
+      "mode": "presentation-contract"
+    },
+    {
+      "id": "l_seq",
+      "inputs": [
+        "Seq"
+      ],
+      "outputs": [
+        "LimitSeq"
+      ],
+      "mode": "presentation-contract"
+    },
+    {
+      "id": "l_bridge",
+      "inputs": [
+        "LimitED",
+        "LimitSeq"
+      ],
+      "outputs": [
+        "LimitBridge"
+      ],
+      "mode": "public-proof-interface"
+    },
+    {
+      "id": "t_basis",
+      "inputs": [
+        "Basis"
+      ],
+      "outputs": [
+        "Tensor"
+      ],
+      "mode": "presentation-contract"
+    },
+    {
+      "id": "t_multilin",
+      "inputs": [
+        "Multilin"
+      ],
+      "outputs": [
+        "Tensor"
+      ],
+      "mode": "presentation-contract"
+    },
+    {
+      "id": "t_field",
+      "inputs": [
+        "Tensor",
+        "Bundle"
+      ],
+      "outputs": [
+        "TensorField"
+      ],
+      "mode": "presentation-contract"
+    },
+    {
+      "id": "m_forget",
+      "inputs": [
+        "SmoothAtlas"
+      ],
+      "outputs": [
+        "CkAtlas"
+      ],
+      "mode": "public-proof-interface"
+    }
+  ],
+  "patterns": [
+    {
+      "id": "limit_unreachable",
+      "claim": "A convergent sequence can never equal its limit.",
+      "counterexample": "A constant sequence converges to its value."
+    }
+  ],
+  "note": "Finite symbolic contract fixture. Math proofs remain in the manuscript; action completion here is structural resource production, not personal mastery."
+}

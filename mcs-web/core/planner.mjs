@@ -160,6 +160,36 @@ export function makePlanner(ontology) {
 
   function plan(rawRequest) {
     const request = normalizePlanRequest(rawRequest);
+    if (request.extensions !== undefined) {
+      // Enumerate the structural family once. Extensions only annotate or order that family.
+      const { costs, preferredAction, ...structuralStrategy } = request.strategy;
+      const base = plan({ ...rawRequest, extensions: undefined, budget: null, strategy: structuralStrategy });
+      const fragments = [];
+      if (request.extensions.includes('declared-cost/1')) {
+        const cap = request.budget?.maxCost;
+        const decisions = base.routes.map(route => {
+          const vector = route.events.map(event => costs?.[event.actionId]);
+          const known = vector.every(value => typeof value === 'number');
+          const total = known ? vector.reduce((sum, value) => sum + value, 0) : null;
+          const verdict = total === null || cap == null ? 'Unknown' : total <= cap ? 'Pass' : 'Reject';
+          return { routeId: route.id, total, verdict };
+        });
+        fragments.push({ package: 'declared-cost/1', kind: 'constraint', decisions,
+          inputs: { budget: request.budget, costs: costs ?? null }, evidence: 'ILLUSTRATION' });
+      }
+      if (request.extensions.includes('preferred-action/1')) {
+        if (preferredAction) ontology.action(preferredAction);
+        const decisions = fragments.find(f => f.kind === 'constraint')?.decisions;
+        const passed = decisions ? new Set(decisions.filter(row => row.verdict === 'Pass').map(row => row.routeId)) : null;
+        const eligible = base.routes.filter(route => !passed || passed.has(route.id));
+        const matches = route => route.events.some(event => event.actionId === preferredAction);
+        const order = preferredAction ? eligible.sort((a, b) => Number(matches(b)) - Number(matches(a))).map(route => route.id) : null;
+        fragments.push({ package: 'preferred-action/1', kind: 'ranking', order,
+          inputs: { preferredAction: preferredAction ?? null }, evidence: 'DEF' });
+      }
+      return { ...base, adaptations: { enabled: request.extensions, fragments },
+        meta: { ...base.meta, request: { ...base.meta.request, strategy: structuralStrategy, extensions: request.extensions } } };
+    }
     for (const goal of request.goals) ontology.node(goal);
     const backgroundByNode = new Map();
     for (const entry of request.background) {
@@ -242,7 +272,37 @@ export function makePlanner(ontology) {
       if (ordered.length === 0) {
         const goalSources = {};
         let ok = true;
-        for (const goal of request.goals) {
+        if (request.extensions !== undefined) {
+      // Enumerate the structural family once. Extensions only annotate or order that family.
+      const { costs, preferredAction, ...structuralStrategy } = request.strategy;
+      const base = plan({ ...rawRequest, extensions: undefined, budget: null, strategy: structuralStrategy });
+      const fragments = [];
+      if (request.extensions.includes('declared-cost/1')) {
+        const cap = request.budget?.maxCost;
+        const decisions = base.routes.map(route => {
+          const vector = route.events.map(event => costs?.[event.actionId]);
+          const known = vector.every(value => typeof value === 'number');
+          const total = known ? vector.reduce((sum, value) => sum + value, 0) : null;
+          const verdict = total === null || cap == null ? 'Unknown' : total <= cap ? 'Pass' : 'Reject';
+          return { routeId: route.id, total, verdict };
+        });
+        fragments.push({ package: 'declared-cost/1', kind: 'constraint', decisions,
+          inputs: { budget: request.budget, costs: costs ?? null }, evidence: 'ILLUSTRATION' });
+      }
+      if (request.extensions.includes('preferred-action/1')) {
+        if (preferredAction) ontology.action(preferredAction);
+        const decisions = fragments.find(f => f.kind === 'constraint')?.decisions;
+        const passed = decisions ? new Set(decisions.filter(row => row.verdict === 'Pass').map(row => row.routeId)) : null;
+        const eligible = base.routes.filter(route => !passed || passed.has(route.id));
+        const matches = route => route.events.some(event => event.actionId === preferredAction);
+        const order = preferredAction ? eligible.sort((a, b) => Number(matches(b)) - Number(matches(a))).map(route => route.id) : null;
+        fragments.push({ package: 'preferred-action/1', kind: 'ranking', order,
+          inputs: { preferredAction: preferredAction ?? null }, evidence: 'DEF' });
+      }
+      return { ...base, adaptations: { enabled: request.extensions, fragments },
+        meta: { ...base.meta, request: { ...base.meta.request, strategy: structuralStrategy, extensions: request.extensions } } };
+    }
+    for (const goal of request.goals) {
           const options = backgroundOptions(goal, GOAL_ACCEPTS);
           if (options.length === 0 && request.useUnknownEntries && isBoundary(goal)) {
             goalSources[goal] = boundarySource(boundaryEntry(goal));
@@ -328,7 +388,37 @@ export function makePlanner(ontology) {
       if (cycle) { state.reasons.add('SOURCE_CYCLE'); return; }
 
       const goalSourceOptions = {};
-      for (const goal of request.goals) {
+      if (request.extensions !== undefined) {
+      // Enumerate the structural family once. Extensions only annotate or order that family.
+      const { costs, preferredAction, ...structuralStrategy } = request.strategy;
+      const base = plan({ ...rawRequest, extensions: undefined, budget: null, strategy: structuralStrategy });
+      const fragments = [];
+      if (request.extensions.includes('declared-cost/1')) {
+        const cap = request.budget?.maxCost;
+        const decisions = base.routes.map(route => {
+          const vector = route.events.map(event => costs?.[event.actionId]);
+          const known = vector.every(value => typeof value === 'number');
+          const total = known ? vector.reduce((sum, value) => sum + value, 0) : null;
+          const verdict = total === null || cap == null ? 'Unknown' : total <= cap ? 'Pass' : 'Reject';
+          return { routeId: route.id, total, verdict };
+        });
+        fragments.push({ package: 'declared-cost/1', kind: 'constraint', decisions,
+          inputs: { budget: request.budget, costs: costs ?? null }, evidence: 'ILLUSTRATION' });
+      }
+      if (request.extensions.includes('preferred-action/1')) {
+        if (preferredAction) ontology.action(preferredAction);
+        const decisions = fragments.find(f => f.kind === 'constraint')?.decisions;
+        const passed = decisions ? new Set(decisions.filter(row => row.verdict === 'Pass').map(row => row.routeId)) : null;
+        const eligible = base.routes.filter(route => !passed || passed.has(route.id));
+        const matches = route => route.events.some(event => event.actionId === preferredAction);
+        const order = preferredAction ? eligible.sort((a, b) => Number(matches(b)) - Number(matches(a))).map(route => route.id) : null;
+        fragments.push({ package: 'preferred-action/1', kind: 'ranking', order,
+          inputs: { preferredAction: preferredAction ?? null }, evidence: 'DEF' });
+      }
+      return { ...base, adaptations: { enabled: request.extensions, fragments },
+        meta: { ...base.meta, request: { ...base.meta.request, strategy: structuralStrategy, extensions: request.extensions } } };
+    }
+    for (const goal of request.goals) {
         const candidates = [];
         for (const entry of backgroundOptions(goal, GOAL_ACCEPTS)) candidates.push(backgroundSource(entry));
         for (const event of events) {

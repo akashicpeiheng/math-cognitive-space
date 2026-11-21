@@ -51,7 +51,7 @@ const INTRO_TEXT = {
     entriesTitle: '从哪进',
     entriesLead: '四条入口对应四种读法，不是四个功能按钮。',
     colophonTitle: '版本与作者',
-    colophonBody: '本页描述的是本机工作台的当前状态。理论专稿的分章 Markdown 是修订源，论文是可编辑的 LaTeX 源；两者都在本机，未在公开渠道发布。',
+    colophonBody: '2026 年 11 月 21 日修订版收录 16 章正文、四组案例和核验报告。第 7 章定义学习者接口，第 12 章讨论路线。英文论文另行维护。',
     readingOrderPrefix: '阅读顺序建议：先看',
     readingOrderMid: '，再看',
     readingOrderSuffix: '，最后回到「从哪进」选一个案例动手。',
@@ -75,7 +75,7 @@ const INTRO_TEXT = {
     entriesTitle: 'Where to enter',
     entriesLead: 'Four entries for four ways of reading, not four feature buttons.',
     colophonTitle: 'Version and author',
-    colophonBody: 'This page describes the current state of the local workbench. The chapter Markdown of the theoretical monograph is the revision source and the paper is an editable LaTeX source; both are local and have not been published publicly.',
+    colophonBody: 'The 21 November 2026 revision includes 16 chapters, four cases and verification reports. Chapters 7 and 12 cover learner records and planning. The English paper is maintained separately.',
     readingOrderPrefix: 'Suggested reading order: first ',
     readingOrderMid: ', then ',
     readingOrderSuffix: ', and finally back to “where to enter” to pick a case and start.',
@@ -100,7 +100,8 @@ export function IntroPage() {
         <h1>{text.title}</h1>
         <p className="lede intro-summary">{text.summary}</p>
         <div className="intro-hero-actions">
-          <Link className="button primary" to="/method">{text.methodButton}</Link>
+          <a className="button primary" href="/publications/mcs-foundations-2026-11-21.pdf">{pick({zh:'阅读完整专稿（PDF）', en:'Read the monograph (PDF, Chinese)'})}</a>
+          <Link className="button" to="/method">{text.methodButton}</Link>
           <Link className="button" to="/nodes">{text.readButton}</Link>
           <Link className="button ghost" to="/lab">{text.labButton}</Link>
           <Link className="button ghost" to={hrefFor('/manual')}>{text.manualButton}</Link>

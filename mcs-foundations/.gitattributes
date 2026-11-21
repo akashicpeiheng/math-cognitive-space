@@ -1,0 +1,6 @@
+# Manuscript and fixture manifests hash the source bytes, including their line endings.
+/*.md -text
+/cases/*.md -text
+/publication/导读.md -text
+/validation/REPORT*.md -text
+/validation/fixtures/*.json -text

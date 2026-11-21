@@ -122,7 +122,16 @@ export function normalizePlanRequest(raw) {
   const background = Array.isArray(raw.background) ? raw.background.map(normalizeBackgroundEntry) : [];
   const horizon = raw.horizon === undefined ? 8 : requireInteger(raw.horizon, code, 'horizon 必须是 0 到 32 的整数', { min: 0, max: 32 });
   const maxCandidates = raw.maxCandidates === undefined ? 100000 : requireInteger(raw.maxCandidates, code, 'maxCandidates 必须是正整数', { min: 1, max: 1000000 });
+  const extensions = raw.extensions;
+  if (extensions !== undefined) {
+    const supported = ['declared-cost/1', 'preferred-action/1', 'learning-schedule/1'];
+    assert(Array.isArray(extensions) && extensions.every(id => supported.includes(id))
+      && new Set(extensions).size === extensions.length, code, '规划扩展无效或重复');
+  }
   const strategy = isPlainObject(raw.strategy) ? { ...raw.strategy } : {};
+  if (extensions?.includes('preferred-action/1') && strategy.preferredAction !== undefined) {
+    requireString(strategy.preferredAction, code, 'preferredAction 必须为行动引用');
+  }
   if (strategy.costs !== undefined) {
     assert(isPlainObject(strategy.costs), code, 'strategy.costs 必须是对象');
     for (const [actionId, cost] of Object.entries(strategy.costs)) {
@@ -150,6 +159,7 @@ export function normalizePlanRequest(raw) {
     };
   })();
   return {
+    extensions,
     goals: uniqueGoals,
     background,
     horizon,

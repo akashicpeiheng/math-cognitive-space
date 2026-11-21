@@ -14,7 +14,6 @@ import { useMediaQuery } from '../useMediaQuery';
 import { useI18n } from '../i18n';
 // `useLabels` 住在 `i18n/useLabels.tsx`：`labels.ts` 是纯数据表，不准 import React。
 import { useLabels } from '../i18n/useLabels';
-import { paceHorizon, preferenceSummary, readPreferences } from '../start-preferences';
 import { planRoute, serializeRouteSearch } from '../route-replay';
 import { buildReadingSteps, saveReadingRoute, readingOrder } from '../route-reading';
 import { useLearningData } from '../useLearningData';
@@ -480,22 +479,11 @@ export function PlanPage() {
    * （与「我的学习」/开始页同一份 `deriveDirection`），再由用户一键把某个候选变成目标。
    */
   const [frontierOn, setFrontierOn] = useState(false);
-  /**
-   * 事件界默认值：先看开始页的节奏偏好（TODO A4-23）。
-   *
-   * 第四十六轮的边界：「三问的答案只影响开始页的入口排序，`/plan` 不套用。」
-   * 这一条选择把**节奏**这一问接上：它本来就是在说「一次走多远」，
-   * 而事件界 h 正是这个旋钮。映射表与理由写在 `web/src/start-preferences.ts` 的 `paceHorizon`。
-   *
-   * 三条纪律（写在页面上，也写在模块里）：只改**默认值**、算法与本体一律不变、
-   * 用户一改就不再覆盖（`paceApplied` 只在首次挂载时按偏好设一次）。
-   */
-  const savedPreferences = readPreferences();
-  // 第二参数是语种：`start-preferences.ts`（task-8）已给出成对文案，中文默认值逐字不变。
-  const paceDefault = paceHorizon(savedPreferences.pace, locale);
-  const [horizon, setHorizon] = useState<number>(() => paceDefault?.horizon ?? 8);
-  /** 偏好是否真的改过默认值（页面据此显示说明；用户手改后置 false）。 */
-  const [paceApplied, setPaceApplied] = useState<boolean>(() => paceDefault !== null);
+  const [horizon, setHorizon] = useState(8);
+  const [costEnabled, setCostEnabled] = useState(false);
+  const [rankingEnabled, setRankingEnabled] = useState(false);
+  const [scheduleEnabled, setScheduleEnabled] = useState(false);
+  const [preferredAction, setPreferredAction] = useState('');
   const [maxCandidates, setMaxCandidates] = useState(100000);
   const [entries, setEntries] = useState<Record<string, { kind: 'confirmed' | 'assumption' | 'unknown' }>>({});
   const [strategyText, setStrategyText] = useState('{}');
@@ -516,7 +504,6 @@ export function PlanPage() {
   /** 主目标来自档案方案；显式 URL 目标和手动选择保留优先权。 */
   const [directionNode, setDirectionNode] = useState<string | null>(null);
   const previousPrimary = useRef<string | null>(null);
-  const paceProfile = useRef<string | null>(null);
   /** 上次规划是否走了 withReview 路径：决定要不要如实说明该路径的字段限制。 */
   const [lastWasReview, setLastWasReview] = useState(false);
   /** 当前载入的范例（若有）：用来显示入口清单与「清除范例入口」。 */
@@ -551,7 +538,7 @@ export function PlanPage() {
    */
   const frontierReport = useMemo(() => {
     if (!frontierOn || !graph) return null;
-    const known = Object.keys(entries).map((node) => ({ node }));
+    const known = Object.entries(entries).filter(([, entry]) => entry.kind === 'confirmed').map(([node]) => ({ node }));
     return deriveDirection({ nodes: graph.nodes, actions: graph.actions, relations: graph.relations, theta: { known }, steps: 0 });
   }, [frontierOn, graph, entries]);
   /** 目标一出现就离开无目标模式：两种结果是互斥的，不能让它们同时挂在页面上。 */
@@ -560,6 +547,7 @@ export function PlanPage() {
     requestGeneration.current++;
     setJobId(null); setJobStatus(null); setResult(null); setError(null);
     setEntries({}); setProfileKnown(new Set());
+    setCostEnabled(false); setRankingEnabled(false); setScheduleEnabled(false); setPreferredAction('');
     autoFilledRef.current = new Set();
     draftLoaded.current = false;
   }, [auth.identityKey]);
@@ -629,11 +617,6 @@ export function PlanPage() {
     if (!params.get('goal') && primary) setGoals(current =>
       current.length === 1 && (current[0] === previous || (previous === null && current[0] === initialGoal.current)) ? [primary] : current);
     previousPrimary.current = primary;
-    if (paceProfile.current !== profileId) {
-      const setting = paceHorizon(learningData.learningPlan.pace, locale);
-      if (setting) { setHorizon(setting.horizon); setPaceApplied(true); }
-      paceProfile.current = profileId;
-    }
   }, [profileId, learningData.learningPlan, learningData.loading, params, locale]);
 
   /** 上一次自动带入的节点集合：切换档案时要先撤掉旧档案带进来的项，再换成新档案的。 */
@@ -654,10 +637,11 @@ export function PlanPage() {
       return;
     }
     let active = true;
-    api<{ theta: { known: Array<{ node: string }> } }>(`/profiles/${profileId}`)
+    api<{ theta: { known: Array<{ node: string }>; unknown: Array<{ node: string }> } }>(`/profiles/${profileId}`)
       .then((result) => {
         if (!active) return;
         const known = new Set(result.theta.known.map((entry) => entry.node));
+        const unknown = new Set(result.theta.unknown.map(entry => entry.node));
         setProfileKnown(known);
         /*
          * 这里必须是「合并」而不是「替换」。
@@ -669,10 +653,11 @@ export function PlanPage() {
         setEntries((current) => {
           const next = { ...current };
           for (const node of autoFilledRef.current) {
-            if (!known.has(node) && next[node]?.kind === 'confirmed') delete next[node];
+            if (!known.has(node) && !unknown.has(node)) delete next[node];
           }
           for (const node of known) if (!(node in next)) next[node] = { kind: 'confirmed' };
-          autoFilledRef.current = new Set(known);
+          for (const node of unknown) if (!(node in next)) next[node] = { kind: 'unknown' };
+          autoFilledRef.current = new Set([...known, ...unknown]);
           return next;
         });
       })
@@ -777,8 +762,10 @@ export function PlanPage() {
       try { strategy = JSON.parse(strategyText); }
       catch { setError(pick(TEXT.strategyParseError)); return; }
     }
-    const budget = budgetMax.trim() === '' ? null : { maxCost: Number(budgetMax), currency: 'declared-cost' };
-    const body: Record<string, unknown> = { goalId: activeGoals[0], background, horizon: activeHorizon, maxCandidates, strategy, budget, profileId: profileId ?? undefined };
+    if (rankingEnabled && preferredAction.trim()) strategy.preferredAction = preferredAction.trim();
+    const extensions = [...(costEnabled ? ['declared-cost/1'] : []), ...(rankingEnabled ? ['preferred-action/1'] : []), ...(profileId && scheduleEnabled ? ['learning-schedule/1'] : [])];
+    const budget = !costEnabled || budgetMax.trim() === '' ? null : { maxCost: Number(budgetMax), currency: 'declared-cost' };
+    const body: Record<string, unknown> = { goalId: activeGoals[0], background, horizon: activeHorizon, maxCandidates, strategy, budget, extensions, profileId: profileId ?? undefined };
     // 多目标照旧走服务端已有的 goalIds 通道；单目标时请求体与改动前逐字一致。
     if (activeGoals.length > 1) body.goalIds = activeGoals.slice(1);
     if (review) body.review = { node: activeGoals[0] };
@@ -1008,54 +995,28 @@ export function PlanPage() {
                 min={1}
                 max={MAX_HORIZON}
                 value={horizon}
-                onChange={(event) => { setHorizon(Number(event.target.value)); setPaceApplied(false); }}
+                onChange={(event) => { setHorizon(Number(event.target.value)); }}
               />
             </label>
             <label>{pick(TEXT.maxCandidatesLabel)}
               <input type="number" min={100} max={1000000} value={maxCandidates} onChange={(event) => setMaxCandidates(Number(event.target.value))} />
             </label>
+            <label><input type="checkbox" checked={costEnabled} onChange={e => setCostEnabled(e.target.checked)} />
+              {pick({zh:'按声明成本核对预算', en:'Check budget against declared costs'})}</label>
+            <label><input type="checkbox" checked={rankingEnabled} onChange={e => setRankingEnabled(e.target.checked)} />
+              {pick({zh:'按首选行动排序', en:'Rank by preferred action'})}</label>
+            {rankingEnabled && <label>{pick({zh:'首选行动 ID',en:'Preferred action ID'})}
+              <input value={preferredAction} onChange={e => setPreferredAction(e.target.value)} /></label>}
+            {profileId && <label><input type="checkbox" checked={scheduleEnabled} onChange={e => setScheduleEnabled(e.target.checked)} />
+              {pick({zh:'使用档案中的排程偏好', en:'Apply saved scheduling preferences'})}</label>}
             <label>{pick(TEXT.budgetLabel)}
-              <input type="number" min={0} value={budgetMax} onChange={(event) => setBudgetMax(event.target.value)} placeholder={pick(TEXT.budgetPlaceholder)} />
+              <input type="number" min={0} disabled={!costEnabled} value={budgetMax} onChange={(event) => setBudgetMax(event.target.value)} placeholder={pick(TEXT.budgetPlaceholder)} />
             </label>
             <label className="strategy-input">{pick(TEXT.strategyLabel)}
               <textarea rows={3} value={strategyText} onChange={(event) => setStrategyText(event.target.value)} placeholder={pick(TEXT.strategyPlaceholder)} />
             </label>
           </div>
           <p className="muted">{pick(TEXT.noCostNote)()}</p>
-          {/*
-            偏好参与默认值这件事必须**写出来**（TODO A4-23）：
-            不然「为什么这里是 3 而不是 8」无从判断。同时说明它只改默认值、不改算法，
-            并给回去改偏好的入口。
-          */}
-          {paceApplied && paceDefault && (
-            <p className="muted plan-pace-note" data-pace-source={savedPreferences.pace ?? undefined}>
-              {rich('paceNote')(
-                /*
-                 * 理由文本来自 `start-preferences.ts`（归 task-8），英文站上可能仍是中文：
-                 * 回落中文时如实标注，不假装已翻译。
-                 */
-                <span
-                  className={isPending(paceDefault.why) ? 'i18n-pending' : undefined}
-                  title={isPending(paceDefault.why) ? t('i18n.pendingTitle') : undefined}
-                >
-                  {paceDefault.why}
-                </span>,
-                (() => {
-                  const summary = preferenceSummary(savedPreferences, locale);
-                  if (!summary) return null;
-                  return (
-                    <span
-                      className={isPending(summary) ? 'i18n-pending' : undefined}
-                      title={isPending(summary) ? t('i18n.pendingTitle') : undefined}
-                    >
-                      {summary}
-                    </span>
-                  );
-                })(),
-                hrefFor('/start#prefs'),
-              )}
-            </p>
-          )}
         </details>
       </div>
 
@@ -1308,6 +1269,14 @@ export function PlanPage() {
             )}
           </section>
 
+          {result.adaptations?.fragments.map(fragment => fragment.kind !== 'annotation' && <section className="card" key={fragment.package}>
+            <h3>{fragment.kind === 'constraint' ? pick({zh:'预算核对', en:'Budget check'}) : pick({zh:'偏好排序', en:'Preference ranking'})}</h3>
+            {fragment.kind === 'constraint' ? <ul>{fragment.decisions.map(row =>
+              <li key={row.routeId}>{row.routeId} · {row.verdict === 'Pass' ? pick({zh:'预算内', en:'Within budget'})
+                : row.verdict === 'Reject' ? pick({zh:'超出预算', en:'Over budget'}) : pick({zh:'未决', en:'Unknown'})}
+                {row.total !== null && ' · ' + row.total}</li>)}</ul>
+              : <p>{fragment.order?.join(' → ') || pick({zh:'无可排序候选或未指定行动',en:'No eligible candidates or action specified'})}</p>}
+          </section>)}
           {result.routes.length === 0 && (
             <section className="card empty-state">
               <h2>{pick(TEXT.noRoutes)}</h2>

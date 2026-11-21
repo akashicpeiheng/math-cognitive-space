@@ -31,8 +31,13 @@ export function deriveExternalState(events = []) {
   for (const event of events) {
     const nodeId = event.nodeId;
     if (event.kind === 'confirmation') {
-      if (event.payload?.confirmed === false) unknown.set(nodeId, event);
-      else confirmed.set(nodeId, event);
+      if (event.payload?.confirmed === false) {
+        confirmed.delete(nodeId);
+        unknown.set(nodeId, event);
+      } else if (event.payload?.confirmed === true || event.payload?.confirmed === undefined) {
+        unknown.delete(nodeId);
+        confirmed.set(nodeId, event);
+      }
     }
     if (event.kind === 'view') {
       viewed.set(nodeId, event);
@@ -46,7 +51,6 @@ export function deriveExternalState(events = []) {
     if (event.kind === 'misconception' && event.payload?.patternId) {
       misconceptions.set(event.payload.patternId, event);
     }
-    if (event.kind === 'evaluation' && event.payload?.demonstrated === false) unknown.set(nodeId, event);
   }
   return {
     confirmed: [...confirmed.values()],
@@ -60,10 +64,14 @@ export function deriveExternalState(events = []) {
 }
 
 export function adapt(ontology, profile, { goalId = null, budget = null, strategy = {} } = {}) {
-  const state = deriveExternalState(profile.events ?? []);
+  const events = profile.events ?? [];
+  const current = event => !event.ontologyVersion || event.ontologyVersion === ontology.version;
+  const state = deriveExternalState(events.filter(current));
   const known = [];
   const unknown = [];
-  const boundary = [];
+  const boundary = events.filter(event => !current(event)).map(event => ({
+    ref: event.nodeId, eventId: event.eventId, ontologyVersion: event.ontologyVersion, kind: 'unresolved-version',
+  }));
   for (const event of state.confirmed) {
     const node = ontology.maybeNode(event.nodeId);
     if (!node) { boundary.push({ ref: event.nodeId, kind: 'unresolved-confirmation', note: '确认记录引用了当前版本无法解析的节点；不能当作空依赖。' }); continue; }
@@ -76,7 +84,7 @@ export function adapt(ontology, profile, { goalId = null, budget = null, strateg
   }
   for (const event of state.unknown) {
     const node = ontology.maybeNode(event.nodeId);
-    if (node) unknown.push({ node: node.id, reason: event.payload?.reason ?? '外部记录标为尚未确认' });
+    if (node) unknown.push({ node: node.id, evidence: ['event:' + event.eventId], reason: event.payload?.reason ?? '外部记录标为尚未确认' });
     else boundary.push({ ref: event.nodeId, kind: 'unresolved-unknown', note: '未知记录引用了当前版本无法解析的节点。' });
   }
   const allNodes = ontology.raw.nodes.map((node) => node.id);
@@ -119,6 +127,13 @@ export function adaptWithOntology(ontology, profile, options = {}) {
     note: `来自外部确认 ${entry.evidence.join('、')}`,
     source: 'profile-confirmation',
   }));
+  if (options.includeExplicitUnknown) {
+    for (const entry of theta.unknown) {
+      background.push({ entryId: 'profile:' + profile.id + ':' + entry.node, node: entry.node,
+        provides: RESOURCE_BY_CONSTRUCT[ontology.node(entry.node).construct] ?? ['statement'],
+        kind: 'unknown', confirmed: false, source: entry.evidence[0], note: entry.reason });
+    }
+  }
   return { theta, background };
 }
 

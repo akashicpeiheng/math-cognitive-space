@@ -154,3 +154,19 @@ test('四组贯通案例在声明背景下都能找到最少事件路线', async
     assert.ok(result.routes[0].witness.every((item) => item.status));
   }
 });
+
+test('explicit extensions keep structural witnesses and distinguish unknown, zero and rejected costs', () => {
+  const planner = makePlanner(andOrFixture());
+  const input = { goalId: 'g', background: confirmed(['u', 'v', 'w']), extensions: [],
+    budget: { maxCost: 0 }, strategy: { costs: { a_and: 2 }, preferredAction: 'a_or' } };
+  const base = planner.plan(input);
+  assert.equal(base.routes.length, 2);
+  assert.deepEqual(base.adaptations.fragments, []);
+  const both = planner.plan({ ...input, extensions: ['declared-cost/1', 'preferred-action/1'] });
+  assert.deepEqual(both.routes, base.routes);
+  assert.deepEqual(both.adaptations.fragments[0].decisions.map(row => row.verdict).sort(), ['Reject', 'Unknown']);
+  assert.deepEqual(both.adaptations.fragments[1].order, []);
+  const ranked = planner.plan({ ...input, extensions: ['preferred-action/1'] });
+  assert.equal(ranked.adaptations.fragments[0].order[0], base.routes.find(r => r.events[0].actionId === 'a_or').id);
+  assert.throws(() => planner.plan({ ...input, extensions: ['missing/1'] }));
+});

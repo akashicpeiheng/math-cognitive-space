@@ -23,6 +23,7 @@ const MIME = {
   '.webmanifest': 'application/manifest+json; charset=utf-8',
   '.svg': 'image/svg+xml',
   '.png': 'image/png',
+  '.pdf': 'application/pdf',
   /*
    * `.webp` 必须在这里显式登记：末幕人像用的是带 alpha 的 WebP，
    * 漏了它就会落到下面的 `?? 'application/octet-stream'`，浏览器只能靠魔数嗅探，

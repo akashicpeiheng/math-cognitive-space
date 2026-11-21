@@ -244,6 +244,14 @@ export interface PlanPackageView {
 }
 
 export interface PlanResultView {
+  adaptations?: {
+    enabled: string[];
+    fragments: Array<
+      { package: string; kind: 'constraint'; decisions: Array<{ routeId: string; total: number | null; verdict: 'Pass' | 'Reject' | 'Unknown' }> }
+      | { package: string; kind: 'ranking'; order: string[] | null }
+      | { package: string; kind: 'annotation' }
+    >;
+  };
   status: string;
   goals: string[];
   routes: PlanPackageView[];

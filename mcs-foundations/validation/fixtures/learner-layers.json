@@ -1,0 +1,275 @@
+{
+  "schema": "mcs-layered-finite-example/1",
+  "synthetic": true,
+  "recordId": "example",
+  "M": "external-state-monograph-2026-09",
+  "L": {
+    "version": "reading-demo/1",
+    "tasks": [
+      "compare-group-entries"
+    ]
+  },
+  "events": [
+    {
+      "id": "e1",
+      "kind": "confirmation",
+      "target": {
+        "layer": "M",
+        "id": "Perm",
+        "version": "external-state-monograph-2026-09"
+      },
+      "time": "2026-01-01T00:00:00Z",
+      "source": "synthetic-example",
+      "basis": "fixture stipulation",
+      "payload": true
+    },
+    {
+      "id": "e2",
+      "kind": "confirmation",
+      "target": {
+        "layer": "M",
+        "id": "Sym",
+        "version": "external-state-monograph-2026-09"
+      },
+      "time": "2026-01-01T00:01:00Z",
+      "source": "synthetic-example",
+      "basis": "fixture stipulation",
+      "payload": true
+    },
+    {
+      "id": "e3",
+      "kind": "view",
+      "target": {
+        "layer": "L",
+        "id": "compare-group-entries",
+        "version": "reading-demo/1"
+      },
+      "time": "2026-01-01T00:02:00Z",
+      "source": "synthetic-example",
+      "basis": "fixture stipulation",
+      "payload": "read"
+    },
+    {
+      "id": "e4",
+      "kind": "answer",
+      "target": {
+        "layer": "L",
+        "id": "compare-group-entries",
+        "version": "reading-demo/1"
+      },
+      "time": "2026-01-01T00:03:00Z",
+      "source": "synthetic-example",
+      "basis": "fixture stipulation",
+      "payload": "这两个操作总可交换"
+    },
+    {
+      "id": "e5",
+      "kind": "confirmation",
+      "target": {
+        "layer": "M",
+        "id": "Perm",
+        "version": "external-state-monograph-2026-09"
+      },
+      "time": "2026-01-01T00:04:00Z",
+      "source": "synthetic-example",
+      "basis": "fixture stipulation",
+      "payload": false
+    }
+  ],
+  "requests": [
+    {
+      "id": "empty",
+      "prefix": 0,
+      "context": {
+        "goal": "Group"
+      },
+      "enabled": []
+    },
+    {
+      "id": "only-declarations",
+      "prefix": 2,
+      "context": {
+        "goal": "Group"
+      },
+      "enabled": []
+    },
+    {
+      "id": "observations",
+      "prefix": 4,
+      "context": {
+        "goal": "Group"
+      },
+      "enabled": []
+    },
+    {
+      "id": "unknown-entry",
+      "prefix": 5,
+      "context": {
+        "goal": "Group"
+      },
+      "enabled": []
+    },
+    {
+      "id": "options-off",
+      "prefix": 4,
+      "context": {
+        "goal": "Group",
+        "budget": 1,
+        "preference": "g_sym"
+      },
+      "enabled": []
+    },
+    {
+      "id": "budget",
+      "prefix": 4,
+      "context": {
+        "goal": "Group",
+        "budget": 1
+      },
+      "enabled": [
+        "time"
+      ]
+    },
+    {
+      "id": "zero-budget",
+      "prefix": 4,
+      "context": {
+        "goal": "Group",
+        "budget": 0
+      },
+      "enabled": [
+        "time"
+      ]
+    },
+    {
+      "id": "unknown-cost",
+      "prefix": 4,
+      "context": {
+        "goal": "Group",
+        "budget": 1
+      },
+      "enabled": [
+        "time-partial"
+      ]
+    },
+    {
+      "id": "preference",
+      "prefix": 4,
+      "context": {
+        "goal": "Group",
+        "preference": "g_sym"
+      },
+      "enabled": [
+        "order"
+      ]
+    },
+    {
+      "id": "diagnosis",
+      "prefix": 4,
+      "context": {
+        "goal": "Group"
+      },
+      "enabled": [
+        "diagnosis"
+      ]
+    },
+    {
+      "id": "no-evidence",
+      "prefix": 2,
+      "context": {
+        "goal": "Group"
+      },
+      "enabled": [
+        "diagnosis"
+      ]
+    },
+    {
+      "id": "combined",
+      "prefix": 4,
+      "context": {
+        "goal": "Group",
+        "budget": 1,
+        "preference": "g_sym"
+      },
+      "enabled": [
+        "time",
+        "order",
+        "diagnosis"
+      ]
+    }
+  ],
+  "packages": {
+    "time": {
+      "id": "time",
+      "version": "1",
+      "apiVersion": "finite-example/1",
+      "readSet": [
+        "Ctx.budget"
+      ],
+      "outputKinds": [
+        "constraint"
+      ],
+      "namespace": "example.time",
+      "stateSchema": "action-minutes",
+      "evidence": "ILLUSTRATION",
+      "dependencies": [],
+      "state": {
+        "g_perm": 1,
+        "g_sym": 2
+      }
+    },
+    "time-partial": {
+      "id": "time-partial",
+      "version": "1",
+      "apiVersion": "finite-example/1",
+      "readSet": [
+        "Ctx.budget"
+      ],
+      "outputKinds": [
+        "constraint"
+      ],
+      "namespace": "example.time-partial",
+      "stateSchema": "action-minutes",
+      "evidence": "ILLUSTRATION",
+      "dependencies": [],
+      "state": {
+        "g_perm": 1
+      }
+    },
+    "order": {
+      "id": "order",
+      "version": "1",
+      "apiVersion": "finite-example/1",
+      "readSet": [
+        "Ctx.preference"
+      ],
+      "outputKinds": [
+        "ranking"
+      ],
+      "namespace": "example.order",
+      "stateSchema": "empty",
+      "evidence": "ILLUSTRATION",
+      "dependencies": [],
+      "state": {}
+    },
+    "diagnosis": {
+      "id": "diagnosis",
+      "version": "1",
+      "apiVersion": "finite-example/1",
+      "readSet": [
+        "Rec.observations"
+      ],
+      "outputKinds": [
+        "prediction",
+        "question",
+        "annotation",
+        "eventProposal"
+      ],
+      "namespace": "example.diagnosis",
+      "stateSchema": "empty",
+      "evidence": "ILLUSTRATION",
+      "dependencies": [],
+      "state": {}
+    }
+  }
+}

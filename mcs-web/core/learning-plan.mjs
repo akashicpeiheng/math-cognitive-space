@@ -118,7 +118,12 @@ export function personalizePlanResult(ontology, result, rawPreferences, backgrou
     const schedule = routeSchedule(ontology, route, milestone, preferences, known, mainNodes, model.hard);
     return [route.id, { ...route, learningSchedule: schedule ? { ...schedule, ontologyVersion: ontology.version } : null }];
   }));
-  return { ...result, routes: result.routes.map(route => packages.get(route.id)), pareto: result.pareto.map(route => packages.get(route.id) ?? route) };
+  const annotated = { ...result, routes: result.routes.map(route => packages.get(route.id)), pareto: result.pareto.map(route => packages.get(route.id) ?? route) };
+  if (result.adaptations?.enabled.includes('learning-schedule/1')) {
+    annotated.adaptations = { ...result.adaptations, fragments: [...result.adaptations.fragments,
+      { package: 'learning-schedule/1', kind: 'annotation', inputs: preferences, evidence: 'ILLUSTRATION' }] };
+  }
+  return annotated;
 }
 
 /** Bounded orchestration around the existing AND/OR planner. M is never edited. */

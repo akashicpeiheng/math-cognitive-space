@@ -1,0 +1,44 @@
+{
+  "schema": "mcs-external-demo/1",
+  "model": "synthetic-confirmation-and-additive-cost/1",
+  "synthetic": true,
+  "profiles": [
+    {
+      "id": "A",
+      "confirmed": [
+        "Perm",
+        "Quant",
+        "Dist",
+        "Basis",
+        "Bundle",
+        "SmoothAtlas"
+      ],
+      "misconception_flags": [],
+      "budget": 5,
+      "unit_cost": 1
+    },
+    {
+      "id": "B",
+      "confirmed": [
+        "Sym",
+        "Seq",
+        "Multilin",
+        "Bundle"
+      ],
+      "misconception_flags": [
+        "limit_unreachable"
+      ],
+      "budget": 5,
+      "unit_cost": 1
+    },
+    {
+      "id": "Cold",
+      "confirmed": [],
+      "unknown": "all-public-nodes",
+      "misconception_flags": "unknown",
+      "budget": 5,
+      "unit_cost": 1
+    }
+  ],
+  "note": "These are explicitly stipulated examples, not real learner observations or validated estimates."
+}

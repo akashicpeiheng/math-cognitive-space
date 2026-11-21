@@ -1,0 +1,648 @@
+{
+  "scope": "Legacy structural regression, layered synthetic learner examples and current document integrity; five-scale M/L validation is in verify_scale_model.py.",
+  "not_claimed": [
+    "HOL machine proof",
+    "empirical effectiveness",
+    "unbounded planning decidability"
+  ],
+  "checks": [
+    {
+      "id": "V01_closure_exhaustive",
+      "status": "passed",
+      "instances": 512,
+      "detail": "64 个规则系统 × 8 个背景：与全部封闭超集的交这一独立语义计算一致；满足单调、幂等及有界可达性。"
+    },
+    {
+      "id": "V02_and_or_prerequisites",
+      "status": "passed",
+      "instances": 8,
+      "detail": "联合输入保持 AND，替代入口保持 OR；空路线族不产生先修；个体筛选不改变公共路线族。"
+    },
+    {
+      "id": "V03_event_posets",
+      "status": "passed",
+      "instances": 65,
+      "detail": "四事件的 64 个按序有向无环图，核验 315 个线性扩张及相邻不可比交换连通性；另核对来源与策略分别无环但合并成环的二事件反例。"
+    },
+    {
+      "id": "V04_boundary_and_sources",
+      "status": "passed",
+      "instances": 6,
+      "detail": "三事件界内全部来源指派尊重每个线性扩张；隐藏 a、b 后两项义务均留在边界。"
+    },
+    {
+      "id": "V05_cycle_repeat_budget",
+      "status": "passed",
+      "instances": 6,
+      "detail": "无入口循环不可执行；独立零输入入口可解除循环；重复访问同一节点保留不同事件；零预算拒绝单位成本行动。"
+    },
+    {
+      "id": "V06_or_knowledge_space",
+      "status": "passed",
+      "instances": 49,
+      "detail": "七状态外部实例并闭且可达，但不交闭，因此不是任何条目偏序的全部下闭集族。"
+    },
+    {
+      "id": "V07_unknown_and_no_reflection",
+      "status": "passed",
+      "instances": 4,
+      "detail": "未知支持不等于已知空集，集合运算遍历可能值；命题可为假而相信它的判断为真。"
+    },
+    {
+      "id": "V08_padding_witness",
+      "status": "passed",
+      "instances": 1,
+      "detail": "闭常元出现在未使用实参中，β 结果仍为 e；一般饱和结论由正文证明。"
+    },
+    {
+      "id": "V09_external_noninterference",
+      "status": "passed",
+      "instances": 9,
+      "detail": "旧合成快照的确认集决定群/张量结构入口，预算及单位成本参与筛选，诊断标记产生极限提示；学习、遗忘、答错、纠正及重校准不改变本体哈希；冷启动保留未知。"
+    },
+    {
+      "id": "V10_explicit_inputs_and_pareto",
+      "status": "passed",
+      "instances": 15,
+      "detail": "改变公共版本、事件前缀、上下文、扩展版本或状态、算法参数及种子均改变复现键；未知成本保留为不可比较候选，不用默认数值支配。"
+    },
+    {
+      "id": "V11_document_integrity",
+      "status": "passed",
+      "instances": 26,
+      "detail": "26 篇正文文档：本地链接、编号唯一性、LC01–LC36、13 类模板及四篇案例均通过检查。"
+    },
+    {
+      "id": "V12_aggregation_adjunction",
+      "status": "passed",
+      "instances": 17496,
+      "detail": "三元素域上的全部 128 个非空块子族选择，穷尽检查展开/完整块选择的伴随及闭包、内部算子的幂等性。"
+    },
+    {
+      "id": "V13_route_port_substitution",
+      "status": "passed",
+      "instances": 10,
+      "detail": "顺序复合同时替换事件输入与最终目标端口；核验左右单位、三路结合、背景透传及无资源依赖时的顺序约束，并拒绝悬空中间目标的旧反例。"
+    },
+    {
+      "id": "V14_noninjective_route_transport",
+      "status": "passed",
+      "instances": 5,
+      "detail": "两个不同输入合并为同一节点时须选一个合法生产者；输送后依赖为原图子图，不能宣称保留全部原依赖。"
+    },
+    {
+      "id": "V15_observational_nonidentification",
+      "status": "passed",
+      "instances": 6,
+      "detail": "两个确定模型在长度0至4的纯a记录上一致，在未试行动b上预测相反；见正文反例16.1的一般论证。"
+    },
+    {
+      "id": "V16_scaling_directions",
+      "status": "passed",
+      "instances": 64,
+      "detail": "三元素载体的 8 个子集：放/缩切片互为逆关系且各自为预序；严格包含不反转蕴含，混合方向不保证传递，缩方向可多值，遗忘映射不保证可逆。"
+    },
+    {
+      "id": "V17_learner_layers",
+      "status": "passed",
+      "instances": 12,
+      "detail": "分层请求的结构入口、待确认来源、事件重放与冲突、版本隔离、预算与未知、排序、诊断提议、停用回放及旧夹具迁移。"
+    }
+  ],
+  "results": {
+    "core_sha256": "ece7b3f6266a7ed6483a21407322cd9c0cd4812fd2ab08c1751e03c26a4f6609",
+    "profiles": {
+      "A": {
+        "group": [
+          [
+            "g_perm"
+          ]
+        ],
+        "tensor": [
+          [
+            "t_basis",
+            "t_field"
+          ]
+        ],
+        "prompts": []
+      },
+      "B": {
+        "group": [
+          [
+            "g_sym"
+          ]
+        ],
+        "tensor": [
+          [
+            "t_multilin",
+            "t_field"
+          ]
+        ],
+        "prompts": [
+          "limit_unreachable"
+        ]
+      }
+    },
+    "cold_start": [
+      {
+        "action": "g_perm",
+        "assumed_entry": [
+          "Perm"
+        ],
+        "status": "Conditional"
+      },
+      {
+        "action": "g_sym",
+        "assumed_entry": [
+          "Sym"
+        ],
+        "status": "Conditional"
+      },
+      {
+        "action": "g_units",
+        "assumed_entry": [
+          "Unit5"
+        ],
+        "status": "Conditional"
+      }
+    ],
+    "layered_examples": {
+      "empty": {
+        "base": [],
+        "conditional": {
+          "g_perm": [
+            "Perm"
+          ],
+          "g_sym": [
+            "Sym"
+          ],
+          "g_units": [
+            "Unit5"
+          ]
+        },
+        "passed": [],
+        "pending": [],
+        "rankings": {},
+        "fragments": [],
+        "viewed": [],
+        "observed": [],
+        "unresolved": []
+      },
+      "only-declarations": {
+        "base": [
+          "g_perm",
+          "g_sym"
+        ],
+        "conditional": {
+          "g_units": [
+            "Unit5"
+          ]
+        },
+        "passed": [
+          "g_perm",
+          "g_sym"
+        ],
+        "pending": [],
+        "rankings": {},
+        "fragments": [],
+        "viewed": [],
+        "observed": [],
+        "unresolved": []
+      },
+      "observations": {
+        "base": [
+          "g_perm",
+          "g_sym"
+        ],
+        "conditional": {
+          "g_units": [
+            "Unit5"
+          ]
+        },
+        "passed": [
+          "g_perm",
+          "g_sym"
+        ],
+        "pending": [],
+        "rankings": {},
+        "fragments": [],
+        "viewed": [
+          "e3"
+        ],
+        "observed": [
+          "e4"
+        ],
+        "unresolved": []
+      },
+      "unknown-entry": {
+        "base": [
+          "g_sym"
+        ],
+        "conditional": {
+          "g_perm": [
+            "Perm"
+          ],
+          "g_units": [
+            "Unit5"
+          ]
+        },
+        "passed": [
+          "g_sym"
+        ],
+        "pending": [],
+        "rankings": {},
+        "fragments": [],
+        "viewed": [
+          "e3"
+        ],
+        "observed": [
+          "e4"
+        ],
+        "unresolved": []
+      },
+      "options-off": {
+        "base": [
+          "g_perm",
+          "g_sym"
+        ],
+        "conditional": {
+          "g_units": [
+            "Unit5"
+          ]
+        },
+        "passed": [
+          "g_perm",
+          "g_sym"
+        ],
+        "pending": [],
+        "rankings": {},
+        "fragments": [],
+        "viewed": [
+          "e3"
+        ],
+        "observed": [
+          "e4"
+        ],
+        "unresolved": []
+      },
+      "budget": {
+        "base": [
+          "g_perm",
+          "g_sym"
+        ],
+        "conditional": {
+          "g_units": [
+            "Unit5"
+          ]
+        },
+        "passed": [
+          "g_perm"
+        ],
+        "pending": [],
+        "rankings": {},
+        "fragments": [
+          {
+            "namespace": "example.time",
+            "id": "time",
+            "version": "1",
+            "inputSnapshot": "e5b5cdb5b32ff242412667a23217d0ba5c7352ba6f24e063315ce649316aa540",
+            "evidence": "ILLUSTRATION",
+            "generatedAt": "2026-01-01T01:00:00Z",
+            "values": {
+              "constraint": {
+                "g_perm": true,
+                "g_sym": false
+              }
+            }
+          }
+        ],
+        "viewed": [
+          "e3"
+        ],
+        "observed": [
+          "e4"
+        ],
+        "unresolved": []
+      },
+      "zero-budget": {
+        "base": [
+          "g_perm",
+          "g_sym"
+        ],
+        "conditional": {
+          "g_units": [
+            "Unit5"
+          ]
+        },
+        "passed": [],
+        "pending": [],
+        "rankings": {},
+        "fragments": [
+          {
+            "namespace": "example.time",
+            "id": "time",
+            "version": "1",
+            "inputSnapshot": "c4c2df17e11bbb3bf3f1c2e765ae7968e0da00350215505a78448f3f6d8aa76c",
+            "evidence": "ILLUSTRATION",
+            "generatedAt": "2026-01-01T01:00:00Z",
+            "values": {
+              "constraint": {
+                "g_perm": false,
+                "g_sym": false
+              }
+            }
+          }
+        ],
+        "viewed": [
+          "e3"
+        ],
+        "observed": [
+          "e4"
+        ],
+        "unresolved": []
+      },
+      "unknown-cost": {
+        "base": [
+          "g_perm",
+          "g_sym"
+        ],
+        "conditional": {
+          "g_units": [
+            "Unit5"
+          ]
+        },
+        "passed": [
+          "g_perm"
+        ],
+        "pending": [
+          "g_sym"
+        ],
+        "rankings": {},
+        "fragments": [
+          {
+            "namespace": "example.time-partial",
+            "id": "time-partial",
+            "version": "1",
+            "inputSnapshot": "b7b32b5068c0ce43ef5996a166fc0ef84fd32b3dbfc9e014d0a0e29b43c694ce",
+            "evidence": "ILLUSTRATION",
+            "generatedAt": "2026-01-01T01:00:00Z",
+            "values": {
+              "constraint": {
+                "g_perm": true,
+                "g_sym": null
+              }
+            }
+          }
+        ],
+        "viewed": [
+          "e3"
+        ],
+        "observed": [
+          "e4"
+        ],
+        "unresolved": []
+      },
+      "preference": {
+        "base": [
+          "g_perm",
+          "g_sym"
+        ],
+        "conditional": {
+          "g_units": [
+            "Unit5"
+          ]
+        },
+        "passed": [
+          "g_perm",
+          "g_sym"
+        ],
+        "pending": [],
+        "rankings": {
+          "example.order": [
+            "g_sym",
+            "g_perm"
+          ]
+        },
+        "fragments": [
+          {
+            "namespace": "example.order",
+            "id": "order",
+            "version": "1",
+            "inputSnapshot": "78ace4fe737a0de40d6c2cf2ace6c75c1e0c2db78cd1ed880ed769811602055f",
+            "evidence": "ILLUSTRATION",
+            "generatedAt": "2026-01-01T01:00:00Z",
+            "values": {
+              "ranking": [
+                "g_sym",
+                "g_perm"
+              ]
+            }
+          }
+        ],
+        "viewed": [
+          "e3"
+        ],
+        "observed": [
+          "e4"
+        ],
+        "unresolved": []
+      },
+      "diagnosis": {
+        "base": [
+          "g_perm",
+          "g_sym"
+        ],
+        "conditional": {
+          "g_units": [
+            "Unit5"
+          ]
+        },
+        "passed": [
+          "g_perm",
+          "g_sym"
+        ],
+        "pending": [],
+        "rankings": {},
+        "fragments": [
+          {
+            "namespace": "example.diagnosis",
+            "id": "diagnosis",
+            "version": "1",
+            "inputSnapshot": "bc14beb1b3e992cf598949a1a770f32426a7fd83609a2bc2892eb349481af282",
+            "evidence": "ILLUSTRATION",
+            "generatedAt": "2026-01-01T01:00:00Z",
+            "values": {
+              "prediction": "交换性可能误用",
+              "question": "能举出两个不交换的置换吗？",
+              "annotation": [
+                "e4"
+              ],
+              "eventProposal": {
+                "kind": "evaluation",
+                "evidence": [
+                  "e4"
+                ]
+              }
+            }
+          }
+        ],
+        "viewed": [
+          "e3"
+        ],
+        "observed": [
+          "e4"
+        ],
+        "unresolved": []
+      },
+      "no-evidence": {
+        "base": [
+          "g_perm",
+          "g_sym"
+        ],
+        "conditional": {
+          "g_units": [
+            "Unit5"
+          ]
+        },
+        "passed": [
+          "g_perm",
+          "g_sym"
+        ],
+        "pending": [],
+        "rankings": {},
+        "fragments": [
+          {
+            "namespace": "example.diagnosis",
+            "id": "diagnosis",
+            "version": "1",
+            "inputSnapshot": "630994308e85f541ea4871f1aac10f419d33f735dbb89a05511fc9285ed11317",
+            "evidence": "ILLUSTRATION",
+            "generatedAt": "2026-01-01T01:00:00Z",
+            "values": {
+              "prediction": null
+            }
+          }
+        ],
+        "viewed": [],
+        "observed": [],
+        "unresolved": []
+      },
+      "combined": {
+        "base": [
+          "g_perm",
+          "g_sym"
+        ],
+        "conditional": {
+          "g_units": [
+            "Unit5"
+          ]
+        },
+        "passed": [
+          "g_perm"
+        ],
+        "pending": [],
+        "rankings": {
+          "example.order": [
+            "g_perm"
+          ]
+        },
+        "fragments": [
+          {
+            "namespace": "example.time",
+            "id": "time",
+            "version": "1",
+            "inputSnapshot": "e5b5cdb5b32ff242412667a23217d0ba5c7352ba6f24e063315ce649316aa540",
+            "evidence": "ILLUSTRATION",
+            "generatedAt": "2026-01-01T01:00:00Z",
+            "values": {
+              "constraint": {
+                "g_perm": true,
+                "g_sym": false
+              }
+            }
+          },
+          {
+            "namespace": "example.order",
+            "id": "order",
+            "version": "1",
+            "inputSnapshot": "78ace4fe737a0de40d6c2cf2ace6c75c1e0c2db78cd1ed880ed769811602055f",
+            "evidence": "ILLUSTRATION",
+            "generatedAt": "2026-01-01T01:00:00Z",
+            "values": {
+              "ranking": [
+                "g_sym",
+                "g_perm"
+              ]
+            }
+          },
+          {
+            "namespace": "example.diagnosis",
+            "id": "diagnosis",
+            "version": "1",
+            "inputSnapshot": "bc14beb1b3e992cf598949a1a770f32426a7fd83609a2bc2892eb349481af282",
+            "evidence": "ILLUSTRATION",
+            "generatedAt": "2026-01-01T01:00:00Z",
+            "values": {
+              "prediction": "交换性可能误用",
+              "question": "能举出两个不交换的置换吗？",
+              "annotation": [
+                "e4"
+              ],
+              "eventProposal": {
+                "kind": "evaluation",
+                "evidence": [
+                  "e4"
+                ]
+              }
+            }
+          }
+        ],
+        "viewed": [
+          "e3"
+        ],
+        "observed": [
+          "e4"
+        ],
+        "unresolved": []
+      }
+    }
+  },
+  "documents": {
+    "manuscript_files": 26,
+    "indexed_statements": 240,
+    "localization_schemes": 36
+  },
+  "manuscript_sha256": {
+    "00-README.md": "6253491ba59822ac47596a58cc1b232339f5430976b303ba976f021aab1d42c7",
+    "01-元理论与可构造宇宙.md": "36a7b4e9a8a51da2cf624dba844d9eef6579e0453ca81bebd7698601ca4f6f04",
+    "02-对象语言：简单类型论.md": "b88a6b286877dcd31c5090f9c2b5c6807b305c2da772f7ee279bcc1776165f11",
+    "03-语义：Henkin与标准.md": "a795d4ff4b820fb4ad84fba3f3852e8da0df0e5177e36f77a9c64e8961eaa088",
+    "04-节点生成与身份.md": "badb0ddea3503541a691b83bcd8aa6f5480673ada9fa10069eea83305ff67ff0",
+    "05-概念函数与支持族.md": "a7aa1ae6d59297a04e7e22550c3a76d3d9d13dcb8e80a243aebef8931a5b6b69",
+    "06-硬关系.md": "02d2664fe5b8eec04de3c8c57195b34e5e036c0e0d8dcddfc0156d23c384cf1f",
+    "07-软关系与认知状态.md": "92b5830a1b89b17b1f0ad11e0a470e8b9db9e905b69c2aeb2b5ad93c5a78fcba",
+    "08-关系代数与结构.md": "b175fc9e8bdb3f76dd5728aa8be0313d73ddaccb5f1e1da550024642d1d3a96b",
+    "09-话题、领域、学科与元理论.md": "2048a33f367dec681892b9ede161206c947b5a6d3cf03a7324c180e97ac73fde",
+    "10-节点模板.md": "d90d9a18ba9a93249552cc19b77ec8e09c8fa27d3fd237678968c5830d6cb9b9",
+    "11-局部化36方案.md": "3536b4938836751873532c73184ccbaeea5dee5fbdf15ea1b7b7ac5292d6757a",
+    "12-视图转换与路径规划.md": "2f4545cd04da0350d9f9cc90cea6034ecb33f22db93eb64e0e921362c3758481",
+    "13-贯通案例.md": "c443388aae9ec224e02c2a669da9896c1d7600de5ed49e29ff8dc7a8ff6fe09b",
+    "14-反例集.md": "9decc4016d3a973c93508b156597c139f8e6fe8c975fbd0c00b2c04239725715",
+    "15-验证与完成标准.md": "ce768bbbe908579dfbdcbbb435c69299e00aa09b6378aa292232c8a58a4f9f9d",
+    "16-开放问题.md": "93f88c881028e50c7e3165ec4f2790d6184ca62b9d34ac28ec569a3c0cb3b13c",
+    "A-定义与定理索引.md": "10528c518448c69a682540f41d33b0ee3f9cfff37d2efa2df9c2c128fc31331e",
+    "B-文献证据表.md": "0fd1b97ff13c4750adcebe652598ca69c2f6c5e5a0840d9f5949b6510d104087",
+    "C-记号索引.md": "e8191d9345692407b854bf47590a1aa3507f46cbf4d94f24b6c084b2c0352c3b",
+    "D-接口契约.md": "6dffd9ae2ab6a366e47c42070fdac41cf5f755a41c3ae695a7d03a7fba03c5d4",
+    "E-核心公理与验证条件.md": "8865a630adbf1c5c493c7e1228bf92ce92ae489d0eec7b4e7cd44a3125a20282",
+    "cases\\01-极限与连续.md": "b0daa34abc1cb30b63e5ff4da5eeeac89c892bcb1a7a6c98f2fab379da06e362",
+    "cases\\02-Ck与光滑流形.md": "533d145136c99221069b0d5e45c5a2a4156e373a0c2bb4c580d986809e6370f4",
+    "cases\\03-张量与张量场.md": "72f2e17b4be5d94e888aacba61eb72c4c5291c9fd9fd8cc9e986ea16ef0a673e",
+    "cases\\04-群概念的多来源.md": "b0eb95f8c72ad3277550a12b2a61f53ee53f9e1da0b3ea300ef67d28986c7ca3"
+  },
+  "fixture_sha256": {
+    "core.json": "06e6f55687b5885ff60ebd4b865098bcb69ff918f7efd8b3af4c3117ea17219c",
+    "external.json": "cbd109c6e923bc2c240095db5046032abfbf6c28c1040a1f13ac46e65197208f",
+    "learner-layers.json": "dbdb4ed7392416b76e252d146476e162794297f13f3aff979d0e0bd0950a8285"
+  }
+}
